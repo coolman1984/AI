@@ -52,6 +52,7 @@ exits 0.
 duckdb>=1.0.0
 pandas>=2.0.0
 openpyxl>=3.1.0
+charset-normalizer>=3.3.0
 pyyaml>=6.0
 pytest>=8.0.0
 ```
@@ -164,6 +165,11 @@ data has every messy trait on purpose so your code is forced to handle them.
      decimal: "."             # "." US, "," European — set to match the data
      thousands: ","
      date_format: "%Y-%m-%d"  # set to match the data
+   clean:
+     money_columns: [unit_cost]   # SUMmed as money -> typed DECIMAL, not DOUBLE
+     on_duplicates: flag          # flag | drop  (flag = keep + record; never silent)
+   run:
+     sample_limit: 0          # 0 = process everything; >0 = only first N rows/files (dry-run)
    ```
 5. Write `scripts/common.py` with EXACTLY these functions:
    ```python
@@ -250,19 +256,43 @@ def main(): ...   # reads config, ingests big_excel + every folder file
 Rules:
 - Read Excel with `pandas.read_excel(path, header=header_row-1,
   dtype=str, engine="openpyxl")`. `dtype=str` forces text — DO NOT skip it.
-- For very large Excel, if memory is a concern, read with `openpyxl`
-  `read_only=True` row-by-row in `chunk_size` batches. (For ≤500k it usually
-  fits with `dtype=str`; measure before optimizing.)
+- **MULTI-SHEET WORKBOOKS:** a 272-column workbook may have several sheets. Call
+  `pd.ExcelFile(path).sheet_names` and ingest each sheet as its own
+  `raw_<file>_<sheet>` table. NEVER assume a single sheet — a silently ignored
+  second sheet is lost data.
+- **BIG-EXCEL MEMORY (read this — it is the real risk, not a "maybe"):**
+  500k rows × 272 columns as Python strings can be 5–15 GB and WILL OOM with a
+  single `read_excel`. Decide by size: if the file is large, do NOT load it
+  whole. Either (a) stream with `openpyxl` `read_only=True`,
+  `iter_rows(values_only=True)`, accumulating `chunk_size` rows and writing each
+  chunk to DuckDB via `con.append`/`INSERT`, OR (b) convert the sheet to CSV
+  first with the streaming reader and let DuckDB `read_csv` ingest it. `dtype=str`
+  whole-file load is ONLY acceptable for small/medium files — measure first.
 - Slugify and **de-duplicate** headers: a repeated `cost` becomes `cost`,
   `cost_2`. Log the original→final mapping.
-- Add columns `__source_file` (filename) and `__row_id` (stable integer).
+- **CSV ENCODING:** files in the folder may not be UTF-8. Sniff per file with
+  `charset-normalizer` (add to requirements) and fall back to the config
+  encoding; log the detected encoding. A wrong encoding mangles text silently.
+- Add columns: `__source_file` (filename), `__sheet` (sheet name or NULL), and
+  `__row_id`. **`__row_id` MUST be globally unique across ALL sources** — use
+  `<source_file>:<sheet>:<n>` (a string), NOT a per-table integer that restarts
+  at 0. After Phase 4 unions everything, a non-unique `__row_id` makes it
+  impossible to trace a reject back to its origin row. This is a correctness
+  requirement, not cosmetic.
+- **IDEMPOTENT RE-RUNS:** ingest must be safe to run twice. Use
+  `CREATE OR REPLACE TABLE` (never `INSERT` into an existing table on a fresh
+  run), or drop/recreate the staging DB at the start. A re-run that APPENDS
+  doubles every number downstream — the classic silent catastrophe.
 - Write each source to its own raw table: `raw_<sourcename>`.
 - Everything stored as VARCHAR. Verify with `DESCRIBE`.
 
 **Definition of Done (Phase 3)**
 - [ ] After running against the synthetic fixture, DuckDB contains one table per
-      source file; all columns are VARCHAR; `__source_file` and `__row_id` exist.
-- [ ] `run.log` contains the header-remap for the duplicate-header case.
+      source sheet/file; all columns are VARCHAR; `__source_file`, `__sheet`,
+      `__row_id` exist and `__row_id` is unique across the whole DB.
+- [ ] Running ingest TWICE produces the same row counts (idempotency proven).
+- [ ] `run.log` contains the header-remap for the duplicate-header case and the
+      detected encoding per CSV.
 - [ ] Verification: `python scripts/01_ingest.py && duckdb data/staging.duckdb "SHOW TABLES;"` lists the expected tables.
 
 ---
@@ -352,16 +382,29 @@ is forbidden.
 
 **Steps**
 1. For each column, using its profiled `inferred_type`, coerce:
-   - numeric: strip thousands sep, swap locale decimal, `TRY_CAST` to DOUBLE.
+   - **money/cost columns: `TRY_CAST` to `DECIMAL(18,4)`, NOT `DOUBLE`.** Floating
+     point sums drift (`0.1 + 0.2 != 0.3`); summing 500k costs as DOUBLE produces
+     a total that's wrong in the cents and won't reconcile. Use DECIMAL for any
+     column you will SUM as money. Mark which columns are money in `config.yaml`
+     (`clean.money_columns`). Non-money numerics may be DOUBLE.
+   - numeric: strip thousands sep, swap locale decimal, then `TRY_CAST`.
    - date: parse using `config.locale.date_format`; handle Excel serials
      (integer 30000–60000 → date via `1899-12-30` epoch).
    - integer/boolean/text similarly.
 2. A row where a REQUIRED column fails to parse → write the ORIGINAL row to
-   `rejects.csv` with extra columns `__reject_reason` and `__source_file`.
+   `rejects.csv` with extra columns `__reject_reason`, `__source_file`, and
+   `__row_id` (so every reject is traceable to its exact origin row).
    Required columns are listed in `column_map.yaml` under the top-level
    `required:` key (read it from there, not from config.yaml).
-3. Rows that parse go into the `clean` table with proper DuckDB types.
-4. Log counts: rows in, rows clean, rows rejected, and rejection reasons tally.
+3. **DUPLICATE ROWS:** messy exports often contain exact-duplicate rows (the same
+   record exported twice). Blindly summing double-counts. After typing, detect
+   full-row duplicates; per `config.yaml` `clean.on_duplicates` either `flag`
+   (keep, but record the count in `run.log` and the report's `data_quality`) or
+   `drop` (keep first, send the rest to `rejects.csv` with reason
+   `duplicate_row`). DEFAULT = `flag` — never silently drop without recording it.
+4. Rows that parse go into the `clean` table with proper DuckDB types.
+5. Log counts: rows in, rows clean, rows rejected, duplicates found, and rejection
+   reasons tally.
 
 **Tricks**
 - Use DuckDB `TRY_CAST` — it returns NULL instead of throwing, so you can detect
@@ -370,9 +413,10 @@ is forbidden.
   unparseable" (`"approx 12"`). Only the second is a reject.
 
 **Definition of Done (Phase 6)**
-- [ ] `clean` table has proper types (numeric columns are DOUBLE, not VARCHAR).
+- [ ] Money columns are `DECIMAL`, other numerics `DOUBLE` (not VARCHAR).
 - [ ] `rejects.csv` exists and contains the `"approx 12"` / `#REF!` rows with
-      a readable `__reject_reason`.
+      a readable `__reject_reason` and a `__row_id`.
+- [ ] Duplicate count is logged and surfaced in the report's `data_quality`.
 - [ ] `rows_in == rows_clean + rows_rejected` (logged). This equation MUST hold.
 
 ---
@@ -416,7 +460,9 @@ only fetch the already-grouped result.
    - No aggregate references a quarantined row.
    - Sum of a per-group total reconciles to the grand total within rounding.
 2. `run_all.py` — runs phases 3→7 then 8 in order; stops on first failure with a
-   clear message. Supports `--from <phase>` to resume.
+   clear message. Supports `--from <phase>` to resume. MUST honor
+   `run.sample_limit` (ingest only the first N rows/files for a fast dry-run on a
+   slice before committing to the full 500k).
 3. Tests in `tests/`:
    - `test_ingest.py`: after ingest, all columns VARCHAR; source/row_id present.
    - `test_clean.py`: the row-conservation equation holds; known-bad rows land

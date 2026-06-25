@@ -6,6 +6,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "doc_id",
     "source_filename",
     "source_format",
@@ -16,6 +17,11 @@
     "extraction"
   ],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of THIS schema the document was produced against, e.g. '1.0'. Lets consumers and re-runs detect when the contract changed. Bump on any breaking change.",
+      "const": "1.0"
+    },
     "doc_id": {
       "type": "string",
       "description": "SHA-1 of the source file bytes. Used as the unique, collision-safe output filename so two sources named the same don't overwrite each other.",
@@ -139,6 +145,7 @@
 
   "examples": [
     {
+      "schema_version": "1.0",
       "doc_id": "9a1c0b3f4e2d1a8b7c6d5e4f3a2b1c0d9e8f7a6b",
       "source_filename": "q3_review.pptx",
       "source_format": "pptx",

@@ -65,6 +65,7 @@ is different: documents are messy in *layout*, not in *types*.
 | PowerPoint `.pptx` | **`python-pptx`** | slides, shapes, text frames, tables, notes |
 | PowerPoint legacy `.ppt` | convert via **LibreOffice headless** | same reason as `.doc` |
 | File type detection | **`python-magic`** (libmagic) + extension fallback | extension lies; sniff the bytes |
+| Output validation | **`jsonschema`** | validate every output file against `schema/document.schema.json` (Phase 6/8) |
 | Config | **`pyyaml`** | |
 | Logging | stdlib **`logging`** → `run.log` | not `print()` |
 | Tests | **`pytest`** | |
@@ -80,6 +81,7 @@ pytesseract>=0.3.10
 python-docx>=1.1.0
 python-pptx>=0.6.23
 python-magic>=0.4.27
+jsonschema>=4.20.0
 pyyaml>=6.0
 pytest>=8.0.0
 Pillow>=10.0.0
@@ -88,7 +90,10 @@ Pillow>=10.0.0
 **System dependencies (the agent must check these exist and document them):**
 - `tesseract` binary (OCR). Check: `tesseract --version`. Install: apt/brew.
 - `libreoffice` / `soffice` (only if `.doc`/`.ppt` present). Check: `soffice --version`.
-- `libmagic` (for python-magic). On Debian: `apt install libmagic1`.
+- `libmagic` (for python-magic). On Debian: `apt install libmagic1`. On
+  **Windows**, `python-magic` needs the bundled binary — use
+  `pip install python-magic-bin` instead, or fall back to extension-only
+  detection and log that byte-sniffing is disabled.
 
 > If a system dep is missing, do NOT crash the whole pipeline. Detect at startup,
 > log a clear WARNING, and DISABLE the feature that needs it (e.g. skip OCR,
@@ -150,6 +155,7 @@ so downstream consumers never care whether the source was Word, PDF, or PPT.
 
 ```json
 {
+  "schema_version": "1.0",
   "doc_id": "sha1 of file bytes",
   "source_filename": "report_q3.pdf",
   "source_format": "pdf|docx|pptx",
@@ -233,9 +239,16 @@ Develop against the synthetic fixtures (Phase 2), not the user's real folder.
      dpi: 300                     # render resolution for scanned pages
      language: eng                # tesseract lang pack(s), e.g. "eng+fra"
    pdf:
-     scanned_text_threshold: 20   # < this many chars/page of real text ⇒ treat page as scanned
+     scanned_text_threshold: 20   # < this many chars on a PAGE of real text ⇒ that page is scanned
+     passwords: []                # optional known passwords to TRY on encrypted PDFs
+   legacy:
+     soffice_timeout_sec: 120     # kill a hung LibreOffice convert
+     soffice_serial: true         # run conversions ONE AT A TIME (see Phase 4 gotcha)
    limits:
      max_pages: 0                 # 0 = no limit; set to cap huge PDFs while testing
+   run:
+     sample_limit: 0              # 0 = all files; >0 = only first N files (dry-run)
+     skip_existing: true          # if output/docs/<doc_id>.json exists, skip (resumable batches)
    ```
 3. `scripts/common.py` — must include:
    - `load_config()`, `get_logger(name)` (file + stdout, no dup handlers).
@@ -285,26 +298,37 @@ Output a routing list the later phases consume.
 **Required interface**
 ```python
 def detect_format(path) -> str        # 'pdf'|'docx'|'pptx'|'doc'|'ppt'|'unknown' via libmagic + ext
-def is_pdf_encrypted(path) -> bool     # pypdf .is_encrypted
-def pdf_is_scanned(path, threshold, max_pages) -> bool  # mean chars/page < threshold
-def build_routing(cfg) -> list[dict]   # one entry per file: {path, format, route, flags}
+def try_unlock_pdf(path, passwords) -> str | None  # returns a working password, '' for none-needed, or None if locked
+def scanned_pages(path, threshold, max_pages) -> list[int]  # PER-PAGE: which pages have < threshold chars
+def build_routing(cfg) -> list[dict]   # one entry per file: {path, format, route, flags, scanned_pages}
 ```
 Routing rules:
 - `.doc`/`.ppt` → route `convert_legacy` (Phase 4), unless feature disabled →
   failure `legacy_conversion_disabled`.
-- encrypted PDF with no password → failure `encrypted_no_password` (do NOT hang).
-- PDF where `pdf_is_scanned` is true → route `ocr` (Phase 5 OCR path).
-- text PDF → route `pdf`; `.docx` → `docx`; `.pptx` → `pptx`.
+- encrypted PDF → try each password in `pdf.passwords`; if one works, proceed and
+  note it; if none works → failure `encrypted_no_password` (do NOT hang).
+- **PER-PAGE scanned detection (critical fix):** a PDF can be PART text, PART
+  scanned. Do NOT make a whole-document scanned/not decision — that silently
+  loses the scanned pages of a mostly-text PDF (or wastefully OCRs a mostly-image
+  one). `scanned_pages()` returns the LIST of page numbers below the char
+  threshold. Route the document to `pdf` but carry `scanned_pages` so Phase 5
+  extracts text pages with pdfplumber and OCRs ONLY the flagged pages, then
+  merges them in page order.
+- `.docx` → `docx`; `.pptx` → `pptx`.
 - `unknown`/corrupt → failure `unrecognized_format`.
 
 **Common mistakes**
 - Trusting the extension. A `.pdf` can be a renamed `.docx`. Sniff bytes.
 - Treating "no text extracted" as "empty document." It usually means SCANNED.
-  Route to OCR, never silently emit an empty doc.
+  Route those PAGES to OCR, never silently emit an empty doc.
+- Deciding scanned/text for the whole PDF. It's a PER-PAGE property.
 
 **Definition of Done**
-- [ ] Routing table correctly tags `sample_scanned.pdf` as `ocr`,
-      `sample_text.pdf` as `pdf`, and (if present) `encrypted.pdf` as a failure.
+- [ ] Routing tags `sample_scanned.pdf` with `scanned_pages: [1]`,
+      `sample_text.pdf` with `scanned_pages: []`, and (if present) `encrypted.pdf`
+      as a failure unless a matching password is configured.
+- [ ] A synthetic MIXED pdf (one text page + one image page) reports exactly the
+      image page in `scanned_pages`.
 - [ ] No file crashes detection; unreadable ones land in `failures.csv`.
 
 ---
@@ -317,10 +341,17 @@ binary formats — conversion is mandatory for those.
 
 **Steps**
 1. Command: `soffice --headless --convert-to docx --outdir <tmp> <file.doc>`
-   (and `pptx` for `.ppt`). Run with a **timeout** (e.g. 120s) — LibreOffice can
-   hang; a hung convert must become a `failure`, not a stuck pipeline.
-2. Record `was_converted_from` so the final JSON keeps provenance.
-3. If `soffice` missing → these files are failures with a clear reason.
+   (and `pptx` for `.ppt`). Run with a **timeout** (`legacy.soffice_timeout_sec`)
+   — LibreOffice can hang; a hung convert must become a `failure`, not a stuck
+   pipeline.
+2. **SERIAL EXECUTION GOTCHA:** LibreOffice uses a single shared user profile and
+   a second `soffice` invocation while another is running will silently fail or
+   block. If you ever parallelize the batch, convert legacy files ONE AT A TIME
+   (`legacy.soffice_serial: true`), OR give each invocation an isolated profile
+   via `-env:UserInstallation=file:///tmp/lo_<uniqueid>`. Do not run two bare
+   `soffice` converts at once.
+3. Record `was_converted_from` so the final JSON keeps provenance.
+4. If `soffice` missing → these files are failures with a clear reason.
 
 **Definition of Done**
 - [ ] If a `.doc` fixture is available, it converts and the result is readable by
@@ -334,10 +365,28 @@ binary formats — conversion is mandatory for those.
 **Goal:** each extractor turns one file into a list of normalized `blocks`
 (+ `tables` + `metadata`) in READING ORDER.
 
-### 5a. `03_extract_pdf.py` (text PDFs)
+### 5a. `03_extract_pdf.py` (text PDFs, possibly with some scanned pages)
 - Use `pdfplumber` page by page. For each page: extract words/lines for text
   blocks, and `page.extract_tables()` for tables.
-- Preserve order: emit blocks per page top-to-bottom; tag each with its `page`.
+- **PER-PAGE OCR MERGE:** if this page number is in the routing's `scanned_pages`,
+  do NOT use pdfplumber text for it — get its text from `06_ocr.py` instead and
+  insert those OCR blocks at the correct page position. The output interleaves
+  text-layer pages and OCR pages in page order.
+- **TABLE/TEXT DOUBLE-COUNTING (pdfplumber gotcha):** `extract_text()` and
+  `extract_tables()` OVERLAP — the cells inside a table also appear in the page
+  text, so naive concatenation prints every table twice (once mangled, once as a
+  table). Get the table bounding boxes from `page.find_tables()` and EXCLUDE
+  those regions from the text extraction (`page.outside_bbox(...)` /
+  filter words whose coords fall in a table bbox). Verify the fixture's table
+  text appears exactly once.
+- **READING ORDER / MULTI-COLUMN LIMITATION:** simple top-to-bottom ordering is
+  correct for single-column pages but SCRAMBLES two-column layouts (academic
+  papers, brochures) — it reads across the columns instead of down each. Detect
+  multi-column pages (a vertical gutter of whitespace splitting the words into
+  left/right clusters) and order each column top-to-bottom, left column first.
+  If you don't implement column detection, you MUST record a
+  `warning: "multi_column_unhandled"` on such pages so the consumer knows the
+  order may be wrong — never silently emit scrambled text as if it were clean.
 - Strip repeated **headers/footers** (text that appears at the same y-position on
   most pages) — log how many you removed. (Common mistake: page numbers and
   running headers polluting every page's text.)
@@ -357,12 +406,21 @@ binary formats — conversion is mandatory for those.
 - Slides have NO inherent reading order among shapes — order by shape top/left
   position (y then x) so output is stable and human-sensible.
 
-### 5d. `06_ocr.py` (scanned PDFs / image pages)
-- For each page routed to OCR: render to image with PyMuPDF at `cfg.ocr.dpi`
+### 5d. `06_ocr.py` (the scanned PAGES flagged by routing)
+- For each page in `scanned_pages`: render to image with PyMuPDF at `cfg.ocr.dpi`
   (`page.get_pixmap(dpi=...)`), save to `ocr_cache`, run `pytesseract.image_to_string`
   with `cfg.ocr.language`. Cache by `doc_id+page` so re-runs don't re-OCR.
-- Set `was_ocr: true`. OCR text is lower confidence — add a `warning` noting it.
+- Set `was_ocr: true` on the document and a per-block/per-page note. OCR text is
+  lower confidence — add `warning: "ocr_low_confidence"`. If `pytesseract`
+  exposes confidence (`image_to_data`), log the mean confidence per page so a
+  human can spot garbage OCR.
+- A fully-scanned PDF is just the case where `scanned_pages` == every page.
 - If tesseract missing → failure `tesseract_not_installed` (do not silently emit empty).
+
+> NOTE on the tech-table mention of "images-in-docs": OCR of images EMBEDDED in
+> `.docx`/`.pptx` (e.g. a screenshot pasted into a slide) is OUT OF SCOPE for v1
+> — only scanned-PDF pages are OCR'd. If you want embedded-image OCR later, add
+> it as a separate, explicitly-flagged pass; do not silently attempt it now.
 
 **Common mistakes (all formats)**
 - Losing reading order (the #1 quality bug). Always emit blocks in document order.
@@ -439,7 +497,10 @@ regardless of corpus size.
    - `ocr_used_count` matches the number of docs with `was_ocr:true`.
 2. `run_all.py`: detect → convert → extract/ocr → normalize → profile → validate,
    in order, stop-on-first-failure, with `--from <phase>` resume. Writes
-   `manifest.json` summarizing counts.
+   `manifest.json` summarizing counts. MUST honor `run.skip_existing` (skip docs
+   whose `output/docs/<doc_id>.json` already exists, so a crashed batch resumes
+   without redoing work) and `run.sample_limit` (process only the first N files,
+   for a fast dry-run before committing to the full corpus).
 3. Tests:
    - `test_detect.py`: scanned vs text vs encrypted classified correctly.
    - `test_extract.py`: reading order preserved; docx heading level; pptx notes
