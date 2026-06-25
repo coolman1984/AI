@@ -1,0 +1,59 @@
+{
+  "_instructions": {
+    "what_this_is": "This is the DESTINATION shape. It defines EXACTLY what report.json must look like. The AI reads this (not your data) to learn what to build. Replace the example structure below with YOUR real report shape. Put null/0 where real numbers will go.",
+    "rules": [
+      "Any key starting with underscore (_) is a comment and MUST be ignored by 05_shape.py.",
+      "Keep the structure realistic but the values empty (null, 0, or []). The pipeline fills them.",
+      "The KEY NAMES here become the contract: 05_shape.py and test_shape.py check them.",
+      "Numbers that are sums/counts -> use 0. Numbers unknown until runtime -> use null. Lists -> []."
+    ],
+    "how_to_adapt": "Delete the example 'report' below and paste your own desired output structure. If you are not sure, keep the example and just rename fields to match your data.",
+    "example_domain": "manufacturing cost rollup (from ARCHITECTURE.md). Replace with your domain."
+  },
+
+  "report_metadata": {
+    "report_name": "Manufacturing Cost Rollup",
+    "generated_at": null,
+    "source_row_count": 0,
+    "rows_clean": 0,
+    "rows_rejected": 0,
+    "currency": "USD"
+  },
+
+  "summary": {
+    "total_material_cost": 0,
+    "distinct_sub_assemblies": 0,
+    "distinct_materials": 0,
+    "average_unit_cost": null
+  },
+
+  "by_sub_assembly": [
+    {
+      "_example_row": "One object PER sub_assembly. The pipeline emits as many of these as there are groups. This single example shows the shape.",
+      "sub_assembly": "Frame",
+      "material_count": 0,
+      "total_cost": 0,
+      "average_unit_cost": null,
+      "min_unit_cost": null,
+      "max_unit_cost": null
+    }
+  ],
+
+  "by_material": [
+    {
+      "_example_row": "Optional second breakdown. Delete this whole block if you only need by_sub_assembly.",
+      "material_id": "Iron_01",
+      "sub_assembly": "Frame",
+      "unit_cost": null,
+      "occurrences": 0,
+      "extended_cost": 0
+    }
+  ],
+
+  "data_quality": {
+    "_note": "Filled by 06_validate.py / 04_clean.py. Keep these keys so quality is always visible in the report.",
+    "rejected_row_count": 0,
+    "rejection_reasons": {},
+    "row_conservation_ok": false
+  }
+}

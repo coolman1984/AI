@@ -358,7 +358,8 @@ is forbidden.
    - integer/boolean/text similarly.
 2. A row where a REQUIRED column fails to parse → write the ORIGINAL row to
    `rejects.csv` with extra columns `__reject_reason` and `__source_file`.
-   Required columns are listed in `config.yaml` (`clean.required_columns`).
+   Required columns are listed in `column_map.yaml` under the top-level
+   `required:` key (read it from there, not from config.yaml).
 3. Rows that parse go into the `clean` table with proper DuckDB types.
 4. Log counts: rows in, rows clean, rows rejected, and rejection reasons tally.
 

@@ -1,0 +1,66 @@
+# =============================================================================
+# column_map.yaml  —  THE HUMAN-REVIEWED COLUMN MAP
+# =============================================================================
+# WHY THIS FILE EXISTS:
+#   Your inputs (one big Excel + a folder of files) use DIFFERENT names for the
+#   SAME thing: "Unit Cost", "unitcost", "Cost/Unit", "cost". If the pipeline
+#   guessed which ones match, a wrong guess would silently corrupt your totals.
+#   So matching is NOT guessed — it is declared HERE, by a human (you).
+#
+# HOW IT WORKS (read 02_canonicalize.py):
+#   - Left side  = the ONE canonical name the rest of the pipeline uses.
+#   - Right side = the list of source-column variants that mean the same thing.
+#     Variants are matched AFTER slugify (lowercase, spaces/punct -> "_"),
+#     so "Unit Cost ($)" is seen as "unit_cost". List the slugified forms.
+#   - Any source column NOT listed here is CARRIED THROUGH under its slugified
+#     name (never dropped) and logged as a WARNING so you can decide if it
+#     needs mapping.
+#
+# THE GOLDEN RULE FOR THIS FILE:
+#   Only map columns you are CERTAIN are the same thing. When unsure, leave it
+#   out — it will be carried through and flagged, which is safe. A wrong entry
+#   here produces a confident WRONG number, which is the worst outcome.
+#
+# HOW TO ADAPT:
+#   1. Run Phase 3+5 once to get profile/schema_profile.json — it lists every
+#      real column name across all your files.
+#   2. For each real concept, pick ONE canonical name (left) and list every
+#      variant you saw (right).
+#   3. Re-run; check run.log for "unmapped column" WARNINGS and map any you missed.
+# =============================================================================
+
+# ---- EXAMPLE MAPPING (manufacturing domain — REPLACE with your real columns) ----
+
+columns:
+  # canonical_name:  [ list, of, slugified, source, variants ]
+
+  material_id:   [material_id, mat_id, material, material_no, item_id]
+
+  sub_assembly:  [sub_assembly, subassembly, assembly, sub_assy, parent_assembly]
+
+  unit_cost:     [unit_cost, unitcost, cost_per_unit, cost_unit, price_per_unit, cost]
+  #  ^ NOTE: "cost" is listed here ONLY because in THIS example we are certain a
+  #    bare "cost" column means unit cost. In YOUR data, verify that before
+  #    including an ambiguous name like "cost" — if "cost" sometimes means TOTAL
+  #    cost, do NOT map it here; carry it through and inspect it.
+
+  quantity:      [quantity, qty, units, count, no_of_units]
+
+  cost_date:     [cost_date, date, as_of_date, effective_date, valuation_date]
+
+  branch:        [branch, branch_name, location, site, plant]
+
+# ---- columns to IGNORE entirely (optional) -------------------------------------
+# Listed source columns are dropped on purpose (e.g. internal junk, free-text
+# notes you never aggregate). Leave empty if you want to keep everything.
+ignore:
+  []
+  # - internal_notes
+  # - scratch_col
+
+# ---- required columns (used by 04_clean.py) ------------------------------------
+# If any of these fails to parse for a row, that ROW goes to rejects.csv with a
+# reason. Pick the columns whose value MUST be valid for the report to be correct.
+required:
+  - material_id
+  - unit_cost
