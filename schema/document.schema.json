@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/document.schema.json",
+  "title": "Normalized Document",
+  "description": "The unified output contract for ONE extracted document, regardless of whether the source was Word, PDF, or PowerPoint. 06_normalize.py MUST produce objects that validate against this schema. Downstream consumers rely on these keys and never need to know the original format. NOTE: keys are intentionally explicit; do not rename them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "doc_id",
+    "source_filename",
+    "source_format",
+    "metadata",
+    "blocks",
+    "tables",
+    "full_text",
+    "extraction"
+  ],
+  "properties": {
+    "doc_id": {
+      "type": "string",
+      "description": "SHA-1 of the source file bytes. Used as the unique, collision-safe output filename so two sources named the same don't overwrite each other.",
+      "minLength": 8
+    },
+    "source_filename": {
+      "type": "string",
+      "description": "Original filename as found in data/raw_docs/ (basename, with extension)."
+    },
+    "source_format": {
+      "type": "string",
+      "description": "The MODERN format that was actually parsed.",
+      "enum": ["pdf", "docx", "pptx"]
+    },
+    "was_converted_from": {
+      "type": ["string", "null"],
+      "description": "If the source was a legacy binary converted via LibreOffice, the original format; else null.",
+      "enum": ["doc", "ppt", null]
+    },
+    "was_ocr": {
+      "type": "boolean",
+      "description": "True if any text in this document came from OCR (scanned/image PDF). OCR text is lower confidence; see extraction.warnings.",
+      "default": false
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Document-level metadata. Missing values are null, never omitted.",
+      "additionalProperties": true,
+      "required": ["page_count", "slide_count", "word_count"],
+      "properties": {
+        "title":    { "type": ["string", "null"] },
+        "author":   { "type": ["string", "null"] },
+        "created":  { "type": ["string", "null"], "description": "ISO-8601 if known." },
+        "modified": { "type": ["string", "null"], "description": "ISO-8601 if known." },
+        "page_count":  { "type": "integer", "minimum": 0, "description": "PDF/Word pages; 0 for pptx." },
+        "slide_count": { "type": "integer", "minimum": 0, "description": "PPTX slides; 0 otherwise." },
+        "word_count":  { "type": "integer", "minimum": 0 }
+      }
+    },
+    "blocks": {
+      "type": "array",
+      "description": "All content in READING ORDER. This ordering is the core quality guarantee — emit blocks in document/position order, never grouped by type. Tables also appear here (type='table') so their position is preserved.",
+      "items": { "$ref": "#/$defs/block" }
+    },
+    "tables": {
+      "type": "array",
+      "description": "Convenience index of every table, duplicated from the blocks array, for consumers that only want tables.",
+      "items": { "$ref": "#/$defs/table" }
+    },
+    "full_text": {
+      "type": "string",
+      "description": "All block text concatenated in reading order (join with double newline). The cheap field most consumers use. May be empty ONLY if the document is a known failure logged in failures.csv."
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extractor", "warnings", "char_count"],
+      "properties": {
+        "extractor": {
+          "type": "string",
+          "enum": ["pdfplumber", "python-docx", "python-pptx", "ocr"],
+          "description": "Which engine produced this. 'ocr' means scanned-PDF path."
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Non-fatal issues, e.g. 'ocr_low_confidence', 'stripped 3 running headers', 'encrypted but opened with empty password'."
+        },
+        "char_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+
+  "$defs": {
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["block_id", "type", "text"],
+      "properties": {
+        "block_id": { "type": "integer", "minimum": 0, "description": "Sequential index within this document, in reading order." },
+        "type": {
+          "type": "string",
+          "enum": ["heading", "paragraph", "list_item", "table", "image_caption", "slide_title", "notes"],
+          "description": "Semantic role. 'notes' = PPTX speaker notes. 'table' blocks carry the table in the 'table' field and an empty 'text'."
+        },
+        "level": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Heading depth (1=H1) or list/bullet nesting depth; null when not applicable."
+        },
+        "page":  { "type": ["integer", "null"], "minimum": 1, "description": "1-based page for PDF/Word; null for pptx." },
+        "slide": { "type": ["integer", "null"], "minimum": 1, "description": "1-based slide for PPTX; null otherwise." },
+        "text":  { "type": "string", "description": "The block's text. Empty string for type='table' (data lives in 'table')." },
+        "table": {
+          "oneOf": [ { "type": "null" }, { "$ref": "#/$defs/table" } ],
+          "description": "Populated only when type='table'; otherwise null."
+        }
+      }
+    },
+    "table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["table_id", "n_rows", "n_cols", "rows"],
+      "properties": {
+        "table_id": { "type": "integer", "minimum": 0 },
+        "page":  { "type": ["integer", "null"], "minimum": 1 },
+        "slide": { "type": ["integer", "null"], "minimum": 1 },
+        "n_rows": { "type": "integer", "minimum": 0 },
+        "n_cols": { "type": "integer", "minimum": 0 },
+        "rows": {
+          "type": "array",
+          "description": "Row-major cells as strings. First row is often the header but this is NOT assumed — do not drop it.",
+          "items": {
+            "type": "array",
+            "items": { "type": ["string", "null"] }
+          }
+        }
+      }
+    }
+  },
+
+  "examples": [
+    {
+      "doc_id": "9a1c0b3f4e2d1a8b7c6d5e4f3a2b1c0d9e8f7a6b",
+      "source_filename": "q3_review.pptx",
+      "source_format": "pptx",
+      "was_converted_from": null,
+      "was_ocr": false,
+      "metadata": {
+        "title": "Q3 Review",
+        "author": "Finance Team",
+        "created": "2026-03-01T09:00:00",
+        "modified": "2026-03-02T14:12:00",
+        "page_count": 0,
+        "slide_count": 2,
+        "word_count": 58
+      },
+      "blocks": [
+        { "block_id": 0, "type": "slide_title", "level": null, "page": null, "slide": 1, "text": "Q3 Review", "table": null },
+        { "block_id": 1, "type": "list_item", "level": 1, "page": null, "slide": 2, "text": "Revenue up 12%", "table": null },
+        { "block_id": 2, "type": "table", "level": null, "page": null, "slide": 2, "text": "",
+          "table": { "table_id": 0, "page": null, "slide": 2, "n_rows": 2, "n_cols": 2, "rows": [["Region","Total"],["EMEA","1.2M"]] } },
+        { "block_id": 3, "type": "notes", "level": null, "page": null, "slide": 2, "text": "Mention the EMEA outperformance.", "table": null }
+      ],
+      "tables": [
+        { "table_id": 0, "page": null, "slide": 2, "n_rows": 2, "n_cols": 2, "rows": [["Region","Total"],["EMEA","1.2M"]] }
+      ],
+      "full_text": "Q3 Review\n\nRevenue up 12%\n\nMention the EMEA outperformance.",
+      "extraction": { "extractor": "python-pptx", "warnings": [], "char_count": 57 }
+    }
+  ]
+}
