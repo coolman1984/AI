@@ -1,495 +1,614 @@
-# MASTER_PLAN.md — The Decision Intelligence System
+# MASTER_PLAN.md — Factory-Wide Decision Intelligence System
 
-> **What this document is.** The other plans in this repo describe three *engines*
-> (numbers, documents, memory). This document is the **spine** that turns them into
-> one product: a system that reads the mountain of files a manager can't, and hands
-> back — in a few words — the headline, the drivers, the risks, the recommended
-> action, the evidence, and how much to trust it.
->
-> It is written in two registers. **Part A is for the decision-maker** (plain
-> language: what it does, why to trust it). **Parts B–H are for the coding agent**
-> (architecture, tool contracts, phases). Read Part A once; build from B onward.
+> **The one sentence that fixes everything:**
+> Numbers come from queries, never from AI guessing. AI synthesizes calculated facts
+> and text into concise, evidence-backed management thinking. The whole system is a
+> set of tools (an MCP server) that any AI agent drives.
+
+This is the **single authoritative architecture and build plan.** It supersedes and
+consolidates the earlier `MASTER_PLAN` draft and the `DECISION_INTELLIGENCE_PLAN.md`
+opinion. The original `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN*.md`, and `REVIEW.md`
+remain as the **detailed engine specs** this plan orchestrates — they are not
+replaced. (See Part N for what changed in this revision and why.)
+
+It is written in two registers. **Part A is for the decision-maker** (plain language).
+**Parts B–N are for the build chain** (architecture, contracts, phases). The build
+chain is **Architect → Codex → cheaper coding models** — Part I defines exactly how
+the plan is handed down so weaker models can implement it safely.
+
+### The three rules everything obeys
+1. **Golden Rule (premise).** Code writes code from samples; engines execute code
+   against volumes. *The AI never reads the raw data — it reads profiles and writes
+   code your machine runs.*
+2. **Calculation-Integrity Rule (trust).** Every number comes from a SQL query against
+   the database. A synthesis model may **never** originate a number. This is enforced
+   physically: a numeric question cannot reach the synthesis model until the Data
+   Engine has returned calculated facts.
+3. **Decision-Memory Rule (value).** Every useful output is stored as a fact, driver,
+   risk, recommendation, decision, action, or lesson — *with evidence*. The brain
+   stores *why*, not just *what*. That is what makes it a brain, not a report.
 
 ---
 
 # PART A — THE VISION (plain language)
 
-## A.1 The problem we are removing
-
+## A.1 The problem we remove
 A manager in **any department** of a large TV-and-mobile factory drowns in inputs:
-huge SAP Excel exports (one file can reach ~200 MB), long PDFs, approval workflows,
-tens of emails, Word documents, sales tables, decks. The cost is not just time. It is
-**missed signal**: the variance nobody decomposed, the risk buried on page 40, the
-defect trend nobody linked to a supplier change, the fact that *this same problem
-happened two quarters ago and we already know the fix.*
+SAP Excel exports up to ~200 MB, long PDFs, approval workflows, tens of emails, Word
+docs, sales tables, decks, screenshots. The cost is not just time — it is **missed
+signal**: the variance nobody decomposed, the risk buried on page 40, the defect
+trend nobody tied to a supplier change, the fact that *this happened last quarter and
+we already know the fix.*
 
-## A.2 What the system delivers instead
-
-For any question — or, later, *before* you even ask — the manager gets one tight card:
+## A.2 What it delivers — one card, every time
+For any question (and later, *before* you ask), the manager gets one tight card:
 
 | Section | Meaning |
 |---|---|
-| **Executive headline** | One clear answer, in one sentence. |
-| **Key numbers** | Calculated facts only — never estimated by an AI. |
-| **Main drivers** | What actually caused the movement (price / quantity / mix / fx / …). |
-| **Risk / opportunity** | Why management should care. |
-| **Recommended action** | What to do next. |
-| **Evidence** | Exact source: file, sheet/page, rows/tables, and the calculation used. |
-| **Confidence** | High / Medium / Low, derived from data quality — not vibes. |
+| **Executive headline** | One clear answer, one sentence. |
+| **Key numbers** | Calculated facts only — never AI-estimated. |
+| **Main drivers** | What caused the movement (price / qty / mix / fx / usage / …). |
+| **Risk / opportunity** | Why management should care, and the time horizon. |
+| **Recommended action** | What to do next — with an owner and a deadline. |
+| **Evidence** | Exact source: file, sheet/page, rows/tables, and the calculation. |
+| **Confidence** | High / Medium / Low, from real data quality (Part E.4) — not vibes. |
 
-## A.3 The one rule that makes it trustworthy
+Same shape, every department, every time. Zero interpretation overhead.
 
-> **Numbers come from calculation. Text understanding may use AI. Every claim cites
-> its source. No summary omits its confidence.**
-
-A confident wrong number is the only failure that matters here, because the manager
-can't check it. Everything in Parts B–H exists to make that failure *structurally
-impossible*, not merely unlikely.
+## A.3 The trust rule, stated for a human
+> **Numbers are calculated, never guessed. Every claim cites its source. No answer
+> hides its confidence. Anything uncertain is flagged for a human — never silently
+> turned into a fact.** Everything below exists to make a confident-but-wrong number
+> *structurally impossible*, because that is the only failure a manager can't catch.
 
 ## A.4 Who it serves — the whole factory, department by department
-
-This is a **factory-wide** brain, not one department's tool. Every department —
-Production, Quality, Supply Chain, Procurement, Planning, Maintenance, Engineering,
-Warehouse, Sales, Finance/Controlling, HR, EHS, After-sales — gets its **own second
-brain first**. Then those department brains are **federated into one factory brain**
-so the CEO and CFO can see and decide across all of them (§B.4).
-
-Each manager's recurring workflow is a **playbook** on the shared engines (§G.1);
-each department is an **isolated, access-scoped namespace** (§G.2). One platform,
-many brains — not many apps.
+Every department — Production, Quality, Supply Chain, Procurement, Planning,
+Maintenance, Engineering, Warehouse, Sales, Finance/Controlling, HR, EHS, After-sales
+— gets its **own second brain first**. Then those brains **federate into one factory
+brain** so the CEO and CFO decide across all of them. **One platform, many brains —
+not many apps.** Finance/Costing is the pilot (Part L). Privacy is locked: **all
+processing stays in-house** (Part G.5).
 
 ---
 
-# PART B — THE ARCHITECTURE: MCP-FIRST
+# PART B — ARCHITECTURE: MCP-FIRST
 
 ## B.1 The decision that shapes everything
-
-This application is **not a chatbot**. It is a **toolbox** — an **MCP server**
-(Model Context Protocol) exposing a clean, professional set of tools. Any AI agent
-(Claude, Codex, an in-house agent) connects to it and *drives* the tools. The agent
-reasons and writes prose; the tools do the exact, auditable work.
-
-```
-        ┌─────────────────────────────────────────────────────────┐
-        │   ANY AI AGENT  (Claude / Codex / …)  — the ORCHESTRATOR  │
-        │   routes questions, calls tools, composes the summary.    │
-        │   MAY compose language.  MAY NOT originate facts.         │
-        └───────────────────────────┬─────────────────────────────┘
-                                     │  MCP (tool calls in / results out)
-        ┌───────────────────────────▼─────────────────────────────┐
-        │            THE APPLICATION  =  ONE MCP SERVER             │
-        │  a catalog of deterministic, testable, auditable tools    │
-        ├───────────────┬───────────────┬───────────────┬──────────┤
-        │  DATA ENGINE  │  DOC ENGINE   │ INSIGHT BRAIN │ OUTPUT &  │
-        │  (numbers)    │  (text)       │ (memory)      │ QUALITY   │
-        └───────┬───────┴───────┬───────┴───────┬───────┴────┬─────┘
-                │               │               │            │
-          staging DB      doc index        vault + index   summary
-          (DuckDB)        (search)         (MD + pgvector)  contract
-```
-
-## B.2 Why MCP-first is the correct call (not a fashion)
-
-- **It turns your trust rule into a wall.** The agent literally has no tool that
-  returns a number except the Data Engine. It *cannot* hand-roll a total; it can
-  only call `data.query` and report what came back.
-- **Separation of deterministic vs generative.** Calculations, SQL, search, and
-  storage are code — tested, repeatable, identical every run. Only language is
-  generated. The two never blur.
-- **Reusable by any agent, today and later.** Claude today, a cheaper model
-  tomorrow, an autonomous monitoring agent next year — all speak MCP. You build the
-  capability once.
-- **Auditable.** Every answer is a sequence of tool calls with inputs and outputs.
-  That trace *is* the evidence trail in §A.2.
-
-## B.3 The trust boundary (the single most important diagram)
+This is **not a chatbot**. It is a **toolbox — an MCP server** (Model Context
+Protocol) exposing a clean, professional catalog of tools. Any AI agent (Claude,
+Codex, an in-house agent) connects and *drives* the tools. The agent reasons and
+writes prose; the tools do the exact, auditable work.
 
 ```
-   AI may ORIGINATE:   prose, structure, the choice of which tool to call.
-   AI may NEVER ORIGINATE:   a number, a quote, a citation, a confidence score.
-   ─────────────────────────────────────────────────────────────────────────
-   Every number      → produced by  data.*      (and carries the query that made it)
-   Every quote/page  → produced by  docs.*      (and carries file + page/table ref)
-   Every past fact   → produced by  brain.*     (and carries the vault file ref)
-   Every summary     → validated by report.make_manager_summary, which REJECTS
-                       any numeric claim lacking a tool-produced evidence ref.
+        ANY AI AGENT (Claude / Codex / …) — the ORCHESTRATOR
+        routes questions, calls tools, composes the card.
+        MAY originate language.  MAY NOT originate facts.
+                              │  MCP (tool calls in / results out)
+        ┌─────────────────────▼─────────────────────────────────┐
+        │           THE APPLICATION = ONE MCP SERVER             │
+        │     deterministic, testable, auditable tools           │
+        ├───────────┬───────────┬───────────┬───────────┬───────┤
+        │ DATA      │ DOCUMENT  │ EMAIL     │ INSIGHT   │ OUTPUT│
+        │ ENGINE    │ ENGINE    │ ENGINE    │ BRAIN     │ & GOV │
+        │ (numbers) │ (text)    │ (.eml)    │ (memory)  │       │
+        └─────┬─────┴─────┬─────┴─────┬─────┴─────┬─────┴───┬───┘
+              ▼           ▼           ▼           ▼         ▼
+        staging DB    doc index   email index  vault+index  card +
+        (DuckDB)      (search)    (threads)    (MD+pgvector) quality
+                                  │
+                   PER-DEPARTMENT BRAINS  →  FACTORY BRAIN (federation)
+                                  │
+                   KNOWLEDGE VAULT (plain Markdown, git, forever)
 ```
 
-If a summary contains a number with no attached evidence ref, the output tool
-refuses to emit it. That refusal is the whole guarantee.
+## B.2 Why MCP-first is correct
+- **It turns the trust rule into a wall.** The agent has *no tool that returns a
+  number except the Data Engine.* It cannot hand-roll a total; it can only call
+  `query_numbers` and report what came back.
+- **Separation of deterministic vs generative.** Calculations, SQL, search, storage =
+  code (tested, repeatable). Only language is generated. The two never blur.
+- **Reusable by any agent.** Claude, Codex, Kimi, a future autonomous watcher — all
+  speak MCP. Build the capability once.
+- **Auditable.** Every answer is a trace of tool calls with inputs/outputs. That trace
+  *is* the evidence trail in A.2.
+
+## B.3 The trust boundary (the most important diagram)
+```
+  AI may ORIGINATE:   prose, structure, which tool to call.
+  AI may NEVER ORIGINATE:   a number, a quote, a citation, a confidence score.
+  Every number     → data.*   (carries the SQL that produced it)
+  Every quote/page → docs.* / email.*  (carries file + page/table/thread ref)
+  Every past fact  → brain.*  (carries the vault file ref)
+  Every card       → summarize_for_manager, which REJECTS any numeric claim
+                     lacking a tool-produced evidence ref.
+```
 
 ## B.4 Department brains, then the factory brain
-
-The unit of rollout is the **department**. Each department gets its **own second
-brain** — its own scoped slice of the *same* shared engines:
-
-- its own **vault namespace** (the forever archive of its notes/records/decisions),
-- its own **staging + index** (its numbers and its documents),
-- its own **playbooks** (its recurring workflows),
-- its own **access scope** (who in that department may see what).
-
-You do **not** build a separate app per department. You build **one platform** that
-hosts many department brains. Onboarding a department = *configuration* (its sources,
-playbooks, roles), never new code.
-
-```
-   Production │ Quality │ Supply Chain │ Procurement │ Planning │ Maintenance
-   Engineering │ Warehouse │ Sales │ Finance/Controlling │ HR │ EHS │ After-sales
-        each = one DEPARTMENT BRAIN  (scoped vault + index + playbooks + access)
-                                  │
-                   ┌──────────────▼───────────────┐
-                   │        THE FACTORY BRAIN       │
-                   │  federation OVER the department │
-                   │  brains, governed by access:    │
-                   │  CEO / CFO see across;           │
-                   │  a dept manager sees their scope.│
-                   └────────────────────────────────┘
-```
-
-**Why department-first, then federate.** A department brain is provable and useful on
-its own — it earns trust fast and keeps the data bounded. The factory brain is then a
-*retrieval layer over the department brains*, not a 13th pile of data. And it is
-exactly where leadership's real value lives: the questions that **cross** departments
-— *"did the panel shortage in Supply Chain cause the Quality rework spike and the
-Sales commit miss?"* — which no single department's files can answer alone.
+The unit of rollout is the **department**. Each gets its own scoped slice of the same
+shared engines: its own **vault namespace**, **staging + index**, **lens + playbooks**
+(Part F), and **access scope** (Part G.1). You do not build N apps — you build one
+platform that *hosts* N department brains. Onboarding a department = configuration,
+not code. The **factory brain** is a federated retrieval layer *over* the department
+brains, governed by access — it is where the CEO's cross-department questions live
+(*"did the panel shortage in Supply Chain cause the Quality rework spike and the Sales
+miss?"*), which no single department's files can answer alone.
 
 ---
 
-# PART C — THE THREE ENGINES (build specs already exist)
+# PART C — THE FOUR EVIDENCE ENGINES
 
-These are the existing plans, reframed as MCP-exposed engines:
+Detailed build specs already exist; this plan orchestrates them. Each engine is an
+MCP-exposed module that **produces facts, never invents them.**
 
-| Engine | What it owns | Build spec | Source-of-truth principle |
+| Engine | Owns | Detailed spec | Source-of-truth principle |
 |---|---|---|---|
-| **Data Engine** | Exact numbers from Excel/CSV/SAP | `IMPLEMENTATION_PLAN.md` | DuckDB staging; heavy math in SQL; rejects + run.log |
-| **Document Engine** | Text/tables from PDF/Word/PPT | `IMPLEMENTATION_PLAN_DOCS.md` | one normalized JSON per doc; OCR for scans; `schema/document.schema.json` |
-| **Insight Brain** | Durable memory + retrieval | `IMPLEMENTATION_PLAN_SECONDBRAIN.md` | Markdown vault = archive; Postgres/pgvector = disposable lens |
+| **Data Engine** | Numbers from Excel/CSV/SAP | `IMPLEMENTATION_PLAN.md` | DuckDB staging; heavy math in SQL; rejects + run.log |
+| **Document Engine** | Text/tables from PDF/Word/PPT (+OCR) | `IMPLEMENTATION_PLAN_DOCS.md` | one normalized JSON per doc; `schema/document.schema.json` |
+| **Email Engine** *(NEW)* | `.eml` threads, senders, approvals, attachments | *(new spec — Part C.2)* | thread-preserving; attachments recurse into Data/Doc engines |
+| **Insight Brain** | Durable memory + retrieval + synthesis | `IMPLEMENTATION_PLAN_SECONDBRAIN.md` | Markdown vault = archive; Postgres/pgvector = disposable lens |
 
-`ARCHITECTURE.md` states the founding principle behind all three: *the AI reads a
-map of the data, never the data.* MCP-first is that principle enforced in wiring.
+## C.1 Scale & SAP reality (why the engines are built this way)
+A single SAP raw export can be **~200 MB, 272 columns, ~600k rows**, and there are
+many, across every department, plus heavy PDF/email/approval volume.
+- **Never load a 200 MB sheet into memory or a prompt.** Stream text-first into DuckDB
+  (`openpyxl read_only`, chunked append, disk spill); all heavy math in SQL. An AI
+  sees only the tiny profile and the small aggregated result.
+- **SAP exports are messy in predictable ways** (ALV banners, embedded subtotal/total
+  rows, header on row 4, UTF-16/Latin-1, locale `1.234,56`, transaction-specific
+  layouts like MB51/COOIS/KSB1). `ingest_files` strips junk, detects encoding/locale,
+  and **logs every assumption — never silently.** Full defenses in Part J.
 
-## C.1 The scale & SAP reality (why the engines are built this way)
+## C.2 Email Engine (the piece the earlier draft of mine missed)
+Emails are not documents — they carry threads, sender/date, approval chains, and
+attachments. The Email Engine: parses `.eml` → sender, subject, date, body, **thread**,
+attachments; feeds **each attachment back** into the Data or Document engine; makes
+**approval workflows traceable** (who approved what, when, in what chain); and exposes
+`search_emails` returning threads with full metadata + evidence refs.
 
-The inputs are not toy files. A single SAP raw export can be **~200 MB of Excel**,
-there are many of them across every department, plus heavy PDF / Word / email /
-approval-workflow volume. Two consequences, already baked into the engine specs:
+## C.3 Template Registry (the other thing I had missed)
+Standard repeated files must not be re-profiled blindly every month.
 
-- **Never load a 200 MB sheet into memory or into an AI prompt.** The Data Engine
-  lands it text-first into DuckDB (streamed/chunked) and does all heavy math in SQL
-  that spills to disk. An AI only ever sees the tiny profile and the small aggregated
-  result — never the rows.
-- **SAP exports are messy in predictable ways.** ALV-grid junk rows, embedded
-  subtotal/total rows, the header on row 4 not row 1, UTF-16/Latin-1 encodings,
-  locale decimals (`1.234,56`), and layouts tied to the transaction it came from
-  (MB51, COOIS, KSB1, …). `data.ingest_table` must strip the junk, detect
-  encoding/locale, and **record every assumption in the run log — never silently.**
-  This is precisely the messy-data defense in `ARCHITECTURE.md` §3.
+| Mode | How | Confidence |
+|---|---|---|
+| **Template-matched** | Known SAP export → matched to a registered template (expected columns, header row, sheet structure, classification) | High — no confirmation |
+| **Inferred** | Unknown file → profile + classify, log confidence, **wait for human confirmation** | Low until confirmed; once confirmed it *becomes* a template |
+
+The registry is a committed YAML config. By month three, most files match instantly.
+No blind fuzzy-matching of critical columns — ever (Part J.1).
 
 ---
 
-# PART D — THE MCP TOOL CATALOG (the technology, made concrete)
+# PART D — THE MCP TOOL CATALOG (the public surface)
 
-This is the public surface of the application. Tools are grouped by engine. Each is
-deterministic, returns structured JSON, and — where it returns a fact — returns the
-**evidence ref** that produced it. Names are the contract; do not rename.
+Names are the contract; do not rename. Every fact-returning tool also returns the
+**evidence ref** that produced it. Each tool is scoped by the caller's department +
+role (Part G.1).
 
-### D.1 Data Engine — `data.*`  (numbers; the only source of numbers)
-
-| Tool | Does | Returns (incl. evidence) |
+| Tool | Engine | Does |
 |---|---|---|
-| `data.ingest_table(path)` | Land Excel/CSV/SAP export into staging DB (text-first, chunked, idempotent) | `table_id`, rows_in, rows_landed |
-| `data.profile_table(table_id)` | Build the tiny schema map (cols, types, nulls, ranges, weird values, date range) | `schema_profile` |
-| `data.classify_file(profile)` | Label the file: monthly-close / budget / cost-rollup / variance / … | `file_type`, confidence |
-| `data.query(spec)` | Run an aggregation **in the engine** (group/sum/join) | `result` + **the exact SQL** + row counts |
-| `data.compute_variance(actual, baseline, dims)` | Decompose Δ into **price / quantity / mix / usage / scrap / fx / timing** | variance bridge + per-driver contribution + SQL |
-| `data.reconcile(report)` | Conservation checks: rows_in == clean + rejected; totals tie | pass/fail + discrepancies |
+| `ingest_files` | all | Drop Excel/CSV/PDF/Word/PPT/.eml into the system (idempotent, resumable) |
+| `query_numbers` | data | Numeric question → SQL runs → calculated facts **+ the SQL + rows** |
+| `compute_variance` | data | Decompose Δ into price / qty / mix / usage / scrap / fx / timing + bridge |
+| `search_documents` | docs | Document question → passages + file/page/table refs |
+| `search_emails` | email | Email question → threads, senders, dates, attachments |
+| `search_knowledge` | brain | Broad question → vault notes/decisions (hybrid keyword+semantic) |
+| `get_data_quality` | gov | Confidence/quality score behind any answer (Part E.4) |
+| `summarize_for_manager` | brain | Build the A.2 card; **reject any number without evidence**; attach confidence |
+| `store_decision` | brain | Store decision: what, why, evidence, action, owner, date |
+| `retrieve_decisions` | brain | "What did we do last time this happened?" |
+| `retrieve_by_topic` | brain | "Show me all foam cost issues" — across everything |
+| `set_lens` | brain | Switch the active department lens (Part F) |
+| `get_warnings` | gov | Active warnings / early warnings for the current lens (Part E.5) |
+| `register_template` | data | Promote a confirmed file layout into the Template Registry (C.3) |
+| `project_module_report` | gov | Health report of any code module without reading it (Part H.3) |
 
-### D.2 Document Engine — `docs.*`  (text; the only source of quotes/pages)
+---
 
-| Tool | Does | Returns (incl. evidence) |
+# PART E — THE INSIGHT BRAIN (manager-ready thinking)
+
+## E.1 Question Router (the gatekeeper)
+Every question is classified and routed — this is where the Calculation-Integrity Rule
+is physically enforced.
+
+| Question type | Routed to | Example |
 |---|---|---|
-| `docs.ingest_document(path)` | Normalize PDF/Word/PPT → one JSON (reading order, tables, OCR for scans) | `doc_id`, warnings |
-| `docs.profile_document(doc_id)` | Topics, doc type, key entities, page/slide count, OCR confidence | `doc_profile` |
-| `docs.search(query, filters)` | **Hybrid** keyword + semantic search over the corpus | passages + **file + page/table ref** each |
-| `docs.get_passage(ref)` | Fetch the exact cited text/table for evidence | passage text/table |
+| Numeric / calculation | Data Engine (SQL) | "Total material cost variance vs budget?" |
+| Document / text | Document / Email Engine | "What does the supplier-hold policy say?" |
+| Knowledge / cross-source | Vault (+ graph later) | "All previous foam cost issues and what we did" |
+| Mixed (number + why) | Data for facts → Vault for context → synthesis | "Why did TV material cost rise last quarter?" |
 
-### D.3 Insight Brain — `brain.*`  (durable memory; the only source of past facts)
+The active **department lens** (Part F) shapes interpretation and framing.
 
-| Tool | Does | Returns |
+## E.2 Manager Summary Template
+The seven-section card in A.2, rendered the same way every time, by
+`summarize_for_manager`, which refuses to emit a numeric claim without a tool-produced
+evidence ref.
+
+## E.3 Decision Memory (first-class)
+Every useful output becomes a typed, evidence-linked record in the vault:
+
+| Type | Example | Originated by |
 |---|---|---|
-| `brain.upsert_note(...)` / `brain.link(...)` | Write to the Markdown vault (truth) + reindex | vault path |
-| `brain.search(query)` | Hybrid (+ later graph) search across all stored knowledge | notes + vault refs |
-| `brain.save_decision(record)` | Store a **decision-memory** item (§E) with evidence + confidence | decision_id |
-| `brain.recall(query)` | "What did we do last time?" / "all foam cost issues" | past decisions + evidence |
-| `brain.detect_recurrence(pattern)` | Surface "same pattern happened in Q2" | matching prior episodes |
+| Fact | "TV material cost rose USD X vs budget." | `query_numbers` (calculated) |
+| Driver | "Mainly LCM price + quantity mix." | `compute_variance` |
+| Risk | "Margin impact continues if BOM price holds." | agent, from facts |
+| **Recommendation** | "Negotiate supplier; review part A." | agent — marked *proposed* |
+| **Decision** | "Management **approved** supplier negotiation." | **human-signed** (G.4) |
+| Action | "Procurement reviews part A by month-end." | human-assigned, tracked to close |
+| Lesson | "Same pattern occurred in Q2 — fix was X." | `retrieve_by_topic` / recurrence |
 
-### D.4 Orchestration, Output & Quality — `route.* / report.* / quality.*`
+**Recommendation ≠ Decision.** The system *proposes*; a human *approves*. Only a
+human-signed decision becomes settled fact (G.4).
 
-| Tool | Does |
+## E.4 Confidence + Data-Quality Score (concrete thresholds)
+| Confidence | Condition |
 |---|---|
-| `route.classify_question(q)` | number / document / knowledge / mixed → which engines to use |
-| `quality.data_quality_score(inputs)` | High/Med/Low from rejects, missing cols, OCR confidence |
-| `report.make_manager_summary(payload)` | Assemble the §A.2 card; **reject any number without an evidence ref**; attach confidence |
+| **High** | Rejects < 1%, no missing required columns, OCR unused or high-confidence, sources agree |
+| **Medium** | Rejects 1–5%, or OCR medium-confidence, or minor missing columns |
+| **Low** | Rejects > 5%, or OCR low-confidence, or major missing columns, or sources disagree |
 
-### D.5 Early Warning — `watch.*`  (v2; proactive, not reactive)
+OCR/screenshots are lower-trust by default; weak-confidence Arabic/English/handwriting
+enters a **human-review queue** and may not become a trusted fact without review (J.2).
 
-| Tool | Does |
-|---|---|
-| `watch.define_metric(spec)` | Register a metric to track (e.g. material cost vs budget per plant) |
-| `watch.set_threshold(metric, rule)` | When to raise a flag (abs/%, trend, recurrence) |
-| `watch.scan()` | Run all watches on the latest data; emit warnings *before* anyone asks |
+## E.5 Recommendations, Warnings, Early Warnings
+- **Recommendations** — derived from drivers + past decisions.
+- **Warnings** — things to look at now (reject pile, missing data, budget overrun).
+- **Early warnings** — *proactive*; pattern/recurrence detection across periods (Part
+  L Phase, the `watch.*` layer): "this variance pattern preceded a cost spike in Q2."
 
 ---
 
-# PART E — DECISION MEMORY (the part that makes it valuable)
+# PART F — THE DEPARTMENT LENS MODEL
 
-The brain stores **decisions, reasons, and evidence — not files**. Every useful
-result becomes one or more typed records, each linked to its evidence:
+Each department has a **lens config** (committed YAML) defining what matters to it and
+how to frame its card. The same engines serve every lens; the Router uses the active
+lens to decide what to query and how to summarize. A **playbook** is a named recurring
+workflow *on* a lens (e.g. Finance "monthly close": which files, which variances, which
+card). New department = new lens + playbooks = **configuration, not code.**
 
-| Record type | Example | Originated by |
+| Department | Lens focus | Example question |
 |---|---|---|
-| **Fact** | "TV material cost rose USD X vs budget." | `data.*` (calculated) |
-| **Driver** | "Mainly LCM price + quantity mix." | `data.compute_variance` |
-| **Risk** | "Margin impact continues if BOM price holds." | agent, from facts |
-| **Recommendation** | "Negotiate supplier; review part A." | agent (clearly marked *proposed*) |
-| **Decision** | "Management **approved** supplier negotiation." | **human-signed** (§G.4) |
-| **Action** | "Procurement to review part A by month-end." | human-assigned, tracked to close |
-| **Lesson** | "Same pattern occurred in Q2 — fix was X." | `brain.detect_recurrence` |
-
-**Recommendation ≠ Decision.** The system *proposes*; a human *decides*. Only a
-human-signed decision becomes a fact the brain treats as settled (§G.4). Without
-this line, the brain starts believing its own suggestions.
+| Finance/Costing *(pilot)* | Variance, margin, budget, cost rollup | "Why did TV material cost increase?" |
+| Production | Output, yield, scrap, downtime, BOM accuracy | "Which line has the most scrap?" |
+| Quality | Defect rates, holds, RMA, supplier quality | "Which suppliers caused the most RMAs?" |
+| Procurement | Supplier cost, PO trends, price changes, lead times | "Which suppliers raised prices?" |
+| Supply Chain | Inventory, stockouts, lead times, shipping | "What's at risk of stockout this month?" |
+| Sales | Customer mix, revenue, pricing, channel | "Which customers shifted mix?" |
+| R&D | BOM changes, specs, design changes | "What changed on the MX BOM this quarter?" |
+| HR | Headcount, overtime, attrition | "Where are overtime spikes?" |
+| Maintenance | Downtime, MTBF, backlog | "Which lines have the highest downtime?" |
 
 ---
 
-# PART F — THE LOGIC FLOW (yours, mapped onto tools)
+# PART G — GOVERNANCE & TRUST (what keeps it safe)
 
-```
-1. COLLECT     user drops Excel / PDF / Word / PPT / SAP export
-2. CONVERT     data.ingest_table   |  docs.ingest_document
-3. PROFILE     data.profile_table  |  docs.profile_document        (the tiny map)
-4. UNDERSTAND  data.classify_file  |  docs.profile_document.topics (what is this?)
-5. ROUTE       route.classify_question  → numbers / docs / memory / mixed
-6. QUERY       data.query / data.compute_variance | docs.search | brain.recall
-7. QUALITY     quality.data_quality_score
-8. SUMMARIZE   report.make_manager_summary   (the §A.2 card, citations enforced)
-9. STORE       brain.save_decision (+ upsert_note)   → the Second Brain
-10. RETRIEVE   later: brain.recall / brain.search / detect_recurrence
-(v2) WATCH     watch.scan  → proactive early warnings, before step 1
-```
+## G.1 Access control (day-one constraint)
+Every record, file, and vault note carries an **owner/scope** (department, plant,
+region). `query_numbers`, `search_*`, and `brain.*` filter by the caller's role: a
+plant manager sees one plant; the CFO sees finance across plants; the CEO sees all.
+Retrofitting row-level security later is painful and dangerous — it is wired in from
+Phase 0.
 
-The manager experiences steps 8 and 10. Everything else is the machine being honest.
+## G.2 Evaluation harness (or you never *know* it's right)
+A committed **golden set** of known-answer questions (e.g. 30 finance Q&A, hand-
+verified). Every release **tests retrieval and calculation separately** — a system can
+sound perfect while retrieving the wrong evidence (the cited Haystack point). The
+harness gates every phase. Lives in `/eval`.
 
----
+## G.3 Nothing vanishes silently
+Unparseable rows → `rejects.csv`. Failed documents → `failures.csv`. Every assumption →
+`run.log`. Conservation laws asserted: `rows_in == clean + rejected`,
+`docs_in == docs_out + failures`. A human skims rejects/failures **every run**.
 
-# PART G — THE UPGRADES BEYOND THE ORIGINAL PLAN
+## G.4 Human-in-the-loop sign-off
+A recommendation is `proposed`; it becomes a `decision` only on human approval
+(signature + timestamp recorded). The brain distinguishes the two forever, so it never
+treats its own suggestion as fact.
 
-These are the gaps that separate "useful finance tool" from "company-wide brain."
-
-### G.1 Playbooks (how one tool serves all managers)
-A **playbook** is a named, reusable workflow on the engines: which files it expects,
-which queries/variances it runs, which summary template it fills, what it watches.
-- `monthly_close` (v1), then `sales_pipeline`, `supply_risk`, `ceo_briefing`, …
-- New manager = new playbook (config), **not** new system. This is the scale path.
-
-### G.2 Access control (day-one constraint)
-Every record and file carries an **owner/scope** (plant, department, region). Tools
-filter by the calling user's role: a plant manager sees one plant; the CEO sees all.
-Wired into `data.query`, `docs.search`, and `brain.*` from the start — retrofitting
-row-level security later is painful and dangerous.
-
-### G.3 Early warning (proactive layer — v2)
-The original flow is reactive (ask → answer). "Early warning" means the system
-speaks first: `watch.*` scans new data against thresholds and recurrence patterns
-and pushes a flagged summary card. This is a distinct phase, not a tweak.
-
-### G.4 Human-in-the-loop sign-off
-A recommendation is `proposed`; it becomes a `decision` only when a human approves
-it (signature + timestamp recorded). The brain distinguishes the two forever.
-
-### G.5 Evaluation harness (or you never *know* it's right)
-Per the research cited (Haystack): test **retrieval and calculation separately**, on
-a fixed set of known-answer questions, every release. A "golden set" of e.g. 30
-finance questions with hand-verified answers gates every change. Retrieval can be
-wrong while the prose sounds perfect — only the harness catches that.
+## G.5 Offline / in-house (LOCKED)
+**All processing stays in-house. No factory document, SAP export, email, screenshot,
+OCR image, or approval leaves the company network.** OCR runs offline (Tesseract /
+PaddleOCR, EN+AR). Any future external provider must be explicit, configurable, and
+approved before use.
 
 ---
 
-# PART H — ROADMAP (build the platform once, roll out by department)
+# PART H — CODE ARCHITECTURE FOR AI-REVIEWABILITY
 
-> Rule kept from the engine specs: **do not start a phase until the previous phase's
-> Definition of Done is green**; a trust gate is part of every DoD. The platform is
-> built once (Phases 0–4); departments are then onboarded by *configuration*
-> (Phase 5+), and the factory brain federates over them (Phase 6).
+The biggest risk is not a wrong number — it is **a million lines of code no human and
+no AI can hold in their head.** Same trick as the data: *the AI reads a map of the
+code, never all the code.* This matters double here because the actual coders are
+**cheaper, weaker models** (Part I) that hang or break things when given too much.
 
-### Phase 0 — Foundations
-MCP server skeleton + config that is **multi-department from line one**: department
-namespaces, roles/access scopes, model + embedding-model names, locale. One trivial
-tool callable end-to-end from an external agent.
-**DoD:** an agent can list and call a tool over MCP, scoped to a named department.
-
-### Phase 1 — Data Engine + trust wall (at SAP scale)
-`data.ingest_table → profile_table → query → compute_variance → reconcile` on real
-~200 MB SAP exports (streamed, SQL-in-engine, SAP junk stripped). Evidence ref on
-every number, per `IMPLEMENTATION_PLAN.md`.
-**DoD:** a 200 MB file ingests without running out of memory; a calculation
-reconciles to the cent; `data.reconcile` passes; rejects + run.log visible.
-
-### Phase 2 — Pilot department: one brain, end-to-end  *(the proof)*
-Stand up **one department's** brain fully: its files → its playbooks → a manager
-card → saved decision, all scoped to that department. **You choose the pilot**
-(criteria in §My Recommendation). This proves the *platform* — it does not make the
-product that department's app.
-**DoD:** for one real period, that department's card is correct, fully cited,
-confidence-scored, and retrievable later via `brain.recall`.
-
-### Phase 3 — Document Engine
-`docs.ingest_document → search → get_passage` per `IMPLEMENTATION_PLAN_DOCS.md`, so
-cards cite PDFs, approvals, emails, and decks alongside numbers.
-**DoD:** a mixed-evidence card cites a number *and* a page, each verifiable.
-
-### Phase 4 — Insight Brain (durable, department-scoped memory)
-Vault (namespaced per department) + Postgres/pgvector index per
-`IMPLEMENTATION_PLAN_SECONDBRAIN.md`; full `brain.*`.
-**DoD:** delete the index, rebuild from the vault, retrieval identical.
-
-### Phase 5 — Replicate: onboard more departments
-Add departments one at a time — each is **configuration** (sources, playbooks,
-roles), not new engine code. Enforce role-scoped tools across all of them (§G.2).
-**DoD:** two departments give correctly different, correctly scoped answers; a third
-onboards with zero engine-code change.
-
-### Phase 6 — The factory brain (federation, for CEO/CFO)
-Cross-department retrieval over the department brains, governed by access (§B.4).
-**DoD:** a cross-department question (supply → quality → sales) returns one card
-citing evidence from each department, respecting the asker's access scope.
-
-### Phase 7 — Early warning (proactive)
-`watch.*`: thresholds, recurrence, proactive cards per department and factory-wide.
-**DoD:** a planted regression in new data raises a flagged card with no human asking.
-
-### Phase 8 — Advanced retrieval (GraphRAG, later)
-Relationships + community summaries for broad "themes across the whole factory"
-questions (the cited GraphRAG work). **Only after** the core loop earns its keep.
-
----
-
-# PART I — CODE ARCHITECTURE FOR AI-REVIEWABILITY (non-negotiable)
-
-The single biggest risk to this project is not a wrong number — it is **a million
-lines of code no human and no AI can hold in their head.** When that happens, an AI
-asked to change anything reads forever, runs out of context, and breaks what it
-couldn't see. We prevent that by design, from line one.
-
-**The principle — the same trick as the data.** Just as the AI reads a *map* of the
-data and never the 200 MB file, the AI must read a *map of the code* and never all
-million lines. The map is a set of tiny, always-current summary documents.
-
-### I.1 Module rules (enforced, not suggested)
-- **One responsibility per module.** Engines, the MCP server, playbooks, and shared
-  contracts are separate. A module never reaches inside another — it calls only
-  through a published **contract** (an MCP tool schema or a typed function signature).
+## H.1 Module rules (enforced, not suggested)
+- **One responsibility per module.** Engines, MCP server, playbooks, shared contracts
+  are separate. A module never reaches inside another — it calls only through a
+  published **contract** (an MCP tool schema or a typed function signature).
 - **Hard size caps.** A file past its cap is split; a module past its cap becomes two.
   Reviewability is a budget, kept on purpose.
-- **The seams are explicit and versioned.** The MCP tool schemas (Part D) and the JSON
-  schemas (`schema/`) ARE the contracts. An AI can understand a module from its
-  contract without reading its internals — that is the entire purpose of a seam.
+- **Seams are explicit and versioned.** The MCP tool schemas (Part D) and the JSON
+  schemas (`schema/`) ARE the contracts. A model understands a module from its
+  contract without reading its internals — the entire point of a seam.
 
-### I.2 The map: `AGENT.md` everywhere
-- **Root `AGENT.md`** — the table of contents of the whole system: every module, one
-  line each, with a pointer to its own `AGENT.md`. An AI starts here, always.
-- **One `AGENT.md` per module** (≤ ~1 page): *what it does · its public interface ·
-  inputs/outputs · invariants it guarantees · what it must NEVER do · where its tests
-  are.* The AI reads this, not the code — unless it must change that exact module.
-- **These docs are part of "done."** A change that alters a module's interface but not
-  its `AGENT.md` is incomplete and fails review. The map can never drift from the
-  territory — that one rule keeps the whole scheme honest.
+## H.2 The map: `AGENTS.md` everywhere (Codex-native)
+We standardize on **`AGENTS.md`** (plural) — the format **Codex reads natively** and
+hierarchically (nearest file wins; OpenAI's own repo ships 88 of them).
+- **Root `AGENTS.md`** — table of contents of the whole system; every module one line,
+  with a pointer to its own `AGENTS.md`, plus exact **build/test/lint commands** and
+  the **always / ask-first / never** safety rules (incl. git-safety). An agent starts
+  here, always.
+- **One `AGENTS.md` per module** (≤ ~1 page): *what it does · public interface ·
+  inputs/outputs · invariants · what it must NEVER do · allowed libraries + import
+  examples · where its tests are · exact commands.*
+- **These docs are part of "done."** A change that alters an interface but not its
+  `AGENTS.md` fails review. The map can never drift from the territory.
 
-### I.3 Reports on demand
-A `project.module_report` capability lists, per module, its public surface,
-dependencies, test status, and open TODOs — so an AI (or you) gets a health report on
-any part *without reading it*. This is the "AI makes reports, doesn't read all the
-code" workflow you asked for, made concrete.
+## H.3 Reports on demand
+`project_module_report` lists, per module: public surface, dependencies, test status,
+open TODOs — a health report on any part *without reading it*. This is your "AI makes
+reports, doesn't read all the code" requirement, made real.
 
-### I.4 Proposed repository shape (one platform, clear seams)
+## H.4 Repository shape (one platform, clear seams)
 ```
-/AGENT.md                  ← root map: start here
-/shared/contracts/         ← MCP tool schemas + JSON schemas (the seams)   + AGENT.md
-/engines/data/             ← numbers (DuckDB, SAP ingest, variance)        + AGENT.md
-/engines/docs/             ← text/OCR (PDF/Word/PPT/email/screenshots)     + AGENT.md
-/engines/brain/            ← vault + index + decision memory               + AGENT.md
-/mcp_server/               ← exposes the tool catalog over MCP             + AGENT.md
-/playbooks/finance/        ← the pilot department's workflows              + AGENT.md
-/eval/                     ← golden-set trust harness (§G.5)               + AGENT.md
+/AGENTS.md                 ← root map + commands + safety rules: start here
+/shared/contracts/         ← MCP tool schemas + JSON schemas (the seams)   + AGENTS.md
+/engines/data/             ← DuckDB, SAP ingest, variance, templates       + AGENTS.md
+/engines/docs/             ← PDF/Word/PPT extraction + offline OCR          + AGENTS.md
+/engines/email/            ← .eml threads, approvals, recursive attachments + AGENTS.md
+/engines/brain/            ← vault + index + decision memory + synthesis    + AGENTS.md
+/mcp_server/               ← exposes the tool catalog over MCP              + AGENTS.md
+/lenses/                   ← per-department lens configs (finance.yaml …)   + AGENTS.md
+/templates/                ← file template registry (file_templates.yaml)   + AGENTS.md
+/playbooks/finance/        ← the pilot department's workflows               + AGENTS.md
+/eval/                     ← golden-set trust harness (G.2)                 + AGENTS.md
+/vault/                    ← forever-safe Markdown knowledge base (gitignored content)
+/tests/                    ← pytest suites mirroring each module
 ```
-Each folder is independently reviewable; the root `AGENT.md` ties them together.
 
 ---
 
-# PART J — THE MESSY-DATA & OCR COMMITMENTS (finance pilot)
+# PART I — THE BUILD CHAIN: Architect → Codex → cheaper coders
 
-The pilot must survive real factory inputs, not clean samples. These are the edge
-cases we commit to handling, who owns each, and the defense. Items beyond the existing
-`ARCHITECTURE.md` §3 / `REVIEW.md` audit are marked **NEW**.
+This plan is implemented by a **pipeline of models**, not one. Designing for that is
+the difference between a clean system and a mess weak models can't maintain.
 
-### J.1 Numbers (Data Engine) — 272 columns × ~600k rows, ~200 MB SAP files
+## I.1 Roles
+| Stage | Model(s) | Produces |
+|---|---|---|
+| **Architect** | (this plan) | the architecture, contracts, phases, rules, edge-case defenses |
+| **Lead Engineer** | **Codex / GPT-5.5** | expands each phase into **task cards** (I.3), writes contracts as stubs + the **tests** (red), scaffolds the repo + every `AGENTS.md`, integrates, runs the full suite, handles cross-cutting refactors |
+| **Implementers** | **Kimi K2.7 / DeepSeek V4 Pro / V4 Flash / MiniMax M3** | implement one task card at a time — fill code until its (already-written) test passes |
+
+## I.2 The safety mechanism: contracts-first, test-first
+Because the implementers are cheaper/weaker, **the strong model writes the interface
+and the test before they touch code.** A task becomes: *"make `tests/data/
+test_variance.py` pass, by implementing `compute_variance` per the contract, editing
+only `engines/data/variance.py`."* A weak model can't go far wrong when the test
+defines done, the contract is fixed, and the module is isolated. This is TDD used as a
+guardrail for weak coders.
+
+## I.3 The Task Card (Codex fills one per atomic task; implementers consume it)
+```
+TASK <id> — <short title>
+Module:       engines/data
+Files:        engines/data/variance.py   (edit ONLY this)
+Read first:   engines/data/AGENTS.md  +  shared/contracts/data.tools.json
+Contract:     compute_variance(actual, baseline, dims) -> VarianceBridge   (fixed)
+Depends on:   TASK 0xx (must be green first)
+Do:           <one explicit paragraph; copy-pasteable commands>
+Done when:    `pytest tests/data/test_variance.py` is green   (test already exists)
+Never:        load whole files into memory · touch another module · invent columns
+Assign to:    DeepSeek V4 Pro    (per routing, I.4)
+```
+
+## I.4 Model routing (match task difficulty to model — research-grounded)
+| Task type | Model | Why |
+|---|---|---|
+| Plan expansion, contracts, tests, cross-cutting refactor, integration | **Codex / GPT-5.5** | long-horizon, repo-wide, 1M ctx, strong validation; AGENTS.md-native |
+| The MCP server + long-horizon agent/tool workflows, self-correcting multi-file work | **Kimi K2.7 Code** | token-efficient long runs, MCP-native, self-correction |
+| Hard isolated logic (variance math, SQL, SAP parsers) at low cost | **DeepSeek V4 Pro** | SWE-bench 80.6% ≈ frontier at ~1/10 cost |
+| Bulk/boilerplate, glue, config, test scaffolding | **DeepSeek V4 Flash** | top-quartile coding, ~$0.14/$0.28 per M — very cheap/fast |
+| Image/screenshot/OCR-tuning tasks, very-long-context reads | **MiniMax M3** | native multimodal, 1M ctx, SWE-Bench Pro ≈ GPT-5.5 |
+
+## I.5 Guardrails against weak-model failure modes
+- **Hallucinated APIs** → pinned `requirements.txt`; each `AGENTS.md` lists allowed
+  libraries + import examples.
+- **Scope creep** → atomic cards; "edit ONLY this file"; "never touch another module."
+- **Silent breakage** → test-first; CI runs the suite + the golden set (G.2) on every
+  change; red blocks merge.
+- **Context overflow / hang** → implementers read only the module `AGENTS.md` + the
+  card + the test, never the whole repo (even with 1M context — cost and degradation).
+- **Style drift** → `AGENTS.md` code-style + a single formatter/linter command.
+- **Unsafe git** → root `AGENTS.md` always/ask-first/never git rules; branch discipline.
+
+## I.6 Note on 1M context windows
+Every model in the chain has ~1M context — but "it fits" is not "use it." Big context
+costs money and degrades weak models. The map-not-territory discipline (Part H) stands:
+feed the smallest correct slice.
+
+---
+
+# PART J — MESSY-DATA & OCR COMMITMENTS (finance pilot)
+
+The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
+`REVIEW.md` are marked **NEW**.
+
+## J.1 Numbers (Data Engine)
 | Edge case | Defense | Owner |
 |---|---|---|
-| **Total / subtotal rows embedded between data rows** (sum them → double-count) **NEW** | Detect total rows (blank key columns; labels `Total`/`Gesamt`/`المجموع`; value == group sum) → **quarantine, never aggregate**; the conservation check catches any leakage | `data.ingest_table` + `data.reconcile` |
-| 272-column mixed/dirty types; the first rows lie | Profile (random + weirdest samples), coerce + quarantine to rejects | `data.profile_table`, clean |
-| 200 MB won't fit in RAM | Stream into DuckDB; math in SQL (spills to disk) | `data.ingest_table` |
-| SAP junk (ALV headers, encoding, locale `1.234,56`) | Strip + detect + log every assumption | `data.ingest_table` |
+| **Total/subtotal rows embedded in detail rows** (sum → double-count) **NEW** | Detect via template rules, labels (`Total`/`Gesamt`/`المجموع`), blank key cols, repeated rollup patterns, and numeric reconciliation → flag `total_row`, **exclude from detail aggregates** unless template says otherwise | `ingest_files` + validate |
+| Header not on row 1 | Detect once, **save as template setting**; low-confidence → human confirm | template registry |
+| 272 mixed/dirty columns; first rows lie | Profile (random + weirdest samples); coerce + quarantine to rejects | profile + clean |
+| 200 MB won't fit RAM | Stream into DuckDB; math in SQL (spills to disk) | `ingest_files` |
+| SAP junk (ALV banners, encoding, locale `1.234,56`, negatives in parens) | Strip + detect + parse by declared locale; quarantine unparseable with reason | `ingest_files` |
+| Same concept, many column names | Human-reviewed `column_map.yaml`; **no blind fuzzy match** on critical fields | clean |
 | Duplicate / re-ingested rows | Global row-id, idempotent load, duplicate flagging | per `REVIEW.md` A1–A4 |
+| Money summed as float drifts | `DECIMAL(18,4)` for money columns at clean stage | clean |
+| Schema drift over months | `schema_profile.json` committed; git diff shows it; assert expected columns, **fail loudly** | profile |
 
-### J.2 Documents & images (Document Engine) — the hard new frontier
+## J.2 Documents, emails & images (the hard frontier)
 | Edge case | Defense | Owner |
 |---|---|---|
-| PDFs / decks / **emails with many tables needing OCR** | Per-page scanned detection → OCR only image pages; table-aware extraction | `docs.ingest_document` |
-| **Bilingual English + Arabic**, right-to-left, mixed scripts on one page **NEW** | OCR with EN+AR models; per-region script detection; preserve RTL reading order | docs OCR stage |
-| **Screenshots** (not clean scans) | Image pre-processing (deskew, denoise, threshold) before OCR | docs OCR stage |
-| **Handwriting**, often EN+AR, partial/missing **NEW** | Best-effort OCR + **confidence score per block**; handwriting and low-confidence text are **flagged and routed to a human-review queue — never silently trusted** | docs OCR + `quality.*` |
+| Mixed PDF (text + scanned pages) | Per-page scanned flag; OCR only image pages; merge in reading order | docs |
+| PDFs/decks/emails with many tables needing OCR | Table-aware extraction; table text appears once | docs |
+| **Bilingual English + Arabic, RTL, mixed scripts** **NEW** | Offline OCR with EN+AR models; per-region script detection; preserve RTL order; keep original + normalized text; never translate silently | docs OCR |
+| **Screenshots** (not clean scans) | Deskew/denoise/threshold before OCR; low-confidence cells → review | docs OCR |
+| **Handwriting** (often EN+AR, partial) **NEW** | Best-effort OCR + **confidence per block**; handwriting/low-confidence **flagged → human-review queue, never silently trusted** | docs OCR + `get_data_quality` |
+| Cropped/missing screenshot content | Mark incomplete; the card **discloses the gap** instead of filling it | docs + summary |
+| One bad file crashes the batch | Per-file try/except → `failures.csv` + reason; batch continues | all |
+| Legacy `.doc`/`.ppt` | LibreOffice headless, **serial** with isolated UserInstallation profiles | docs |
 
-> **Honest limit.** Arabic handwriting OCR is the least reliable input in the entire
-> system. We do not pretend to read it perfectly. We extract best-effort, score
-> confidence, and **surface low confidence loudly** so a human confirms before it
-> becomes a fact. That fits the trust rule exactly: uncertain input → visible, never
-> silent.
+> **Honest limit.** Offline Arabic-handwriting OCR is the least reliable input in the
+> whole system. We do not pretend to read it perfectly: extract best-effort, score
+> confidence, **surface low confidence loudly**, route to human review. Uncertain in →
+> visible, never silent. (This is *why* the offline trade-off in G.5 is acceptable.)
 
-### J.3 DECIDED — OCR stays fully in-house (offline only)
-**Decision (locked): all OCR runs offline; no factory document is ever sent to an
-outside service.** Engine: **Tesseract / PaddleOCR with English + Arabic models**,
-running on-premise. This keeps every document inside the network — the right call for
-confidential factory data.
+---
 
-Accepted trade-off: offline OCR is weaker on hard Arabic and on handwriting. We do not
-hide that — low-confidence and handwritten blocks are **flagged and routed to the
-human-review queue** (J.2), never silently trusted. Cloud document-AI is explicitly
-**out of scope** unless this decision is formally revisited.
+# PART K — TECHNOLOGY STACK (consolidated)
+
+| Concern | Use | Rationale |
+|---|---|---|
+| Heavy storage + aggregation | **DuckDB** | spills to disk; 200 MB+ files; friendly SQL |
+| Excel reading | **openpyxl `read_only`** (+ pandas only for tiny results) | streams; won't OOM |
+| PDF text + tables | **pdfplumber** | reading order + tables |
+| PDF metadata / pages | **pypdf** | encryption check, page count |
+| PDF render for OCR | **PyMuPDF (fitz)** | fast page-image export |
+| OCR (offline, EN+AR) | **Tesseract / PaddleOCR** + `pytesseract` | in-house; EN+AR; handwriting → review |
+| Word / PPT | **python-docx / python-pptx** | paragraphs, tables, slides, notes |
+| Legacy `.doc`/`.ppt` | **LibreOffice headless** (serial) | convert to modern |
+| Email | stdlib `email` + `mail-parser` | separate engine; attachments recurse |
+| File-type detection | **python-magic** + extension fallback | extensions lie |
+| Output validation | **jsonschema** | validate against `document.schema.json` |
+| Encoding sniff | **charset-normalizer** | per-file; logged |
+| Config | **pyyaml** | `config.yaml`, `column_map.yaml`, lenses, templates |
+| Index / FTS / relations | **Postgres** (Supabase) | disposable, rebuildable from vault |
+| Vector search | **pgvector** | one DB for v1 |
+| Synthesis AI | **Claude (Anthropic), swappable** | reasoning, summaries, recommendations |
+| Embeddings AI | **Voyage AI (or OpenAI/Cohere), swappable** | semantic vectors (Claude has no embeddings API) |
+| Markdown vault | **python-frontmatter + markdown-it-py** | parse + links |
+| MCP server | **MCP Python SDK** | the interface for AI agents |
+| Tests | **pytest** | regressions are silent otherwise |
+| Python | **3.11+** | |
+
+**AI providers are swappable via `config.yaml`** (synthesis and embeddings configured
+separately; keys from env vars, never committed) — this is also how the build-chain
+models (Codex / DeepSeek / Kimi / MiniMax) are selected per task. System deps installed
+separately: Tesseract, LibreOffice, libmagic, Postgres+pgvector.
+
+---
+
+# PART L — ROADMAP (foundation first, then grow)
+
+> **Do not start a phase until the previous phase's Definition of Done is green;** a
+> trust gate (G.2) is part of every DoD. Platform built once (Phases 0–4 + brain);
+> departments onboarded by configuration (v2); factory brain federates (v3).
+
+### v1 — Pilot department: Finance / Costing
+| Phase | Builds | Deliverable |
+|---|---|---|
+| **0. Foundation** | MCP server skeleton; `config.yaml` (providers, lenses, templates, **roles/access**); git-vault scaffold; DuckDB setup; **root + per-module `AGENTS.md`**; pinned `requirements.txt`; CI + empty golden set | a tool callable over MCP, scoped to a department; CI green |
+| **1. Data — Ingest** | Streaming Excel/SAP/CSV → DuckDB (text-first, chunked, multi-sheet/file). Handles 200 MB+. | `ingest_files` live; 200 MB file ingests with no OOM |
+| **2. Data — Profile + Classify + Templates** | Schema profile; template-match vs infer (C.3) | profile + `file_templates.yaml`; classification works |
+| **3. Data — Clean** | Coerce types; quarantine rejects; **total-row defense (J.1)**; duplicates; money `DECIMAL` | clean tables; `rejects.csv`; `run.log` |
+| **4. Data — Query** | SQL variance/driver breakdown | `query_numbers` + `compute_variance` live; reconciles to the cent |
+| **5. Document Engine** | PDF/Word/PPT → normalized JSON; offline OCR (EN+AR); resumable | `search_documents` live; mixed-evidence card cites a page |
+| **6. Email Engine** | `.eml` parse; attachments recurse; approval chains | `search_emails` live |
+| **7. Question Router** | Classify number/doc/knowledge/mixed; apply lens | routing live |
+| **8. Manager Summary** | Template renderer; evidence enforced; confidence (E.4) | `summarize_for_manager` live |
+| **9. Decision Memory** | Store/retrieve decisions, drivers, actions, lessons; **human sign-off (G.4)** | `store_decision`/`retrieve_decisions` round-trip |
+| **10. Vault + Index** | Markdown vault (dept-namespaced) + pgvector; rebuildable | delete index → rebuild from vault → identical |
+| **11. Validate + Quality** | Conservation laws; data-quality score; evidence audit; golden set | `get_data_quality` live; `validate` exits 0; golden set passes |
+
+**v1 success =** Finance drops real files (SAP exports, Excel, PDFs, decks, emails,
+approvals, screenshots) → asks a management question → gets a structured card with
+calculated numbers, drivers, evidence links, quality/OCR warnings, and confidence →
+stores the decision → later retrieves what was decided and why.
+
+### v2 — Department expansion
+Apply the same engines to Production, Quality, Supply Chain, Sales, R&D, HR,
+Procurement, Maintenance. Each = lens config + vault subtree + role scope. **No
+rebuild.** DoD: two departments give correctly different, correctly scoped answers; a
+third onboards with zero engine-code change.
+
+### v3 — Factory-wide brain (federation)
+Cross-department retrieval + **GraphRAG-style** relationships/community summaries;
+CEO/CFO lens; **early-warning** (`watch.*`) across periods and departments. DoD: a
+cross-department question returns one card citing each department, respecting access.
+
+### v4 — Continuous intelligence (later)
+Automated ingestion; predictive warnings; decision-outcome tracking ("did the action
+work?").
+
+---
+
+# PART M — DEFINITION OF DONE (v1 pilot)
+
+- [ ] `ingest_files` handles a 200 MB+ Excel with zero OOM
+- [ ] Embedded total/subtotal rows are detected and excluded (J.1) — proven by a test
+- [ ] Every document JSON validates against `schema/document.schema.json`
+- [ ] `mcp_server` exposes the full Part D tool catalog, **scoped by role** (G.1)
+- [ ] `query_numbers("material cost variance vs budget")` returns a number **with rows cited**
+- [ ] `summarize_for_manager` matches the template with evidence + confidence
+- [ ] `store_decision` + `retrieve_decisions` round-trip; recommendation vs decision distinct (G.4)
+- [ ] `validate` exits 0 (conservation laws pass); golden set passes (G.2)
+- [ ] `rebuild_index` reconstructs the index from the vault alone
+- [ ] `rejects.csv` + `failures.csv` exist (even if empty) and are skimmed every run
+- [ ] Every module has an `AGENTS.md` (purpose, interface, commands, edge cases, never-do)
+- [ ] OCR outputs carry confidence + human-review status for screenshots, EN/AR, handwriting
+- [ ] All processing verified in-house; no external calls except configured AI providers (G.5)
+
+---
+
+# PART N — REVISION RATIONALE (what changed and why)
+
+Honest record of this consolidation, so we never re-litigate it.
+
+**Adopted from `DECISION_INTELLIGENCE_PLAN.md` (it was right, my earlier draft wasn't):**
+- **Email Engine** as a separate engine (threads, approvals, recursive attachments). I
+  had wrongly folded email into "documents."
+- **Template Registry** (template-matched vs inferred) — recurring SAP files shouldn't
+  be re-profiled blindly; this makes each month faster and safer.
+- **Department Lens Model** as explicit config; **consolidated tech stack**; **concrete
+  confidence thresholds**; **Definition-of-Done** checklist.
+
+**Kept from my version (the other draft lacked these):**
+- **Access control / role scoping** (G.1) — essential for CEO vs plant-manager; absent
+  there.
+- **Evaluation harness as a real phase** (G.2) — there it was only a research aside.
+- **Recommendation-vs-Decision human sign-off** (G.4); the **trust boundary** as a hard
+  structural wall (B.3).
+
+**New in this revision (driven by the build-chain requirement + research):**
+- **Part I — the Architect → Codex → cheap-coders pipeline**: contracts-first, test-
+  first, the Task Card, model routing, and weak-model guardrails. This is the core new
+  idea: the plan is shaped so *weaker* models can implement it without breaking things.
+- **Standardized on `AGENTS.md`** (plural, hierarchical) because **Codex reads it
+  natively** — making the whole repo Codex-compatible by construction.
+- Folded SAP-scale, total-row, and bilingual/handwriting OCR defenses into one
+  committed edge-case register (Part J).
+
+**Wrong assumptions I corrected:** email-as-document; profile-every-file-every-time;
+under-specifying for weak implementers; loose `AGENT.md` naming.
 
 ---
 
 # MY RECOMMENDATION (the sharp answer)
 
-**Pilot = Finance / Controlling. Build the shared platform once, prove it on Finance,
-then repeat the recipe department by department.** Finance is the right pilot: the
-pain is real, the data is the most structured in the factory (SAP numbers), and it
-exercises the hardest part — exact numbers, variance drivers, cited evidence — on day
-one. But it stays a **factory platform piloted on Finance**, not a finance app: Parts
-B–J are department-agnostic, and every other department is then Phase 5 (configuration,
-not new code), with the CEO/CFO factory brain (Phase 6) federating on top.
+**Pilot = Finance/Costing. Build the foundation once, prove it on Finance, then repeat
+by configuration.** Finance is the right pilot: real pain, the most structured data
+(SAP), and it exercises the hardest part — exact numbers, variance drivers, cited
+evidence — on day one. It stays a **factory platform piloted on Finance**, not a
+finance app.
 
-**Foundation first, then grow — in this exact order:**
-1. **Phase 0 + Part I discipline** — the modular skeleton, the `AGENT.md` map, the
-   contracts. The powerful foundation you asked for: built so it can grow to a million
-   lines and *still* be reviewable.
-2. **Phase 1** — the Data Engine trust wall on a real 200 MB SAP file, including the
-   **embedded-total-row** defense (J.1).
-3. **Phase 2** — the Finance brain end-to-end (one real period, fully cited card).
+**Order:** (1) Phase 0 + the Part H/I discipline — the modular skeleton, the
+`AGENTS.md` maps, the contracts and tests — *the powerful foundation built so it stays
+reviewable at a million lines and so weak models can build on it.* (2) The Data Engine
+trust wall on a real 200 MB SAP file, including the total-row defense. (3) The Finance
+card end-to-end. Documents/email/OCR come after the numbers loop is trustworthy.
 
-Documents/OCR (Phase 3) and the bilingual/handwriting frontier (J.2) come *after* the
-numbers loop is trustworthy — they are harder and lower-certainty, so they must not
-block the foundation.
-
-> Privacy decision is now locked (J.3): **all processing stays in-house, OCR runs
-> offline, no factory document leaves the network.** No open decisions block the
-> foundation — Phase 0 can begin whenever you give the word.
+**Next concrete step:** hand Part L Phase 0 to Codex with the instruction *"scaffold
+the repo, write every `AGENTS.md`, define the contracts in `/shared/contracts`, and
+write the failing tests — implement nothing yet."* That produces the skeleton the cheap
+models then fill, card by card. Say the word and I'll prepare that exact Codex hand-off
+brief.
