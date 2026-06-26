@@ -20,17 +20,24 @@ Deliver a runnable skeleton: the repo structure, every `AGENTS.md`, the contract
 ```
 /AGENTS.md                 (exists)        /CODEX_PLAN.md (exists)  /MASTER_PLAN.md (exists)
 /shared/contracts/         + AGENTS.md     ← MCP tool schemas + JSON schemas (the seams)
+/shared/metrics/           + AGENTS.md     ← governed metric definitions — meaning (Part R)
 /engines/data/             + AGENTS.md     ← DuckDB, SAP ingest, profile, clean, variance, templates
 /engines/docs/             + AGENTS.md     ← PDF/Word/PPT extraction + offline OCR (EN+AR)
 /engines/email/            + AGENTS.md     ← .eml threads, approvals, recursive attachments
-/engines/brain/            + AGENTS.md     ← vault + pgvector index + decision memory + synthesis
+/engines/brain/            + AGENTS.md     ← decision memory + synthesis
+/engines/audit/            + AGENTS.md     ← independent re-run, certainty, MCQ, sign-off gate (Part O)
+/engines/learning/         + AGENTS.md     ← skills, error/outcome memory, gated self-evolution (Part P)
+/engines/wiki/             + AGENTS.md     ← raw → AI-wiki → disposable index, wiki-lint (Part Q)
 /mcp_server/               + AGENTS.md     ← exposes the Part D tool catalog over MCP
 /lenses/                   + AGENTS.md     ← per-department lens configs (finance.yaml first)
 /templates/                + AGENTS.md     ← file template registry (file_templates.yaml)
 /playbooks/finance/        + AGENTS.md     ← pilot workflows (e.g. monthly_close)
-/eval/                     + AGENTS.md     ← golden-set trust harness
+/serving/                  + AGENTS.md     ← one-A4 card renderer + human review/approval UI
+/gov/security/             + AGENTS.md     ← threat model, prompt-injection + RBAC tests (Part S)
+/ops/observability/        + AGENTS.md     ← tracing, evidence-bundle ids, replay (Part S)
+/eval/                     + AGENTS.md     ← golden-set + red-team trust harness
 /tests/                                    ← pytest suites mirroring each module
-/config.yaml                               ← paths, locale, AI providers, lenses, templates, ROLES/ACCESS
+/config.yaml                               ← paths, locale, ON-PREM AI providers, lenses, templates, ROLES/ACCESS
 /requirements.txt                          ← pinned (see Part K)
 /.github/workflows/ci.yml                  ← install + pytest + ruff on every push to main
 ```
@@ -40,8 +47,12 @@ For every tool in `MASTER_PLAN.md` Part D, define a typed signature + a JSON sch
 `ingest_files, query_numbers, compute_variance, search_documents, search_emails,
 search_knowledge, get_data_quality, summarize_for_manager, store_decision,
 retrieve_decisions, retrieve_by_topic, set_lens, get_warnings, register_template,
-project_module_report`. Each contract states inputs, outputs, and the **evidence-ref**
-field that every fact-returning tool must include. These are frozen interfaces:
+project_module_report, define_metric, query_metric, audit_report,
+raise_review_questions, approve_report, propose_skill, use_skill, record_outcome,
+wiki_update, wiki_query, wiki_lint`. Each contract states inputs, outputs, and the
+**evidence-ref** field that every fact-returning tool must include. The **audit/sign-off
+tools (`audit_report`, `raise_review_questions`, `approve_report`) gate release** — a card
+cannot be marked released without a recorded human approval. These are frozen interfaces:
 changing one later requires owner sign-off (see `AGENTS.md`).
 
 ### 0.3 Write FAILING tests (red) for each contract

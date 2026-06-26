@@ -56,6 +56,9 @@ ruff check . && ruff format .      # lint + format (style is enforced, not debat
 Every module's `AGENTS.md` must restate the exact commands to test *that* module.
 
 ## Always
+- **No report reaches a human decision-maker without passing the independent Audit Layer
+  (MASTER_PLAN Part O) and a recorded, named human sign-off.** The system proposes and
+  checks; a human approves and owns the decision. This is non-negotiable.
 - Always read `MASTER_PLAN.md` + the nearest `AGENTS.md` before editing a module.
 - Always work test-first: a card is done only when its named test is green.
 - Always keep modules small and single-responsibility; split a file before it grows
@@ -103,5 +106,8 @@ The pilot must handle (defenses in `MASTER_PLAN.md` Part J):
 ## Module maps to create during implementation
 Each major module gets its own `AGENTS.md` (purpose · public interface · inputs/outputs
 · invariants · never-do · allowed libs + import examples · test commands · edge cases):
-`shared/contracts/`, `engines/data/`, `engines/docs/`, `engines/email/`,
-`engines/brain/`, `mcp_server/`, `lenses/`, `templates/`, `playbooks/finance/`, `eval/`.
+`shared/contracts/`, `shared/metrics/` (governed meaning, Part R), `engines/data/`,
+`engines/docs/`, `engines/email/`, `engines/brain/`, `engines/audit/` (Part O),
+`engines/learning/` (Part P), `engines/wiki/` (Part Q), `mcp_server/`, `lenses/`,
+`templates/`, `playbooks/finance/`, `serving/` (one-A4 card + human review UI),
+`gov/security/` (threat model), `ops/observability/`, `eval/`.

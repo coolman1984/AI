@@ -201,6 +201,13 @@ role (Part G.1).
 | `get_warnings` | gov | Active warnings / early warnings for the current lens (Part E.5) |
 | `register_template` | data | Promote a confirmed file layout into the Template Registry (C.3) |
 | `project_module_report` | gov | Health report of any code module without reading it (Part H.3) |
+| `define_metric` / `query_metric` | semantic | Define / run a **governed metric** — one definition of cost/margin/variance (Part R) |
+| `audit_report` | audit | **Independent** re-run + re-verify of a draft card; returns pass/flag + **certainty score** + issues (Part O) |
+| `raise_review_questions` | audit | Generate deep **multiple-choice** questions for the human when uncertain or high-stakes (Part O.5) |
+| `approve_report` | audit | Record the **accountable human sign-off** before release: who · when · what was shown · what changed (Part O.6) |
+| `propose_skill` / `use_skill` | learning | Skill lifecycle — propose (validated, gated) and reuse procedures (Part P) |
+| `record_outcome` | learning | Track whether a decision's action actually worked — "did it work?" (Part P) |
+| `wiki_update` / `wiki_query` / `wiki_lint` | wiki | Maintain / query / validate the AI wiki: raw → wiki → index, with provenance (Part Q) |
 
 ---
 
@@ -484,7 +491,7 @@ The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
 | Config | **pyyaml** | `config.yaml`, `column_map.yaml`, lenses, templates |
 | Index / FTS / relations | **Postgres** (Supabase) | disposable, rebuildable from vault |
 | Vector search | **pgvector** | one DB for v1 |
-| Synthesis AI | **Claude (Anthropic), swappable** | reasoning, summaries, recommendations |
+| Synthesis AI | **on-prem model (Qwen / Llama / DeepSeek via vLLM) by default**, swappable | reasoning, summaries, recommendations — *kept in-house to honor G.5; external (Claude) only if G.5 is explicitly relaxed* |
 | Embeddings AI | **Voyage AI (or OpenAI/Cohere), swappable** | semantic vectors (Claude has no embeddings API) |
 | Markdown vault | **python-frontmatter + markdown-it-py** | parse + links |
 | MCP server | **MCP Python SDK** | the interface for AI agents |
@@ -504,26 +511,32 @@ separately: Tesseract, LibreOffice, libmagic, Postgres+pgvector.
 > trust gate (G.2) is part of every DoD. Platform built once (Phases 0–4 + brain);
 > departments onboarded by configuration (v2); factory brain federates (v3).
 
-### v1 — Pilot department: Finance / Costing
+### v1 — Pilot department: Finance / Costing  *(numeric trust loop → audit → learning, before documents)*
 | Phase | Builds | Deliverable |
 |---|---|---|
-| **0. Foundation** | MCP server skeleton; `config.yaml` (providers, lenses, templates, **roles/access**); git-vault scaffold; DuckDB setup; **root + per-module `AGENTS.md`**; pinned `requirements.txt`; CI + empty golden set | a tool callable over MCP, scoped to a department; CI green |
-| **1. Data — Ingest** | Streaming Excel/SAP/CSV → DuckDB (text-first, chunked, multi-sheet/file). Handles 200 MB+. | `ingest_files` live; 200 MB file ingests with no OOM |
-| **2. Data — Profile + Classify + Templates** | Schema profile; template-match vs infer (C.3) | profile + `file_templates.yaml`; classification works |
-| **3. Data — Clean** | Coerce types; quarantine rejects; **total-row defense (J.1)**; duplicates; money `DECIMAL` | clean tables; `rejects.csv`; `run.log` |
-| **4. Data — Query** | SQL variance/driver breakdown | `query_numbers` + `compute_variance` live; reconciles to the cent |
-| **5. Document Engine** | PDF/Word/PPT → normalized JSON; offline OCR (EN+AR); resumable | `search_documents` live; mixed-evidence card cites a page |
-| **6. Email Engine** | `.eml` parse; attachments recurse; approval chains | `search_emails` live |
-| **7. Question Router** | Classify number/doc/knowledge/mixed; apply lens | routing live |
-| **8. Manager Summary** | Template renderer; evidence enforced; confidence (E.4) | `summarize_for_manager` live |
-| **9. Decision Memory** | Store/retrieve decisions, drivers, actions, lessons; **human sign-off (G.4)** | `store_decision`/`retrieve_decisions` round-trip |
-| **10. Vault + Index** | Markdown vault (dept-namespaced) + pgvector; rebuildable | delete index → rebuild from vault → identical |
-| **11. Validate + Quality** | Conservation laws; data-quality score; evidence audit; golden set | `get_data_quality` live; `validate` exits 0; golden set passes |
+| **0. Foundation** | MCP skeleton; `config.yaml` (providers **on-prem synthesis**, lenses, templates, **roles/access**); git-vault scaffold; DuckDB; **root + per-module `AGENTS.md`**; pinned `requirements.txt`; CI + empty golden set; **skeletons for metrics (R), audit (O), learning (P), observability (S)** | a tool callable over MCP, scoped to a department; CI green |
+| **1. Data — Ingest** | Streaming Excel/SAP/CSV → DuckDB (text-first, chunked, 200 MB+); **source-adapter interface (S)** | `ingest_files` live; 200 MB no OOM |
+| **2. Profile + Classify + Templates** | Schema profile; template-match vs infer (C.3); **data contracts per source (S)** | profile + `file_templates.yaml` |
+| **3. Clean** | Coerce; quarantine; **total-row defense (J.1)**; duplicates; money `DECIMAL`; **materiality-weighted rejects (S)** | clean tables; `rejects.csv`; `run.log` |
+| **4. Governed metrics + Query** | **Metric layer (R)** — define finance metrics once → governed SQL variance/driver | `define_metric`/`query_metric` + `compute_variance`; reconciles to the cent **and ties to SAP (S)** |
+| **5. Manager card** | one-A4 **BLUF/Minto/SCQA** renderer; evidence enforced; **multi-dimensional confidence (S)** | `summarize_for_manager` live |
+| **6. AUDIT & human sign-off** | **Independent re-run** + citation re-verify + **certainty score** + **deep MCQ to human** + **accountable approval gate** (Part O) | `audit_report`/`raise_review_questions`/`approve_report` live; **nothing releases without sign-off** |
+| **7. Decision + outcome memory** | Store/retrieve decisions; **outcome tracking** ("did it work?"); recommendation ≠ decision (G.4) | `store_decision`/`retrieve_decisions`/`record_outcome` |
+| **8. LEARNING loop** | Error memory; corrections → lessons → **skills** (risk-tiered, gated, injection-quarantined) (Part P) | `propose_skill`/`use_skill`; a repeated mistake becomes a regression test |
+| **9. Document Engine** | PDF/Word/PPT → JSON; offline OCR (EN+AR); resumable | `search_documents` live |
+| **10. Email Engine** | `.eml`; attachments recurse; approval chains | `search_emails` live |
+| **11. Wiki vault + index** | raw → AI-wiki → disposable index (Part Q); wiki-lint; rebuildable | `wiki_query` live; delete index → rebuild → identical |
+| **12. Validate + Quality + Security** | Conservation; golden set; **red-team / prompt-injection (S)**; observability traces | `validate` exits 0; golden + security pass |
 
-**v1 success =** Finance drops real files (SAP exports, Excel, PDFs, decks, emails,
-approvals, screenshots) → asks a management question → gets a structured card with
-calculated numbers, drivers, evidence links, quality/OCR warnings, and confidence →
-stores the decision → later retrieves what was decided and why.
+> **Why this order:** prove the numeric loop, then make it **auditable and accountable**
+> (Phase 6), then make it **learn** (Phase 8) — all *before* the harder document/OCR work.
+> Trust and learning are foundations, not finishing touches.
+
+**v1 success =** Finance drops real files → asks a management question → gets a one-A4
+card with calculated numbers, drivers, evidence, and confidence → **the audit layer
+independently re-checks it, asks the analyst any uncertain points as multiple-choice,
+and a named human signs it off** → only then does it reach the manager/CEO → the
+decision + its later outcome are stored, and any correction teaches the system.
 
 ### v2 — Department expansion
 Apply the same engines to Production, Quality, Supply Chain, Sales, R&D, HR,
@@ -591,6 +604,201 @@ Honest record of this consolidation, so we never re-litigate it.
 **Wrong assumptions I corrected:** email-as-document; profile-every-file-every-time;
 under-specifying for weak implementers; loose `AGENT.md` naming.
 
+**Revision 3 (after two senior audits + the owner's audit-layer directive) — added
+Parts O–S:**
+- **Part O — Audit & Human-Accountability Layer** (the biggest addition): an *independent*
+  re-run + reassessment + **calibrated certainty score** + **deep multiple-choice
+  questions to the human** + an **accountable, recorded sign-off gate**. Maker-checker /
+  four-eyes. *Nothing reaches the CEO unsigned.* This was the key gap both my own audit and
+  the second opinion under-weighted, and the owner correctly insisted on it.
+- **Part P — Learning Engine** (skills/memory/error/outcome/gated self-evolution, with the
+  zombie-agent quarantine). **Part Q — LLM-Wiki vault** (Karpathy/Obsidian: raw → AI-wiki →
+  disposable index). **Part R — Governed meaning** (semantic metrics + factory ontology).
+  **Part S — register** of in-house-synthesis fix, confidence v2, observability, data
+  contracts/lineage, source adapters, security threat model, one-A4 doctrine.
+- **Roadmap re-sequenced:** numeric trust loop → **audit** → **learning** *before*
+  documents/OCR. Trust and learning are foundations, not finishing touches.
+- **Reuse stance (Hermes / Karpathy / Obsidian projects):** borrow the *patterns and open
+  standards*, **do not fork** — build our learning/wiki modules natively with the finance
+  governance, access control, audit, and injection defenses those general tools lack.
+  (License note: Hermes is MIT; keep any AGPL component external behind a CLI only.)
+
+---
+
+> **Parts O–S below are the trust / learning / meaning upgrades** added after two
+> independent senior audits (`RISK_AND_GAPS_AUDIT.md` + a second-opinion review) and the
+> owner's directive for an independent audit layer with human accountability. They are
+> sequenced into the roadmap above (Phases 4, 6, 8, 11) — they are not optional extras.
+
+---
+
+# PART O — THE AUDIT & HUMAN-ACCOUNTABILITY LAYER (the last line of defense)
+
+**Why this exists.** The stakes are millions of dollars. A confident *wrong* number that
+reaches the CEO and HQ — and gets approved — is a factory-scale disaster. Therefore **no
+report reaches a human decision-maker without (1) passing an independent audit and (2) an
+explicit, accountable human sign-off.** This is the **maker-checker / four-eyes** control
+that finance has used for a century, made into an architectural layer. The system's job
+is not to decide — it is to make the *human's* decision **informed, safe, and on the
+record.** The human carries the responsibility; the audit layer makes that responsibility
+defensible.
+
+```
+  CREATION (engines → governed metrics → synthesis → DRAFT card)
+        │
+        ▼   independent process · different code path · ideally a different model
+  ┌─────────────────────  AUDIT LAYER  ─────────────────────┐
+  │ O.1 re-run   O.2 reassess   O.3 certainty   O.4 materiality│
+  └───────────────┬─────────────────────────────────────────┘
+        │ uncertain / high-stakes?
+        ▼ yes
+  O.5 DEEP MULTIPLE-CHOICE QUESTIONS → the human analyst answers
+        │
+        ▼
+  O.6 ACCOUNTABLE HUMAN SIGN-OFF  (named person · recorded · responsible)
+        │  (nothing passes this gate unsigned)
+        ▼
+  RELEASE to manager / CEO   →   O.8 feeds the LEARNING engine (Part P)
+```
+
+### O.1 Independent re-run (four-eyes)
+The audit **re-executes the critical calculations by an independent path** (separate
+query/code, ideally a separate model) and checks they match the draft **to the cent**.
+A mismatch **blocks release** and is flagged. One pipeline can be wrong; two independent
+pipelines agreeing is the floor for trust.
+
+### O.2 Logic reassessment
+Independently re-checks: reconciliation/conservation (`rows_in == clean + rejected`);
+**tie-out to the system of record (SAP official figure)**; no leaked total/subtotal rows;
+**every metric uses its governed definition** (Part R); **every claim's citation
+re-verified** against real evidence (defeats "hybrid-ghost" fabricated citations); driver
+attribution actually supported by the numbers; recommendation consistent with the facts.
+
+### O.3 Certainty scoring (quantified + calibrated)
+Produces a **multi-dimensional certainty score** — numbers · drivers · evidence ·
+recommendation · data-quality · **materiality** — plus an overall %. It is **calibrated
+against history**: when the system said "90% sure," was it right ~90% of the time? The
+system must **know what it doesn't know** and **abstain & ask** rather than guess
+(selective prediction). A fluent answer is not a correct answer.
+
+### O.4 Materiality-aware escalation
+Escalate by **money at stake**, not just error rate. A 0.5% reject pile can be **$2M**.
+Rules: low-materiality + high-certainty → light confirm; **high-materiality OR
+low-certainty OR sources disagree → mandatory deep review**; very large numbers →
+**a second approver** (segregation of duties).
+
+### O.5 Deep human questioning (multiple-choice)
+When uncertain or high-stakes, the audit asks the analyst **specific, decision-shaped
+multiple-choice questions** — never a vague "is this OK?". Example:
+> *"The supplier approval PDF was OCR'd at 62% confidence and drives a **$1.2M** variance.
+> Which is correct? (A) $1.2M as read · (B) $1.02M [alternate reading] · (C) open the
+> source page · (D) exclude pending human review."*
+Answers are recorded **and feed learning** (Part P). This is your requirement: the human
+is pulled in *precisely where the machine is unsure*, with the question pre-digested.
+
+### O.6 Accountable human sign-off (the hard gate)
+Before release, a **named human approves.** The system records **who, when, what they
+were shown, what they changed, and the certainty at approval** — tamper-evident,
+audit-grade. **Nothing reaches the CEO without this signature.** A recommendation only
+becomes an authorized *decision* at this gate (this *is* the G.4 boundary, enforced).
+**Responsibility is explicit and human.**
+
+### O.7 Disaster-prevention guarantee
+Because the audit is **independent of the creator**, a single mistaken pipeline cannot
+silently reach HQ. The layer's whole purpose is to convert *silent confident wrongness*
+into *visible, questioned, signed* output.
+
+### O.8 It makes the system wiser over time
+Every flag, every answered question, every human correction, every rejected draft →
+**error memory + skill/method update** (Part P, risk-tiered + injection-quarantined).
+Next month the audit is sharper and asks **fewer, better** questions. That is
+"learn by doing / gain experience," applied to the control itself.
+
+---
+
+# PART P — THE LEARNING ENGINE (skills, memory, self-correction)
+
+The system must **learn from its mistakes**, not wait for the human to fix the same thing
+three times. Grounded in the field's best work (Voyager skill libraries; Hermes
+self-created skills + DSPy/GEPA self-evolution; Letta/Zep/Mem0 memory; Reflexion
+self-correction). Full analysis in `RISK_AND_GAPS_AUDIT.md`.
+
+- **Four memories:** *episodic* (every Q&A/decision trace), *semantic* (governed facts +
+  the metric layer + the wiki), *procedural* (**skills**), *working* (per task).
+- **Skill library:** after a successful non-trivial task the agent **proposes a skill**
+  (the validated SQL/method + "when to use"). A skill is **not free text it trusts** — it
+  is validated by tests + the verifier + **human approval**, then versioned and retrieved
+  (FTS/vector). The monthly close gets faster and more reliable each cycle.
+- **Error memory + reflection:** the audit's catches and the human's corrections become
+  durable records (*symptom · root cause · fix*); before finalizing, the agent checks
+  "have we been wrong this way before?"
+- **Outcome tracking** (your "did the action work?"): link each decision → later actuals;
+  learn which drivers/recommendations were actually right.
+- **Gated self-evolution (DSPy + GEPA):** optimize prompts/skills offline against the
+  golden set — **never auto-deployed**; every change passes eval + human sign-off, and is
+  versioned/rollback-able.
+- **Risk-tiered promotion:** formatting preference → auto after test; **report method →
+  human approval; finance calculation / metric / access rule → owner approval.**
+- **⚠️ Zombie-agent defense:** anything learned from *document-derived* content is
+  **quarantined and human-approved** before entering skills/memory — a prompt injection in
+  an email must never silently write a poisoned skill. Learning is sandboxed from
+  untrusted input.
+
+---
+
+# PART Q — THE LLM-WIKI VAULT (Karpathy / Obsidian pattern)
+
+Upgrades the second brain (`IMPLEMENTATION_PLAN_SECONDBRAIN.md`) into a three-tier design:
+
+1. **Immutable raw sources** — SAP exports, documents, emails, screenshots, approvals,
+   source snapshots. **Never rewritten.** The forensic record.
+2. **AI-maintained Markdown wiki** — pages for entities, metrics, methods, decisions,
+   risks, actions, lessons, synthesis. The AI maintains it, but **every claim carries
+   provenance** (`extracted` / `calculated` / `inferred` / `human-approved` / `ambiguous`)
+   and a link to evidence. Inferred never becomes fact without approval.
+3. **Disposable indexes** — FTS + vector + graph, **rebuildable from tiers 1–2 anytime.**
+
+Plus a `.manifest.json` (source tracking), `index.md` / `log.md` / `hot.md` (navigation),
+and a **`wiki_lint` gate** (no broken links, no page without frontmatter, no claim without
+provenance, no source ingested without a manifest entry). **Borrow the patterns** from
+Karpathy's LLM-wiki gist, `Ar9av/obsidian-wiki`, and `obsidian-second-brain` — **do not
+fork** any of them (same reasoning as Hermes, Part 7 of the audit).
+
+---
+
+# PART R — GOVERNED MEANING (semantic metrics + factory ontology)
+
+The federation promise dies if "cost / margin / scrap / yield" mean different things per
+department or file. `column_map.yaml` maps *columns*; this layer governs *meaning*.
+
+- **Semantic metrics layer (v1):** every KPI defined **once** — name · business
+  definition · formula · grain · required dimensions · currency · sign convention · time
+  basis · owner · tests · examples. The Router resolves "variance/margin" to its
+  **governed definition before any SQL runs.** Pattern: **dbt Semantic Layer** or **Cube**
+  (Cube even ships an MCP server + row-level access — a natural fit).
+- **Factory ontology (v2, for federation):** an ISA-95-inspired shared vocabulary
+  (plant · area · line · work-center · material · BOM · order · cost-center · supplier · …)
+  so department lenses share nouns. **v1 needs only the finance metric layer + a few
+  shared dimensions** — full ontology is reserved for the federation phase (avoid the
+  cathedral).
+
+---
+
+# PART S — FURTHER UPGRADES (concise register; detail in `RISK_AND_GAPS_AUDIT.md`)
+
+| Upgrade | What | Phase |
+|---|---|---|
+| **In-house synthesis** | On-prem model (vLLM) by default — resolves the G.5 vs K contradiction | 0 |
+| **Confidence v2** | Multi-dimensional + **materiality-weighted rejects** (by $ amount, top rejected rows by value; "cannot finalize if rejected amount > threshold") | 3, 5 |
+| **Observability / replay** | Trace-id per question, evidence-bundle id, prompt/model/data-snapshot versions (OpenTelemetry GenAI) — debug a live wrong answer | 0, 12 |
+| **Data contracts + lineage** | Per-source contracts (cols/types/grain/PK/freshness/owner) + OpenLineage-style lineage + data-quality checks (Great Expectations/Pandera) | 2 |
+| **Source adapters** | Excel-export adapter now; **SAP OData / DB-view / delta loads later** — don't hardwire manual exports forever | 1 |
+| **Security threat model** | Prompt injection (retrieved text = data, never instructions), Excel/CSV formula injection, file sandboxing, **RBAC tests**, audit logs (OWASP LLM Top-10, NIST GenAI) | 0, 12 |
+| **One-A4 doctrine** | BLUF + Minto + SCQA, **hard length budget enforced in code**, progressive disclosure, IBCS-style visuals | 5 |
+| **Hybrid retrieval + rerank** | BM25 + dense + local cross-encoder reranker (fixes retrieval mismatch) | 9 |
+| **Deployment / DR** | Local or shared-server deploy, backup/restore, scheduled jobs | later |
+| **Scope discipline** | ISA-95 / OPC UA / Sparkplug / DataHub / full Dagster are **"reserve space," not v1** — prove the finance loop first | — |
+
 ---
 
 # MY RECOMMENDATION (the sharp answer)
@@ -605,7 +813,14 @@ finance app.
 `AGENTS.md` maps, the contracts and tests — *the powerful foundation built so it stays
 reviewable at a million lines and so weak models can build on it.* (2) The Data Engine
 trust wall on a real 200 MB SAP file, including the total-row defense. (3) The Finance
-card end-to-end. Documents/email/OCR come after the numbers loop is trustworthy.
+card end-to-end, **then the independent Audit & sign-off layer (Part O), then the Learning
+loop (Part P)** — make the numbers *trustworthy, accountable, and self-improving* before
+touching documents/email/OCR, which come last because they are harder and lower-certainty.
+
+**Non-negotiable:** because a wrong number reaching the CEO/HQ is a million-dollar
+disaster, the **independent audit + accountable human sign-off (Part O)** is part of the
+definition of done, not a later nicety. The system proposes and checks; **a named human
+approves and owns the decision.**
 
 **Next concrete step:** hand Part L Phase 0 to Codex with the instruction *"scaffold
 the repo, write every `AGENTS.md`, define the contracts in `/shared/contracts`, and
