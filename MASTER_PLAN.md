@@ -374,25 +374,121 @@ questions (the cited GraphRAG work). **Only after** the core loop earns its keep
 
 ---
 
+# PART I — CODE ARCHITECTURE FOR AI-REVIEWABILITY (non-negotiable)
+
+The single biggest risk to this project is not a wrong number — it is **a million
+lines of code no human and no AI can hold in their head.** When that happens, an AI
+asked to change anything reads forever, runs out of context, and breaks what it
+couldn't see. We prevent that by design, from line one.
+
+**The principle — the same trick as the data.** Just as the AI reads a *map* of the
+data and never the 200 MB file, the AI must read a *map of the code* and never all
+million lines. The map is a set of tiny, always-current summary documents.
+
+### I.1 Module rules (enforced, not suggested)
+- **One responsibility per module.** Engines, the MCP server, playbooks, and shared
+  contracts are separate. A module never reaches inside another — it calls only
+  through a published **contract** (an MCP tool schema or a typed function signature).
+- **Hard size caps.** A file past its cap is split; a module past its cap becomes two.
+  Reviewability is a budget, kept on purpose.
+- **The seams are explicit and versioned.** The MCP tool schemas (Part D) and the JSON
+  schemas (`schema/`) ARE the contracts. An AI can understand a module from its
+  contract without reading its internals — that is the entire purpose of a seam.
+
+### I.2 The map: `AGENT.md` everywhere
+- **Root `AGENT.md`** — the table of contents of the whole system: every module, one
+  line each, with a pointer to its own `AGENT.md`. An AI starts here, always.
+- **One `AGENT.md` per module** (≤ ~1 page): *what it does · its public interface ·
+  inputs/outputs · invariants it guarantees · what it must NEVER do · where its tests
+  are.* The AI reads this, not the code — unless it must change that exact module.
+- **These docs are part of "done."** A change that alters a module's interface but not
+  its `AGENT.md` is incomplete and fails review. The map can never drift from the
+  territory — that one rule keeps the whole scheme honest.
+
+### I.3 Reports on demand
+A `project.module_report` capability lists, per module, its public surface,
+dependencies, test status, and open TODOs — so an AI (or you) gets a health report on
+any part *without reading it*. This is the "AI makes reports, doesn't read all the
+code" workflow you asked for, made concrete.
+
+### I.4 Proposed repository shape (one platform, clear seams)
+```
+/AGENT.md                  ← root map: start here
+/shared/contracts/         ← MCP tool schemas + JSON schemas (the seams)   + AGENT.md
+/engines/data/             ← numbers (DuckDB, SAP ingest, variance)        + AGENT.md
+/engines/docs/             ← text/OCR (PDF/Word/PPT/email/screenshots)     + AGENT.md
+/engines/brain/            ← vault + index + decision memory               + AGENT.md
+/mcp_server/               ← exposes the tool catalog over MCP             + AGENT.md
+/playbooks/finance/        ← the pilot department's workflows              + AGENT.md
+/eval/                     ← golden-set trust harness (§G.5)               + AGENT.md
+```
+Each folder is independently reviewable; the root `AGENT.md` ties them together.
+
+---
+
+# PART J — THE MESSY-DATA & OCR COMMITMENTS (finance pilot)
+
+The pilot must survive real factory inputs, not clean samples. These are the edge
+cases we commit to handling, who owns each, and the defense. Items beyond the existing
+`ARCHITECTURE.md` §3 / `REVIEW.md` audit are marked **NEW**.
+
+### J.1 Numbers (Data Engine) — 272 columns × ~600k rows, ~200 MB SAP files
+| Edge case | Defense | Owner |
+|---|---|---|
+| **Total / subtotal rows embedded between data rows** (sum them → double-count) **NEW** | Detect total rows (blank key columns; labels `Total`/`Gesamt`/`المجموع`; value == group sum) → **quarantine, never aggregate**; the conservation check catches any leakage | `data.ingest_table` + `data.reconcile` |
+| 272-column mixed/dirty types; the first rows lie | Profile (random + weirdest samples), coerce + quarantine to rejects | `data.profile_table`, clean |
+| 200 MB won't fit in RAM | Stream into DuckDB; math in SQL (spills to disk) | `data.ingest_table` |
+| SAP junk (ALV headers, encoding, locale `1.234,56`) | Strip + detect + log every assumption | `data.ingest_table` |
+| Duplicate / re-ingested rows | Global row-id, idempotent load, duplicate flagging | per `REVIEW.md` A1–A4 |
+
+### J.2 Documents & images (Document Engine) — the hard new frontier
+| Edge case | Defense | Owner |
+|---|---|---|
+| PDFs / decks / **emails with many tables needing OCR** | Per-page scanned detection → OCR only image pages; table-aware extraction | `docs.ingest_document` |
+| **Bilingual English + Arabic**, right-to-left, mixed scripts on one page **NEW** | OCR with EN+AR models; per-region script detection; preserve RTL reading order | docs OCR stage |
+| **Screenshots** (not clean scans) | Image pre-processing (deskew, denoise, threshold) before OCR | docs OCR stage |
+| **Handwriting**, often EN+AR, partial/missing **NEW** | Best-effort OCR + **confidence score per block**; handwriting and low-confidence text are **flagged and routed to a human-review queue — never silently trusted** | docs OCR + `quality.*` |
+
+> **Honest limit.** Arabic handwriting OCR is the least reliable input in the entire
+> system. We do not pretend to read it perfectly. We extract best-effort, score
+> confidence, and **surface low confidence loudly** so a human confirms before it
+> becomes a fact. That fits the trust rule exactly: uncertain input → visible, never
+> silent.
+
+### J.3 One open decision — the OCR engine for Arabic + handwriting
+A real fork that affects both quality and privacy:
+- **Offline OCR** (Tesseract / PaddleOCR, EN+AR): all data stays in-house, but weak on
+  handwriting and hard Arabic.
+- **Cloud document-AI**: far stronger on Arabic, handwriting, and tables — but **sends
+  factory documents to an outside service.**
+
+Default for v1: **offline + human-review queue** for handwriting (keeps data in-house,
+honest about its limits). Cloud OCR is a later upgrade *if* you accept sending those
+specific documents out. Tracked here as a decision that is yours to make.
+
+---
+
 # MY RECOMMENDATION (the sharp answer)
 
-**Build the shared platform once, then prove it on ONE pilot department — your
-choice — before rolling out to all of them.** This is *not* "a finance app." The
-architecture in Parts B–G is factory-wide and department-agnostic; a pilot is simply
-*where you prove the platform is right* before betting a dozen departments on it.
-Trying to onboard every department at once means nothing becomes trustworthy and the
-whole effort stalls. Department-first, then federate, is exactly your instinct — the
-pilot is just *which* department goes first.
+**Pilot = Finance / Controlling. Build the shared platform once, prove it on Finance,
+then repeat the recipe department by department.** Finance is the right pilot: the
+pain is real, the data is the most structured in the factory (SAP numbers), and it
+exercises the hardest part — exact numbers, variance drivers, cited evidence — on day
+one. But it stays a **factory platform piloted on Finance**, not a finance app: Parts
+B–J are department-agnostic, and every other department is then Phase 5 (configuration,
+not new code), with the CEO/CFO factory brain (Phase 6) federating on top.
 
-Pick the pilot on three criteria:
-1. **Most pain** — where a manager is drowning worst (fastest visible win, real sponsor).
-2. **Most-structured data** — so the pilot proves the engine instead of fighting the
-   messiest corner of the factory first.
-3. **A willing user** — a manager who will actually use it daily and give feedback.
+**Foundation first, then grow — in this exact order:**
+1. **Phase 0 + Part I discipline** — the modular skeleton, the `AGENT.md` map, the
+   contracts. The powerful foundation you asked for: built so it can grow to a million
+   lines and *still* be reviewable.
+2. **Phase 1** — the Data Engine trust wall on a real 200 MB SAP file, including the
+   **embedded-total-row** defense (J.1).
+3. **Phase 2** — the Finance brain end-to-end (one real period, fully cited card).
 
-Every other department is then a **repeat of the same recipe** (Phase 5), and the
-CEO/CFO factory brain (Phase 6) is the federation on top.
+Documents/OCR (Phase 3) and the bilingual/handwriting frontier (J.2) come *after* the
+numbers loop is trustworthy — they are harder and lower-certainty, so they must not
+block the foundation.
 
-> The reversible choice is *which* department goes first — Parts B–G do not change
-> whichever you pick. Tell me your candidate departments (and where the worst data
-> pain is) and I'll rank them, or recommend one.
+> Open items still yours to decide, both tracked above: the **OCR engine** for Arabic
+> + handwriting (J.3), and whether any cloud service may ever see factory documents.
