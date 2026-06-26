@@ -455,16 +455,16 @@ cases we commit to handling, who owns each, and the defense. Items beyond the ex
 > becomes a fact. That fits the trust rule exactly: uncertain input → visible, never
 > silent.
 
-### J.3 One open decision — the OCR engine for Arabic + handwriting
-A real fork that affects both quality and privacy:
-- **Offline OCR** (Tesseract / PaddleOCR, EN+AR): all data stays in-house, but weak on
-  handwriting and hard Arabic.
-- **Cloud document-AI**: far stronger on Arabic, handwriting, and tables — but **sends
-  factory documents to an outside service.**
+### J.3 DECIDED — OCR stays fully in-house (offline only)
+**Decision (locked): all OCR runs offline; no factory document is ever sent to an
+outside service.** Engine: **Tesseract / PaddleOCR with English + Arabic models**,
+running on-premise. This keeps every document inside the network — the right call for
+confidential factory data.
 
-Default for v1: **offline + human-review queue** for handwriting (keeps data in-house,
-honest about its limits). Cloud OCR is a later upgrade *if* you accept sending those
-specific documents out. Tracked here as a decision that is yours to make.
+Accepted trade-off: offline OCR is weaker on hard Arabic and on handwriting. We do not
+hide that — low-confidence and handwritten blocks are **flagged and routed to the
+human-review queue** (J.2), never silently trusted. Cloud document-AI is explicitly
+**out of scope** unless this decision is formally revisited.
 
 ---
 
@@ -490,5 +490,6 @@ Documents/OCR (Phase 3) and the bilingual/handwriting frontier (J.2) come *after
 numbers loop is trustworthy — they are harder and lower-certainty, so they must not
 block the foundation.
 
-> Open items still yours to decide, both tracked above: the **OCR engine** for Arabic
-> + handwriting (J.3), and whether any cloud service may ever see factory documents.
+> Privacy decision is now locked (J.3): **all processing stays in-house, OCR runs
+> offline, no factory document leaves the network.** No open decisions block the
+> foundation — Phase 0 can begin whenever you give the word.
