@@ -16,10 +16,12 @@
 
 ## A.1 The problem we are removing
 
-A manager — finance today, the CEO tomorrow — drowns in inputs: huge Excel sheets,
-SAP exports, long PDFs, tens of emails, decks. The cost is not just time. It is
+A manager in **any department** of a large TV-and-mobile factory drowns in inputs:
+huge SAP Excel exports (one file can reach ~200 MB), long PDFs, approval workflows,
+tens of emails, Word documents, sales tables, decks. The cost is not just time. It is
 **missed signal**: the variance nobody decomposed, the risk buried on page 40, the
-fact that *this same problem happened two quarters ago and we already know the fix.*
+defect trend nobody linked to a supplier change, the fact that *this same problem
+happened two quarters ago and we already know the fix.*
 
 ## A.2 What the system delivers instead
 
@@ -44,12 +46,17 @@ A confident wrong number is the only failure that matters here, because the mana
 can't check it. Everything in Parts B–H exists to make that failure *structurally
 impossible*, not merely unlikely.
 
-## A.4 Who it serves
+## A.4 Who it serves — the whole factory, department by department
 
-Finance is the **proving ground**, not the ceiling. The same engines serve the CEO
-(cross-department briefing), plant managers (their plant only), sales (pipeline
-review), procurement (supply risk). Each manager's workflow is a **playbook** that
-runs on the same engines — see §F. Access is scoped per role from day one (§G.2).
+This is a **factory-wide** brain, not one department's tool. Every department —
+Production, Quality, Supply Chain, Procurement, Planning, Maintenance, Engineering,
+Warehouse, Sales, Finance/Controlling, HR, EHS, After-sales — gets its **own second
+brain first**. Then those department brains are **federated into one factory brain**
+so the CEO and CFO can see and decide across all of them (§B.4).
+
+Each manager's recurring workflow is a **playbook** on the shared engines (§G.1);
+each department is an **isolated, access-scoped namespace** (§G.2). One platform,
+many brains — not many apps.
 
 ---
 
@@ -111,6 +118,41 @@ reasons and writes prose; the tools do the exact, auditable work.
 If a summary contains a number with no attached evidence ref, the output tool
 refuses to emit it. That refusal is the whole guarantee.
 
+## B.4 Department brains, then the factory brain
+
+The unit of rollout is the **department**. Each department gets its **own second
+brain** — its own scoped slice of the *same* shared engines:
+
+- its own **vault namespace** (the forever archive of its notes/records/decisions),
+- its own **staging + index** (its numbers and its documents),
+- its own **playbooks** (its recurring workflows),
+- its own **access scope** (who in that department may see what).
+
+You do **not** build a separate app per department. You build **one platform** that
+hosts many department brains. Onboarding a department = *configuration* (its sources,
+playbooks, roles), never new code.
+
+```
+   Production │ Quality │ Supply Chain │ Procurement │ Planning │ Maintenance
+   Engineering │ Warehouse │ Sales │ Finance/Controlling │ HR │ EHS │ After-sales
+        each = one DEPARTMENT BRAIN  (scoped vault + index + playbooks + access)
+                                  │
+                   ┌──────────────▼───────────────┐
+                   │        THE FACTORY BRAIN       │
+                   │  federation OVER the department │
+                   │  brains, governed by access:    │
+                   │  CEO / CFO see across;           │
+                   │  a dept manager sees their scope.│
+                   └────────────────────────────────┘
+```
+
+**Why department-first, then federate.** A department brain is provable and useful on
+its own — it earns trust fast and keeps the data bounded. The factory brain is then a
+*retrieval layer over the department brains*, not a 13th pile of data. And it is
+exactly where leadership's real value lives: the questions that **cross** departments
+— *"did the panel shortage in Supply Chain cause the Quality rework spike and the
+Sales commit miss?"* — which no single department's files can answer alone.
+
 ---
 
 # PART C — THE THREE ENGINES (build specs already exist)
@@ -125,6 +167,23 @@ These are the existing plans, reframed as MCP-exposed engines:
 
 `ARCHITECTURE.md` states the founding principle behind all three: *the AI reads a
 map of the data, never the data.* MCP-first is that principle enforced in wiring.
+
+## C.1 The scale & SAP reality (why the engines are built this way)
+
+The inputs are not toy files. A single SAP raw export can be **~200 MB of Excel**,
+there are many of them across every department, plus heavy PDF / Word / email /
+approval-workflow volume. Two consequences, already baked into the engine specs:
+
+- **Never load a 200 MB sheet into memory or into an AI prompt.** The Data Engine
+  lands it text-first into DuckDB (streamed/chunked) and does all heavy math in SQL
+  that spills to disk. An AI only ever sees the tiny profile and the small aggregated
+  result — never the rows.
+- **SAP exports are messy in predictable ways.** ALV-grid junk rows, embedded
+  subtotal/total rows, the header on row 4 not row 1, UTF-16/Latin-1 encodings,
+  locale decimals (`1.234,56`), and layouts tied to the transaction it came from
+  (MB51, COOIS, KSB1, …). `data.ingest_table` must strip the junk, detect
+  encoding/locale, and **record every assumption in the run log — never silently.**
+  This is precisely the messy-data defense in `ARCHITECTURE.md` §3.
 
 ---
 
@@ -256,62 +315,84 @@ wrong while the prose sounds perfect — only the harness catches that.
 
 ---
 
-# PART H — ROADMAP (phases, with trust gates)
+# PART H — ROADMAP (build the platform once, roll out by department)
 
-> Rule from the engine specs, kept here: **do not start a phase until the previous
-> phase's Definition of Done is green.** A trust gate is part of every DoD.
+> Rule kept from the engine specs: **do not start a phase until the previous phase's
+> Definition of Done is green**; a trust gate is part of every DoD. The platform is
+> built once (Phases 0–4); departments are then onboarded by *configuration*
+> (Phase 5+), and the factory brain federates over them (Phase 6).
 
 ### Phase 0 — Foundations
-Stand up the **MCP server skeleton** + config (roles, model names, embedding model,
-locale). One trivial tool (`data.profile_table`) callable end-to-end from an agent.
-**DoD:** an external agent can list and call a tool over MCP; result is structured.
+MCP server skeleton + config that is **multi-department from line one**: department
+namespaces, roles/access scopes, model + embedding-model names, locale. One trivial
+tool callable end-to-end from an external agent.
+**DoD:** an agent can list and call a tool over MCP, scoped to a named department.
 
-### Phase 1 — Data Engine + the trust wall  *(v1 core)*
-Build `data.ingest_table → profile_table → query → compute_variance → reconcile`
-per `IMPLEMENTATION_PLAN.md`. Wire the **evidence ref** through every numeric result.
-**DoD:** a variance reconciles to the cent; `data.reconcile` passes; rejects visible.
+### Phase 1 — Data Engine + trust wall (at SAP scale)
+`data.ingest_table → profile_table → query → compute_variance → reconcile` on real
+~200 MB SAP exports (streamed, SQL-in-engine, SAP junk stripped). Evidence ref on
+every number, per `IMPLEMENTATION_PLAN.md`.
+**DoD:** a 200 MB file ingests without running out of memory; a calculation
+reconciles to the cent; `data.reconcile` passes; rejects + run.log visible.
 
-### Phase 2 — The monthly-close vertical slice  *(the proof — see §My Recommendation)*
-The `monthly_close` playbook end-to-end: upload files → variance drivers →
-`report.make_manager_summary` card → `brain.save_decision`.
-**DoD:** for one real month, the card is correct, fully cited, confidence-scored,
-and the decision is retrievable next month via `brain.recall`.
+### Phase 2 — Pilot department: one brain, end-to-end  *(the proof)*
+Stand up **one department's** brain fully: its files → its playbooks → a manager
+card → saved decision, all scoped to that department. **You choose the pilot**
+(criteria in §My Recommendation). This proves the *platform* — it does not make the
+product that department's app.
+**DoD:** for one real period, that department's card is correct, fully cited,
+confidence-scored, and retrievable later via `brain.recall`.
 
 ### Phase 3 — Document Engine
 `docs.ingest_document → search → get_passage` per `IMPLEMENTATION_PLAN_DOCS.md`, so
-summaries can cite PDFs/decks alongside numbers.
+cards cite PDFs, approvals, emails, and decks alongside numbers.
 **DoD:** a mixed-evidence card cites a number *and* a page, each verifiable.
 
-### Phase 4 — Insight Brain (durable memory)
-Vault + Postgres/pgvector index per `IMPLEMENTATION_PLAN_SECONDBRAIN.md`; full
-`brain.*`. **DoD:** delete the index, rebuild from the vault, retrieval identical.
+### Phase 4 — Insight Brain (durable, department-scoped memory)
+Vault (namespaced per department) + Postgres/pgvector index per
+`IMPLEMENTATION_PLAN_SECONDBRAIN.md`; full `brain.*`.
+**DoD:** delete the index, rebuild from the vault, retrieval identical.
 
-### Phase 5 — Generalize: more playbooks + access control (§G.1, §G.2)
-Add a second manager's playbook; enforce role-scoped tools.
-**DoD:** two roles get correctly different answers to the same question.
+### Phase 5 — Replicate: onboard more departments
+Add departments one at a time — each is **configuration** (sources, playbooks,
+roles), not new engine code. Enforce role-scoped tools across all of them (§G.2).
+**DoD:** two departments give correctly different, correctly scoped answers; a third
+onboards with zero engine-code change.
 
-### Phase 6 — Early warning (§G.3)
-`watch.*`: thresholds, recurrence, proactive cards. **DoD:** a planted regression in
-new data raises a flagged card with no human question asked.
+### Phase 6 — The factory brain (federation, for CEO/CFO)
+Cross-department retrieval over the department brains, governed by access (§B.4).
+**DoD:** a cross-department question (supply → quality → sales) returns one card
+citing evidence from each department, respecting the asker's access scope.
 
-### Phase 7 — Advanced retrieval (GraphRAG, later)
-Relationships + community summaries for broad "themes across all reports" questions
-(the cited GraphRAG work). **Only after** the core loop earns its keep.
+### Phase 7 — Early warning (proactive)
+`watch.*`: thresholds, recurrence, proactive cards per department and factory-wide.
+**DoD:** a planted regression in new data raises a flagged card with no human asking.
+
+### Phase 8 — Advanced retrieval (GraphRAG, later)
+Relationships + community summaries for broad "themes across the whole factory"
+questions (the cited GraphRAG work). **Only after** the core loop earns its keep.
 
 ---
 
 # MY RECOMMENDATION (the sharp answer)
 
-**Build the monthly-closing variance loop first — Phases 0→2 — not general search.**
+**Build the shared platform once, then prove it on ONE pilot department — your
+choice — before rolling out to all of them.** This is *not* "a finance app." The
+architecture in Parts B–G is factory-wide and department-agnostic; a pilot is simply
+*where you prove the platform is right* before betting a dozen departments on it.
+Trying to onboard every department at once means nothing becomes trustworthy and the
+whole effort stalls. Department-first, then federate, is exactly your instinct — the
+pilot is just *which* department goes first.
 
-General search is the "simple AI search over all files" already rejected in the
-planning notes: easy to build, weak on exactly the numbers that matter, and it
-leaves the hard problem unproven. The monthly-close loop forces the system to be
-*right* about numbers, drivers, evidence, and confidence on day one. Win that, and
-every other manager's need is a **playbook on the same engines** (§G.1) — a config
-change, not a rebuild. That is the shortest path from "useful finance brain" to the
-company-wide decision intelligence system in Part A.
+Pick the pilot on three criteria:
+1. **Most pain** — where a manager is drowning worst (fastest visible win, real sponsor).
+2. **Most-structured data** — so the pilot proves the engine instead of fighting the
+   messiest corner of the factory first.
+3. **A willing user** — a manager who will actually use it daily and give feedback.
 
-> The single reversible assumption in this plan is that v1 = monthly close. If the
-> first high-value loop should be a different manager's workflow, only Phase 2's
-> playbook changes — Parts B–E stay exactly as written.
+Every other department is then a **repeat of the same recipe** (Phase 5), and the
+CEO/CFO factory brain (Phase 6) is the federation on top.
+
+> The reversible choice is *which* department goes first — Parts B–G do not change
+> whichever you pick. Tell me your candidate departments (and where the worst data
+> pain is) and I'll rank them, or recommend one.
