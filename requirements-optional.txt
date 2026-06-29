@@ -1,0 +1,24 @@
+# Heavy / infra-dependent tools — wired behind adapters in the code, installed where the
+# infrastructure (GPU, models, graph DB, on-prem LLM) exists. NOT required to run the demo.
+#
+# Document extraction + OCR (Part C / engines/docs)
+#   docling            # layout-aware PDF/Word/PPT extraction
+#   paddleocr          # offline EN+AR OCR (strong Arabic); needs paddlepaddle
+#   pymupdf            # PDF render for OCR  (AGPL — internal use only)
+#
+# Memory graphs (Part E / engines/brain)
+#   cognee             # knowledge graph from documents (Apache-2.0; Kuzu+LanceDB+SQLite)
+#   graphiti-core      # temporal knowledge graph (Apache-2.0; needs Kuzu/FalkorDB)
+#
+# Enterprise search (later / v2-v3) — runs as its own service
+#   onyx               # self-hosted enterprise search + connectors
+#
+# Output / design (serving) — runs as its own local app
+#   open-design        # nexu-io local-first design app (HTML/PDF/PPTX export)
+#
+# Orchestrator + protocol
+#   mcp                # MCP Python SDK (expose tools to Hermes/Codex/Claude)
+#
+# On-prem synthesis + embeddings (to honor the in-house rule, G.5)
+#   vllm               # serve a local model (Qwen/Llama/DeepSeek)
+#   sentence-transformers  # local embeddings (bge / Qwen-embed)

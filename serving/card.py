@@ -1,0 +1,87 @@
+"""Manager card (MASTER_PLAN E.2) — one-A4, BLUF-first, every number cited."""
+from __future__ import annotations
+
+from shared.contracts.models import EvidenceRef, ManagerCard, NumberFact, VarianceBridge
+
+
+def make_manager_card(bridge: VarianceBridge, data_quality: dict) -> ManagerCard:
+    tv = bridge.total_variance
+    direction = "OVER" if tv > 0 else "UNDER" if tv < 0 else "ON"
+    drivers_sorted = sorted(bridge.parts, key=lambda p: abs(p.variance), reverse=True)
+    top = drivers_sorted[0]
+
+    headline = (
+        f"Material cost is ${abs(tv):,.0f} {direction} budget "
+        f"(${bridge.total_actual:,.0f} vs ${bridge.total_budget:,.0f}); "
+        f"biggest mover: {top.dim_value} ${top.variance:+,.0f}."
+    )
+
+    key_numbers = [
+        NumberFact("Total variance", tv, bridge.evidence),
+        NumberFact(f"{top.dim_value} variance", top.variance, top.evidence),
+    ]
+    drivers = [f"{p.dim_value}: {p.variance:+,.0f}" for p in drivers_sorted[:3]]
+    risks = []
+    if data_quality["confidence"] == "Low":
+        risks.append(
+            f"Data quality LOW: {data_quality['reject_count']} rows rejected "
+            f"({data_quality['reject_ratio']:.0%}) — verify before deciding."
+        )
+    actions = [f"Review {top.dim_value} cost driver with the owner before sign-off."]
+
+    card = ManagerCard(
+        headline=headline,
+        decision_needed="Investigate" if tv != 0 else "Monitor",
+        key_numbers=key_numbers,
+        drivers=drivers,
+        risks=risks,
+        actions=actions,
+        confidence=data_quality,
+        evidence=[n.evidence for n in key_numbers],
+    )
+    card.validate()  # trust wall: refuse a number without evidence
+    return card
+
+
+def render_text(card: ManagerCard) -> str:
+    lines = [
+        "================ MANAGER CARD (one A4) ================",
+        f"HEADLINE : {card.headline}",
+        f"DECISION : {card.decision_needed}",
+        "KEY NUMBERS:",
+    ]
+    for n in card.key_numbers:
+        lines.append(f"  - {n.label}: {n.value:+,.2f}   [{n.evidence.source} {n.evidence.method}]")
+    lines.append("DRIVERS  : " + "; ".join(card.drivers))
+    if card.risks:
+        lines.append("RISKS    : " + "; ".join(card.risks))
+    lines.append("ACTIONS  : " + "; ".join(card.actions))
+    lines.append(
+        f"CONFIDENCE: {card.confidence['confidence']} "
+        f"(rejects {card.confidence['reject_ratio']:.0%}, "
+        f"materiality {card.confidence['materiality_ratio']:.0%})"
+    )
+    lines.append("======================================================")
+    return "\n".join(lines)
+
+
+def compute_data_quality(rows_in: int, rejects: list, total_amount: float, cfg: dict) -> dict:
+    reject_ratio = len(rejects) / rows_in if rows_in else 0.0
+    material_rejected = sum(r.amount for r in rejects if getattr(r, "amount", None))
+    materiality_ratio = (material_rejected / total_amount) if total_amount else 0.0
+    if reject_ratio > 0.05 or materiality_ratio > cfg.get("materiality_warn_ratio", 0.02):
+        confidence = "Low"
+    elif reject_ratio > 0.01:
+        confidence = "Medium"
+    else:
+        confidence = "High"
+    return {
+        "confidence": confidence,
+        "reject_count": len(rejects),
+        "reject_ratio": reject_ratio,
+        "materiality_ratio": materiality_ratio,
+    }
+
+
+# placeholder to satisfy EvidenceRef import lint when re-exported
+_ = EvidenceRef

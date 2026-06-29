@@ -1,0 +1,9 @@
+material_id,sub_assembly,period,qty,amount
+M1,Frame,2026-05,10,1000.00
+M2,Frame,2026-05,5,500.00
+M3,Panel,2026-05,20,2000.00
+M4,Panel,2026-05,4,400.00
+M5,Board,2026-05,8,800.00
+,Frame,2026-05,,1500.00
+M3,Panel,2026-05,20,2000.00
+M6,Board,2026-05,2,abc

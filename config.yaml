@@ -1,0 +1,34 @@
+# Factory Brain configuration. Providers are IN-HOUSE by default (MASTER_PLAN G.5).
+ai:
+  synthesis:           # reasoning / summaries — on-prem to keep data in-house
+    provider: local
+    model: qwen-on-prem        # served via vLLM; external only if G.5 is relaxed
+    endpoint_env: SYNTHESIS_ENDPOINT
+  embeddings:
+    provider: local
+    model: bge-local
+    endpoint_env: EMBEDDINGS_ENDPOINT
+
+# Pilot department (MASTER_PLAN Part F / L)
+active_lens: finance
+
+# Access scopes (MASTER_PLAN G.1) — who sees what
+roles:
+  cfo:      { scope: "finance:*" }
+  analyst:  { scope: "finance:costing" }
+  ceo:      { scope: "*" }
+
+# Data-quality / audit thresholds (MASTER_PLAN E.4 / Part O)
+audit:
+  certainty_release_threshold: 0.80   # below this -> mandatory human questions + sign-off
+  reject_count_warn_ratio: 0.05
+  materiality_warn_ratio: 0.02        # rejected $ / total $ that forces escalation
+  recompute_tolerance: 0.01           # independent re-run must match to the cent
+
+# Tool layers (MASTER_PLAN K.1) — heavy tools plug in via adapters when infra exists
+tools:
+  document_extractor: plaintext       # -> docling when installed
+  ocr_engine: none                    # -> paddleocr when installed
+  knowledge_memory: local_json        # -> cognee when installed
+  temporal_memory: local_json         # -> graphiti when installed
+  renderer: builtin_html              # -> open_design when installed
