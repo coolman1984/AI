@@ -14,6 +14,7 @@ from engines.brain.memory import get_knowledge_memory, get_temporal_memory
 from engines.data.clean import clean_actuals
 from engines.data.ingest import get_connection, ingest_csv
 from engines.data.variance import material_cost_variance
+from engines.learning.learning import LearningStore
 from serving.card import compute_data_quality, make_manager_card, render_text
 from serving.open_design import get_renderer
 
@@ -58,6 +59,19 @@ def run_pipeline(actuals_csv: str, budget_csv: str, cfg: dict, approver: str | N
     renderer = get_renderer(tool_cfg.get("renderer", "builtin_html"))
     html = renderer.render_html(card, audited=audit.passed, signed_by=signoff.approver if signoff else None)
 
+    # 9) REMEMBER the decision (episodic memory — improves over time, Part P)
+    decision = None
+    if signoff:
+        store = LearningStore()
+        decision = store.record_decision(
+            summary=card.headline,
+            variance=bridge.total_variance,
+            approver=signoff.approver,
+            approved=signoff.approved,
+            certainty=audit.certainty["overall"],
+            status="released" if released else "blocked",
+        )
+
     return {
         "rows_in": rows_in,
         "rejects": rejects,
@@ -68,6 +82,7 @@ def run_pipeline(actuals_csv: str, budget_csv: str, cfg: dict, approver: str | N
         "audit": audit,
         "signoff": signoff,
         "released": released,
+        "decision": decision,
         "html": html,
     }
 
