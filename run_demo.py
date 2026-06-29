@@ -18,9 +18,16 @@ def main() -> None:
         "data/sample/finance_budget.csv",
         cfg,
         approver="analyst_mohamed",
+        budget_pdf="data/sample/budget_approval_2026.pdf",
     )
 
     print(out["card_text"])
+    de = out["document_evidence"]
+    if de:
+        print(f"DOCUMENT EVIDENCE: cited {de.source} ({de.locator}) via {de.method}")
+    if out["budget_doc"] and out["budget_doc"].warnings:
+        print("DOC WARNINGS: " + "; ".join(out["budget_doc"].warnings))
+    print()
     print()
     print("REJECTS (nothing vanishes silently):")
     for r in out["rejects"]:

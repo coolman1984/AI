@@ -20,13 +20,18 @@ card** (every number carries evidence; refuses uncited numbers) → **independen
 certainty, raises a deep multiple-choice question when data quality is low) → **accountable
 human sign-off** → **memory** (local knowledge + temporal stores) → **HTML render**.
 
+It also extracts a real PDF (`budget_approval_2026.pdf`) with **pypdf**, searches it, and
+**cites it on the card** — documents are evidence, never a numeric source. Scanned/low-
+confidence pages route to a human-review queue (`engines/docs/ocr.py`).
+
 The demo deliberately uses messy sample data (an embedded total row, a duplicate, an
 unparseable amount) so you can see the defenses fire and the audit ask the human.
 
 ## What is stubbed behind a clean adapter (needs infra/models — `requirements-optional.txt`)
 | Layer | Adapter | Plug in |
 |---|---|---|
-| Doc extraction / OCR | `engines/docs/extract.py` | Docling, PaddleOCR (offline EN+AR) |
+| Doc extraction (layout/tables) | `engines/docs/extract.py` `DoclingExtractor` | Docling (pypdf already real for text PDFs) |
+| OCR (scanned/Arabic/handwriting) | `engines/docs/ocr.py` `PaddleOcrEngine` | PaddleOCR (gating logic already real) |
 | Knowledge graph | `engines/brain/memory.py` `CogneeMemory` | Cognee (Kuzu+LanceDB) |
 | Temporal graph | `engines/brain/memory.py` `GraphitiMemory` | Graphiti (Kuzu/FalkorDB) |
 | Output/design | `serving/open_design.py` `OpenDesignRenderer` | nexu-io/open-design |

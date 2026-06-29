@@ -8,19 +8,27 @@ from __future__ import annotations
 
 from engines.audit.audit import approve_report
 from engines.brain.orchestrator import run_pipeline
+from engines.docs.extract import extract_document
+from engines.docs.search import search_documents
 
 
-def tool_run_finance_card(actuals_csv: str, budget_csv: str, cfg: dict, approver: str | None = None):
-    return run_pipeline(actuals_csv, budget_csv, cfg, approver=approver)
+def tool_run_finance_card(actuals_csv, budget_csv, cfg, approver=None, budget_pdf=None):
+    return run_pipeline(actuals_csv, budget_csv, cfg, approver=approver, budget_pdf=budget_pdf)
 
 
 def tool_approve_report(audit_result, approver: str, note: str = ""):
     return approve_report(audit_result, approver, note)
 
 
+def tool_search_documents(paths: list[str], query: str, cfg: dict, top_k: int = 3):
+    docs = [extract_document(p, cfg) for p in paths]
+    return search_documents(docs, query, top_k)
+
+
 TOOLS = {
     "run_finance_card": tool_run_finance_card,   # ingest..card..audit (the trust loop)
     "approve_report": tool_approve_report,        # accountable human sign-off (Part O.6)
+    "search_documents": tool_search_documents,    # cite PDFs/Word/PPT as evidence (Stage 4)
 }
 
 

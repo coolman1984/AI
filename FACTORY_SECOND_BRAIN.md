@@ -202,8 +202,8 @@ scheduled/automated ingestion.
 | **0 Foundation** | repo, contracts, AGENTS.md, config, CI, tests | ✅ done |
 | **1 Numeric trust loop** | DuckDB + Polars ingest/clean + governed variance + cited card | ✅ done |
 | **2 Audit + sign-off** | independent re-run, certainty, human questions, accountable approval | ✅ done |
-| **3 Learning loop** | error memory, skills, outcome tracking (gated, injection-quarantined) | next |
-| **4 Documents** | Docling + offline OCR; cards cite PDFs/decks | then |
+| **3 Learning loop** | decision + outcome memory (gated, injection-quarantined) | ✅ done |
+| **4 Documents** | pypdf extraction + OCR confidence gating + `search_documents`; cards cite PDFs | ✅ done (pypdf real; Docling/PaddleOCR adapters) |
 | **5 Memory tools** | wire real Cognee + Graphiti; the LLM-wiki vault | then |
 | **6 Presentation** | wire Open Design (dashboards/PPTX) | then |
 | **7 Second department + factory brain** | Planning lens; cross-department federation; Onyx | later |

@@ -14,12 +14,20 @@ from engines.brain.memory import get_knowledge_memory, get_temporal_memory
 from engines.data.clean import clean_actuals
 from engines.data.ingest import get_connection, ingest_csv
 from engines.data.variance import material_cost_variance
+from engines.docs.extract import extract_document
+from engines.docs.search import search_documents
 from engines.learning.learning import LearningStore
 from serving.card import compute_data_quality, make_manager_card, render_text
 from serving.open_design import get_renderer
 
 
-def run_pipeline(actuals_csv: str, budget_csv: str, cfg: dict, approver: str | None = None) -> dict:
+def run_pipeline(
+    actuals_csv: str,
+    budget_csv: str,
+    cfg: dict,
+    approver: str | None = None,
+    budget_pdf: str | None = None,
+) -> dict:
     audit_cfg = cfg.get("audit", {})
     tool_cfg = cfg.get("tools", {})
 
@@ -38,6 +46,19 @@ def run_pipeline(actuals_csv: str, budget_csv: str, cfg: dict, approver: str | N
     # 4) MANAGER CARD (one-A4, every number cited)
     dq = compute_data_quality(rows_in, rejects, bridge.total_actual, audit_cfg)
     card = make_manager_card(bridge, dq)
+
+    # 4b) DOCUMENT EVIDENCE (Stage 4): extract + cite the approved-budget PDF if provided.
+    # Documents are evidence, not numbers — this attaches a citation, it does not change a figure.
+    document_evidence = None
+    budget_doc = None
+    if budget_pdf:
+        budget_doc = extract_document(budget_pdf, cfg)
+        passages = search_documents([budget_doc], "approved budget", top_k=1)
+        if passages:
+            document_evidence = passages[0].evidence
+            card.evidence.append(document_evidence)
+        if budget_doc.needs_review:
+            card.risks.append("Budget approval document needs human review (low-confidence OCR).")
 
     # 5) INDEPENDENT AUDIT (four-eyes)
     audit = audit_card(card, bridge, clean, budget, rows_in, len(rejects), audit_cfg)
@@ -83,6 +104,8 @@ def run_pipeline(actuals_csv: str, budget_csv: str, cfg: dict, approver: str | N
         "signoff": signoff,
         "released": released,
         "decision": decision,
+        "document_evidence": document_evidence,
+        "budget_doc": budget_doc,
         "html": html,
     }
 
