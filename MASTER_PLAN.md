@@ -477,12 +477,13 @@ The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
 | Concern | Use | Rationale |
 |---|---|---|
 | Heavy storage + aggregation | **DuckDB** | spills to disk; 200 MB+ files; friendly SQL |
-| Excel reading | **openpyxl `read_only`** (+ pandas only for tiny results) | streams; won't OOM |
-| PDF text + tables | **pdfplumber** | reading order + tables |
+| Excel reading | **openpyxl `read_only`** | streams; won't OOM |
+| Clean / shape dataframes | **Polars** (Rust; replaces pandas) | fast, low-memory on wide SAP tables |
+| Document extraction (PDF/Word/PPT, layout + tables) | **Docling** (primary; local) | structured text + tables + reading order |
 | PDF metadata / pages | **pypdf** | encryption check, page count |
-| PDF render for OCR | **PyMuPDF (fitz)** | fast page-image export |
-| OCR (offline, EN+AR) | **Tesseract / PaddleOCR** + `pytesseract` | in-house; EN+AR; handwriting → review |
-| Word / PPT | **python-docx / python-pptx** | paragraphs, tables, slides, notes |
+| PDF render for OCR | **PyMuPDF (fitz)** *(AGPL — internal use; Docling covers most needs)* | fast page-image export |
+| OCR (offline, EN+AR) | **PaddleOCR** (primary; strong Arabic) + Tesseract fallback | in-house; EN+AR; handwriting → human review |
+| Word / PPT (fallback) | **python-docx / python-pptx** | when Docling needs a fallback |
 | Legacy `.doc`/`.ppt` | **LibreOffice headless** (serial) | convert to modern |
 | Email | stdlib `email` + `mail-parser` | separate engine; attachments recurse |
 | File-type detection | **python-magic** + extension fallback | extensions lie |
@@ -492,7 +493,13 @@ The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
 | Index / FTS / relations | **Postgres** (Supabase) | disposable, rebuildable from vault |
 | Vector search | **pgvector** | one DB for v1 |
 | Synthesis AI | **on-prem model (Qwen / Llama / DeepSeek via vLLM) by default**, swappable | reasoning, summaries, recommendations — *kept in-house to honor G.5; external (Claude) only if G.5 is explicitly relaxed* |
-| Embeddings AI | **Voyage AI (or OpenAI/Cohere), swappable** | semantic vectors (Claude has no embeddings API) |
+| Embeddings AI | **local embeddings (e.g. bge / Qwen-embed), swappable** | semantic vectors, in-house |
+| Knowledge-graph memory | **Cognee** (Apache-2.0; local: Kuzu+LanceDB+SQLite) | entities/relations from docs; hybrid graph+vector |
+| Temporal knowledge graph | **Graphiti** (Apache-2.0; Kuzu/FalkorDB) | facts that change over time — "what changed Q2→Q3" (fills the temporal gap) |
+| Graph database | **Kuzu** (embedded, light) / FalkorDB; Neo4j only if needed | backs Cognee + Graphiti |
+| Enterprise search (later) | **Onyx** (self-host) | search across all factory docs + ready connectors; v2/v3 |
+| Output / design (UX) | **Open Design** (nexu-io; local-first) | dashboards/decks/reports; HTML/PDF/PPTX export; driven by Codex/Hermes |
+| Orchestrator agent | **Hermes** (pattern; MIT) | drives the MCP tools; its skills/memory feed the *gated* learning engine (Part P) |
 | Markdown vault | **python-frontmatter + markdown-it-py** | parse + links |
 | MCP server | **MCP Python SDK** | the interface for AI agents |
 | Tests | **pytest** | regressions are silent otherwise |
@@ -501,7 +508,50 @@ The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
 **AI providers are swappable via `config.yaml`** (synthesis and embeddings configured
 separately; keys from env vars, never committed) — this is also how the build-chain
 models (Codex / DeepSeek / Kimi / MiniMax) are selected per task. System deps installed
-separately: Tesseract, LibreOffice, libmagic, Postgres+pgvector.
+separately: Tesseract, LibreOffice, libmagic, Postgres+pgvector, a graph DB (Kuzu).
+
+## K.1 — The Layered Tool Stack (the concrete picks, one map)
+
+Seven roles, each mapped to an engine in this plan. **Think of it as a body:** read →
+clean → analyze → remember relations → remember history → search → present, with one
+brain coordinating.
+
+| # | Layer (role) | Tools | Maps to |
+|---|---|---|---|
+| 1 | **Read files** | Docling · PyMuPDF · PaddleOCR · OpenPyXL | Document + Data ingest (Part C) |
+| 2 | **Clean + analyze numbers** | Polars · DuckDB | Data Engine + governed metrics (Parts C, R) |
+| 3 | **Knowledge memory (relations)** | **Cognee** | Insight Brain graph (Parts E, Q) |
+| 4 | **Temporal memory (history)** | **Graphiti** | time-aware memory — fixes the temporal gap (Part E) |
+| 5 | **Enterprise search (later)** | **Onyx** | federation / search across departments (Part E, v2–v3) |
+| 6 | **Output / design** | **Open Design** | serving / UX layer (Part S) |
+| 7 | **Orchestrator** | **Hermes** | the agent that drives the MCP tools (Part B) |
+
+**Build order (owner's sequence):** ① Docling + DuckDB + Polars → ② Cognee → ③ Graphiti
+→ ④ Open Design → ⑤ Onyx. (Onyx is last: it pays off only once many departments and
+sources exist; until then the *agent* is the main user.) This sits inside the Part L
+roadmap — extraction in Phases 1–4, Cognee/Graphiti in the brain phases, Open Design at
+the manager-card/serving phase, Onyx in v2–v3.
+
+**Architect's guardrails on this stack (non-negotiable):**
+- **All local / in-house (G.5).** Cognee, Graphiti, Onyx, and Open Design all run
+  self-hosted; point their LLM at the **on-prem** model; no external calls. Prefer the
+  light local graph stack (**Kuzu** + LanceDB + SQLite) over a heavy Neo4j install.
+- **Cognee and Graphiti are complementary, not redundant.** Cognee = *structure/relations
+  extracted from documents*; Graphiti = *how facts change over time*. Keep that boundary
+  so we don't run two overlapping graphs.
+- **The vault stays the source of truth (Part Q).** Cognee / Graphiti / Onyx / pgvector
+  indexes are **disposable and rebuildable** from raw + wiki. Knowledge never lives only
+  inside a graph DB.
+- **The trust wall still holds.** Numbers come from **DuckDB/Polars via governed metrics
+  (Part R)** — the graphs store relations, context, and history, **never the authoritative
+  numbers.** The Audit layer + human sign-off (Part O) still gate every output.
+- **Open Design is output-only.** It renders the card/dashboard/deck **after** audit +
+  sign-off. It never computes or invents a number — it is the beautiful face on the brain,
+  not the brain.
+- **Hermes is the orchestrator only** (borrow the pattern, don't fork); its learning is
+  **quarantined from untrusted input** (Part P zombie-agent rule).
+- **License watch:** PyMuPDF is AGPL (Docling covers most needs — prefer Docling); Onyx
+  has community + enterprise tiers; confirm Open Design's license before shipping.
 
 ---
 
@@ -622,6 +672,13 @@ Parts O–S:**
   standards*, **do not fork** — build our learning/wiki modules natively with the finance
   governance, access control, audit, and injection defenses those general tools lack.
   (License note: Hermes is MIT; keep any AGPL component external behind a CLI only.)
+
+**Revision 4 — concrete tool stack adopted (Part K.1):** the owner's seven-layer map —
+Docling/PyMuPDF/PaddleOCR/OpenPyXL (read) · Polars/DuckDB (analyze) · **Cognee**
+(relations) · **Graphiti** (history) · **Onyx** (enterprise search, later) · **Open
+Design** (output) · **Hermes** (orchestrator). Graphiti directly closes the temporal-data
+gap from the audits. Cognee and Graphiti are kept complementary (structure vs. time). All
+run in-house; the vault stays source of truth and the Audit + sign-off gate still hold.
 
 ---
 
