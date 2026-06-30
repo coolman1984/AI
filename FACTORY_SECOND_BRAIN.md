@@ -206,7 +206,7 @@ scheduled/automated ingestion.
 | **4 Documents + OCR cascade** | pypdf + **real Tesseract & RapidOCR**, quality-gated fallback (→ PaddleOCR/Surya/VLM), `search_documents` citations | ✅ done (Tesseract+RapidOCR real; stronger tiers as adapters) |
 | **5 Memory tools** | knowledge relations + **temporal change-tracking real now** (local); Cognee/Graphiti adapters (graphiti-core imports; needs graph DB + LLM) | ✅ done (local real; heavy backends as adapters) |
 | **6 Presentation** | HTML dashboard (inline SVG variance chart) + **real PPTX** export; Open Design adapter for branded output | ✅ done (HTML + PPTX real; Open Design adapter) |
-| **7 Second department + factory brain** | Planning lens; cross-department federation; Onyx | later |
+| **7 Second department + factory brain** | Planning lens (config only); role-scoped factory brief; cross-department links | ✅ done (Onyx enterprise search still later) |
 
 ---
 

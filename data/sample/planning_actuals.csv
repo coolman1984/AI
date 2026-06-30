@@ -1,0 +1,6 @@
+item_id,sub_assembly,period,qty,output
+P1,Frame,2026-05,,90
+P2,Panel,2026-05,,70
+P3,Board,2026-05,,100
+,Frame,2026-05,,260
+P2,Panel,2026-05,,70

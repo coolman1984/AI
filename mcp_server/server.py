@@ -35,12 +35,26 @@ def tool_related(subject: str, backend: str = "local_json"):
     return get_knowledge_memory(backend).relations_for(subject)
 
 
+def tool_run_department(lens_name, actuals_csv, baseline_csv, cfg, approver=None, period="2026-05"):
+    from engines.brain.factory import run_department
+    return run_department(lens_name, actuals_csv, baseline_csv, cfg, approver, period)
+
+
+def tool_factory_brief(results: dict, role: str, cfg: dict):
+    from engines.brain.factory import cross_department_entities, factory_brief
+    brief = factory_brief(results, role, cfg)
+    brief["cross_department"] = cross_department_entities(role, cfg)
+    return brief
+
+
 TOOLS = {
     "run_finance_card": tool_run_finance_card,   # ingest..card..audit (the trust loop)
     "approve_report": tool_approve_report,        # accountable human sign-off (Part O.6)
     "search_documents": tool_search_documents,    # cite PDFs/Word/PPT as evidence (Stage 4)
     "what_changed": tool_what_changed,            # temporal memory: change over time (Stage 5)
     "related": tool_related,                      # knowledge memory: relationships (Stage 5)
+    "run_department": tool_run_department,        # any department via its lens (Stage 7)
+    "factory_brief": tool_factory_brief,          # cross-department CEO/CFO brief, role-scoped
 }
 
 

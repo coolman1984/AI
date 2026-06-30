@@ -1,0 +1,13 @@
+# Planning lens — the SECOND department. Note: no new engine code, only this config.
+name: Planning
+scope: planning
+grain: sub_assembly        # same shared dimension as finance -> enables cross-department links
+key_col: item_id
+value_col: output
+baseline_col: plan_output
+metric: output_plan_variance
+noun: Output
+unit: units
+direction_over: ABOVE plan
+direction_under: BELOW plan
+direction_on: ON plan

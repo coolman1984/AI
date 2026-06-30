@@ -85,6 +85,26 @@ def main() -> None:
     print()
     print(f"VISUAL OUTPUT: dashboard -> {paths['html']}   deck -> {paths['pptx']}")
 
+    # --- Stage 7: a SECOND department by config only, then the factory brain ---
+    from engines.brain.factory import cross_department_entities, factory_brief, run_department
+    plan_out = run_department(
+        "planning", "data/sample/planning_actuals.csv",
+        "data/sample/planning_plan.csv", cfg, approver="planner", period="2026-05",
+    )
+    print()
+    print("SECOND DEPARTMENT — Planning (same engines, only a new lens config):")
+    print(f"  {plan_out['card'].headline}")
+    results = {"finance": out, "planning": plan_out}
+    print("FACTORY BRIEF — CEO (sees all):")
+    for v in factory_brief(results, "ceo", cfg)["visible"]:
+        print(f"  [{v['department']}] {v['headline']}")
+    ab = factory_brief(results, "analyst", cfg)
+    print(f"FACTORY BRIEF — finance analyst: visible={[v['department'] for v in ab['visible']]}, "
+          f"hidden={ab['hidden']}  (access-scoped)")
+    print("CROSS-DEPARTMENT links (CEO view):")
+    for link in cross_department_entities("ceo", cfg):
+        print(f"  {link['entity']} tracked in {', '.join(link['departments'])}")
+
 
 if __name__ == "__main__":
     main()

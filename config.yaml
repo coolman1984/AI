@@ -16,6 +16,7 @@ active_lens: finance
 roles:
   cfo:      { scope: "finance:*" }
   analyst:  { scope: "finance:costing" }
+  planner:  { scope: "planning" }
   ceo:      { scope: "*" }
 
 # Data-quality / audit thresholds (MASTER_PLAN E.4 / Part O)

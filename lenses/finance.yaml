@@ -1,0 +1,13 @@
+# Finance / Cost Control lens (MASTER_PLAN Part F). The pilot department.
+name: Finance / Cost Control
+scope: finance:costing
+grain: sub_assembly        # what we group by
+key_col: material_id       # the row key (blank -> total/missing-key reject)
+value_col: amount          # the measured actual
+baseline_col: budget_amount
+metric: material_cost_variance
+noun: Material cost
+unit: USD
+direction_over: OVER budget
+direction_under: UNDER budget
+direction_on: ON budget

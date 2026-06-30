@@ -22,16 +22,18 @@ def audit_card(
     rows_in: int,
     reject_count: int,
     cfg: dict,
+    value_col: str = "amount",
+    baseline_col: str = "budget_amount",
 ) -> AuditResult:
     issues: list[str] = []
     tol = cfg.get("recompute_tolerance", 0.01)
 
-    # --- O.1 INDEPENDENT RE-RUN (different engine: DuckDB SQL) ---
+    # --- O.1 INDEPENDENT RE-RUN (different engine: DuckDB SQL vs the Polars path) ---
     con = duckdb.connect()
     con.register("clean", clean_actuals)
     con.register("bud", budget)
-    re_actual = con.execute("SELECT COALESCE(SUM(TRY_CAST(amount AS DOUBLE)),0) FROM clean").fetchone()[0]
-    re_budget = con.execute("SELECT COALESCE(SUM(TRY_CAST(budget_amount AS DOUBLE)),0) FROM bud").fetchone()[0]
+    re_actual = con.execute(f"SELECT COALESCE(SUM(TRY_CAST({value_col} AS DOUBLE)),0) FROM clean").fetchone()[0]
+    re_budget = con.execute(f"SELECT COALESCE(SUM(TRY_CAST({baseline_col} AS DOUBLE)),0) FROM bud").fetchone()[0]
     re_variance = round(float(re_actual) - float(re_budget), 4)
     numbers_match = abs(re_variance - bridge.total_variance) <= tol
     if not numbers_match:

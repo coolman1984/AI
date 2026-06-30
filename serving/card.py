@@ -4,16 +4,28 @@ from __future__ import annotations
 from shared.contracts.models import EvidenceRef, ManagerCard, NumberFact, VarianceBridge
 
 
-def make_manager_card(bridge: VarianceBridge, data_quality: dict) -> ManagerCard:
+def _fmt(v: float, unit: str) -> str:
+    return f"${v:,.0f}" if unit == "USD" else f"{v:,.0f} {unit}"
+
+
+def make_manager_card(bridge: VarianceBridge, data_quality: dict, lens: dict | None = None) -> ManagerCard:
+    lens = lens or {}
+    noun = lens.get("noun", "Material cost")
+    unit = lens.get("unit", "USD")
     tv = bridge.total_variance
-    direction = "OVER" if tv > 0 else "UNDER" if tv < 0 else "ON"
+    if tv > 0:
+        direction = lens.get("direction_over", "OVER budget")
+    elif tv < 0:
+        direction = lens.get("direction_under", "UNDER budget")
+    else:
+        direction = lens.get("direction_on", "ON budget")
     drivers_sorted = sorted(bridge.parts, key=lambda p: abs(p.variance), reverse=True)
     top = drivers_sorted[0]
 
     headline = (
-        f"Material cost is ${abs(tv):,.0f} {direction} budget "
-        f"(${bridge.total_actual:,.0f} vs ${bridge.total_budget:,.0f}); "
-        f"biggest mover: {top.dim_value} ${top.variance:+,.0f}."
+        f"{noun} is {_fmt(abs(tv), unit)} {direction} "
+        f"({_fmt(bridge.total_actual, unit)} vs {_fmt(bridge.total_budget, unit)}); "
+        f"biggest mover: {top.dim_value} {top.variance:+,.0f}."
     )
 
     key_numbers = [

@@ -27,6 +27,11 @@ confidence pages route to a human-review queue (`engines/docs/ocr.py`).
 The demo deliberately uses messy sample data (an embedded total row, a duplicate, an
 unparseable amount) so you can see the defenses fire and the audit ask the human.
 
+It then runs a **second department (Planning) by configuration only** (`lenses/planning.yaml`
+— no new engine code), assembles a **role-scoped factory brief** (CEO sees all; a finance
+analyst is scoped out of Planning), and surfaces **cross-department links** (the same
+sub-assemblies tracked in both Finance and Planning).
+
 ## What is stubbed behind a clean adapter (needs infra/models — `requirements-optional.txt`)
 | Layer | Adapter | Plug in |
 |---|---|---|
