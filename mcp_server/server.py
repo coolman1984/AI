@@ -25,10 +25,22 @@ def tool_search_documents(paths: list[str], query: str, cfg: dict, top_k: int = 
     return search_documents(docs, query, top_k)
 
 
+def tool_what_changed(entity: str, attribute: str = "material_cost_variance", backend: str = "local_json"):
+    from engines.brain.memory import get_temporal_memory
+    return get_temporal_memory(backend).changes(entity, attribute)
+
+
+def tool_related(subject: str, backend: str = "local_json"):
+    from engines.brain.memory import get_knowledge_memory
+    return get_knowledge_memory(backend).relations_for(subject)
+
+
 TOOLS = {
     "run_finance_card": tool_run_finance_card,   # ingest..card..audit (the trust loop)
     "approve_report": tool_approve_report,        # accountable human sign-off (Part O.6)
     "search_documents": tool_search_documents,    # cite PDFs/Word/PPT as evidence (Stage 4)
+    "what_changed": tool_what_changed,            # temporal memory: change over time (Stage 5)
+    "related": tool_related,                      # knowledge memory: relationships (Stage 5)
 }
 
 

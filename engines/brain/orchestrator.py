@@ -27,6 +27,7 @@ def run_pipeline(
     cfg: dict,
     approver: str | None = None,
     budget_pdf: str | None = None,
+    period: str = "2026-05",
 ) -> dict:
     audit_cfg = cfg.get("audit", {})
     tool_cfg = cfg.get("tools", {})
@@ -73,7 +74,7 @@ def run_pipeline(
     tm = get_temporal_memory(tool_cfg.get("temporal_memory", "local_json"))
     for p in bridge.parts:
         km.add_relation(p.dim_value, "has_variance", f"{p.variance:+.2f}", p.evidence.method)
-        tm.record_fact(p.dim_value, "material_cost_variance", f"{p.variance:+.2f}", "2026-05")
+        tm.record_fact(p.dim_value, "material_cost_variance", f"{p.variance:+.2f}", period)
 
     # 8) RENDER (Open Design role) — only renders an audited, signed card
     released = bool(signoff and signoff.approved)

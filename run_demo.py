@@ -6,12 +6,16 @@ audit -> deep question -> human sign-off -> render.
 """
 from __future__ import annotations
 
+import shutil
+
 import yaml
 
+from engines.brain.memory import get_knowledge_memory, get_temporal_memory
 from engines.brain.orchestrator import run_pipeline
 
 
 def main() -> None:
+    shutil.rmtree(".brain", ignore_errors=True)  # fresh memory for a deterministic demo
     cfg = yaml.safe_load(open("config.yaml"))
     out = run_pipeline(
         "data/sample/finance_actuals.csv",
@@ -19,6 +23,7 @@ def main() -> None:
         cfg,
         approver="analyst_mohamed",
         budget_pdf="data/sample/budget_approval_2026.pdf",
+        period="2026-05",
     )
 
     print(out["card_text"])
@@ -57,6 +62,22 @@ def main() -> None:
     print(f"  born-digital failed -> OCR engine used: {p.ocr_engine}, "
           f"confidence={p.ocr_confidence:.2f}, needs_review={p.needs_review}")
     print(f"  recovered text: {scanned.full_text[:70]!r}")
+
+    # --- temporal memory: run a second period and detect what changed ---
+    run_pipeline(
+        "data/sample/finance_actuals_2026_06.csv",
+        "data/sample/finance_budget.csv",
+        cfg,
+        approver="analyst_mohamed",
+        period="2026-06",
+    )
+    print()
+    print("KNOWLEDGE MEMORY (relations for Frame):")
+    for r in get_knowledge_memory("local_json").relations_for("Frame"):
+        print(f"  Frame --{r['p']}--> {r['o']}")
+    print("TEMPORAL MEMORY (what changed for Frame across periods):")
+    for c in get_temporal_memory("local_json").changes("Frame", "material_cost_variance"):
+        print(f"  {c['from_period']} {c['from_value']} -> {c['to_period']} {c['to_value']}")
 
 
 if __name__ == "__main__":

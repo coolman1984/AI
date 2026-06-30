@@ -32,8 +32,8 @@ unparseable amount) so you can see the defenses fire and the audit ask the human
 |---|---|---|
 | Doc extraction (layout/tables) | `engines/docs/extract.py` `DoclingExtractor` | Docling (pypdf already real for text PDFs) |
 | OCR cascade | `engines/docs/ocr.py` | **Tesseract + RapidOCR already real**; PaddleOCR/Surya/VLM are tiers that activate on install — the quality gate + fallback + review routing are real now |
-| Knowledge graph | `engines/brain/memory.py` `CogneeMemory` | Cognee (Kuzu+LanceDB) |
-| Temporal graph | `engines/brain/memory.py` `GraphitiMemory` | Graphiti (Kuzu/FalkorDB) |
+| Knowledge graph | `engines/brain/memory.py` | local relations real now; **Cognee** adapter for full graph (Kuzu+LanceDB) |
+| Temporal graph | `engines/brain/memory.py` | **temporal change-tracking real now** (`changes()`); **Graphiti** adapter (imports; needs graph DB + LLM) |
 | Output/design | `serving/open_design.py` `OpenDesignRenderer` | nexu-io/open-design |
 | Enterprise search | (v2-v3) | Onyx |
 | Synthesis / embeddings | `config.yaml` `ai.*` | on-prem model via vLLM |
