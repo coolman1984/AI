@@ -18,7 +18,7 @@ def test_end_to_end_pipeline_releases_after_signoff():
     assert out["audit"].passed is True
     assert out["released"] is True
     assert "OVER budget" in out["card_text"] or "UNDER budget" in out["card_text"]
-    assert "<h2>" in out["html"]
+    assert "<h1>" in out["html"] and "Material cost" in out["html"]
 
 
 def test_mcp_dispatch_runs_the_tool():

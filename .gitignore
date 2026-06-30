@@ -4,5 +4,6 @@ __pycache__/
 .brain/
 *.duckdb
 out_*.html
+out/
 .pytest_cache/
 .ruff_cache/

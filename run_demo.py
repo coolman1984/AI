@@ -79,6 +79,12 @@ def main() -> None:
     for c in get_temporal_memory("local_json").changes("Frame", "material_cost_variance"):
         print(f"  {c['from_period']} {c['from_value']} -> {c['to_period']} {c['to_value']}")
 
+    # --- visual output: export the audited, signed card to HTML + PPTX ---
+    from serving.open_design import export_report
+    paths = export_report(out["ctx"], out_dir="out")
+    print()
+    print(f"VISUAL OUTPUT: dashboard -> {paths['html']}   deck -> {paths['pptx']}")
+
 
 if __name__ == "__main__":
     main()

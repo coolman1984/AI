@@ -18,7 +18,7 @@ from engines.docs.extract import extract_document
 from engines.docs.search import search_documents
 from engines.learning.learning import LearningStore
 from serving.card import compute_data_quality, make_manager_card, render_text
-from serving.open_design import get_renderer
+from serving.open_design import render_dashboard_html
 
 
 def run_pipeline(
@@ -76,10 +76,13 @@ def run_pipeline(
         km.add_relation(p.dim_value, "has_variance", f"{p.variance:+.2f}", p.evidence.method)
         tm.record_fact(p.dim_value, "material_cost_variance", f"{p.variance:+.2f}", period)
 
-    # 8) RENDER (Open Design role) — only renders an audited, signed card
+    # 8) RENDER (Open Design role) — visual output of an audited, signed card
     released = bool(signoff and signoff.approved)
-    renderer = get_renderer(tool_cfg.get("renderer", "builtin_html"))
-    html = renderer.render_html(card, audited=audit.passed, signed_by=signoff.approver if signoff else None)
+    ctx = {
+        "card": card, "bridge": bridge, "audit": audit, "signoff": signoff,
+        "released": released, "document_evidence": document_evidence, "period": period,
+    }
+    html = render_dashboard_html(ctx)  # export to file/PPTX via serving.open_design.export_report
 
     # 9) REMEMBER the decision (episodic memory — improves over time, Part P)
     decision = None
@@ -107,6 +110,7 @@ def run_pipeline(
         "decision": decision,
         "document_evidence": document_evidence,
         "budget_doc": budget_doc,
+        "ctx": ctx,
         "html": html,
     }
 
