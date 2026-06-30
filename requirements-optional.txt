@@ -3,8 +3,11 @@
 #
 # Document extraction + OCR (Part C / engines/docs)
 #   docling            # layout-aware PDF/Word/PPT extraction
-#   paddleocr          # offline EN+AR OCR (strong Arabic); needs paddlepaddle
-#   pymupdf            # PDF render for OCR  (AGPL — internal use only)
+#   OCR cascade (tiers above Tesseract, which is in requirements.txt + apt tesseract-ocr):
+#   rapidocr-onnxruntime  # CPU/ONNX, multilingual — runs without a GPU
+#   paddleocr / paddlepaddle  # strong layouts/tables/Arabic (PaddleOCR-VL for hardest)
+#   surya-ocr          # layout + reading order, multilingual
+#   # VLM-OCR top tier (GPU): olmOCR-2, PaddleOCR-VL, GOT-OCR2, DeepSeek-OCR
 #
 # Memory graphs (Part E / engines/brain)
 #   cognee             # knowledge graph from documents (Apache-2.0; Kuzu+LanceDB+SQLite)

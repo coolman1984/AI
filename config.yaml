@@ -28,7 +28,9 @@ audit:
 # Tool layers (MASTER_PLAN K.1) — heavy tools plug in via adapters when infra exists
 tools:
   document_extractor: plaintext       # -> docling when installed
-  ocr_engine: none                    # -> paddleocr when installed
+  # OCR cascade: try cheap/fast first, fall back to the best available, then human review.
+  ocr_cascade: [tesseract, rapidocr, paddleocr, surya, vlm]
+  ocr_quality_threshold: 0.5
   knowledge_memory: local_json        # -> cognee when installed
   temporal_memory: local_json         # -> graphiti when installed
   renderer: builtin_html              # -> open_design when installed

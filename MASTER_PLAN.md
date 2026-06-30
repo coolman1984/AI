@@ -482,7 +482,7 @@ The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
 | Document extraction (PDF/Word/PPT, layout + tables) | **Docling** (primary; local) | structured text + tables + reading order |
 | PDF metadata / pages | **pypdf** | encryption check, page count |
 | PDF render for OCR | **PyMuPDF (fitz)** *(AGPL — internal use; Docling covers most needs)* | fast page-image export |
-| OCR (offline, EN+AR) | **PaddleOCR** (primary; strong Arabic) + Tesseract fallback | in-house; EN+AR; handwriting → human review |
+| OCR (offline, EN+AR) — **cascade** | **Tesseract** → **RapidOCR** → PaddleOCR → Surya → **VLM** (olmOCR-2/PaddleOCR-VL/GOT-OCR2/DeepSeek-OCR) | escalate to the best engine when reading is poor; in-house; handwriting/low-confidence → human review |
 | Word / PPT (fallback) | **python-docx / python-pptx** | when Docling needs a fallback |
 | Legacy `.doc`/`.ppt` | **LibreOffice headless** (serial) | convert to modern |
 | Email | stdlib `email` + `mail-parser` | separate engine; attachments recurse |

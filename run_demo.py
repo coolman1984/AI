@@ -48,6 +48,16 @@ def main() -> None:
     print(f"SIGN-OFF: approved={s.approved} by {s.approver} — {s.note}")
     print(f"RELEASED TO MANAGER: {out['released']}")
 
+    # --- OCR cascade demo: a scanned (image-only) PDF forces fallback to OCR ---
+    from engines.docs.extract import extract_document
+    print()
+    print("OCR CASCADE on a scanned (image-only) PDF:")
+    scanned = extract_document("data/sample/budget_approval_scanned.pdf", cfg)
+    p = scanned.pages[0]
+    print(f"  born-digital failed -> OCR engine used: {p.ocr_engine}, "
+          f"confidence={p.ocr_confidence:.2f}, needs_review={p.needs_review}")
+    print(f"  recovered text: {scanned.full_text[:70]!r}")
+
 
 if __name__ == "__main__":
     main()

@@ -18,6 +18,7 @@ class Page:
     was_ocr: bool = False
     ocr_confidence: float | None = None
     needs_review: bool = False
+    ocr_engine: str | None = None   # which cascade tier produced the text
 
 
 @dataclass

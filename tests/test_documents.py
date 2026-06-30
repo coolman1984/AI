@@ -1,5 +1,5 @@
 from engines.docs.extract import PyPdfExtractor, extract_document
-from engines.docs.ocr import NullOcrEngine, handle_scanned_page
+from engines.docs.ocr import extract_page_text, extraction_quality
 from engines.docs.search import search_documents
 
 PDF = "data/sample/budget_approval_2026.pdf"
@@ -24,22 +24,26 @@ def test_search_returns_cited_passage():
     assert ev.resolves()
 
 
-def test_scanned_page_with_no_ocr_goes_to_human_review():
-    # blank/scanned page + no OCR engine -> must be flagged for human review, never trusted
-    text, was_ocr, conf, needs_review, warning = handle_scanned_page(
-        "", NullOcrEngine(), image=None, threshold=0.8
+def test_quality_scorer_separates_good_from_garbage():
+    assert extraction_quality("Frame 1400 Panel 2500 Board 700 approved budget") > 0.6
+    assert extraction_quality("@#$%^&* ||| ~~~") == 0.0
+    assert extraction_quality("") == 0.0
+
+
+def test_poor_text_with_no_cascade_goes_to_human_review():
+    # blank/scanned page + no OCR cascade -> flagged for review, never trusted
+    res = extract_page_text("", image_loader=None, cascade=[], quality_threshold=0.5)
+    assert res["needs_review"] is True
+    assert res["was_ocr"] is False
+    assert res["warning"] is not None
+
+
+def test_cascade_escalates_and_flags_when_all_poor():
+    class FakeImg:
+        pass
+    # cascade with a single fake engine that returns garbage -> needs_review
+    res = extract_page_text(
+        "", image_loader=lambda: FakeImg(), cascade=["none"], quality_threshold=0.5
     )
-    assert was_ocr is True and needs_review is True and conf == 0.0
-    assert warning is not None
-
-
-def test_low_confidence_ocr_flags_review():
-    class FakeOcr:
-        def ocr(self, _):
-            return "blurry arabic handwriting", 0.40
-
-    text, was_ocr, conf, needs_review, warning = handle_scanned_page(
-        "", FakeOcr(), image=None, threshold=0.80
-    )
-    assert text and was_ocr is True
-    assert needs_review is True and conf == 0.40
+    assert res["was_ocr"] is True
+    assert res["needs_review"] is True   # NullOcrEngine returns nothing -> review
