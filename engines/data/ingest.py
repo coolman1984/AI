@@ -133,3 +133,24 @@ def ingest_csv(
         [path],
     )
     return con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
+
+
+def ingest_csv_tracked(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    path: str,
+    *,
+    source_type: str = "csv",
+) -> dict:
+    """Ingest a CSV into a target table with a tracked run lifecycle."""
+    run_id = start_ingestion_run(con, source_type, path)
+    rows_in = ingest_csv(con, table, path, run_id=run_id)
+    finish_ingestion_run(con, run_id, rows_in=rows_in, reject_count=0)
+    return {
+        "run_id": run_id,
+        "source_type": source_type,
+        "source_path": path,
+        "rows_in": rows_in,
+        "reject_count": 0,
+        "status": "completed",
+    }

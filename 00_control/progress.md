@@ -64,6 +64,15 @@ Next task: P2.2 — receive and profile one real export.
 Confidence level: High (scope locked, next move clarified).
 
 ---
+Date: 2026-07-01 (IS2.1)
+Completed: started IS2 for real by adding a tracked CSV ingestion path on top of the new storage contract, so callers can create, run, and finish a tracked ingest in one reusable step instead of manual three-step chaining.
+Files changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, and governance files reflecting that IS2 has begun.
+Validation performed: targeted pytest => `13 passed`; data-slice pytest => `16 passed`; full pytest => `42 passed, 1 skipped`.
+Evidence recorded: E18. Problems found: CSV is now tracked cleanly, but the path is still text-first demo ingestion and needs the next IS2 slice for typed reusable ingestion; P2.2 still waits on the first real export.
+Next task: continue IS2 internally while waiting for P2.2 externally.
+Confidence level: High (IS2 has moved from plan to code without fake Excel breadth).
+
+---
 Date: 2026-07-01 (IS1)
 Completed: turned the unified ingestion storage contract into working code: run lifecycle tracking, reject persistence, and a minimal DuckDB schema now exist and are verified by dedicated tests.
 Files changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, plus governance files reflecting the new project state.

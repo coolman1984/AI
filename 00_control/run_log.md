@@ -89,3 +89,13 @@ Outputs changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, `00_
 Result: the project now has real ingestion run tracking and reject persistence; the next internal engineering move is IS2 while P2.2 remains blocked on external data.
 Evidence: E17.
 Next step: start IS2 and keep waiting for the first real export.
+
+---
+Timestamp: 2026-07-01
+Action: Started IS2 with the smallest real slice: added a reusable tracked CSV ingest wrapper on top of the IS1 lifecycle and verified it end-to-end.
+Reason: keep moving the project forward internally while P2.2 remains blocked on external data.
+Inputs read: IS1 code/tests, worker draft, worker review.
+Outputs changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, `00_control/{task_queue,progress,evidence_log,restart_notes}.md`.
+Result: CSV ingestion no longer needs manual start→ingest→finish chaining; IS2 is now live, not just planned.
+Evidence: E18.
+Next step: continue IS2 toward typed reusable ingestion while waiting for the first real export.

@@ -22,7 +22,8 @@ Only the Evaluator marks Passed (evidence required).
 | P2.1 | lock the first real workflow in governance files | Planner→Evaluator | Passed | High | implementation_plan, current governance | mission/open_questions/success_contract | file review | E15 |
 | P2.2 | ingest and profile one real export before expansion | Builder→Evaluator | Blocked | High | first real export, source_inventory, data_map | profile report, issue log, readiness findings | profiling evidence | BLOCKED on external data |
 | IS1 | define unified ingestion database schema | Builder→Evaluator | Passed | High | current contracts, source types | schema contract + storage design + minimal DuckDB lifecycle helpers | targeted pytest + full pytest | E17 |
-| IS2 | harden Excel/CSV ingestion into reusable spine | Builder→Evaluator | Pending | High | sample + real exports, IS1 contract | multi-sheet typed ingestion + reject flow | test-first + pytest `tests/test_data_pipeline.py` | – |
+| IS2 | harden Excel/CSV ingestion into reusable spine | Builder→Evaluator | In Progress | High | sample + real exports, IS1 contract | reusable tracked CSV path + upcoming multi-sheet typed ingestion + reject flow | test-first + pytest `tests/test_data_pipeline.py` | E18 |
+| IS2.1 | add tracked CSV wrapper on top of IS1 lifecycle | Builder→Evaluator | Passed | High | IS1 helpers + ingest_csv | `ingest_csv_tracked` + tests | targeted pytest + full pytest | E18 |
 | IS3 | add PDF table extraction into the spine | Builder→Evaluator | Pending | High | table-bearing PDFs | structured table rows + confidence/review path | test-first + pytest `tests/test_pdf_tables.py` | – |
 | IS4 | add PowerPoint extraction into the spine | Builder→Evaluator | Pending | High | synthetic + future real PPTX | slide text/table extraction to unified storage | test-first + pytest `tests/test_ppt.py` | – |
 | IS5 | add email extraction into the spine | Builder→Evaluator | Pending | High | synthetic + future real email samples | body/attachment extraction to unified storage | test-first + pytest `tests/test_email.py` | – |
@@ -32,4 +33,4 @@ Only the Evaluator marks Passed (evidence required).
 | T11 | Deployment + scheduled ingestion + backup/DR | Architect | Pending | Med | server + stable local loop | ops | restore test | – |
 | T12 | Gated self-evolution (DSPy/GEPA) | Builder | Pending | Low | golden set | learning | eval gate | – |
 
-**Next best action:** two-track move — externally, receive one real export for **P2.2**; internally, start **IS2** so Excel/CSV ingestion begins using the new storage contract instead of staying a demo-only path.
+**Next best action:** two-track move — externally, receive one real export for **P2.2**; internally, continue **IS2** by pushing the existing CSV path from tracked ingest into typed reusable ingestion instead of leaving it half-modernized.

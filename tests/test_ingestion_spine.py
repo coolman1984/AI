@@ -10,6 +10,7 @@ from engines.data.ingest import (
     get_connection,
     init_ingestion_schema,
     ingest_csv,
+    ingest_csv_tracked,
     insert_ingestion_rejects,
     start_ingestion_run,
 )
@@ -138,3 +139,62 @@ def test_ingest_csv_with_run(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
     assert row == (2, 0, "completed")
     count = con.execute("SELECT count(*) FROM raw_test").fetchone()[0]
     assert count == 2
+
+
+def test_ingest_csv_tracked_happy_path(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path = tmp_path / "data.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["id", "val"])
+        writer.writerow(["1", "10"])
+        writer.writerow(["2", "20"])
+        writer.writerow(["3", "30"])
+
+    result = ingest_csv_tracked(con, "raw_tracked", str(path))
+
+    assert result["status"] == "completed"
+    assert result["rows_in"] == 3
+    assert result["reject_count"] == 0
+    assert result["source_type"] == "csv"
+    assert result["source_path"] == str(path)
+    assert isinstance(result["run_id"], int) and result["run_id"] > 0
+
+
+def test_ingest_csv_tracked_persists_run(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path = tmp_path / "persist.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["x"])
+        writer.writerow(["a"])
+        writer.writerow(["b"])
+
+    result = ingest_csv_tracked(con, "raw_persist", str(path))
+
+    row = con.execute(
+        "SELECT run_id, source_type, source_path, status, rows_in, reject_count "
+        "FROM ingestion_runs WHERE run_id = ?",
+        [result["run_id"]],
+    ).fetchone()
+    assert row is not None
+    assert row[0] == result["run_id"]
+    assert row[1] == "csv"
+    assert row[2] == str(path)
+    assert row[3] == "completed"
+    assert row[4] == 2
+    assert row[5] == 0
+
+
+def test_ingest_csv_tracked_multiple_invocations(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path_a = tmp_path / "a.csv"
+    path_b = tmp_path / "b.csv"
+    path_a.write_text("x\n1\n2\n")
+    path_b.write_text("x\n3\n4\n5\n")
+
+    result_a = ingest_csv_tracked(con, "raw_multi_a", str(path_a))
+    result_b = ingest_csv_tracked(con, "raw_multi_b", str(path_b))
+
+    assert result_a["run_id"] != result_b["run_id"]
+    assert result_a["rows_in"] == 2
+    assert result_b["rows_in"] == 3
+    assert con.execute("SELECT count(*) FROM raw_multi_a").fetchone()[0] == 2
+    assert con.execute("SELECT count(*) FROM raw_multi_b").fetchone()[0] == 3
