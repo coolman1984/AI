@@ -14,12 +14,14 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
 1. **`MASTER_PLAN.md`** — the single authoritative architecture and build plan. Read
    before proposing code or changing phases. (Parts D, H, I, J, K, L are the ones you
    implement against.)
-2. **`CODEX_PLAN.md`** — the lead-engineer kickoff: exactly what to build first.
-3. `ARCHITECTURE.md` — founding mental model: *AI reads the map; engines read the volume.*
-4. `IMPLEMENTATION_PLAN.md` — tabular/SAP/Excel→DuckDB engine spec.
-5. `IMPLEMENTATION_PLAN_DOCS.md` — PDF/Word/PPT + OCR engine spec.
-6. `IMPLEMENTATION_PLAN_SECONDBRAIN.md` — vault + index engine spec.
-7. `REVIEW.md` — weak-point audit; read before trusting the architecture.
+2. **`AGENT_SKILL_MAP.md`** — the lightweight routing layer: which skill to load for which task.
+3. **`AGENT_CORE_CONTRACT.md`** — the shared spine all skills must obey.
+4. **`CODEX_PLAN.md`** — the lead-engineer kickoff: exactly what to build first.
+5. `ARCHITECTURE.md` — founding mental model: *AI reads the map; engines read the volume.*
+6. `IMPLEMENTATION_PLAN.md` — tabular/SAP/Excel→DuckDB engine spec.
+7. `IMPLEMENTATION_PLAN_DOCS.md` — PDF/Word/PPT + OCR engine spec.
+8. `IMPLEMENTATION_PLAN_SECONDBRAIN.md` — vault + index engine spec.
+9. `REVIEW.md` — weak-point audit; read before trusting the architecture.
 
 ## The three rules everything obeys
 1. **Golden Rule:** code writes code from samples; engines execute against volumes. The
@@ -28,6 +30,13 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
    model may NEVER originate a number. Numeric questions route to the Data Engine first.
 3. **Decision-Memory Rule:** every useful output is stored (fact/driver/risk/
    recommendation/decision/action/lesson) **with evidence**.
+
+## Lightweight agent architecture
+- Treat this repository as **lightweight routing + central contract + specialized skills**.
+- Do not load the whole architecture for every task.
+- Load `AGENT_CORE_CONTRACT.md` plus only the relevant skill from `agent_skills/`.
+- The skills may specialize, but shared truth stays centralized.
+- If a task spans multiple stages, compose skills in sequence instead of improvising one giant prompt.
 
 ---
 
