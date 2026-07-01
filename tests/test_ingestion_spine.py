@@ -198,3 +198,64 @@ def test_ingest_csv_tracked_multiple_invocations(tmp_path, con: duckdb.DuckDBPyC
     assert result_b["rows_in"] == 3
     assert con.execute("SELECT count(*) FROM raw_multi_a").fetchone()[0] == 2
     assert con.execute("SELECT count(*) FROM raw_multi_b").fetchone()[0] == 3
+
+
+def test_ingest_csv_tracked_rejects_embedded_total_row(
+    tmp_path, con: duckdb.DuckDBPyConnection
+) -> None:
+    path = tmp_path / "with_total.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["material_id", "amount"])
+        writer.writerow(["A1", "100"])
+        writer.writerow(["Total", "100"])  # embedded subtotal row -> must be excluded
+        writer.writerow(["A2", "200"])
+
+    result = ingest_csv_tracked(con, "raw_with_total", str(path))
+
+    assert result["rows_in"] == 3
+    assert result["reject_count"] == 1
+    assert con.execute("SELECT count(*) FROM raw_with_total").fetchone()[0] == 2
+    reason = con.execute(
+        "SELECT reason FROM ingestion_rejects WHERE run_id = ?", [result["run_id"]]
+    ).fetchone()[0]
+    assert reason == "total_row"
+
+
+def test_ingest_csv_tracked_rejects_duplicate_row(
+    tmp_path, con: duckdb.DuckDBPyConnection
+) -> None:
+    path = tmp_path / "with_dupe.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["material_id", "amount"])
+        writer.writerow(["A1", "100"])
+        writer.writerow(["A2", "200"])
+        writer.writerow(["A1", "100"])  # exact duplicate of the first data row
+
+    result = ingest_csv_tracked(con, "raw_with_dupe", str(path))
+
+    assert result["rows_in"] == 3
+    assert result["reject_count"] == 1
+    assert con.execute("SELECT count(*) FROM raw_with_dupe").fetchone()[0] == 2
+    reason = con.execute(
+        "SELECT reason FROM ingestion_rejects WHERE run_id = ?", [result["run_id"]]
+    ).fetchone()[0]
+    assert reason == "duplicate"
+
+
+def test_ingest_csv_tracked_conserves_rows(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path = tmp_path / "mixed.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["material_id", "amount"])
+        writer.writerow(["A1", "100"])
+        writer.writerow(["Total", "100"])
+        writer.writerow(["A2", "200"])
+        writer.writerow(["A2", "200"])  # duplicate
+
+    result = ingest_csv_tracked(con, "raw_mixed", str(path))
+
+    kept = con.execute("SELECT count(*) FROM raw_mixed").fetchone()[0]
+    assert result["rows_in"] == kept + result["reject_count"]
+    assert result["reject_count"] == 2

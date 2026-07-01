@@ -73,6 +73,20 @@ Next task: continue IS2 internally while waiting for P2.2 externally.
 Confidence level: High (IS2 has moved from plan to code without fake Excel breadth).
 
 ---
+Date: 2026-07-01 (IS2.2)
+Completed: closed the gap IS2.1 left open — `ingest_csv_tracked` previously always reported
+`reject_count=0`; it now detects embedded total/subtotal rows and exact-duplicate rows, quarantines
+them to `ingestion_rejects` with a reason, and keeps only accepted rows in the target table.
+Files changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, `engines/data/AGENTS.md`,
+`00_control/{task_queue,evidence_log,restart_notes}.md`.
+Validation performed: targeted pytest `tests/test_ingestion_spine.py` => `16 passed`; full pytest
+=> `42 passed, 4 skipped`; `ruff check .` => clean.
+Evidence recorded: E19. Problems found: none in this slice; multi-sheet Excel (IS2.3) and
+per-column type inference (IS2.4) are still open, and P2.2 still waits on the first real export.
+Next task: IS2.3 or IS2.4.
+Confidence level: High (reject flow implemented test-first, conservation law asserted).
+
+---
 Date: 2026-07-01 (IS1)
 Completed: turned the unified ingestion storage contract into working code: run lifecycle tracking, reject persistence, and a minimal DuckDB schema now exist and are verified by dedicated tests.
 Files changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, plus governance files reflecting the new project state.

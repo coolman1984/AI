@@ -9,7 +9,9 @@ import json
 from datetime import UTC, datetime
 
 import duckdb
+import polars as pl
 
+from engines.data.clean import TOTAL_LABELS
 from shared.contracts.models import RejectRecord
 
 INIT_INGESTION_SCHEMA_SQL = """
@@ -134,6 +136,15 @@ def ingest_csv(
     return con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
 
 
+def _is_total_row(fields: dict) -> bool:
+    """A row is a subtotal/grand-total row if any cell matches a known total label.
+
+    Column-name-agnostic (the generic spine doesn't know which column is the key),
+    unlike `clean.clean_actuals` which also excludes rows with a blank key column.
+    """
+    return any(str(v).strip().lower() in TOTAL_LABELS for v in fields.values() if v is not None)
+
+
 def ingest_csv_tracked(
     con: duckdb.DuckDBPyConnection,
     table: str,
@@ -141,15 +152,50 @@ def ingest_csv_tracked(
     *,
     source_type: str = "csv",
 ) -> dict:
-    """Ingest a CSV into a target table with a tracked run lifecycle."""
+    """Ingest a CSV into a target table with a tracked run lifecycle.
+
+    Quarantines embedded total/subtotal rows and exact-duplicate rows before they land
+    in `table` — the target table holds only accepted rows; rejects go to
+    `ingestion_rejects` with a reason. Conservation law: rows_in == accepted + rejected.
+    """
     run_id = start_ingestion_run(con, source_type, path)
-    rows_in = ingest_csv(con, table, path, run_id=run_id)
-    finish_ingestion_run(con, run_id, rows_in=rows_in, reject_count=0)
+    staging = f"__staging_{table}"
+    rows_in = ingest_csv(con, staging, path, run_id=run_id)
+
+    raw: pl.DataFrame = con.execute(f"SELECT * FROM {staging}").pl()
+    data_cols = [c for c in raw.columns if c != "__row_id"]
+
+    kept_rows: list[dict] = []
+    rejects: list[RejectRecord] = []
+    seen: set[tuple] = set()
+    for row in raw.iter_rows(named=True):
+        row_id = int(row["__row_id"])
+        fields = {c: row[c] for c in data_cols}
+        if _is_total_row(fields):
+            rejects.append(RejectRecord(row_id, "total_row", fields))
+            continue
+        sig = tuple(fields.values())
+        if sig in seen:
+            rejects.append(RejectRecord(row_id, "duplicate", fields))
+            continue
+        seen.add(sig)
+        kept_rows.append(row)
+
+    clean = pl.DataFrame(kept_rows) if kept_rows else raw.clear()
+    con.register("__clean_view", clean)
+    con.execute(f"CREATE OR REPLACE TABLE {table} AS SELECT * FROM __clean_view")
+    con.unregister("__clean_view")
+    con.execute(f"DROP TABLE {staging}")
+
+    if rejects:
+        insert_ingestion_rejects(con, run_id, rejects)
+    finish_ingestion_run(con, run_id, rows_in=rows_in, reject_count=len(rejects))
+
     return {
         "run_id": run_id,
         "source_type": source_type,
         "source_path": path,
         "rows_in": rows_in,
-        "reject_count": 0,
+        "reject_count": len(rejects),
         "status": "completed",
     }

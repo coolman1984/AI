@@ -99,3 +99,23 @@ Outputs changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, `00_
 Result: CSV ingestion no longer needs manual start→ingest→finish chaining; IS2 is now live, not just planned.
 Evidence: E18.
 Next step: continue IS2 toward typed reusable ingestion while waiting for the first real export.
+
+---
+Timestamp: 2026-07-01
+Action: Completed IS2.2 — wired real reject detection into the tracked CSV path instead of the
+hardcoded zero reject count left by IS2.1.
+Reason: the design doc (`03_design/unified-ingestion-spine.md`) names embedded total/subtotal
+rows and duplicates as the messy-data defenses IS2 must have before Excel/PDF/PPT sources reuse
+the same spine; `clean.clean_actuals` already solved this for the finance-specific columns, but
+the generic spine had no equivalent.
+Inputs read: `engines/data/ingest.py`, `engines/data/clean.py` (reused `TOTAL_LABELS`),
+`tests/test_ingestion_spine.py`.
+Outputs changed: `engines/data/ingest.py` (`_is_total_row`, rewritten `ingest_csv_tracked`),
+`tests/test_ingestion_spine.py` (3 new tests), `engines/data/AGENTS.md`,
+`00_control/{task_queue,progress,evidence_log,restart_notes}.md`.
+Result: `ingest_csv_tracked` now quarantines total/duplicate rows to `ingestion_rejects` and the
+target table holds only accepted rows; conservation (`rows_in == accepted + rejected`) is
+asserted by a dedicated test. Full pytest: 42 passed, 4 skipped. Ruff clean.
+Evidence: E19.
+Next step: IS2.3 (multi-sheet Excel) or IS2.4 (per-column type inference) while P2.2 waits on
+the first real export.
