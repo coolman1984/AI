@@ -22,5 +22,30 @@
 11. **Human approval points:** the audit sign-off gate (Part O) — mandatory before release.
 12. **Final handover:** `06_final_outputs/handover_notes.md` + `proof_of_completion.md`.
 
+---
+
+## P2.1 locked scope
+
+The first real workflow is fixed as:
+
+**Monthly material cost variance review for Cost Control / Finance.**
+
+This slice is complete only when all of the following are true:
+
+- `mission.md`, `open_questions.md`, and `task_queue.md` clearly reflect this workflow.
+- current non-goals are explicit so the team does not drift into heavy infrastructure.
+- the next step is clearly stated as profiling one real export before any expansion.
+
+## Current non-goals
+
+For this phase, the system must **not** expand into:
+
+- automated ingestion
+- heavy infrastructure activation
+- multi-department rollout
+- deployment or backup work
+- enterprise search
+- self-evolution
+
 **Done means:** acceptance criteria satisfied with recorded evidence, not confidence.
 v1 pilot scope: **SATISFIED**. Production-hardening items remain (task_queue.md).

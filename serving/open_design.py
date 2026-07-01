@@ -36,6 +36,7 @@ def _svg_bridge(parts, width: int = 460, row_h: int = 26) -> str:
 
 def render_dashboard_html(ctx: dict) -> str:
     card, bridge, audit = ctx["card"], ctx["bridge"], ctx["audit"]
+    decomposition = ctx.get("decomposition")
     signoff = ctx.get("signoff")
     conf = card.confidence["confidence"]
     conf_color = {"High": "#5cb85c", "Medium": "#f0ad4e", "Low": "#d9534f"}.get(conf, "#777")
@@ -55,7 +56,19 @@ def render_dashboard_html(ctx: dict) -> str:
         f"<span class='ok'>✔ signed off by {signoff.approver}</span>"
         if (signoff and signoff.approved) else "<span class='no'>⛔ not signed — not released</span>"
     )
-    return f"""<!doctype html><meta charset="utf-8">
+    why_now = ""
+    if decomposition is not None and card.driver_split is not None:
+        why_now = (
+            "<div class=\"panel\"><b>Operating driver view (vs standard cost)</b>"
+            f"<div class=\"kpis\">"
+            f"<div class=\"kpi\"><div class=\"v\">{card.driver_split.price.value:+,.0f}</div><div class=\"l\">Price effect</div></div>"
+            f"<div class=\"kpi\"><div class=\"v\">{card.driver_split.volume.value:+,.0f}</div><div class=\"l\">Volume effect</div></div>"
+            f"<div class=\"kpi\"><div class=\"v\">{card.driver_split.mix.value:+,.0f}</div><div class=\"l\">Mix effect</div></div>"
+            "</div>"
+            f"<small>Standard-cost total {card.driver_split.total.value:+,.0f} · reconciles={decomposition.reconciles()}</small>"
+            "</div>"
+        )
+    return f"""<!doctype html><meta charset=\"utf-8\">
 <title>{card.headline}</title>
 <style>
  body{{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:780px;margin:24px auto;color:#222}}
@@ -76,6 +89,7 @@ def render_dashboard_html(ctx: dict) -> str:
     Confidence <span class="badge">{conf}</span> · {sign}</div>
 </div>
 <div class="kpis">{nums}</div>
+{why_now}
 <div class="panel"><b>Variance bridge (by sub-assembly)</b>{_svg_bridge(bridge.parts)}</div>
 <div class="panel"><b>Drivers:</b> {'; '.join(card.drivers)}<br>
   <b>Actions:</b> {'; '.join(card.actions)}

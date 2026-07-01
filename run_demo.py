@@ -23,6 +23,7 @@ def main() -> None:
         cfg,
         approver="analyst_mohamed",
         budget_pdf="data/sample/budget_approval_2026.pdf",
+        standards_csv="data/sample/finance_standards.csv",
         period="2026-05",
     )
 
@@ -69,6 +70,7 @@ def main() -> None:
         "data/sample/finance_budget.csv",
         cfg,
         approver="analyst_mohamed",
+        standards_csv="data/sample/finance_standards.csv",
         period="2026-06",
     )
     print()

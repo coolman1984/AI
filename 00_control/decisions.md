@@ -12,3 +12,6 @@
 | D8 | 2026-06 | Borrow patterns from Hermes/Karpathy/Obsidian; do not fork | governance/security/audit bar | fork repos | RISK_AND_GAPS_AUDIT 7 | low | Active |
 | D9 | 2026-06 | OCR as a quality-gated cascade (Tesseract→…→VLM) | poor sources must escalate to best engine | single OCR | test_ocr_cascade | low | Active |
 | D10 | 2026-06 | Adopt the Master Agent OS (file-based governance) | restartable, auditable, evidence-based truth in files | chat memory | this tree | low | Active |
+| D11 | 2026-07 | Use lightweight `.agent-loop/*` as a bridge over `00_control/*` | repo already had a serious governance tree; avoid a second file OS | replace `00_control`, ignore bridge | E12 | low | Active |
+| D12 | 2026-07 | Work on branch `chatgpt-ai-tasks` until merge readiness | owner explicitly approved branch isolation for ChatGPT work | stay on `main` | git branch + user approval | med | Active |
+| D13 | 2026-07 | Enforce phase order: T8b first, real-data readiness second, heavy infra later | highest leverage now is surfacing management value, not adding systems | jump straight to T9/T10 | 03_design/implementation_plan.md | low | Active |

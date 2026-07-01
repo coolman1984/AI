@@ -92,11 +92,21 @@ class VarianceDecomposition:
 
 
 @dataclass
+class DriverSplit:
+    """Compact management-facing summary of why a variance moved."""
+    total: NumberFact
+    price: NumberFact
+    volume: NumberFact
+    mix: NumberFact
+
+
+@dataclass
 class ManagerCard:
     """One-A4 card (MASTER_PLAN E.2 / Part S). BLUF + key numbers + drivers + confidence."""
     headline: str
     decision_needed: str
     key_numbers: list[NumberFact]
+    driver_split: DriverSplit | None
     drivers: list[str]
     risks: list[str]
     actions: list[str]
