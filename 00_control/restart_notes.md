@@ -11,10 +11,9 @@
    documents + OCR cascade (Tesseract+RapidOCR real); HTML dashboard + PPTX; second
    department (Planning) by config; role-scoped factory brief + cross-department links.
 
-4. **Pending work (task_queue.md):** P2 lock the first real finance workflow and profile one
-   real export (next); T9 wire on-prem LLM → activate Cognee/Graphiti/Docling/VLM (blocked on
-   infra + real-data gate); T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated
-   self-evolution.
+4. **Pending work (task_queue.md):** P2.2 receive and profile one real export (next); T9 wire
+   on-prem LLM → activate Cognee/Graphiti/Docling/VLM (blocked on infra + real-data gate);
+   T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated self-evolution.
 
 5. **Active constraints:** in-house/offline only; single branch `main` (every commit green);
    Python 3.11; modules small + per-module AGENTS.md; English.
@@ -27,8 +26,8 @@
 
 8. **Current bottleneck (bottlenecks.md):** B3 — no real SAP-scale export has been profiled yet.
 
-9. **Next best action:** execute **P2** — lock the first real finance workflow, then run one
-   real export through ingest/profile before any heavy infrastructure work.
+9. **Next best action:** execute **P2.2** — receive one real export, profile its structure and
+   dirt, and log every real-data issue before any heavy infrastructure work.
 
 10. **Source-of-truth files:** `00_control/*` (governance), `MASTER_PLAN.md` (architecture),
     `FACTORY_SECOND_BRAIN.md` (overview), `BUILD.md` (run), `AGENTS.md` (agent rules),

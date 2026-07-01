@@ -19,10 +19,12 @@ Only the Evaluator marks Passed (evidence required).
 | T8b2 | thread decomposition into orchestrator render context | Builder | Passed | High | T8 output | engines/brain/orchestrator | targeted pytest | E14 |
 | T8b3 | render price/volume/mix on card + HTML dashboard | Builder | Passed | High | ctx, card | serving/card, serving/open_design | test_serving/test_card | E14 |
 | T8b4 | run full validation + demo for surfaced drivers | Evaluator | Passed | High | code changes | test results, demo output | pytest + demo | E14 |
+| P2.1 | lock the first real workflow in governance files | Planner→Evaluator | Passed | High | implementation_plan, current governance | mission/open_questions/success_contract | file review | E15 |
+| P2.2 | ingest and profile one real export before expansion | Builder→Evaluator | Pending | High | first real export, source_inventory, data_map | profile report, issue log, readiness findings | profiling evidence | – |
 | T9 | Wire on-prem LLM + activate Cognee/Graphiti/Docling/VLM | Architect/Builder | Blocked | Med | infra + real workflow + real export | adapters live | integration test | preconditions from implementation_plan.md |
 | T10 | Onyx enterprise search | Builder | Pending | Low | many docs + proven retrieval pain | search service | relevance eval | – |
 | T11 | Deployment + scheduled ingestion + backup/DR | Architect | Pending | Med | server + stable local loop | ops | restore test | – |
 | T12 | Gated self-evolution (DSPy/GEPA) | Builder | Pending | Low | golden set | learning | eval gate | – |
 
-**Next best action:** execute **P2** from `03_design/implementation_plan.md` — lock the first real
-finance workflow, ingest one real export, and profile data issues before any heavy infrastructure work.
+**Next best action:** execute **P2.2** — receive one real export, profile its structure and dirt,
+and log every real-data issue before any heavy infrastructure work.

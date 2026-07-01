@@ -16,3 +16,4 @@
 | E12 | 2026-07-01 | Local development clone and lightweight loop bridge are ready | git+files | `git status -sb`; `git remote -v`; `.agent-loop/*`; updated `00_control/*` | re-run | High |
 | E13 | 2026-07-01 | Next-phase plan is grounded in the live repo and verified baseline | tests+files | `.venv`; `pytest -q` => `28 passed, 1 skipped`; `03_design/implementation_plan.md`; updated control files | re-run | High |
 | E14 | 2026-07-01 | The manager outputs now surface price/volume/mix safely and clearly | tests+demo+files | targeted pytest `8 passed, 1 skipped`; full pytest `29 passed, 1 skipped`; `run_demo.py`; `out/card.html` | re-run | High |
+| E15 | 2026-07-01 | The first real workflow is now formally locked in governance files | reviewed files | `00_control/mission.md`; `00_control/open_questions.md`; `00_control/success_contract.md`; `00_control/task_queue.md`; worker draft + review in `/tmp/p2_*` | re-read | High |

@@ -59,3 +59,13 @@ Result: the manager card and HTML dashboard now show price/volume/mix clearly; t
 truthful about basis; targeted and full test suites are green.
 Evidence: E14.
 Next step: start P2 with one real workflow decision and one real export profile run.
+
+---
+Timestamp: 2026-07-01
+Action: Used the team workflow to complete P2.1 only: the writing worker drafted the next governance slice, the review worker narrowed the scope, and Hermes applied the smallest correct set of file changes.
+Reason: Mohamed asked to continue the project using the agreed team system rather than solo execution.
+Inputs read: implementation plan, task queue, current governance files, worker draft, worker review.
+Outputs changed: `00_control/mission.md`, `00_control/open_questions.md`, `00_control/success_contract.md`, `00_control/task_queue.md`, `00_control/progress.md`, `00_control/evidence_log.md`.
+Result: the first real workflow is now locked; heavy infrastructure remains blocked; the next move is clearly P2.2 with one real export.
+Evidence: E15.
+Next step: receive and profile one real export.

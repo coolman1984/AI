@@ -53,3 +53,12 @@ Evidence recorded: E14. Problems found: none in this slice; the next bottleneck 
 not rendering.
 Next task: P2 — lock the first real finance workflow and profile one real export.
 Confidence level: High (feature implemented, tested, and demoed with honest labeling).
+
+---
+Date: 2026-07-01 (P2.1)
+Completed: locked the first real workflow in governance files as monthly material cost variance review for Cost Control / Finance, and made the current non-goals explicit so the team cannot drift into heavy infrastructure early.
+Files changed: `00_control/mission.md`, `00_control/open_questions.md`, `00_control/success_contract.md`, `00_control/task_queue.md`.
+Validation performed: writer worker draft reviewed by reviewer worker; final scope trimmed to the smallest correct slice and re-read in repo.
+Evidence recorded: E15. Problems found: no real export has landed yet, so P2.2 remains the active bottleneck.
+Next task: P2.2 — receive and profile one real export.
+Confidence level: High (scope locked, next move clarified).
