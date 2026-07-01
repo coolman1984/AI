@@ -64,6 +64,15 @@ Next task: P2.2 — receive and profile one real export.
 Confidence level: High (scope locked, next move clarified).
 
 ---
+Date: 2026-07-01 (IS1)
+Completed: turned the unified ingestion storage contract into working code: run lifecycle tracking, reject persistence, and a minimal DuckDB schema now exist and are verified by dedicated tests.
+Files changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, plus governance files reflecting the new project state.
+Validation performed: new targeted pytest => `10 passed`; data-slice pytest => `13 passed`; full pytest => `39 passed, 1 skipped`.
+Evidence recorded: E17. Problems found: the contract exists, but Excel/CSV still uses the old demo-style path and needs IS2; P2.2 still waits on the first real export.
+Next task: two-track move — P2.2 externally and IS2 internally.
+Confidence level: High (contract implemented, tested, and integrated without breaking the project).
+
+---
 Date: 2026-07-01 (Ingestion focus)
 Completed: translated Mohamed's new priority into project governance: extraction from Excel, PDF tables, PowerPoint, and email into local storage with query + calculation readiness is now the explicit engineering backbone under the locked workflow.
 Files changed: `00_control/mission.md`, `00_control/task_queue.md`, `03_design/implementation_plan.md`, `05_validation/issue_tracker.md`, `03_design/unified-ingestion-spine.md`.

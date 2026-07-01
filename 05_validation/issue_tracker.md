@@ -8,4 +8,4 @@
 | I5 | PowerPoint extraction is not yet a first-class ingestion path | Open | Add structured slide/table extraction under IS4 |
 | I6 | Email extraction is not yet a first-class ingestion path | Open | Add body + attachment extraction under IS5 |
 | I7 | PDF support is starter-level for text; table extraction is not yet promoted into unified storage | Open | Add structured PDF table extraction under IS3 |
-| I8 | There is no unified storage contract yet for cross-source extracted rows and fields | Open | Resolve under IS1 before broad query/calculation work |
+| I8 | There is no unified storage contract yet for cross-source extracted rows and fields | Resolved | Closed by IS1: schema + lifecycle helpers + tests (E17) |

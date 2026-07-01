@@ -8,7 +8,7 @@
 
 **Working branch:** `chatgpt-ai-tasks` (temporary owner-approved deviation from the historical main-only rule; keep it green, small, and mergeable until explicitly merged).
 
-**Current verified baseline:** `.venv` created, `pip install -r requirements.txt`, `pytest -q` => `29 passed, 1 skipped`.
+**Current verified baseline:** `.venv` created, `pip install -r requirements.txt`, `pytest -q` => `39 passed, 1 skipped`.
 
 ---
 

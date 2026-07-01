@@ -79,3 +79,13 @@ Outputs changed: `00_control/mission.md`, `00_control/task_queue.md`, `03_design
 Result: extraction/storage/query/calculation is now a formal project backbone; missing PowerPoint/email paths are visible; heavy infrastructure remains gated.
 Evidence: E16.
 Next step: start IS1 internally while waiting for the first real export required by P2.2.
+
+---
+Timestamp: 2026-07-01
+Action: Completed IS1 under the team workflow: writer proposed the storage-contract slice, reviewer cut abstractions and caught design mistakes, and Hermes implemented the smallest correct version with tests first.
+Reason: continue the project by making the extraction/storage/query spine real rather than leaving it as governance only.
+Inputs read: current contracts, ingest path, data tests, worker draft, worker review.
+Outputs changed: `engines/data/ingest.py`, `tests/test_ingestion_spine.py`, `00_control/task_queue.md`, `05_validation/issue_tracker.md`, `00_control/{progress,evidence_log,restart_notes}.md`.
+Result: the project now has real ingestion run tracking and reject persistence; the next internal engineering move is IS2 while P2.2 remains blocked on external data.
+Evidence: E17.
+Next step: start IS2 and keep waiting for the first real export.
