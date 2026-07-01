@@ -14,3 +14,5 @@
 | E10 | 2026-06-30 | Real artifacts generated | files | `out/card.html, out/card.pptx` | open files | High |
 | E11 | 2026-06-30 | Variance decomposition reconciles (price+volume+mix==total) | test+demo | `test_drivers`; demo -50=+50-99-1 | re-run | High |
 | E12 | 2026-07-01 | Local development clone and lightweight loop bridge are ready | git+files | `git status -sb`; `git remote -v`; `.agent-loop/*`; updated `00_control/*` | re-run | High |
+| E13 | 2026-07-01 | Next-phase plan is grounded in the live repo and verified baseline | tests+files | `.venv`; `pytest -q` => `28 passed, 1 skipped`; `03_design/implementation_plan.md`; updated control files | re-run | High |
+| E14 | 2026-07-01 | The manager outputs now surface price/volume/mix safely and clearly | tests+demo+files | targeted pytest `8 passed, 1 skipped`; full pytest `29 passed, 1 skipped`; `run_demo.py`; `out/card.html` | re-run | High |

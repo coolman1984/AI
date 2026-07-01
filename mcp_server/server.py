@@ -12,8 +12,15 @@ from engines.docs.extract import extract_document
 from engines.docs.search import search_documents
 
 
-def tool_run_finance_card(actuals_csv, budget_csv, cfg, approver=None, budget_pdf=None):
-    return run_pipeline(actuals_csv, budget_csv, cfg, approver=approver, budget_pdf=budget_pdf)
+def tool_run_finance_card(actuals_csv, budget_csv, cfg, approver=None, budget_pdf=None, standards_csv=None):
+    return run_pipeline(
+        actuals_csv,
+        budget_csv,
+        cfg,
+        approver=approver,
+        budget_pdf=budget_pdf,
+        standards_csv=standards_csv,
+    )
 
 
 def tool_approve_report(audit_result, approver: str, note: str = ""):

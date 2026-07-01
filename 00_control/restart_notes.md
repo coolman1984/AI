@@ -11,9 +11,9 @@
    documents + OCR cascade (Tesseract+RapidOCR real); HTML dashboard + PPTX; second
    department (Planning) by config; role-scoped factory brief + cross-department links.
 
-4. **Pending work (task_queue.md):** T8b surface price/volume/mix drivers on the card and
-   dashboard (next, no infra); T9 wire on-prem LLM → activate Cognee/Graphiti/Docling/VLM
-   (blocked on infra); T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated
+4. **Pending work (task_queue.md):** P2 lock the first real finance workflow and profile one
+   real export (next); T9 wire on-prem LLM → activate Cognee/Graphiti/Docling/VLM (blocked on
+   infra + real-data gate); T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated
    self-evolution.
 
 5. **Active constraints:** in-house/offline only; single branch `main` (every commit green);
@@ -25,13 +25,13 @@
 7. **Known risks (risks.md):** metric ambiguity (R2, open); prompt injection (R3, open); real
    SAP-scale untested (R7, open); adoption (R8, open). R1/R4/R6 mitigated.
 
-8. **Current bottleneck (bottlenecks.md):** B5 — the price/volume/mix decomposition exists
-   (T8 done, reconciles) but is not yet shown on the card/dashboard.
+8. **Current bottleneck (bottlenecks.md):** B3 — no real SAP-scale export has been profiled yet.
 
-9. **Next best action:** execute **T8b** — surface the price/volume/mix drivers on the
-   manager card + dashboard (no infra). Then T9 (activate heavy backends) is blocked on infra.
+9. **Next best action:** execute **P2** — lock the first real finance workflow, then run one
+   real export through ingest/profile before any heavy infrastructure work.
 
 10. **Source-of-truth files:** `00_control/*` (governance), `MASTER_PLAN.md` (architecture),
     `FACTORY_SECOND_BRAIN.md` (overview), `BUILD.md` (run), `AGENTS.md` (agent rules),
-    `.agent-loop/*` (lightweight restart bridge), and the code under engines/ serving/ shared/
+    `03_design/implementation_plan.md` (phase order + safeguards), `.agent-loop/*`
+    (lightweight restart bridge), and the code under engines/ serving/ shared/
     mcp_server/ gov/ tests/.

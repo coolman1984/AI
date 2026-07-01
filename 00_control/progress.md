@@ -25,3 +25,31 @@ Validation performed: ruff clean; pytest 29 passed; demo shows -50 = +50 -99 -1 
 Evidence recorded: E11. Problems found: none.
 Next task: T8b — surface the drivers on the card + dashboard.
 Confidence level: High (reconciliation proven by test + demo).
+
+---
+Date: 2026-07-01
+Completed: audited the architecture-vs-reality gap, verified the local baseline on `.venv`
+(`pytest 28 passed, 1 skipped`), created a governed implementation plan for the next phases,
+and expanded T8b into execution slices.
+Files changed: `03_design/implementation_plan.md`, `00_control/task_queue.md`,
+`00_control/decisions.md`, `05_validation/issue_tracker.md`.
+Validation performed: `. .venv/bin/activate && pytest -q`.
+Evidence recorded: E13. Problems found: branch-policy divergence is controlled (I4); heavy
+infra still intentionally blocked behind P2 gates (I1).
+Next task: T8b1 — add a typed driver payload to the manager card contract.
+Confidence level: High (plan grounded in current code + green tests).
+
+---
+Date: 2026-07-01 (T8b)
+Completed: surfaced the price/volume/mix view in the manager card and HTML dashboard, with an
+important truth-preserving refinement: the driver panel is labeled explicitly as an operating
+view against standard cost, so it cannot be confused with the main budget variance headline.
+Files changed: `shared/contracts/models.py`, `serving/{card,open_design}.py`,
+`engines/brain/orchestrator.py`, `mcp_server/server.py`, `run_demo.py`, tests, and module
+`AGENTS.md` files.
+Validation performed: targeted pytest => `8 passed, 1 skipped`; full pytest => `29 passed, 1 skipped`;
+`python run_demo.py` confirmed the card text and visual output include the new driver view.
+Evidence recorded: E14. Problems found: none in this slice; the next bottleneck is real data,
+not rendering.
+Next task: P2 — lock the first real finance workflow and profile one real export.
+Confidence level: High (feature implemented, tested, and demoed with honest labeling).

@@ -12,6 +12,7 @@ import polars as pl
 from engines.audit.audit import approve_report, audit_card
 from engines.brain.memory import get_knowledge_memory, get_temporal_memory
 from engines.data.clean import clean_actuals
+from engines.data.drivers import run_variance_decomposition
 from engines.data.ingest import get_connection, ingest_csv
 from engines.data.variance import category_variance
 from engines.docs.extract import extract_document
@@ -28,6 +29,7 @@ def run_pipeline(
     cfg: dict,
     approver: str | None = None,
     budget_pdf: str | None = None,
+    standards_csv: str | None = None,
     period: str = "2026-05",
     lens: dict | None = None,
 ) -> dict:
@@ -52,9 +54,13 @@ def run_pipeline(
         baseline_col=baseline_col, metric=lens["metric"],
     )
 
+    decomposition = None
+    if standards_csv:
+        decomposition = run_variance_decomposition(actuals_csv, standards_csv, cfg, lens=lens)["decomposition"]
+
     # 4) MANAGER CARD (one-A4, every number cited) — lens wording
     dq = compute_data_quality(rows_in, rejects, bridge.total_actual, audit_cfg)
-    card = make_manager_card(bridge, dq, lens=lens)
+    card = make_manager_card(bridge, dq, lens=lens, decomposition=decomposition)
 
     # 4b) DOCUMENT EVIDENCE (Stage 4): extract + cite the approved-budget PDF if provided.
     # Documents are evidence, not numbers — this attaches a citation, it does not change a figure.
@@ -91,7 +97,7 @@ def run_pipeline(
     # 8) RENDER (Open Design role) — visual output of an audited, signed card
     released = bool(signoff and signoff.approved)
     ctx = {
-        "card": card, "bridge": bridge, "audit": audit, "signoff": signoff,
+        "card": card, "bridge": bridge, "decomposition": decomposition, "audit": audit, "signoff": signoff,
         "released": released, "document_evidence": document_evidence, "period": period,
         "lens": lens, "scope": lens["scope"],
     }
@@ -115,6 +121,7 @@ def run_pipeline(
         "rejects": rejects,
         "log": log,
         "bridge": bridge,
+        "decomposition": decomposition,
         "card": card,
         "card_text": render_text(card),
         "audit": audit,

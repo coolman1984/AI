@@ -14,6 +14,7 @@ def _ctx():
         yaml.safe_load(open("config.yaml")),
         approver="analyst_mohamed",
         budget_pdf="data/sample/budget_approval_2026.pdf",
+        standards_csv="data/sample/finance_standards.csv",
     )
     return out["ctx"]
 
@@ -25,6 +26,9 @@ def test_dashboard_html_has_chart_numbers_signoff_and_citation():
     assert "signed off by analyst_mohamed" in html
     assert "budget_approval_2026.pdf" in html     # PDF citation
     assert "Confidence" in html
+    assert "Price effect" in html
+    assert "Volume effect" in html
+    assert "Mix effect" in html
 
 
 def test_export_writes_html_and_pptx(tmp_path):

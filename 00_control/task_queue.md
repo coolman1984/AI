@@ -14,11 +14,15 @@ Only the Evaluator marks Passed (evidence required).
 | T6 | Dashboard + PPTX | Builder | Passed | – | ctx | serving/open_design | test_serving | out/card.html,.pptx |
 | T7 | 2nd dept by config + factory brain | Builder | Passed | – | lenses | engines/brain/factory, gov | test_factory | demo (CEO/analyst scope) |
 | T8 | price/qty/mix variance decomposition | Builder→Evaluator | Passed | – | actuals+standards | engines/data/{variance,drivers} | test_drivers (reconciles to cent) | demo: -50 = +50 -99 -1 |
-| T8b | surface price/volume/mix drivers on the card + dashboard | Builder | Pending | High | decomposition | serving | dashboard shows drivers | – |
-| T9 | Wire on-prem LLM + activate Cognee/Graphiti/Docling/VLM | Architect/Builder | Blocked | Med | infra | adapters live | integration test | needs infra |
-| T10 | Onyx enterprise search | Builder | Pending | Low | many docs | search service | relevance eval | – |
-| T11 | Deployment + scheduled ingestion + backup/DR | Architect | Pending | Med | server | ops | restore test | – |
+| T8b | surface price/volume/mix drivers on the card + dashboard | Builder→Evaluator | Passed | High | decomposition | serving | dashboard shows drivers | E14 |
+| T8b1 | add typed driver payload to manager card contract | Builder | Passed | High | decomposition models | shared/contracts, serving/card | targeted pytest | E14 |
+| T8b2 | thread decomposition into orchestrator render context | Builder | Passed | High | T8 output | engines/brain/orchestrator | targeted pytest | E14 |
+| T8b3 | render price/volume/mix on card + HTML dashboard | Builder | Passed | High | ctx, card | serving/card, serving/open_design | test_serving/test_card | E14 |
+| T8b4 | run full validation + demo for surfaced drivers | Evaluator | Passed | High | code changes | test results, demo output | pytest + demo | E14 |
+| T9 | Wire on-prem LLM + activate Cognee/Graphiti/Docling/VLM | Architect/Builder | Blocked | Med | infra + real workflow + real export | adapters live | integration test | preconditions from implementation_plan.md |
+| T10 | Onyx enterprise search | Builder | Pending | Low | many docs + proven retrieval pain | search service | relevance eval | – |
+| T11 | Deployment + scheduled ingestion + backup/DR | Architect | Pending | Med | server + stable local loop | ops | restore test | – |
 | T12 | Gated self-evolution (DSPy/GEPA) | Builder | Pending | Low | golden set | learning | eval gate | – |
 
-**Next best action:** T8b (surface the price/volume/mix drivers on the card + dashboard) —
-completes T8's management value, no infra needed.
+**Next best action:** execute **P2** from `03_design/implementation_plan.md` — lock the first real
+finance workflow, ingest one real export, and profile data issues before any heavy infrastructure work.
