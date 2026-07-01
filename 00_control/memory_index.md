@@ -8,7 +8,7 @@
   named human sign-off before release; uncertain OCR → human-review queue.
 - **Scale law:** department = lens config, not code; vault = source of truth, indexes
   rebuildable; in-house only.
-- **Next action:** T8 price/qty/mix variance decomposition.
+- **Next action:** T8b surface the price/volume/mix drivers on the card and dashboard.
 
 ## Source-of-truth files
 - Architecture: `MASTER_PLAN.md` (A–S). Overview: `FACTORY_SECOND_BRAIN.md`.
@@ -22,6 +22,8 @@
 - Adapters (need infra): Docling, PaddleOCR/Surya/VLM-OCR, Cognee, Graphiti, Onyx, Open Design, vLLM.
 - Methods that worked: install-and-verify heavy tools where feasible (apt tesseract, rapidocr,
   graphiti-core import); real baseline + adapter pattern; test-first; one green main.
+- Lightweight bridge added: `.agent-loop/*` points fast restarts to the governed `00_control/*`
+  state instead of duplicating project truth.
 - Avoid: faking that GPU/LLM tools run on a CPU sandbox; uncited numbers; data leaving network.
 
 ## User preferences (stable)

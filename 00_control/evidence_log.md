@@ -11,5 +11,6 @@
 | E7 | 2026-06-30 | Real OCR recovers a scanned PDF | demo+test | Tesseract conf 0.95; test_ocr_cascade | re-run | High |
 | E8 | 2026-06-30 | Temporal change detected | demo+test | Frame +100(05)→+550(06); test_memory | re-run | High |
 | E9 | 2026-06-30 | 2nd dept by config; access-scoped; cross-links | demo+test | test_factory; demo CEO/analyst | re-run | High |
-| E10 | 2026-06-30 | Real artifacts generated | files | out/card.html, out/card.pptx | open files | High |
-| E11 | 2026-06-30 | Variance decomposition reconciles (price+volume+mix==total) | test+demo | test_drivers; demo -50=+50-99-1 | re-run | High |
+| E10 | 2026-06-30 | Real artifacts generated | files | `out/card.html, out/card.pptx` | open files | High |
+| E11 | 2026-06-30 | Variance decomposition reconciles (price+volume+mix==total) | test+demo | `test_drivers`; demo -50=+50-99-1 | re-run | High |
+| E12 | 2026-07-01 | Local development clone and lightweight loop bridge are ready | git+files | `git status -sb`; `git remote -v`; `.agent-loop/*`; updated `00_control/*` | re-run | High |
