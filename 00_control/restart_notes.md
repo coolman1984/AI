@@ -24,11 +24,11 @@
 7. **Known risks (risks.md):** metric ambiguity (R2, open); prompt injection (R3, open); real
    SAP-scale untested (R7, open); adoption (R8, open). R1/R4/R6 mitigated.
 
-8. **Current bottleneck (bottlenecks.md):** B1 — variance is total-level; build the
-   price/qty/mix decomposition (removable now, no infra).
+8. **Current bottleneck (bottlenecks.md):** B5 — the price/volume/mix decomposition exists
+   (T8 done, reconciles) but is not yet shown on the card/dashboard.
 
-9. **Next best action:** execute **T8** (price/qty/mix variance) under the core operating loop,
-   with new reconciling tests + recorded evidence.
+9. **Next best action:** execute **T8b** — surface the price/volume/mix drivers on the
+   manager card + dashboard (no infra). Then T9 (activate heavy backends) is blocked on infra.
 
 10. **Source-of-truth files:** `00_control/*` (governance), `MASTER_PLAN.md` (architecture),
     `FACTORY_SECOND_BRAIN.md` (overview), `BUILD.md` (run), `AGENTS.md` (agent rules), and the

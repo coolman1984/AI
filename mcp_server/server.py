@@ -47,6 +47,11 @@ def tool_factory_brief(results: dict, role: str, cfg: dict):
     return brief
 
 
+def tool_explain_variance(actuals_csv, standards_csv, cfg, lens=None):
+    from engines.data.drivers import run_variance_decomposition
+    return run_variance_decomposition(actuals_csv, standards_csv, cfg, lens)
+
+
 TOOLS = {
     "run_finance_card": tool_run_finance_card,   # ingest..card..audit (the trust loop)
     "approve_report": tool_approve_report,        # accountable human sign-off (Part O.6)
@@ -55,6 +60,7 @@ TOOLS = {
     "related": tool_related,                      # knowledge memory: relationships (Stage 5)
     "run_department": tool_run_department,        # any department via its lens (Stage 7)
     "factory_brief": tool_factory_brief,          # cross-department CEO/CFO brief, role-scoped
+    "explain_variance": tool_explain_variance,    # price/volume/mix decomposition (T8)
 }
 
 

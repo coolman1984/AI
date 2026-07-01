@@ -1,0 +1,6 @@
+material_id,sub_assembly,std_qty,std_price
+M1,Frame,10,95
+M2,Frame,4,100
+M3,Panel,22,100
+M4,Panel,4,90
+M5,Board,8,105

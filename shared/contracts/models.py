@@ -66,6 +66,32 @@ class VarianceBridge:
 
 
 @dataclass
+class DriverPart:
+    key: str
+    group: str
+    total: float
+    price: float
+    volume: float
+    mix: float
+
+
+@dataclass
+class VarianceDecomposition:
+    """Why a cost variance happened: price (rate) + volume (overall scale) + mix (proportion).
+    The three must sum to the total — or the decomposition is wrong (four-eyes for drivers)."""
+    metric: str
+    total: float
+    price: float
+    volume: float
+    mix: float
+    parts: list[DriverPart]
+    unmatched: list[str]          # actual items with no standard -> cannot be explained
+
+    def reconciles(self, tol: float = 0.01) -> bool:
+        return abs(self.price + self.volume + self.mix - self.total) <= tol
+
+
+@dataclass
 class ManagerCard:
     """One-A4 card (MASTER_PLAN E.2 / Part S). BLUF + key numbers + drivers + confidence."""
     headline: str

@@ -10,3 +10,5 @@ Raw inputs are READ-ONLY. Working copies/processing happen in the engines.
 | data/sample/budget_approval_scanned.pdf | PDF (image) | Scanned doc — triggers the OCR cascade |
 | data/sample/planning_actuals.csv | CSV | Planning department — output actuals |
 | data/sample/planning_plan.csv | CSV | Planning baseline |
+
+- data/sample/finance_standards.csv | CSV | Finance std qty + std price per material (T8 price/volume/mix)

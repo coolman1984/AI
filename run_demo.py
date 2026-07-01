@@ -105,6 +105,16 @@ def main() -> None:
     for link in cross_department_entities("ceo", cfg):
         print(f"  {link['entity']} tracked in {', '.join(link['departments'])}")
 
+    # --- T8: explain the variance (price / volume / mix) — the "why" ---
+    from engines.data.drivers import run_variance_decomposition
+    d = run_variance_decomposition(
+        "data/sample/finance_actuals.csv", "data/sample/finance_standards.csv", cfg
+    )["decomposition"]
+    print()
+    print("VARIANCE DECOMPOSITION (why the number moved):")
+    print(f"  total {d.total:+,.0f} = price {d.price:+,.0f} + volume {d.volume:+,.0f} "
+          f"+ mix {d.mix:+,.0f}   (reconciles={d.reconciles()})")
+
 
 if __name__ == "__main__":
     main()
