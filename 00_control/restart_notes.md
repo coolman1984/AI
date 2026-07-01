@@ -4,19 +4,18 @@
    human-signed management answers. Pilot department: Cost Control / Finance. (mission.md)
 
 2. **Current project state:** Stages 0–7 complete and verified. Full pipeline runs via
-   `python run_demo.py`. 26 pytest tests pass; ruff clean; CI configured.
+   `python run_demo.py`. 29 pytest tests pass; 1 skipped; ruff clean; CI configured.
 
 3. **Completed work:** foundation; numeric trust loop (DuckDB+Polars, messy-data defenses);
    independent audit + human sign-off; decision/knowledge/temporal memory (local, real);
    documents + OCR cascade (Tesseract+RapidOCR real); HTML dashboard + PPTX; second
    department (Planning) by config; role-scoped factory brief + cross-department links.
 
-4. **Pending work (task_queue.md):** P2.2 receive and profile one real export (next); T9 wire
-   on-prem LLM → activate Cognee/Graphiti/Docling/VLM (blocked on infra + real-data gate);
-   T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated self-evolution.
+4. **Pending work (task_queue.md):** P2.2 receive and profile one real export (blocked on external data, next); IS1 define the unified ingestion storage contract (can start now); IS2–IS6 build the extraction/storage/query/calculation spine across Excel/CSV, PDF tables, PowerPoint, and email; T9 wire on-prem LLM → activate Cognee/Graphiti/Docling/VLM only after the spine and real-data gates are satisfied; T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated self-evolution.
 
-5. **Active constraints:** in-house/offline only; single branch `main` (every commit green);
-   Python 3.11; modules small + per-module AGENTS.md; English.
+5. **Active constraints:** in-house/offline only; temporary owner-approved branch
+   `chatgpt-ai-tasks` must stay green and mergeable; Python 3.11; modules small +
+   per-module AGENTS.md; English.
 
 6. **Active assumptions (assumptions.md):** sample shape mirrors SAP (A1); on-prem LLM (A2)
    and local graph DB (A3) will be provisioned; first workflow ≈ monthly cost variance (A4).
@@ -26,8 +25,8 @@
 
 8. **Current bottleneck (bottlenecks.md):** B3 — no real SAP-scale export has been profiled yet.
 
-9. **Next best action:** execute **P2.2** — receive one real export, profile its structure and
-   dirt, and log every real-data issue before any heavy infrastructure work.
+9. **Next best action:** two-track move — externally get the first real export for P2.2, and
+   internally start IS1 so the unified ingestion spine has a clean storage contract.
 
 10. **Source-of-truth files:** `00_control/*` (governance), `MASTER_PLAN.md` (architecture),
     `FACTORY_SECOND_BRAIN.md` (overview), `BUILD.md` (run), `AGENTS.md` (agent rules),

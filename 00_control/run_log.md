@@ -69,3 +69,13 @@ Outputs changed: `00_control/mission.md`, `00_control/open_questions.md`, `00_co
 Result: the first real workflow is now locked; heavy infrastructure remains blocked; the next move is clearly P2.2 with one real export.
 Evidence: E15.
 Next step: receive and profile one real export.
+
+---
+Timestamp: 2026-07-01
+Action: Used the team workflow to redirect the project toward a unified ingestion spine under the already-locked first workflow.
+Reason: Mohamed explicitly said the priority is extracting data from Excel, PDF tables, PowerPoint, and email into a database with query and calculation support.
+Inputs read: current mission, task queue, implementation plan, document tests, data-pipeline tests, worker draft, worker review.
+Outputs changed: `00_control/mission.md`, `00_control/task_queue.md`, `03_design/implementation_plan.md`, `05_validation/issue_tracker.md`, `03_design/unified-ingestion-spine.md`.
+Result: extraction/storage/query/calculation is now a formal project backbone; missing PowerPoint/email paths are visible; heavy infrastructure remains gated.
+Evidence: E16.
+Next step: start IS1 internally while waiting for the first real export required by P2.2.

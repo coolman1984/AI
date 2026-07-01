@@ -2,25 +2,26 @@
 
 > For Hermes: execute this plan under the lightweight `.agent-loop/*` bridge while keeping `00_control/*` as the governed source of truth.
 
-**Goal:** turn the current pilot from a technically complete vertical slice into a management-usable, restartable local product with visible variance drivers, real-data readiness, and a safe path to heavier infrastructure.
+**Goal:** turn the current pilot from a technically complete vertical slice into a management-usable, restartable local product with visible variance drivers, real-data readiness, and a unified ingestion spine for extraction, storage, query, and calculation across promised source types.
 
-**Architecture:** keep the trust wall unchanged. Numbers continue to come only from the data engine (`engines/data/*`), documents remain evidence only (`engines/docs/*`), and output layers only render audited facts (`serving/*`). Heavy tools are activated only behind adapters after the core path proves stable on real data.
+**Architecture:** keep the trust wall unchanged. Numbers continue to come only from the data engine (`engines/data/*`) and verified query layer; documents remain evidence or structured extraction inputs only; output layers only render audited facts (`serving/*`). Heavy tools are activated only behind adapters after the core path proves stable on real data and the ingestion spine is verified.
 
-**Working branch:** `chatgpt-ai-tasks`
+**Working branch:** `chatgpt-ai-tasks` (temporary owner-approved deviation from the historical main-only rule; keep it green, small, and mergeable until explicitly merged).
 
-**Current verified baseline:** `.venv` created, `pip install -r requirements.txt`, `pytest -q` => `28 passed, 1 skipped`.
+**Current verified baseline:** `.venv` created, `pip install -r requirements.txt`, `pytest -q` => `29 passed, 1 skipped`.
 
 ---
 
 ## Phase order
 
-1. **P1 — Finish T8b now**: surface price/volume/mix in the card + dashboard.
+1. **P1 — Finish T8b now**: surface price/volume/mix in the card + dashboard. Completed.
 2. **P2 — Real-data readiness**: lock the first workflow, ingest one real export, and profile failures before any heavy infra work.
-3. **P3 — Heavy adapter activation (T9)**: on-prem LLM, Docling, Cognee, Graphiti, stronger OCR tiers.
-4. **P4 — Productization (T10-T11)**: enterprise search only after real-document pain is proven; deployment/scheduling/backup after the local loop is stable.
-5. **P5 — Self-evolution (T12)**: only after a golden set and acceptance gate exist.
+3. **P2a — Unified ingestion spine**: make extraction from Excel/CSV, PDF tables, PowerPoint, and email land safely in local storage with query + calculation readiness.
+4. **P3 — Heavy adapter activation (T9)**: on-prem LLM, Docling, Cognee, Graphiti, stronger OCR tiers.
+5. **P4 — Productization (T10-T11)**: enterprise search only after real-document pain is proven; deployment/scheduling/backup after the local loop is stable.
+6. **P5 — Self-evolution (T12)**: only after a golden set and acceptance gate exist.
 
-This sequence is mandatory. Do not jump to P3-P5 before P1-P2 are verified.
+This sequence is mandatory. Do not jump to P3-P5 before P2 and P2a are verified.
 
 ---
 
@@ -152,6 +153,8 @@ The biggest strategic risk now is overbuilding infra before validating the real 
 #### P2.2 Ingest one real export with profiling only
 **Objective:** do not promise production behavior before seeing real dirty data.
 
+**Risk:** this task is blocked until a real export file is provided. Until then, schema work and synthetic tests for the ingestion spine can proceed, but the real-data gate cannot be satisfied.
+
 **Likely files:**
 - `01_inputs/source_inventory.md`
 - `02_understanding/data_map.md`
@@ -171,12 +174,74 @@ The biggest strategic risk now is overbuilding infra before validating the real 
 
 ---
 
+## Phase P2a — Unified ingestion spine before heavy tools
+
+### Why this comes now
+The project already promises to read Excel/SAP, PDF, PPT, scans, and emails. Today the core calculation path is ahead of the universal extraction path. That gap is now the highest-leverage engineering bottleneck.
+
+### Shared pipeline rule
+Every source type follows the same sequence:
+1. locate
+2. extract structured rows or fields
+3. type values
+4. validate or reject with reason
+5. load into local storage
+6. query and calculate through the trusted layer
+
+### Task ladder
+
+#### IS1 — Define the unified storage contract
+**Objective:** establish one local storage model for cross-source extracted rows and fields.
+
+**Order:** 1) write schema/design tests or contract checks, 2) define contract, 3) verify file review.
+
+**Output:** storage contract + design doc under `03_design/unified-ingestion-spine.md`, with future code contract under `shared/contracts/`.
+
+#### IS2 — Harden Excel/CSV ingestion into a reusable spine
+**Objective:** move from demo ingest to reusable typed ingestion for real multi-sheet files.
+
+**Order:** 1) extend tests first, 2) implement, 3) run `pytest tests/test_data_pipeline.py -q`.
+
+#### IS3 — Add PDF table extraction into the spine
+**Objective:** promote structured PDF tables into local storage with confidence/review handling.
+
+**Order:** 1) write table-focused tests first, 2) implement, 3) run `pytest tests/test_pdf_tables.py -q`.
+
+#### IS4 — Add PowerPoint extraction into the spine
+**Objective:** extract slide text and tables into local storage.
+
+**Order:** 1) write tests first using synthetic PPTX fixtures, 2) implement, 3) run `pytest tests/test_ppt.py -q`.
+
+**Sample data note:** synthetic PPTX fixtures should be generated in tests; real PPTX samples can be added later when available.
+
+#### IS5 — Add email extraction into the spine
+**Objective:** extract body text and attachments, then route supported attachments into the same spine.
+
+**Order:** 1) write tests first using synthetic email fixtures, 2) implement, 3) run `pytest tests/test_email.py -q`.
+
+**Sample data note:** synthetic email fixtures should be generated in tests; real email samples can be added later when available.
+
+#### IS6 — Prove query + calculation readiness
+**Objective:** confirm the unified storage path can support exact queries and calculations safely across ingested sources.
+
+**Order:** 1) write verification tests first, 2) implement query/calculation checks, 3) run targeted tests plus full `pytest -q`.
+
+### Gate to heavy tools
+Do not start P3 until all are true:
+- P2.2 real export profiling completed
+- IS1–IS6 verified
+- at least two source types beyond CSV are proven through the spine
+- the infra owner/environment is known
+
+---
+
 ## Phase P3 — Heavy adapter activation (T9)
 
 ### Gate to start
 Do not start this phase until all are true:
 - P1 complete and green
-- one real export profiled
+- P2.2 real export profiled
+- P2a ingestion spine verified
 - first workflow locked
 - infra owner/environment known
 

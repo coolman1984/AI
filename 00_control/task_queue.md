@@ -20,11 +20,16 @@ Only the Evaluator marks Passed (evidence required).
 | T8b3 | render price/volume/mix on card + HTML dashboard | Builder | Passed | High | ctx, card | serving/card, serving/open_design | test_serving/test_card | E14 |
 | T8b4 | run full validation + demo for surfaced drivers | Evaluator | Passed | High | code changes | test results, demo output | pytest + demo | E14 |
 | P2.1 | lock the first real workflow in governance files | Planner→Evaluator | Passed | High | implementation_plan, current governance | mission/open_questions/success_contract | file review | E15 |
-| P2.2 | ingest and profile one real export before expansion | Builder→Evaluator | Pending | High | first real export, source_inventory, data_map | profile report, issue log, readiness findings | profiling evidence | – |
-| T9 | Wire on-prem LLM + activate Cognee/Graphiti/Docling/VLM | Architect/Builder | Blocked | Med | infra + real workflow + real export | adapters live | integration test | preconditions from implementation_plan.md |
+| P2.2 | ingest and profile one real export before expansion | Builder→Evaluator | Blocked | High | first real export, source_inventory, data_map | profile report, issue log, readiness findings | profiling evidence | BLOCKED on external data |
+| IS1 | define unified ingestion database schema | Builder→Evaluator | Pending | High | current contracts, source types | schema contract + storage design | file review + future schema tests | – |
+| IS2 | harden Excel/CSV ingestion into reusable spine | Builder→Evaluator | Pending | High | sample + real exports | multi-sheet typed ingestion + reject flow | test-first + pytest `tests/test_data_pipeline.py` | – |
+| IS3 | add PDF table extraction into the spine | Builder→Evaluator | Pending | High | table-bearing PDFs | structured table rows + confidence/review path | test-first + pytest `tests/test_pdf_tables.py` | – |
+| IS4 | add PowerPoint extraction into the spine | Builder→Evaluator | Pending | High | synthetic + future real PPTX | slide text/table extraction to unified storage | test-first + pytest `tests/test_ppt.py` | – |
+| IS5 | add email extraction into the spine | Builder→Evaluator | Pending | High | synthetic + future real email samples | body/attachment extraction to unified storage | test-first + pytest `tests/test_email.py` | – |
+| IS6 | prove query + calculation readiness across ingested sources | Evaluator | Pending | High | unified storage + extractor outputs | query layer supports exact calculations safely | test-first + cross-source verification | – |
+| T9 | Wire on-prem LLM + activate Cognee/Graphiti/Docling/VLM | Architect/Builder | Blocked | Med | infra + real workflow + real export + verified ingestion spine | adapters live | integration test | preconditions from implementation_plan.md |
 | T10 | Onyx enterprise search | Builder | Pending | Low | many docs + proven retrieval pain | search service | relevance eval | – |
 | T11 | Deployment + scheduled ingestion + backup/DR | Architect | Pending | Med | server + stable local loop | ops | restore test | – |
 | T12 | Gated self-evolution (DSPy/GEPA) | Builder | Pending | Low | golden set | learning | eval gate | – |
 
-**Next best action:** execute **P2.2** — receive one real export, profile its structure and dirt,
-and log every real-data issue before any heavy infrastructure work.
+**Next best action:** two-track move — externally, receive one real export for **P2.2**; internally, start **IS1** so the extraction/storage/query spine has a clean storage target while waiting for the file.

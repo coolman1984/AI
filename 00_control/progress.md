@@ -62,3 +62,12 @@ Validation performed: writer worker draft reviewed by reviewer worker; final sco
 Evidence recorded: E15. Problems found: no real export has landed yet, so P2.2 remains the active bottleneck.
 Next task: P2.2 — receive and profile one real export.
 Confidence level: High (scope locked, next move clarified).
+
+---
+Date: 2026-07-01 (Ingestion focus)
+Completed: translated Mohamed's new priority into project governance: extraction from Excel, PDF tables, PowerPoint, and email into local storage with query + calculation readiness is now the explicit engineering backbone under the locked workflow.
+Files changed: `00_control/mission.md`, `00_control/task_queue.md`, `03_design/implementation_plan.md`, `05_validation/issue_tracker.md`, `03_design/unified-ingestion-spine.md`.
+Validation performed: writing worker draft reviewed by reviewer worker; schema design corrected to avoid all-text generic columns; repo files re-read after patching; `pytest -q` => `29 passed, 1 skipped`.
+Evidence recorded: E16. Problems found: P2.2 still depends on an external real export; PowerPoint and email remain planned but not yet implemented.
+Next task: two-track move — wait for the first real export externally, and start IS1 internally.
+Confidence level: High (priority clarified without fake breadth).
