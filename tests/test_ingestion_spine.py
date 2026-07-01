@@ -8,9 +8,9 @@ import pytest
 from engines.data.ingest import (
     finish_ingestion_run,
     get_connection,
-    init_ingestion_schema,
     ingest_csv,
     ingest_csv_tracked,
+    init_ingestion_schema,
     insert_ingestion_rejects,
     start_ingestion_run,
 )

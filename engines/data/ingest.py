@@ -12,7 +12,6 @@ import duckdb
 
 from shared.contracts.models import RejectRecord
 
-
 INIT_INGESTION_SCHEMA_SQL = """
 CREATE SEQUENCE IF NOT EXISTS ingestion_run_seq START 1;
 CREATE SEQUENCE IF NOT EXISTS ingestion_reject_seq START 1;
