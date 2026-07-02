@@ -1,8 +1,11 @@
 # Factory Second Brain — Project Overview
 
-> The readable front door. Deep detail lives in `MASTER_PLAN.md` (architecture),
-> `RISK_AND_GAPS_AUDIT.md` (risks), and `BUILD.md` (the working code). This document
-> answers the 15 core questions in plain, professional language.
+> **Superseded by `03_design/assistant_master_plan.md` (approved 2026-07-02).**
+> Kept for historical reference.
+>
+> The current architecture and phase order live in `03_design/assistant_master_plan.md`;
+> current Phase A work lives in `03_design/phase_a_cards.md`. This document answers the
+> earlier 15 core questions in plain, professional language.
 
 **What is already real (not a plan):** the numeric trust loop runs today — `python
 run_demo.py` ingests messy finance data, cleans it, computes a cited variance, **audits it

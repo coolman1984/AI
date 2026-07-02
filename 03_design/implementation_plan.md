@@ -1,5 +1,10 @@
 # AI Repository Implementation Plan
 
+> **Superseded by `03_design/assistant_master_plan.md` (approved 2026-07-02).**
+> Kept for historical reference to the pre-v2 T8/IS implementation sequence. Use
+> `03_design/assistant_master_plan.md` plus `03_design/phase_a_cards.md` for current
+> architecture, phase order, and build cards.
+
 > For Hermes: execute this plan under the lightweight `.agent-loop/*` bridge while keeping `00_control/*` as the governed source of truth.
 
 **Goal:** turn the current pilot from a technically complete vertical slice into a management-usable, restartable local product with visible variance drivers, real-data readiness, and a unified ingestion spine for extraction, storage, query, and calculation across promised source types.

@@ -3,19 +3,22 @@
 1. **Current mission:** in-house Factory Second Brain — exact numbers, memory, and audited,
    human-signed management answers. Pilot department: Cost Control / Finance. (mission.md)
 
-2. **Current project state:** Stages 0–7 complete and verified. Full pipeline runs via
-   `python run_demo.py`. 42 pytest tests pass; 4 skipped; ruff clean; CI configured.
+2. **Current project state:** Master plan v2 is approved (`03_design/assistant_master_plan.md`,
+   2026-07-02). Phase A is active. A0.1 (claims store physically separate from facts)
+   passed final gate; A1 documentation consolidation is approved and passed.
 
 3. **Completed work:** foundation; numeric trust loop (DuckDB+Polars, messy-data defenses);
    independent audit + human sign-off; decision/knowledge/temporal memory (local, real);
    documents + OCR cascade (Tesseract+RapidOCR real); HTML dashboard + PPTX; second
    department (Planning) by config; role-scoped factory brief + cross-department links.
 
-4. **Pending work (task_queue.md):** P2.2 receive and profile one real export (blocked on external data, next); IS2.3 multi-sheet Excel and IS2.4 per-column type inference remain on the CSV/Excel path (IS2.2's total-row + duplicate reject flow is done); IS3–IS6 build the extraction/storage/query/calculation spine across PDF tables, PowerPoint, and email; T9 wire on-prem LLM → activate Cognee/Graphiti/Docling/VLM only after the spine and real-data gates are satisfied; T10 Onyx; T11 deployment + scheduled ingestion + backup/DR; T12 gated self-evolution.
+4. **Pending work:** follow `03_design/current_implementation_plan.md` and
+   `03_design/phase_a_cards.md` for Phase A. A0.2 is the next safety-rail card after
+   A0.1; A1.2 is approved and passed. External track unchanged: P2.2 still waits on the
+   first real export.
 
-5. **Active constraints:** in-house/offline only; temporary owner-approved branch
-   `chatgpt-ai-tasks` must stay green and mergeable; Python 3.11; modules small +
-   per-module AGENTS.md; English.
+5. **Active constraints:** in-house/offline only; one branch `main`; Python 3.11;
+   modules small + per-module AGENTS.md; English.
 
 6. **Active assumptions (assumptions.md):** sample shape mirrors SAP (A1); on-prem LLM (A2)
    and local graph DB (A3) will be provisioned; first workflow ≈ monthly cost variance (A4).
@@ -25,11 +28,13 @@
 
 8. **Current bottleneck (bottlenecks.md):** B3 — no real SAP-scale export has been profiled yet.
 
-9. **Next best action:** two-track move — externally get the first real export for P2.2, and
-   internally continue IS2 with IS2.3 (multi-sheet Excel) or IS2.4 (per-column type inference).
+9. **Next best action:** start A0.2 (deterministic figure verifier) from
+   `03_design/phase_a_cards.md`; A1 documentation cleanup is approved; keep
+   waiting for the first real export for P2.2.
 
-10. **Source-of-truth files:** `00_control/*` (governance), `MASTER_PLAN.md` (architecture),
-    `FACTORY_SECOND_BRAIN.md` (overview), `BUILD.md` (run), `AGENTS.md` (agent rules),
-    `03_design/implementation_plan.md` (phase order + safeguards), `.agent-loop/*`
-    (lightweight restart bridge), and the code under engines/ serving/ shared/
-    mcp_server/ gov/ tests/.
+10. **Source-of-truth files:** `03_design/assistant_master_plan.md` (current architecture),
+    `03_design/current_implementation_plan.md` (live execution plan),
+    `03_design/phase_a_cards.md` (current work cards), `00_control/*` (governance),
+    `AGENTS.md` and `AGENT_SKILL_MAP.md` (agent routing), `BUILD.md` (run), and the code
+    under engines/ serving/ shared/ mcp_server/ gov/ tests/. Archived plans live in
+    `archive/` for historical reference only.

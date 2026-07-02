@@ -8,7 +8,7 @@
       "Numbers that are sums/counts -> use 0. Numbers unknown until runtime -> use null. Lists -> []."
     ],
     "how_to_adapt": "Delete the example 'report' below and paste your own desired output structure. If you are not sure, keep the example and just rename fields to match your data.",
-    "example_domain": "manufacturing cost rollup (from ARCHITECTURE.md). Replace with your domain."
+    "example_domain": "manufacturing cost rollup (from 03_design/assistant_master_plan.md). Replace with your domain."
   },
 
   "report_metadata": {

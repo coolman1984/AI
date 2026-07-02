@@ -1,5 +1,8 @@
 # Adversarial Review - Executive Assistant Master Plan (v1 draft)
 
+> Historical review of the v1 draft. Its accepted findings were incorporated into
+> `03_design/assistant_master_plan.md` v2 and Phase A cards.
+
 Reviewer: deep-reasoner (Opus), independent senior architect.
 Scope: 03_design/assistant_master_plan.md, AGENTS.md, task_queue.md,
 restart_notes.md, engines/docs/report_reader.py (the actual LLM bridge code),

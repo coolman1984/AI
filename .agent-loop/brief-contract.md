@@ -4,20 +4,22 @@
 Work inside the local clone of the AI repository using Mohamed's development loop without duplicating the repo's existing governance system.
 
 ## Project path
-`/root/projects/AI`
+`G:\AI`
 
 ## Durable truth
 The governed source of truth already lives in:
 
 - `00_control/*`
-- `MASTER_PLAN.md`
+- `03_design/assistant_master_plan.md`
+- `03_design/phase_a_cards.md`
 - `AGENTS.md`
-- `CODEX_PLAN.md`
+- `AGENT_SKILL_MAP.md`
+- `archive/` for historical plans only
 
 This `.agent-loop` folder is a lightweight execution bridge, not a replacement.
 
 ## Current development target
-Execute `T8b` next: surface the price, volume, and mix drivers on the manager card and dashboard.
+Continue Phase A from `03_design/phase_a_cards.md`: A0.1 passed final gate; A0.2 is next.
 
 ## Acceptance criteria for setup
 1. Repository exists locally at the stated path.

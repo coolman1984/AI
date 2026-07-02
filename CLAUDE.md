@@ -128,6 +128,6 @@ tests, and audit rules below still bind everyone.
    in the same change that alters its interface.
 
 ## Read order before touching code
-`AGENTS.md` → `MASTER_PLAN.md` → the nearest module `AGENTS.md` → then the code.
+`AGENTS.md` -> `03_design/assistant_master_plan.md` -> `03_design/current_implementation_plan.md` -> `03_design/phase_a_cards.md` when working Phase A -> the nearest module `AGENTS.md` -> then the code.
 For where the project stands and what's next: `00_control/restart_notes.md` and
 `00_control/task_queue.md`.

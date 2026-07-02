@@ -3,17 +3,21 @@
 ## Compressed summary (read this first)
 - **Mission:** in-house Factory Second Brain; exact numbers + memory + audited, human-signed
   management answers. Pilot = Cost Control. (mission.md)
-- **State:** Stages 0–7 built & verified (26 tests pass, lint clean, demo end-to-end).
+- **State:** Master plan v2 approved on 2026-07-02; Phase A safety rails are active. A0.1
+  claims store passed final gate; A1 documentation consolidation is approved and passed.
 - **Trust law:** numbers from the data engine only; every number cited; independent audit +
   named human sign-off before release; uncertain OCR → human-review queue.
 - **Scale law:** department = lens config, not code; vault = source of truth, indexes
   rebuildable; in-house only.
-- **Next action:** T8b surface the price/volume/mix drivers on the card and dashboard.
+- **Next action:** continue Phase A from `03_design/phase_a_cards.md` (A0.2 next after
+  A0.1) while the external P2.2 real-export track remains open.
 
 ## Source-of-truth files
-- Architecture: `MASTER_PLAN.md` (A–S). Overview: `FACTORY_SECOND_BRAIN.md`.
-- Build/run: `BUILD.md`. Risks/upgrades: `RISK_AND_GAPS_AUDIT.md`,
-  `reports/PLAN_RISK_AUDIT_AND_UPGRADE_REPORT.md`. Agent rules: `AGENTS.md`. Codex: `CODEX_PLAN.md`.
+- Current architecture: `03_design/assistant_master_plan.md`.
+- Current execution plan: `03_design/current_implementation_plan.md`.
+- Current build cards: `03_design/phase_a_cards.md`.
+- Historical plans/reports: `archive/` and superseded report files.
+- Build/run: `BUILD.md`. Agent rules: `AGENTS.md`.
 - Governance: `00_control/*`. Code: engines/, serving/, shared/, mcp_server/, gov/, tests/.
 
 ## Durable facts

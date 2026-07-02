@@ -4,6 +4,10 @@ This file is the lightweight routing layer for agents working in this repository
 
 Its job is not to explain the whole project. Its job is to help the agent load the right depth at the right time without paying the token cost of loading the entire architecture on every task.
 
+Current architecture reference: `03_design/assistant_master_plan.md`. Current execution
+plan: `03_design/current_implementation_plan.md`. Current Phase A work cards:
+`03_design/phase_a_cards.md`. Historical plans live in `archive/`.
+
 The system design is:
 
 1. **Lightweight agent** — classifies the task and orchestrates the flow.
@@ -19,8 +23,10 @@ If a task needs more than one skill, the agent should compose them in sequence i
 1. `AGENTS.md`
 2. `AGENT_SKILL_MAP.md`
 3. `AGENT_CORE_CONTRACT.md`
-4. Only the relevant skill file(s)
-5. Then the nearest module `AGENTS.md`
+4. `03_design/current_implementation_plan.md` when build order or gates matter
+5. `03_design/assistant_master_plan.md` only when architecture context is needed
+6. Only the relevant skill file(s)
+7. Then the nearest module `AGENTS.md`
 
 Do **not** load every skill by default.
 
@@ -64,6 +70,7 @@ Load:
 - the task needs release gating, independent re-checking, certainty scoring, reconciliation, or human sign-off
 - the user asks whether a result is safe to trust or release
 - there is any ambiguity around data quality, missing evidence, or number mismatches
+- the task involves LLM-originated claims, the claims store, claim quarantine, or the facts/claims wall
 
 Load:
 `agent_skills/audit_and_trust.md`

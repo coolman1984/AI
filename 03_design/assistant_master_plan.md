@@ -1,6 +1,8 @@
-# Executive Assistant Master Plan — v2 (FINAL DRAFT for owner approval)
+# Executive Assistant Master Plan — v2 (APPROVED CURRENT PLAN)
 
 Author: Fable (lead architect). Version 2, 2026-07-02.
+Status: Approved by owner on 2026-07-02. This is the current architecture and
+phase-order source of truth.
 Inputs: full-project review (Sonnet), adversarial critique (Opus — verdict
 "SOUND WITH CHANGES", all findings incorporated), owner's vision statements.
 Codex review skipped by owner decision. Supersedes v1 in this same file.
@@ -54,8 +56,7 @@ Golden Rule (AI reads maps, engines read volumes) · Calculation-Integrity (no
 generated numbers — now enforced by a code verifier, not a prompt request) ·
 Decision-Memory (every result stored with evidence) · tests gate every change ·
 two-tier privacy in **code** (D14) · no code without a task-queue row · one
-branch `main` (the lingering `chatgpt-ai-tasks` branch must be explicitly closed
-or sanctioned by the owner — currently reality contradicts the rule).
+branch `main`.
 
 ---
 
@@ -330,9 +331,12 @@ boundary is proven in production.
 - Any work agent can complete a routine task through the skill map loading
   ≤ 1 skill card — token usage per task measurably minimal.
 
-## 8. Immediate next actions (upon owner approval)
+## 8. Current execution direction
 
-1. Sonnet converts Phase A0 + A1 into task-queue rows (cards with named tests).
-2. Pipeline builds A0 card-by-card (writer → reviewer → Sonnet gate).
-3. Owner supplies one real HQ deck (any old one) for Phase B's gate.
-4. Owner decides: close or sanction the `chatgpt-ai-tasks` branch.
+1. Execute Phase A0 card-by-card (writer → reviewer → final gate), starting from
+   the current `00_control/task_queue.md` next action.
+2. Keep A1 documentation/routing cleanup non-blocking and reviewed against the
+   live source-of-truth files.
+3. Owner supplies one real HQ deck (any old one) for Phase B's gate after A0
+   passes.
+4. Keep the repository on `main` only; do not create feature branches.

@@ -1,5 +1,10 @@
 # Progress
 
+> Historical progress log. For current architecture and next work, read
+> `03_design/assistant_master_plan.md`, `03_design/phase_a_cards.md`, and
+> `00_control/restart_notes.md`. Older entries keep their original task labels for audit
+> history.
+
 Date: 2026-06-30
 Completed: Stages 0–7 of Factory Second Brain (foundation → numeric trust loop → audit +
 sign-off → decision memory → documents + OCR cascade → knowledge + temporal memory →

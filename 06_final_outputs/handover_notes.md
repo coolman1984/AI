@@ -1,41 +1,49 @@
 # Handover Notes
 
-## 1. What was completed
-v1 pilot of Factory Second Brain (Stages 0–7): numeric trust loop, independent audit +
+> Historical v1 handover. Current architecture and phase order are
+> `03_design/assistant_master_plan.md` and `03_design/phase_a_cards.md`; current restart
+> state is `00_control/restart_notes.md`.
+
+## 1. What Was Completed
+
+v1 pilot of Factory Second Brain (Stages 0-7): numeric trust loop, independent audit +
 human sign-off, decision/knowledge/temporal memory, documents + OCR cascade, dashboard +
 PPTX, multi-department by config, role-scoped factory brain. Master Agent OS governance
-instantiated in `00_control/`.
+was instantiated in `00_control/`.
 
-## 2. Where the final outputs are
-- Run it: `python run_demo.py` → prints the full flow, writes `out/card.html`, `out/card.pptx`.
-- Code: engines/, serving/, shared/, mcp_server/, gov/. Tests: tests/ (26 pass).
-- Architecture: MASTER_PLAN.md · overview: FACTORY_SECOND_BRAIN.md · run: BUILD.md.
+## 2. Where The Final Outputs Are
 
-## 3. Inputs used
-Sample data in data/sample/ (finance + planning CSVs, two PDFs incl. a scanned one). See
-01_inputs/source_inventory.md. Raw inputs are read-only.
+- Run it: `python run_demo.py` prints the full flow and writes `out/card.html`,
+  `out/card.pptx`.
+- Code: engines/, serving/, shared/, mcp_server/, gov/. Tests: tests/.
+- Current architecture: `03_design/assistant_master_plan.md`.
+- Current cards: `03_design/phase_a_cards.md`.
+- Run guide: `BUILD.md`.
 
-## 4. Assumptions made
-See assumptions.md (sample≈SAP shape; on-prem LLM + graph DB to be provisioned; first
-workflow ≈ monthly cost variance).
+## 3. Inputs Used
 
-## 5. What was validated
-ruff clean; pytest 26 passed; demo end-to-end; audit catches tampering; OCR recovers a
-scanned PDF; temporal change detected; access scoping enforced. Evidence: evidence_log.md.
+Sample data in data/sample/ (finance + planning CSVs, two PDFs including a scanned one).
+See `01_inputs/source_inventory.md`. Raw inputs are read-only.
+
+## 4. Assumptions Made
+
+See `00_control/assumptions.md`.
+
+## 5. What Was Validated
+
+ruff clean; pytest passed; demo end-to-end; audit catches tampering; OCR recovers a
+scanned PDF; temporal change detected; access scoping enforced. Evidence:
+`00_control/evidence_log.md`.
 
 ## 6. Evidence
-00_control/evidence_log.md (E1–E10), 05_validation/test_results.md, out/ artifacts.
 
-## 7. Risks remaining
-Metric ambiguity (R2), prompt injection (R3), real SAP-scale untested (R7), adoption (R8).
+`00_control/evidence_log.md`, `05_validation/test_results.md`, and out/ artifacts.
 
-## 8. Optional improvements
-T8 price/qty/mix variance (next); activate heavy backends on infra (T9); Onyx (T10);
-deployment + scheduled ingestion + DR (T11); gated self-evolution (T12).
+## 7. Risks Remaining
 
-## 9. Recommended next action
-Build T8 (price/qty/mix variance decomposition) — highest management value, no infra needed.
+Use `00_control/risks.md` and `05_validation/issue_tracker.md` for current risk state.
 
-## To continue from a cold start
-Read `00_control/restart_notes.md`, then `memory_index.md`, then `task_queue.md`. Continue
-from the highest-value pending task.
+## 8. Recommended Next Action
+
+Read `00_control/restart_notes.md`, then continue the current Phase A card from
+`03_design/phase_a_cards.md`.

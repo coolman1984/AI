@@ -1,15 +1,17 @@
 # Factory Decision Intelligence Plan - Senior Risk Audit and Upgrade Report
 
+> **Superseded by `03_design/assistant_master_plan.md` (approved 2026-07-02).**
+> Kept for historical reference. The reviewed filenames below now live under `archive/`
+> where applicable; do not use this report as the current build plan.
+
 Date: 2026-06-26
 
 Scope reviewed:
-- `MASTER_PLAN.md`
-- `CODEX_PLAN.md`
-- `ARCHITECTURE.md`
-- `IMPLEMENTATION_PLAN.md`
-- `IMPLEMENTATION_PLAN_DOCS.md`
-- `IMPLEMENTATION_PLAN_SECONDBRAIN.md`
-- `REVIEW.md`
+- then-current master plan
+- then-current Codex handoff brief
+- then-current architecture pointer
+- then-current implementation plan set
+- then-current review report
 - Root `AGENTS.md`
 
 External patterns researched:
@@ -2316,7 +2318,9 @@ The current plan is a strong evidence architecture. To become a real factory dec
 13. Karpathy-style LLM Wiki vault split: immutable raw sources, maintained wiki, disposable indexes.
 14. Hermes-style self-evolution loop: skills, traces, eval datasets, candidate improvements, human-approved promotion.
 
-The best next action is not to code the full current Phase 0 as-is. First update `MASTER_PLAN.md` and `CODEX_PLAN.md` with this audit's missing modules, the independent audit gate, the human accountability gate, the Karpathy-style vault architecture, the Hermes-style learning loop, and the new phase order. Then scaffold Phase 0.
+Historical recommendation at the time: update the then-current master plan and Codex
+handoff before coding. Current direction is superseded by
+`03_design/assistant_master_plan.md` and `03_design/phase_a_cards.md`.
 
 The sharp version:
 

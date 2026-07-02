@@ -1,10 +1,10 @@
 # AGENTS.md — Operating Manual for All AI Agents on This Repo
 
 This file is read automatically by Codex (and is the convention for other agents).
-It is the **durable, non-negotiable guidance**. The detailed plan lives in
-`MASTER_PLAN.md`; the current, live architecture and build plan lives in
-`03_design/assistant_master_plan.md` (the former kickoff brief `CODEX_PLAN.md` is
-archived, historical only).
+It is the **durable, non-negotiable guidance**. The current, live architecture and
+build plan lives in `03_design/assistant_master_plan.md`; current Phase A build cards
+live in `03_design/phase_a_cards.md`. `MASTER_PLAN.md` and the former kickoff brief
+`CODEX_PLAN.md` are historical only.
 
 This repository builds a **factory-wide Decision Intelligence System** for a large
 TV/mobile manufacturing plant. It is currently a planning workspace about to enter
@@ -13,13 +13,14 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
 ---
 
 ## Read order (start here, always)
-1. **`MASTER_PLAN.md`** — the single authoritative architecture and build plan. Read
-   before proposing code or changing phases. (Parts D, H, I, J, K, L are the ones you
-   implement against.)
-2. **`AGENT_SKILL_MAP.md`** — the lightweight routing layer: which skill to load for which task.
-3. **`AGENT_CORE_CONTRACT.md`** — the shared spine all skills must obey.
-4. **`03_design/assistant_master_plan.md`** — the current, live architecture and
-   build-plan source; supersedes the items formerly listed here.
+1. **`03_design/assistant_master_plan.md`** — the single current architecture and phase
+   plan. Read before proposing code or changing phases.
+2. **`03_design/current_implementation_plan.md`** — the live execution plan that turns
+   the v2 architecture into build order, gates, and card expansion rules.
+3. **`AGENT_SKILL_MAP.md`** — the lightweight routing layer: which skill to load for which task.
+4. **`AGENT_CORE_CONTRACT.md`** — the shared spine all skills must obey.
+5. **`03_design/phase_a_cards.md`** — the current Phase A build-card source.
+6. **`MASTER_PLAN.md`** only when historical background is needed.
    (Note: `archive/` holds prior planning docs — `CODEX_PLAN.md`, `ARCHITECTURE.md`,
    `IMPLEMENTATION_PLAN.md`, `IMPLEMENTATION_PLAN_DOCS.md`,
    `IMPLEMENTATION_PLAN_SECONDBRAIN.md`, `REVIEW.md`, `RISK_AND_GAPS_AUDIT.md`,
@@ -43,7 +44,8 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
 ---
 
 ## The build chain (who does what)
-- **Architect** → produced `MASTER_PLAN.md` (architecture, contracts, phases, rules).
+- **Architect** → produced `03_design/assistant_master_plan.md` (current architecture,
+  contracts, phases, rules).
 - **Lead Engineer = Codex / GPT-5.5** → expands phases into **Task Cards**, writes
   contracts as stubs + the **tests (red)**, scaffolds the repo and every `AGENTS.md`,
   integrates, runs the full suite. Implements business logic only when a card is not
@@ -53,7 +55,8 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
 
 **Method = contracts-first, test-first.** The interface and the test exist before code.
 A card says: *"make `tests/<x>` pass by implementing `<contract>`, editing ONLY
-`<file>`."* See `MASTER_PLAN.md` Part I for the Task Card format and model routing.
+`<file>`."* See `03_design/current_implementation_plan.md` and
+`03_design/phase_a_cards.md` for the current Task Card format and model routing.
 
 ---
 
@@ -68,9 +71,9 @@ Every module's `AGENTS.md` must restate the exact commands to test *that* module
 
 ## Always
 - **No report reaches a human decision-maker without passing the independent Audit Layer
-  (MASTER_PLAN Part O) and a recorded, named human sign-off.** The system proposes and
+  (`03_design/assistant_master_plan.md`) and a recorded, named human sign-off.** The system proposes and
   checks; a human approves and owns the decision. This is non-negotiable.
-- Always read `MASTER_PLAN.md` + the nearest `AGENTS.md` before editing a module.
+- Always read `03_design/assistant_master_plan.md` + the nearest `AGENTS.md` before editing a module.
 - Always work test-first: a card is done only when its named test is green.
 - Always keep modules small and single-responsibility; split a file before it grows
   past its cap.
@@ -107,7 +110,7 @@ Every module's `AGENTS.md` must restate the exact commands to test *that* module
 
 ## First pilot: Finance/Costing (but build factory-wide)
 Do not design a finance-only product. Build reusable engines + a finance **lens**.
-The pilot must handle (defenses in `MASTER_PLAN.md` Part J):
+The pilot must handle the hard cases in `03_design/assistant_master_plan.md`:
 - SAP Excel exports ~200 MB, up to ~272 columns × ~600k rows.
 - **Total/subtotal rows hidden inside detail rows** (detect + exclude; never sum).
 - English + Arabic documents (offline OCR, RTL, mixed scripts).
@@ -117,8 +120,8 @@ The pilot must handle (defenses in `MASTER_PLAN.md` Part J):
 ## Module maps to create during implementation
 Each major module gets its own `AGENTS.md` (purpose · public interface · inputs/outputs
 · invariants · never-do · allowed libs + import examples · test commands · edge cases):
-`shared/contracts/`, `shared/metrics/` (governed meaning, Part R), `engines/data/`,
-`engines/docs/`, `engines/email/`, `engines/brain/`, `engines/audit/` (Part O),
-`engines/learning/` (Part P), `engines/wiki/` (Part Q), `mcp_server/`, `lenses/`,
+`shared/contracts/`, `shared/metrics/` (governed meaning), `engines/data/`,
+`engines/docs/`, `engines/email/`, `engines/brain/`, `engines/audit/`,
+`engines/learning/`, `engines/wiki/`, `mcp_server/`, `lenses/`,
 `templates/`, `playbooks/finance/`, `serving/` (one-A4 card + human review UI),
 `gov/security/` (threat model), `ops/observability/`, `eval/`.

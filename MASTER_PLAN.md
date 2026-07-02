@@ -1,15 +1,19 @@
 # MASTER_PLAN.md — Factory-Wide Decision Intelligence System
 
+> **Superseded by `03_design/assistant_master_plan.md` (approved 2026-07-02).**
+> Kept for historical reference. Use the v2 master plan plus
+> `03_design/phase_a_cards.md` for current architecture, phase order, and build cards.
+
 > **The one sentence that fixes everything:**
 > Numbers come from queries, never from AI guessing. AI synthesizes calculated facts
 > and text into concise, evidence-backed management thinking. The whole system is a
 > set of tools (an MCP server) that any AI agent drives.
 
-This is the **single authoritative architecture and build plan.** It supersedes and
-consolidates the earlier `MASTER_PLAN` draft and the `DECISION_INTELLIGENCE_PLAN.md`
-opinion. The original `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN*.md`, and `REVIEW.md`
-remain as the **detailed engine specs** this plan orchestrates — they are not
-replaced. (See Part N for what changed in this revision and why.)
+This was the **single authoritative architecture and build plan** before the approved
+v2 plan. It consolidated the earlier `MASTER_PLAN` draft and the
+`DECISION_INTELLIGENCE_PLAN.md` opinion. The original `ARCHITECTURE.md`,
+`IMPLEMENTATION_PLAN*.md`, and `REVIEW.md` now live under `archive/` as historical
+background, not current guidance. (See Part N for what changed in this revision and why.)
 
 It is written in two registers. **Part A is for the decision-maker** (plain language).
 **Parts B–N are for the build chain** (architecture, contracts, phases). The build
@@ -142,10 +146,10 @@ MCP-exposed module that **produces facts, never invents them.**
 
 | Engine | Owns | Detailed spec | Source-of-truth principle |
 |---|---|---|---|
-| **Data Engine** | Numbers from Excel/CSV/SAP | `IMPLEMENTATION_PLAN.md` | DuckDB staging; heavy math in SQL; rejects + run.log |
-| **Document Engine** | Text/tables from PDF/Word/PPT (+OCR) | `IMPLEMENTATION_PLAN_DOCS.md` | one normalized JSON per doc; `schema/document.schema.json` |
+| **Data Engine** | Numbers from Excel/CSV/SAP | `archive/IMPLEMENTATION_PLAN.md` (historical) | DuckDB staging; heavy math in SQL; rejects + run.log |
+| **Document Engine** | Text/tables from PDF/Word/PPT (+OCR) | `archive/IMPLEMENTATION_PLAN_DOCS.md` (historical) | one normalized JSON per doc; `schema/document.schema.json` |
 | **Email Engine** *(NEW)* | `.eml` threads, senders, approvals, attachments | *(new spec — Part C.2)* | thread-preserving; attachments recurse into Data/Doc engines |
-| **Insight Brain** | Durable memory + retrieval + synthesis | `IMPLEMENTATION_PLAN_SECONDBRAIN.md` | Markdown vault = archive; Postgres/pgvector = disposable lens |
+| **Insight Brain** | Durable memory + retrieval + synthesis | `archive/IMPLEMENTATION_PLAN_SECONDBRAIN.md` (historical) | Markdown vault = archive; Postgres/pgvector = disposable lens |
 
 ## C.1 Scale & SAP reality (why the engines are built this way)
 A single SAP raw export can be **~200 MB, 272 columns, ~600k rows**, and there are
@@ -437,8 +441,8 @@ feed the smallest correct slice.
 
 # PART J — MESSY-DATA & OCR COMMITMENTS (finance pilot)
 
-The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
-`REVIEW.md` are marked **NEW**.
+The pilot must survive real factory inputs. Items beyond the historical
+`archive/ARCHITECTURE.md` §3 / `archive/REVIEW.md` are marked **NEW**.
 
 ## J.1 Numbers (Data Engine)
 | Edge case | Defense | Owner |
@@ -449,7 +453,7 @@ The pilot must survive real factory inputs. Items beyond `ARCHITECTURE.md` §3 /
 | 200 MB won't fit RAM | Stream into DuckDB; math in SQL (spills to disk) | `ingest_files` |
 | SAP junk (ALV banners, encoding, locale `1.234,56`, negatives in parens) | Strip + detect + parse by declared locale; quarantine unparseable with reason | `ingest_files` |
 | Same concept, many column names | Human-reviewed `column_map.yaml`; **no blind fuzzy match** on critical fields | clean |
-| Duplicate / re-ingested rows | Global row-id, idempotent load, duplicate flagging | per `REVIEW.md` A1–A4 |
+| Duplicate / re-ingested rows | Global row-id, idempotent load, duplicate flagging | per historical `archive/REVIEW.md` A1–A4 |
 | Money summed as float drifts | `DECIMAL(18,4)` for money columns at clean stage | clean |
 | Schema drift over months | `schema_profile.json` committed; git diff shows it; assert expected columns, **fail loudly** | profile |
 
@@ -683,7 +687,7 @@ run in-house; the vault stays source of truth and the Audit + sign-off gate stil
 ---
 
 > **Parts O–S below are the trust / learning / meaning upgrades** added after two
-> independent senior audits (`RISK_AND_GAPS_AUDIT.md` + a second-opinion review) and the
+> independent senior audits (`archive/RISK_AND_GAPS_AUDIT.md` + a second-opinion review) and the
 > owner's directive for an independent audit layer with human accountability. They are
 > sequenced into the roadmap above (Phases 4, 6, 8, 11) — they are not optional extras.
 
@@ -778,7 +782,7 @@ Next month the audit is sharper and asks **fewer, better** questions. That is
 The system must **learn from its mistakes**, not wait for the human to fix the same thing
 three times. Grounded in the field's best work (Voyager skill libraries; Hermes
 self-created skills + DSPy/GEPA self-evolution; Letta/Zep/Mem0 memory; Reflexion
-self-correction). Full analysis in `RISK_AND_GAPS_AUDIT.md`.
+self-correction). Full historical analysis in `archive/RISK_AND_GAPS_AUDIT.md`.
 
 - **Four memories:** *episodic* (every Q&A/decision trace), *semantic* (governed facts +
   the metric layer + the wiki), *procedural* (**skills**), *working* (per task).
@@ -805,7 +809,7 @@ self-correction). Full analysis in `RISK_AND_GAPS_AUDIT.md`.
 
 # PART Q — THE LLM-WIKI VAULT (Karpathy / Obsidian pattern)
 
-Upgrades the second brain (`IMPLEMENTATION_PLAN_SECONDBRAIN.md`) into a three-tier design:
+Upgrades the second brain (`archive/IMPLEMENTATION_PLAN_SECONDBRAIN.md`, historical) into a three-tier design:
 
 1. **Immutable raw sources** — SAP exports, documents, emails, screenshots, approvals,
    source snapshots. **Never rewritten.** The forensic record.
@@ -841,7 +845,7 @@ department or file. `column_map.yaml` maps *columns*; this layer governs *meanin
 
 ---
 
-# PART S — FURTHER UPGRADES (concise register; detail in `RISK_AND_GAPS_AUDIT.md`)
+# PART S — FURTHER UPGRADES (concise register; historical detail in `archive/RISK_AND_GAPS_AUDIT.md`)
 
 | Upgrade | What | Phase |
 |---|---|---|

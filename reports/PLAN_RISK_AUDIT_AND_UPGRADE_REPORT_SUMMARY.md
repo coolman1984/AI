@@ -1,5 +1,9 @@
 # Factory Decision Intelligence Plan - Summary
 
+> **Superseded by `03_design/assistant_master_plan.md` (approved 2026-07-02).**
+> Kept for historical reference. Use the v2 master plan and
+> `03_design/phase_a_cards.md` for current work.
+
 Date: 2026-06-26
 
 This is the short version of `PLAN_RISK_AUDIT_AND_UPGRADE_REPORT.md`. Whenever the main plan or the big audit report changes, this summary must be updated too.
@@ -234,7 +238,9 @@ Then add:
 
 Next step:
 
-Update `MASTER_PLAN.md` and `CODEX_PLAN.md` before coding.
+Historical next step at the time: update the then-current master plan and Codex handoff
+before coding. Current direction is superseded by `03_design/assistant_master_plan.md`
+and `03_design/phase_a_cards.md`.
 
 The updated plan should add:
 
@@ -252,4 +258,3 @@ After that, scaffold Phase 0.
 The final direction is:
 
 > Build one trusted finance answer first. Audit it. Approve it. Learn from it. Then expand.
-

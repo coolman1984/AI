@@ -1,4 +1,9 @@
 # Run Log
+
+> Historical log. References to archived plan filenames below describe what was true at
+> the time of each run; current architecture is `03_design/assistant_master_plan.md`
+> (approved 2026-07-02).
+
 Timestamp: 2026-06-30
 Action: Adopted Master Agent OS; instantiated 00_control governance from real project state.
 Inputs read: pytest (26 passed), ruff (clean), git log (Stages 0-7), module/test inventory.
