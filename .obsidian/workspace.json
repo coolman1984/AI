@@ -1,0 +1,192 @@
+{
+  "main": {
+    "id": "dcf929a5d23f7626",
+    "type": "split",
+    "children": [
+      {
+        "id": "5d4a521964b7fd67",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "773b07a4042cd21b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "AGENT_SKILL_MAP.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "AGENT_SKILL_MAP"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "af432d8ac82d5cc8",
+    "type": "split",
+    "children": [
+      {
+        "id": "d380056efe9f5d3b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "aa56c88bd8e7a0f1",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "4a115718c9590bf5",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "f225061758c93c74",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 240.5
+  },
+  "right": {
+    "id": "d9e0b88f154d7fa8",
+    "type": "split",
+    "children": [
+      {
+        "id": "6b47e713fb1866d0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b804d8e6927bb5fb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "AGENT_SKILL_MAP.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for AGENT_SKILL_MAP"
+            }
+          },
+          {
+            "id": "32566cd0abefaaa5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "AGENT_SKILL_MAP.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from AGENT_SKILL_MAP"
+            }
+          },
+          {
+            "id": "f44e09d6bff87929",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "83c998fe5c8c2b7d",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "474caa7e9351752d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "AGENT_SKILL_MAP.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of AGENT_SKILL_MAP"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "773b07a4042cd21b",
+  "lastOpenFiles": [
+    "03_design/assistant_master_plan.md",
+    "03_design/assistant_master_plan.md.tmp.10888.6471b6e781be",
+    "AGENT_CORE_CONTRACT.md"
+  ]
+}

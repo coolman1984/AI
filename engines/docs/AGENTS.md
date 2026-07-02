@@ -4,7 +4,11 @@
 documents and return cited passages.
 **Public interface:** `extract.extract_document`, `extract.PyPdfExtractor`,
 `ocr.ocr_cascade`, `ocr.extract_page_text`, `ocr.extraction_quality`, `ocr.render_pdf_page`,
-`search.search_documents`.
+`search.search_documents`, `report_reader.read_report` (takes PDF path + LLMBridge),
+`report_reader.store_report_knowledge` (writes to ``.brain/reports/``),
+`report_reader.LLMBridge` (Protocol, ``generate(prompt) -> str``),
+`report_reader.OpencodeLLM` (subprocess wrapper, never in tests),
+`report_reader.ReportKnowledge`, `report_reader.KeyPoint` (text + page).
 **Real today:** `pypdf` (text PDFs) + plain text + **OCR cascade with real Tesseract &
 RapidOCR** + PyMuPDF page rasterizer + the quality gate + keyword search.
 **OCR cascade (`config.yaml tools.ocr_cascade`):** tesseract → rapidocr → paddleocr →
@@ -17,4 +21,4 @@ queue, MASTER_PLAN J.2), never silently trusted. Every returned passage carries 
 EvidenceRef (file + page).
 **Never:** turn OCR text into a fact without review; extract numbers for the variance from a
 PDF (that stays in DuckDB).
-**Tests:** `pytest tests/test_documents.py`
+**Tests:** `pytest tests/test_documents.py`; report-reader tests: `pytest tests/test_report_reader.py`
