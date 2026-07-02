@@ -155,6 +155,8 @@ def test_ingest_csv_tracked_happy_path(tmp_path, con: duckdb.DuckDBPyConnection)
     assert result["status"] == "completed"
     assert result["rows_in"] == 3
     assert result["reject_count"] == 0
+    assert result["duplicate_count"] == 0
+    assert result["on_duplicates"] == "flag"
     assert result["source_type"] == "csv"
     assert result["source_path"] == str(path)
     assert isinstance(result["run_id"], int) and result["run_id"] > 0
@@ -236,8 +238,33 @@ def test_ingest_csv_tracked_rejects_duplicate_row(
     result = ingest_csv_tracked(con, "raw_with_dupe", str(path))
 
     assert result["rows_in"] == 3
+    assert result["reject_count"] == 0
+    assert result["duplicate_count"] == 1
+    assert con.execute("SELECT count(*) FROM raw_with_dupe").fetchone()[0] == 3
+    rejects = con.execute(
+        "SELECT count(*) FROM ingestion_rejects WHERE run_id = ?", [result["run_id"]]
+    ).fetchone()[0]
+    assert rejects == 0
+
+
+def test_ingest_csv_tracked_can_drop_duplicates_when_requested(
+    tmp_path, con: duckdb.DuckDBPyConnection
+) -> None:
+    path = tmp_path / "with_dupe_drop.csv"
+    with path.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["material_id", "amount"])
+        writer.writerow(["A1", "100"])
+        writer.writerow(["A2", "200"])
+        writer.writerow(["A1", "100"])
+
+    result = ingest_csv_tracked(con, "raw_with_dupe_drop", str(path), on_duplicates="drop")
+
+    assert result["rows_in"] == 3
     assert result["reject_count"] == 1
-    assert con.execute("SELECT count(*) FROM raw_with_dupe").fetchone()[0] == 2
+    assert result["duplicate_count"] == 1
+    assert result["on_duplicates"] == "drop"
+    assert con.execute("SELECT count(*) FROM raw_with_dupe_drop").fetchone()[0] == 2
     reason = con.execute(
         "SELECT reason FROM ingestion_rejects WHERE run_id = ?", [result["run_id"]]
     ).fetchone()[0]
@@ -258,4 +285,5 @@ def test_ingest_csv_tracked_conserves_rows(tmp_path, con: duckdb.DuckDBPyConnect
 
     kept = con.execute("SELECT count(*) FROM raw_mixed").fetchone()[0]
     assert result["rows_in"] == kept + result["reject_count"]
-    assert result["reject_count"] == 2
+    assert result["reject_count"] == 1
+    assert result["duplicate_count"] == 1

@@ -11,12 +11,19 @@ from __future__ import annotations
 import duckdb
 import polars as pl
 
-from shared.contracts.models import AuditResult, ManagerCard, SignOff, VarianceBridge
+from shared.contracts.models import (
+    AuditResult,
+    ManagerCard,
+    SignOff,
+    VarianceBridge,
+    VarianceDecomposition,
+)
 
 
 def audit_card(
     card: ManagerCard,
     bridge: VarianceBridge,
+    decomposition: VarianceDecomposition | None,
     clean_actuals: pl.DataFrame,
     budget: pl.DataFrame,
     rows_in: int,
@@ -51,18 +58,53 @@ def audit_card(
     evidence_ok = all(n.evidence and n.evidence.resolves() for n in card.key_numbers)
     if not evidence_ok:
         issues.append("a key number lacks resolving evidence")
+    driver_split_ok = True
+    if card.driver_split is not None:
+        driver_numbers = [
+            card.driver_split.total,
+            card.driver_split.price,
+            card.driver_split.volume,
+            card.driver_split.mix,
+        ]
+        driver_evidence_ok = all(n.evidence and n.evidence.resolves() for n in driver_numbers)
+        if not driver_evidence_ok:
+            driver_split_ok = False
+            issues.append("a driver number lacks resolving evidence")
+        if decomposition is None:
+            driver_split_ok = False
+            issues.append("driver view shown without an audited decomposition")
+        else:
+            expected = {
+                "total": round(decomposition.total, 4),
+                "price": round(decomposition.price, 4),
+                "volume": round(decomposition.volume, 4),
+                "mix": round(decomposition.mix, 4),
+            }
+            actual = {
+                "total": round(card.driver_split.total.value, 4),
+                "price": round(card.driver_split.price.value, 4),
+                "volume": round(card.driver_split.volume.value, 4),
+                "mix": round(card.driver_split.mix.value, 4),
+            }
+            if not decomposition.reconciles(tol):
+                driver_split_ok = False
+                issues.append("driver decomposition does not reconcile to its total")
+            if actual != expected:
+                driver_split_ok = False
+                issues.append("driver view does not match the decomposed numbers")
 
     # --- O.3 CERTAINTY (multi-dimensional, calibrated placeholder) ---
     dq = card.confidence
     certainty = {
         "numbers": 1.0 if numbers_match else 0.0,
         "evidence": 1.0 if evidence_ok else 0.0,
+        "drivers": 1.0 if driver_split_ok else 0.0,
         "data_quality": max(0.0, 1.0 - dq["reject_ratio"]),
         "materiality": max(0.0, 1.0 - dq["materiality_ratio"]),
     }
     certainty["overall"] = round(min(certainty.values()), 3)
 
-    passed = numbers_match and conservation_ok and bridge_ok and evidence_ok
+    passed = numbers_match and conservation_ok and bridge_ok and evidence_ok and driver_split_ok
     needs_human = (
         certainty["overall"] < cfg.get("certainty_release_threshold", 0.80)
         or dq["materiality_ratio"] > cfg.get("materiality_warn_ratio", 0.02)

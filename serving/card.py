@@ -96,6 +96,16 @@ def make_manager_card(
             f"({data_quality['reject_ratio']:.0%}) — verify before deciding."
         )
     actions = [f"Review {top.dim_value} cost driver with the owner before sign-off."]
+    evidence = [n.evidence for n in key_numbers]
+    if driver_split is not None:
+        evidence.extend(
+            [
+                driver_split.total.evidence,
+                driver_split.price.evidence,
+                driver_split.volume.evidence,
+                driver_split.mix.evidence,
+            ]
+        )
 
     card = ManagerCard(
         headline=headline,
@@ -106,7 +116,7 @@ def make_manager_card(
         risks=risks,
         actions=actions,
         confidence=data_quality,
-        evidence=[n.evidence for n in key_numbers],
+        evidence=evidence,
     )
     card.validate()  # trust wall: refuse a number without evidence
     return card

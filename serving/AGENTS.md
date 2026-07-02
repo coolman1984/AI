@@ -12,6 +12,7 @@ for branded dashboards/PDF.
 `open_design.export_report`.
 
 **Invariants:** output-only — never computes or invents a number; renders only an audited,
-signed-off card.
+signed-off card. If `driver_split` is shown, it must carry evidence and match an audited
+decomposition; management-facing "why" numbers do not bypass the main trust gate.
 
 **Tests:** `pytest tests/test_card_and_audit.py tests/test_serving.py`

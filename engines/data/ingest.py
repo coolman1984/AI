@@ -9,7 +9,6 @@ import json
 from datetime import UTC, datetime
 
 import duckdb
-import polars as pl
 
 from engines.data.clean import TOTAL_LABELS
 from shared.contracts.models import RejectRecord
@@ -136,6 +135,10 @@ def ingest_csv(
     return con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
 
 
+def _quote_ident(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
+
+
 def _is_total_row(fields: dict) -> bool:
     """A row is a subtotal/grand-total row if any cell matches a known total label.
 
@@ -151,40 +154,93 @@ def ingest_csv_tracked(
     path: str,
     *,
     source_type: str = "csv",
+    on_duplicates: str = "flag",
 ) -> dict:
     """Ingest a CSV into a target table with a tracked run lifecycle.
 
-    Quarantines embedded total/subtotal rows and exact-duplicate rows before they land
-    in `table` — the target table holds only accepted rows; rejects go to
-    `ingestion_rejects` with a reason. Conservation law: rows_in == accepted + rejected.
+    Quarantines embedded total/subtotal rows before they land in `table`.
+    Exact duplicates are flagged by default and only quarantined when
+    `on_duplicates="drop"`. Conservation law: rows_in == kept + rejected.
     """
+    if on_duplicates not in {"flag", "drop"}:
+        raise ValueError("on_duplicates must be 'flag' or 'drop'")
+
     run_id = start_ingestion_run(con, source_type, path)
     staging = f"__staging_{table}"
     rows_in = ingest_csv(con, staging, path, run_id=run_id)
+    columns = [
+        row[1]
+        for row in con.execute(f"PRAGMA table_info('{staging}')").fetchall()
+    ]
+    data_cols = [c for c in columns if c != "__row_id"]
+    quoted_cols = [_quote_ident(c) for c in data_cols]
+    total_labels = ", ".join(f"'{label}'" for label in sorted(TOTAL_LABELS))
+    total_predicate = " OR ".join(
+        [
+            f"lower(trim(COALESCE(CAST({_quote_ident(c)} AS VARCHAR), ''))) IN ({total_labels})"
+            for c in data_cols
+        ]
+    )
+    duplicate_partition = ", ".join(quoted_cols)
 
-    raw: pl.DataFrame = con.execute(f"SELECT * FROM {staging}").pl()
-    data_cols = [c for c in raw.columns if c != "__row_id"]
+    con.execute(
+        f"""
+        CREATE OR REPLACE TEMP TABLE __annotated_ingest AS
+        SELECT
+            *,
+            CASE
+                WHEN {total_predicate} THEN TRUE
+                ELSE FALSE
+            END AS __is_total_row,
+            row_number() OVER (PARTITION BY {duplicate_partition} ORDER BY __row_id) AS __dup_rank
+        FROM {staging}
+        """
+    )
 
-    kept_rows: list[dict] = []
+    duplicate_count = con.execute(
+        "SELECT count(*) FROM __annotated_ingest WHERE NOT __is_total_row AND __dup_rank > 1"
+    ).fetchone()[0]
+
+    reject_where = "__is_total_row"
+    if on_duplicates == "drop":
+        reject_where = f"{reject_where} OR __dup_rank > 1"
+
+    con.execute(
+        f"""
+        CREATE OR REPLACE TABLE {table} AS
+        SELECT *
+        EXCLUDE (__is_total_row, __dup_rank)
+        FROM __annotated_ingest
+        WHERE NOT ({reject_where})
+        ORDER BY __row_id
+        """
+    )
+
+    reject_rows = con.execute(
+        f"""
+        SELECT
+            __row_id,
+            CASE
+                WHEN __is_total_row THEN 'total_row'
+                WHEN __dup_rank > 1 THEN 'duplicate'
+            END AS reason,
+            {", ".join(quoted_cols)}
+        FROM __annotated_ingest
+        WHERE {reject_where}
+        ORDER BY __row_id
+        """
+    ).fetchall()
+
     rejects: list[RejectRecord] = []
-    seen: set[tuple] = set()
-    for row in raw.iter_rows(named=True):
-        row_id = int(row["__row_id"])
-        fields = {c: row[c] for c in data_cols}
+    for row in reject_rows:
+        row_id = int(row[0])
+        reason = str(row[1])
+        fields = {col: row[idx + 2] for idx, col in enumerate(data_cols)}
         if _is_total_row(fields):
-            rejects.append(RejectRecord(row_id, "total_row", fields))
-            continue
-        sig = tuple(fields.values())
-        if sig in seen:
-            rejects.append(RejectRecord(row_id, "duplicate", fields))
-            continue
-        seen.add(sig)
-        kept_rows.append(row)
+            reason = "total_row"
+        rejects.append(RejectRecord(row_id, reason, fields))
 
-    clean = pl.DataFrame(kept_rows) if kept_rows else raw.clear()
-    con.register("__clean_view", clean)
-    con.execute(f"CREATE OR REPLACE TABLE {table} AS SELECT * FROM __clean_view")
-    con.unregister("__clean_view")
+    con.execute("DROP TABLE __annotated_ingest")
     con.execute(f"DROP TABLE {staging}")
 
     if rejects:
@@ -197,5 +253,7 @@ def ingest_csv_tracked(
         "source_path": path,
         "rows_in": rows_in,
         "reject_count": len(rejects),
+        "duplicate_count": duplicate_count,
+        "on_duplicates": on_duplicates,
         "status": "completed",
     }

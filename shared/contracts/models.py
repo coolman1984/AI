@@ -118,6 +118,15 @@ class ManagerCard:
         for n in self.key_numbers:
             if n.evidence is None or not n.evidence.resolves():
                 raise ValueError(f"key number '{n.label}' has no resolving evidence — refused")
+        if self.driver_split is not None:
+            for n in [
+                self.driver_split.total,
+                self.driver_split.price,
+                self.driver_split.volume,
+                self.driver_split.mix,
+            ]:
+                if n.evidence is None or not n.evidence.resolves():
+                    raise ValueError(f"driver number '{n.label}' has no resolving evidence — refused")
         # length budget (one A4): keep the card tight
         if len(self.key_numbers) > 5:
             raise ValueError("card exceeds 5 key numbers (one-A4 budget)")

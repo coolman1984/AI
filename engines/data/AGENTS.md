@@ -8,9 +8,11 @@ unified-ingestion-spine.md`, stage IS2).
 **Invariants:** numbers come from here, never from generation; conservation law
 (`rows_in == clean + rejected`) is asserted in both `clean.clean_actuals` and
 `ingest.ingest_csv_tracked`; the variance bridge must reconcile.
-**Never:** load a whole large file into memory (stream via DuckDB — `ingest_csv_tracked`'s
-use of `.pl()` is bounded to the already-landed staging table, not the raw file); aggregate
-a total/subtotal row; silently drop a row (every drop is a `RejectRecord`).
+**Never:** load a whole large file into memory (the tracked spine must classify totals /
+duplicates in DuckDB SQL, not by materializing the full staging table in Python); aggregate
+a total/subtotal row; silently drop a row (every drop is a `RejectRecord`). Duplicate policy
+in the generic spine is explicit: `on_duplicates="flag"` by default, `drop` only when the
+caller asks for it.
 **Tests:** `pytest tests/test_data_pipeline.py tests/test_ingestion_spine.py`
 **Edge cases:** embedded total rows, duplicates, locale amounts (1.234,56 / 45,50),
 missing keys — column-mapped in `clean.py` (MASTER_PLAN J.1), column-name-agnostic in

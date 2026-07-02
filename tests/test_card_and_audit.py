@@ -42,24 +42,33 @@ def test_card_includes_driver_split_when_available():
 
 
 def test_audit_independent_recompute_matches():
-    rows_in, clean, rejects, budget, bridge, _decomp, card = _build()
-    res = audit_card(card, bridge, clean, budget, rows_in, len(rejects), AUDIT_CFG)
+    rows_in, clean, rejects, budget, bridge, decomp, card = _build()
+    res = audit_card(card, bridge, decomp, clean, budget, rows_in, len(rejects), AUDIT_CFG)
     assert res.passed is True
     assert abs(res.recomputed["variance"] - bridge.total_variance) < 0.01
     assert 0.0 <= res.certainty["overall"] <= 1.0
 
 
 def test_audit_flags_a_tampered_total():
-    rows_in, clean, rejects, budget, bridge, _decomp, card = _build()
+    rows_in, clean, rejects, budget, bridge, decomp, card = _build()
     bridge.total_actual += 999.0  # someone tampers with the number
-    res = audit_card(card, bridge, clean, budget, rows_in, len(rejects), AUDIT_CFG)
+    res = audit_card(card, bridge, decomp, clean, budget, rows_in, len(rejects), AUDIT_CFG)
     assert res.passed is False
     assert any("mismatch" in i for i in res.issues)
 
 
+def test_audit_flags_a_tampered_driver_split():
+    rows_in, clean, rejects, budget, bridge, decomp, card = _build()
+    assert card.driver_split is not None
+    card.driver_split.price.value += 10.0
+    res = audit_card(card, bridge, decomp, clean, budget, rows_in, len(rejects), AUDIT_CFG)
+    assert res.passed is False
+    assert any("driver view does not match" in i for i in res.issues)
+
+
 def test_low_quality_triggers_human_question_and_blocks_unsigned():
-    rows_in, clean, rejects, budget, bridge, _decomp, card = _build()
-    res = audit_card(card, bridge, clean, budget, rows_in, len(rejects), AUDIT_CFG)
+    rows_in, clean, rejects, budget, bridge, decomp, card = _build()
+    res = audit_card(card, bridge, decomp, clean, budget, rows_in, len(rejects), AUDIT_CFG)
     # sample has 3/8 rejects -> low data quality -> must ask the human
     assert res.needs_human is True
     assert len(res.questions) >= 1

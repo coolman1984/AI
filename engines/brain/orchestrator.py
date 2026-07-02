@@ -77,7 +77,7 @@ def run_pipeline(
 
     # 5) INDEPENDENT AUDIT (four-eyes) — recompute via the lens columns
     audit = audit_card(
-        card, bridge, clean, budget, rows_in, len(rejects), audit_cfg,
+        card, bridge, decomposition, clean, budget, rows_in, len(rejects), audit_cfg,
         value_col=value_col, baseline_col=baseline_col,
     )
 
