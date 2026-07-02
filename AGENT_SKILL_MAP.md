@@ -51,6 +51,8 @@ Load:
 - the task is to normalize deck understanding into a cited workflow record with purpose, steps, owners, KPIs, changes, and open questions
 - the task is to retain original-language source text and provenance metadata for translated workflow fields
 - the task is to apply a Korean-English factory glossary or flag critical-term translation disagreements
+- the task is to measure image-only slide share or OCR review load for Korean decks before escalating OCR/VLM paths
+- the task is to ingest `.eml` messages, preserve email metadata, or route attachments into the document spine
 
 Load:
 `agent_skills/document_evidence_extraction.md`
@@ -76,6 +78,7 @@ Load:
 - the user asks whether a result is safe to trust or release
 - there is any ambiguity around data quality, missing evidence, or number mismatches
 - the task involves LLM-originated claims, the claims store, claim quarantine, or the facts/claims wall
+- the task needs an independent audit of non-numeric brief claims from documents or decks
 
 Load:
 `agent_skills/audit_and_trust.md`

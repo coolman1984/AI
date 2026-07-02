@@ -257,3 +257,74 @@ into chunk summaries, computes glossary match ratio deterministically, and flags
 terms plus KPI back-translation disagreements through a dispatchable `check_translation_terms` tool.
 Evidence: E27.
 Next step: start B.6 (non-numeric brief audit); external real-data wait is unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.6, the independent non-numeric brief audit path.
+Reason: the approved plan needed a real audit seam for document-derived claims so that non-numeric
+brief wording is checked independently instead of being trusted on prompt promises alone.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `engines/audit/audit.py`, `engines/docs/verify.py`,
+`mcp_server/server.py`, `engines/audit/AGENTS.md`, and the existing card audit tests.
+Outputs changed: `engines/audit/brief_audit.py`, `mcp_server/server.py`, `tests/test_brief_audit.py`,
+`engines/audit/AGENTS.md`, `agent_skills/audit_and_trust.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: non-numeric brief claims now get an independent second extraction, citation re-check,
+disagreement routing to human review, and numeric-claim defer-to-verify behavior through a
+dispatchable `audit_brief_claims` tool.
+Evidence: E28.
+Next step: start B.7 (Korean image-share measurement and first local OCR tier); external real-data
+wait is unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.7, Korean image-share measurement and the first repo-owned local RapidOCR seam.
+Reason: the approved plan required measurement before guessing whether heavier OCR or VLM work is
+urgent, and it explicitly preferred integrating RapidOCR as the first local backend instead of
+inventing a new OCR engine.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `engines/docs/{ocr,extract,pptx}.py`,
+`tests/test_ocr_cascade.py`, `tests/test_pptx_extraction.py`, `mcp_server/server.py`,
+`engines/docs/AGENTS.md`.
+Outputs changed: `engines/docs/image_profile.py`, `engines/docs/rapidocr_adapter.py`,
+`engines/docs/ocr.py`, `engines/docs/extract.py`, `mcp_server/server.py`,
+`tests/test_korean_ocr_profile.py`, `engines/docs/AGENTS.md`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: the repo now profiles born-digital versus image-only slides, exposes `profile_deck_images`,
+normalizes RapidOCR output behind a local adapter, and routes image-only / low-confidence Korean
+OCR pages to review with explicit readiness warnings.
+Evidence: E29.
+Next step: start B.8 (email and attachment intake baseline); external real-data wait is unchanged
+for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.8, the governed email and attachment intake baseline.
+Reason: the approved plan required email to join the same privacy- and evidence-governed spine as
+documents before later registry and workflow-family work could be honest.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `gov/privacy.py`, `engines/docs/extract.py`,
+`mcp_server/server.py`, and the current document-engine tests.
+Outputs changed: `engines/email/extract.py`, `engines/email/AGENTS.md`, `mcp_server/server.py`,
+`tests/test_email_extraction.py`, `agent_skills/document_evidence_extraction.md`,
+`AGENT_SKILL_MAP.md`, `00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: the repo now ingests `.eml` body text and metadata locally, defaults privacy to Tier 1,
+routes attachments into the document spine, preserves parent email identity on attachments, and
+records attachment extraction failures without stopping the whole intake.
+Evidence: E30.
+Next step: start B.9 (first HQ deck brief gate); external real-data wait is unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.9, the first HQ deck brief gate.
+Reason: after the document, workflow, translation, audit, OCR, and email seams were all real, the
+next approved step was to make them meet in a one-page Tier 2 deck brief that an owner can compare
+back to the original slides.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `engines/docs/workflow_record.py`,
+`engines/docs/translation_check.py`, `engines/audit/brief_audit.py`, `mcp_server/server.py`,
+and the current document/reporting tests.
+Outputs changed: `serving/decision_brief.py`, `mcp_server/server.py`, `tests/test_hq_deck_brief.py`,
+`agent_skills/management_reporting.md`, `00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: the repo now builds a one-page HQ deck brief object with trusted claims, review-routed
+unsupported claims, coverage report, glossary flags, audit status, and sign-off placeholder through
+a dispatchable `build_hq_deck_brief` tool.
+Evidence: E31.
+Next step: start B.10 (Docling hard-layout adapter); external real-data wait is unchanged for P2.2.

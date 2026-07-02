@@ -5,7 +5,7 @@
 
 2. **Current project state:** Master plan v2 is approved (`03_design/assistant_master_plan.md`,
    2026-07-02). Phase A safety rails (A0.1-A0.8) are green, A1 documentation consolidation is
-   approved and passed, and B.1-B.5 are now green.
+   approved and passed, and B.1-B.9 are now green.
 
 3. **Completed work:** foundation; numeric trust loop (DuckDB+Polars, messy-data defenses);
    independent audit + human sign-off; decision/knowledge/temporal memory (local, real);
@@ -14,7 +14,7 @@
 
 4. **Pending work:** follow `03_design/current_implementation_plan.md` and
    `03_design/phase_b_to_f_cards.md` for the next execution slice. The next card is
-   B.6 (non-numeric brief audit). Later phases are now planned as clean
+   B.10 (Docling hard-layout adapter). Later phases are now planned as clean
    OSS-backed adapters where appropriate: native PPTX first, `RapidOCR` as the
    first local OCR tier, `Docling` as the later hard-layout adapter, stable
    `mcp-python-sdk` for MCP hardening later, and `Cognee` / `Graphiti` only
@@ -34,8 +34,8 @@
 8. **Current bottleneck (bottlenecks.md):** P2.2 / real-data track - no real SAP-scale export
    has been profiled yet.
 
-9. **Next best action:** start B.6 (non-numeric brief audit) from
-   `03_design/phase_b_to_f_cards.md`; A0, A1, B.1, B.2, B.3, B.4, and B.5 are green; keep
+9. **Next best action:** start B.10 (Docling hard-layout adapter) from
+   `03_design/phase_b_to_f_cards.md`; A0, A1, and B.1-B.9 are green; keep
    waiting for the first real export for P2.2.
 
 10. **Source-of-truth files:** `03_design/assistant_master_plan.md` (current architecture),

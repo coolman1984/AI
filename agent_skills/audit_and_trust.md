@@ -64,11 +64,14 @@ Usually hands off to:
 ## Existing repo anchors
 - `engines/audit/AGENTS.md`
 - `engines/audit/audit.py`
+- `engines/audit/brief_audit.py`
 - `tests/test_card_and_audit.py`
+- `tests/test_brief_audit.py`
 
 ## Definition of done
 Done means:
 - the result is clearly passed, failed, or blocked
 - the trust reason is explicit
 - human review points are named when needed
+- non-numeric brief claims are independently re-extracted and never auto-merged on disagreement
 - release readiness is unambiguous

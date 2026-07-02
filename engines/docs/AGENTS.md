@@ -4,7 +4,9 @@
 documents and return cited passages.
 **Public interface:** `extract.extract_document`, `extract.PyPdfExtractor`,
 `pptx.PptxExtractor`,
+`image_profile.profile_deck_images`,
 `ocr.ocr_cascade`, `ocr.extract_page_text`, `ocr.extraction_quality`, `ocr.render_pdf_page`,
+`rapidocr_adapter.RapidOcrAdapter`,
 `search.search_documents`, `verify.extract_numeric_tokens`,
 `verify.normalize_korean_unit`, `verify.figure_matches`,
 `verify.citation_supports_claim`,
@@ -27,6 +29,8 @@ keyword search + chunked coverage summaries for long documents.
 Structured workflow understanding now has a validated record seam for purpose, steps, roles,
 KPIs, changes, questions, and risks with citations, original-language retention, a deterministic
 provenance stamp, and glossary-backed translation checks.
+Deck profiling now measures born-digital versus image-only share and makes OCR review load visible
+before any heavier OCR escalation is chosen.
 **OCR cascade (`config.yaml tools.ocr_cascade`):** tesseract → rapidocr → paddleocr →
 surya → vlm. Each tier runs only if installed; if born-digital text is poor, escalate; if
 all tiers are poor, flag `needs_review`. **Adapters (real-if-installed):** Docling,
@@ -42,7 +46,8 @@ PDF (that stays in DuckDB).
 `pytest tests/test_report_reader.py`; workflow record tests:
 `pytest tests/test_workflow_record.py`; provenance tests:
 `pytest tests/test_provenance_stamp.py`; translation-check tests:
-`pytest tests/test_translation_check.py`
+`pytest tests/test_translation_check.py`; OCR profile tests:
+`pytest tests/test_korean_ocr_profile.py`
 **store_report_knowledge:** `base_dir` injectable for tests (default `.brain/reports`);
 `ReportKnowledge` includes `warnings: list[str]` field; out-of-range key_point pages are
 dropped with a warning. Language detection: Hangul → `"ko"`, else `"en"`.

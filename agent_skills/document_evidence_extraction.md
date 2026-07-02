@@ -70,19 +70,24 @@ Usually hands off to:
 - `engines/docs/AGENTS.md`
 - `engines/docs/extract.py`
 - `engines/docs/pptx.py`
+- `engines/docs/image_profile.py`
 - `engines/docs/summarize.py`
 - `engines/docs/glossary.py`
 - `engines/docs/provenance.py`
+- `engines/docs/rapidocr_adapter.py`
 - `engines/docs/translation_check.py`
 - `engines/docs/workflow_record.py`
 - `engines/docs/ocr.py`
 - `engines/docs/search.py`
+- `engines/email/extract.py`
 - `mcp_server/server.py` (summarize_document + ingest_deck + extract_workflow_record routing)
 - `tests/test_documents.py`
 - `tests/test_chunked_summary.py`
+- `tests/test_korean_ocr_profile.py`
 - `tests/test_translation_check.py`
 - `tests/test_workflow_record.py`
 - `tests/test_provenance_stamp.py`
+- `tests/test_email_extraction.py`
 
 ## Definition of done
 Done means:
@@ -93,4 +98,6 @@ Done means:
 - structured workflow understanding keeps citations on every required field
 - translated workflow fields retain source text and deterministic provenance metadata
 - glossary-backed translation checks surface critical-term disagreements before release
+- image-only share and OCR review load are measured before heavier OCR escalation
+- email body and attachments enter the same governed evidence path with visible failures
 - downstream consumers can use the artifact without guessing source reliability

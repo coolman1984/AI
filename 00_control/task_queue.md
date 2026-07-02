@@ -50,10 +50,10 @@ Only the Evaluator marks Passed (evidence required).
 | B.3 | WorkflowRecord schema | Builder->Evaluator | Passed | High | B.1, B.2 | cited workflow record contract + MCP tool + skill/map updates | pytest `tests/test_workflow_record.py` + full pytest | E25 |
 | B.4 | original-language retention and provenance stamp | Builder->Evaluator | Passed | High | B.3 | Korean source-text retention + provenance stamp | pytest `tests/test_provenance_stamp.py` + full pytest | E26 |
 | B.5 | Korean-English glossary and critical-term check | Builder->Evaluator | Passed | High | B.3, B.4 | glossary logic + translation review flags | pytest `tests/test_translation_check.py` + full pytest | E27 |
-| B.6 | non-numeric brief audit | Builder->Evaluator | Pending | High | A0 gate, B.3 | `engines/audit/brief_audit.py`, audit tool + skill/map updates | pytest `tests/test_brief_audit.py` + full pytest | - |
-| B.7 | Korean image-share measurement + first local OCR tier | Builder->Evaluator | Pending | High | B.1, OCR fixtures | `engines/docs/image_profile.py`, `rapidocr_adapter.py`, OCR routing | pytest `tests/test_korean_ocr_profile.py` + full pytest | - |
-| B.8 | email and attachment intake baseline | Builder->Evaluator | Pending | High | A0 gate, synthetic `.eml` samples | `engines/email/extract.py`, governed email spine path | pytest `tests/test_email_extraction.py` + full pytest | - |
-| B.9 | first HQ deck brief gate | Builder->Evaluator | Pending | High | B.1-B.7, synthetic Tier 2 deck | one-page deck brief with citations, audit status, sign-off placeholder | pytest `tests/test_hq_deck_brief.py` + full pytest | - |
+| B.6 | non-numeric brief audit | Builder->Evaluator | Passed | High | A0 gate, B.3 | `engines/audit/brief_audit.py`, audit tool + skill/map updates | pytest `tests/test_brief_audit.py` + full pytest | E28 |
+| B.7 | Korean image-share measurement + first local OCR tier | Builder->Evaluator | Passed | High | B.1, OCR fixtures | `engines/docs/image_profile.py`, `rapidocr_adapter.py`, OCR routing | pytest `tests/test_korean_ocr_profile.py` + full pytest | E29 |
+| B.8 | email and attachment intake baseline | Builder->Evaluator | Passed | High | A0 gate, synthetic `.eml` samples | `engines/email/extract.py`, governed email spine path | pytest `tests/test_email_extraction.py` + full pytest | E30 |
+| B.9 | first HQ deck brief gate | Builder->Evaluator | Passed | High | B.1-B.7, synthetic Tier 2 deck | one-page deck brief with citations, audit status, sign-off placeholder | pytest `tests/test_hq_deck_brief.py` + full pytest | E31 |
 | B.10 | Docling hard-layout adapter | Builder->Evaluator | Pending | Med | B.1, local Docling install | `engines/docs/docling_adapter.py`, explicit hard-layout tool path | pytest `tests/test_docling_adapter.py` + full pytest | - |
 | C.1 | document registry | Builder->Evaluator | Pending | High | B gate | `engines/brain/registry.py`, document registry MCP tools | pytest `tests/test_document_registry.py` + full pytest | - |
 | C.2 | workflow families and versioning | Builder->Evaluator | Pending | High | C.1 | family/version contract with valid-time and ingest-time | pytest `tests/test_workflow_family.py` + full pytest | - |
@@ -84,4 +84,4 @@ Only the Evaluator marks Passed (evidence required).
 | F.9 | session-state persistence | Builder->Evaluator | Pending | Low | D.6 | session-state/restart-note persistence | pytest `tests/test_session_state.py` + full pytest | - |
 | F.10 | quarterly plan review ritual | Planner->Evaluator | Pending | Low | D gate | review checklist and decision log | doc review | - |
 
-**Next best action:** start **B.6** (non-numeric brief audit). A0.1-A0.8, A1.1-A1.2, B.1, B.2, B.3, B.4, and B.5 are now green. External track unchanged: P2.2 still waits on the first real export.
+**Next best action:** start **B.10** (Docling hard-layout adapter). A0.1-A0.8, A1.1-A1.2, and B.1-B.9 are now green. External track unchanged: P2.2 still waits on the first real export.

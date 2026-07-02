@@ -258,3 +258,78 @@ Evidence recorded: E27.
 Problems found: none in this slice; the next planned build step is B.6 non-numeric brief audit.
 Next task: B.6 - non-numeric brief audit.
 Confidence level: High (glossary checks are green, local, and wired into the live document seams).
+
+---
+Date: 2026-07-02 (B.6)
+Completed: added the non-numeric brief audit path as a real independent check for document-derived
+claims. The new audit does second extraction, citation re-check, disagreement routing, and keeps
+numeric claims on the existing verifier path.
+Files changed: `engines/audit/brief_audit.py`, `mcp_server/server.py`, `tests/test_brief_audit.py`,
+`engines/audit/AGENTS.md`, `agent_skills/audit_and_trust.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_brief_audit.py tests/test_card_and_audit.py
+tests/test_translation_check.py tests/test_workflow_record.py tests/test_provenance_stamp.py
+tests/test_chunked_summary.py tests/test_report_reader.py -q` => `56 passed`; `ruff check` on
+changed Python files => clean; full `pytest -q` => `133 passed, 4 skipped`.
+Evidence recorded: E28.
+Problems found: none in this slice; the next planned build step is B.7 Korean image-share
+measurement and first local OCR tier.
+Next task: B.7 - Korean image-share measurement and first local OCR tier.
+Confidence level: High (non-numeric claim audit is green and now uses the repo's real audit shape).
+
+---
+Date: 2026-07-02 (B.7)
+Completed: added Korean deck image-share profiling and the first repo-owned local RapidOCR seam.
+The document stack now measures born-digital versus image-only slides, surfaces OCR readiness
+warnings, and routes low-confidence image-only pages to review before any heavier OCR escalation.
+Files changed: `engines/docs/image_profile.py`, `engines/docs/rapidocr_adapter.py`,
+`engines/docs/ocr.py`, `engines/docs/extract.py`, `mcp_server/server.py`,
+`tests/test_korean_ocr_profile.py`, `engines/docs/AGENTS.md`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_korean_ocr_profile.py tests/test_ocr_cascade.py
+tests/test_pptx_extraction.py tests/test_translation_check.py tests/test_workflow_record.py
+tests/test_provenance_stamp.py tests/test_brief_audit.py tests/test_chunked_summary.py
+tests/test_report_reader.py -q` => `57 passed, 3 skipped`; `ruff check` on changed Python files
+=> clean; full `pytest -q` => `138 passed, 4 skipped`.
+Evidence recorded: E29.
+Problems found: none in this slice; the next planned build step is B.8 email and attachment intake
+baseline.
+Next task: B.8 - email and attachment intake baseline.
+Confidence level: High (image-share measurement and local OCR review routing are green in the live repo).
+
+---
+Date: 2026-07-02 (B.8)
+Completed: added the governed email and attachment intake baseline. The repo now extracts local
+`.eml` metadata and body text, defaults privacy to Tier 1, routes attachments into the document
+spine, and records attachment failures without aborting the email.
+Files changed: `engines/email/extract.py`, `engines/email/AGENTS.md`, `mcp_server/server.py`,
+`tests/test_email_extraction.py`, `agent_skills/document_evidence_extraction.md`,
+`AGENT_SKILL_MAP.md`, `00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_email_extraction.py tests/test_korean_ocr_profile.py
+tests/test_translation_check.py tests/test_workflow_record.py tests/test_provenance_stamp.py
+tests/test_brief_audit.py tests/test_chunked_summary.py tests/test_report_reader.py -q` =>
+`60 passed`; `ruff check` on changed Python files => clean; full `pytest -q` => `143 passed,
+4 skipped`.
+Evidence recorded: E30.
+Problems found: none in this slice; the next planned build step is B.9 first HQ deck brief gate.
+Next task: B.9 - first HQ deck brief gate.
+Confidence level: High (email intake is green and follows the same governed evidence path as documents).
+
+---
+Date: 2026-07-02 (B.9)
+Completed: added the first HQ deck brief gate as a minimal one-page brief assembly path. The repo
+now composes workflow record, glossary flags, non-numeric audit, coverage report, and sign-off
+placeholder into one brief object with trusted versus review-routed claims.
+Files changed: `serving/decision_brief.py`, `mcp_server/server.py`, `tests/test_hq_deck_brief.py`,
+`agent_skills/management_reporting.md`, `00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_hq_deck_brief.py tests/test_email_extraction.py
+tests/test_korean_ocr_profile.py tests/test_translation_check.py tests/test_workflow_record.py
+tests/test_provenance_stamp.py tests/test_brief_audit.py tests/test_chunked_summary.py
+tests/test_report_reader.py -q` => `64 passed`; `ruff check` on changed Python files => clean;
+full `pytest -q` => `147 passed, 4 skipped`.
+Evidence recorded: E31.
+Problems found: none in this slice; the next planned build step is B.10 Docling hard-layout
+adapter.
+Next task: B.10 - Docling hard-layout adapter.
+Confidence level: High (the first HQ deck brief gate is green and owner-reviewable against source slides).

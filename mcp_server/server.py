@@ -9,14 +9,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from engines.audit.audit import approve_report
+from engines.audit.brief_audit import MappingExtractor, audit_brief_claims
 from engines.brain.orchestrator import run_pipeline
 from engines.docs import report_reader as report_reader_module
 from engines.docs.extract import extract_document
 from engines.docs.glossary import FactoryGlossary
+from engines.docs.image_profile import profile_deck_images
 from engines.docs.search import search_documents
 from engines.docs.summarize import summarize_document
 from engines.docs.translation_check import check_translation_terms
 from engines.docs.workflow_record import extract_workflow_record
+from engines.email.extract import ingest_email
+from serving.decision_brief import build_hq_deck_brief
 
 
 def tool_run_finance_card(actuals_csv, budget_csv, cfg, approver=None, budget_pdf=None, standards_csv=None):
@@ -41,6 +45,14 @@ def tool_search_documents(paths: list[str], query: str, cfg: dict, top_k: int = 
 
 def tool_ingest_deck(path: str, cfg: dict):
     return extract_document(path, cfg)
+
+
+def tool_ingest_email(path: str, cfg: dict, metadata: dict | None = None):
+    return ingest_email(path, cfg, metadata).to_dict()
+
+
+def tool_profile_deck_images(path: str, cfg: dict):
+    return profile_deck_images(path, cfg).to_dict()
 
 
 def tool_summarize_document(path: str, cfg: dict):
@@ -78,6 +90,52 @@ def tool_check_translation_terms(
     }
 
 
+def tool_audit_brief_claims(
+    claims: list[dict],
+    citations: dict[str, str],
+    second_extractions: dict[str, str],
+    cfg: dict | None = None,
+):
+    audit = audit_brief_claims(
+        claims,
+        citations,
+        MappingExtractor(second_extractions),
+        cfg=cfg,
+    )
+    return {
+        "passed": audit.passed,
+        "needs_human": audit.needs_human,
+        "certainty": audit.certainty,
+        "issues": audit.issues,
+        "questions": audit.questions,
+        "recomputed": audit.recomputed,
+    }
+
+
+def tool_build_hq_deck_brief(
+    payload: dict,
+    stamp: dict,
+    glossary_payload: dict,
+    citations: dict[str, str],
+    second_extractions: dict[str, str],
+    coverage_report: dict,
+    critical_terms: list[str] | None = None,
+    back_translations: dict[str, str] | None = None,
+    audit_cfg: dict | None = None,
+):
+    return build_hq_deck_brief(
+        payload,
+        stamp=stamp,
+        glossary_payload=glossary_payload,
+        citations=citations,
+        second_extractions=second_extractions,
+        coverage_report=coverage_report,
+        critical_terms=critical_terms,
+        back_translations=back_translations,
+        audit_cfg=audit_cfg,
+    ).to_dict()
+
+
 def tool_what_changed(entity: str, attribute: str = "material_cost_variance", backend: str = "local_json"):
     from engines.brain.memory import get_temporal_memory
     return get_temporal_memory(backend).changes(entity, attribute)
@@ -109,10 +167,14 @@ TOOLS = {
     "run_finance_card": tool_run_finance_card,   # ingest..card..audit (the trust loop)
     "approve_report": tool_approve_report,        # accountable human sign-off (Part O.6)
     "search_documents": tool_search_documents,    # cite PDFs/Word/PPT as evidence (Stage 4)
+    "ingest_email": tool_ingest_email,            # email body + attachment intake
     "ingest_deck": tool_ingest_deck,              # deck/PPTX extraction into Document evidence shape
+    "profile_deck_images": tool_profile_deck_images,  # image-only share and OCR readiness
     "summarize_document": tool_summarize_document,  # chunked document summary + coverage report
     "extract_workflow_record": tool_extract_workflow_record,  # validate structured deck understanding
     "check_translation_terms": tool_check_translation_terms,  # glossary match and term disagreement checks
+    "audit_brief_claims": tool_audit_brief_claims,  # independent non-numeric brief audit
+    "build_hq_deck_brief": tool_build_hq_deck_brief,  # first Tier 2 deck brief gate
     "what_changed": tool_what_changed,            # temporal memory: change over time (Stage 5)
     "related": tool_related,                      # knowledge memory: relationships (Stage 5)
     "run_department": tool_run_department,        # any department via its lens (Stage 7)

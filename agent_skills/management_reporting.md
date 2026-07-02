@@ -61,13 +61,16 @@ Usually hands off to:
 ## Existing repo anchors
 - `serving/AGENTS.md`
 - `serving/card.py`
+- `serving/decision_brief.py`
 - `serving/open_design.py`
 - `tests/test_card_and_audit.py`
 - `tests/test_serving.py`
+- `tests/test_hq_deck_brief.py`
 
 ## Definition of done
 Done means:
 - the artifact is decision-oriented
 - no uncited number appears
 - confidence and sign-off state are visible
+- deck-brief outputs preserve citations, audit status, and review placeholders
 - the output is usable by management, not just technically correct

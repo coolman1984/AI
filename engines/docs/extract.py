@@ -33,9 +33,15 @@ class PlainTextExtractor:
 
 class PyPdfExtractor:
     """Text-PDF extractor; escalates poor/blank pages through the OCR cascade."""
-    def __init__(self, cascade: list[str] | None = None, quality_threshold: float = 0.5):
+    def __init__(
+        self,
+        cascade: list[str] | None = None,
+        quality_threshold: float = 0.5,
+        ocr_langs: str = "eng+ara",
+    ):
         self.cascade = cascade or []
         self.quality_threshold = quality_threshold
+        self.ocr_langs = ocr_langs
 
     def extract(self, path: str) -> Document:
         from pypdf import PdfReader
@@ -45,7 +51,13 @@ class PyPdfExtractor:
         for i, page in enumerate(reader.pages, start=1):
             raw = page.extract_text() or ""
             loader = (lambda i=i: render_pdf_page(path, i)) if self.cascade else None
-            res = extract_page_text(raw, loader, self.cascade, self.quality_threshold)
+            res = extract_page_text(
+                raw,
+                loader,
+                self.cascade,
+                self.quality_threshold,
+                ocr_langs=self.ocr_langs,
+            )
             doc.pages.append(
                 Page(i, res["text"], res["was_ocr"], res["confidence"], res["needs_review"], res["engine"])
             )
@@ -82,12 +94,13 @@ def extract_document(path: str, cfg: dict | None = None) -> Document:
     tools = cfg.get("tools", {})
     cascade = tools.get("ocr_cascade", ["tesseract"])
     threshold = tools.get("ocr_quality_threshold", 0.5)
+    ocr_langs = tools.get("ocr_langs", "eng+ara")
     ext = Path(path).suffix.lower()
 
     if tools.get("document_extractor") == "docling" and ext in {".pdf", ".docx", ".pptx"}:
         return DoclingExtractor().extract(path)
     if ext == ".pdf":
-        return PyPdfExtractor(cascade, threshold).extract(path)
+        return PyPdfExtractor(cascade, threshold, ocr_langs=ocr_langs).extract(path)
     if ext == ".pptx":
         return PptxExtractor().extract(path)
     return PlainTextExtractor().extract(path)
