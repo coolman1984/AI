@@ -2,7 +2,9 @@
 
 This file is read automatically by Codex (and is the convention for other agents).
 It is the **durable, non-negotiable guidance**. The detailed plan lives in
-`MASTER_PLAN.md`; the kickoff brief lives in `CODEX_PLAN.md`.
+`MASTER_PLAN.md`; the current, live architecture and build plan lives in
+`03_design/assistant_master_plan.md` (the former kickoff brief `CODEX_PLAN.md` is
+archived, historical only).
 
 This repository builds a **factory-wide Decision Intelligence System** for a large
 TV/mobile manufacturing plant. It is currently a planning workspace about to enter
@@ -16,12 +18,12 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
    implement against.)
 2. **`AGENT_SKILL_MAP.md`** — the lightweight routing layer: which skill to load for which task.
 3. **`AGENT_CORE_CONTRACT.md`** — the shared spine all skills must obey.
-4. **`CODEX_PLAN.md`** — the lead-engineer kickoff: exactly what to build first.
-5. `ARCHITECTURE.md` — founding mental model: *AI reads the map; engines read the volume.*
-6. `IMPLEMENTATION_PLAN.md` — tabular/SAP/Excel→DuckDB engine spec.
-7. `IMPLEMENTATION_PLAN_DOCS.md` — PDF/Word/PPT + OCR engine spec.
-8. `IMPLEMENTATION_PLAN_SECONDBRAIN.md` — vault + index engine spec.
-9. `REVIEW.md` — weak-point audit; read before trusting the architecture.
+4. **`03_design/assistant_master_plan.md`** — the current, live architecture and
+   build-plan source; supersedes the items formerly listed here.
+   (Note: `archive/` holds prior planning docs — `CODEX_PLAN.md`, `ARCHITECTURE.md`,
+   `IMPLEMENTATION_PLAN.md`, `IMPLEMENTATION_PLAN_DOCS.md`,
+   `IMPLEMENTATION_PLAN_SECONDBRAIN.md`, `REVIEW.md`, `RISK_AND_GAPS_AUDIT.md`,
+   `PROJECT_STATE_AND_ROADMAP.md` — historical only, do not read as current guidance.)
 
 ## The three rules everything obeys
 1. **Golden Rule:** code writes code from samples; engines execute against volumes. The

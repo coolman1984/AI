@@ -22,3 +22,6 @@ EvidenceRef (file + page).
 **Never:** turn OCR text into a fact without review; extract numbers for the variance from a
 PDF (that stays in DuckDB).
 **Tests:** `pytest tests/test_documents.py`; report-reader tests: `pytest tests/test_report_reader.py`
+**store_report_knowledge:** `base_dir` injectable for tests (default `.brain/reports`);
+`ReportKnowledge` includes `warnings: list[str]` field; out-of-range key_point pages are
+dropped with a warning. Language detection: Hangul → `"ko"`, else `"en"`.
