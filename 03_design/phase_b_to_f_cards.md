@@ -6,17 +6,21 @@ Source: `03_design/assistant_master_plan.md` sections 3-4 and
 
 Each card is one write -> review -> test cycle. Each new capability must ship
 with engine code, tests, a skill card, a routing-map entry, and an MCP tool.
+Where a permissively licensed OSS component already fits the approved plan, the
+card should wrap it with a thin repo-owned adapter instead of rebuilding the
+engine from scratch.
 
 ---
 
 ## B.1 -- Native PPTX extractor
 
 **Goal:** Read PowerPoint decks into the same `Document` and `Page` shape used by
-PDF/text extraction, preserving slide numbers as page numbers.
+PDF/text extraction, preserving slide numbers as page numbers. Keep this card
+thin and deterministic; do not build a generalized layout engine here.
 
 **Files:**
 - `engines/docs/pptx.py` (new) -- `PptxExtractor.extract(path) -> Document`.
-- `engines/docs/extract.py` (edit) -- route `.pptx` to `PptxExtractor` unless Docling is explicitly configured.
+- `engines/docs/extract.py` (edit) -- route `.pptx` to `PptxExtractor`; reserve `Docling` for a later hard-layout adapter card.
 - `engines/docs/AGENTS.md` (edit) -- add PPTX public interface.
 - `agent_skills/document_evidence_extraction.md` (edit) -- document PPTX path.
 - `AGENT_SKILL_MAP.md` (edit) -- route PowerPoint/deck tasks.
@@ -32,6 +36,8 @@ PDF/text extraction, preserving slide numbers as page numbers.
 **Acceptance criteria:**
 - No LLM calls in the extractor.
 - Slide numbers are stable and citation-ready.
+- The output contract is stable enough that a later `Docling` adapter can plug
+  into the same `Document` shape without changing callers.
 - Full pytest and ruff pass.
 
 **Dependencies:** A0 gate.
@@ -178,14 +184,17 @@ second extraction, citation re-check, disagreement routing, and human review.
 
 ---
 
-## B.7 -- Korean image-share measurement
+## B.7 -- Korean image-share measurement + first local OCR tier
 
 **Goal:** Measure scanned/image-only share in HQ decks and route low-confidence
-Korean OCR pages to review before deciding whether VLM work is urgent.
+Korean OCR pages to review before deciding whether a heavier OCR/VLM path is
+urgent. Use `RapidOCR` as the first local OCR backend instead of inventing a
+new OCR engine in this repo.
 
 **Files:**
 - `engines/docs/image_profile.py` (new).
-- `engines/docs/ocr.py` (edit only for Korean language configuration hooks).
+- `engines/docs/rapidocr_adapter.py` (new) -- thin wrapper around local `RapidOCR`.
+- `engines/docs/ocr.py` (edit only for backend selection, Korean language configuration hooks, and review routing).
 - `engines/docs/AGENTS.md` (edit).
 - `agent_skills/document_evidence_extraction.md` (edit).
 - `AGENT_SKILL_MAP.md` (edit).
@@ -193,6 +202,7 @@ Korean OCR pages to review before deciding whether VLM work is urgent.
 
 **Test file:** `tests/test_korean_ocr_profile.py`
 - Born-digital slide is counted separately from image-only slide.
+- `RapidOCR` adapter returns normalized OCR text and confidence/result metadata in a repo-owned shape.
 - Korean OCR unavailable creates a clear readiness warning.
 - Low-confidence OCR marks the page `needs_review`.
 - Summary reports image-only share and review count.
@@ -200,6 +210,8 @@ Korean OCR pages to review before deciding whether VLM work is urgent.
 **Acceptance criteria:**
 - VLM escalation is based on measurement, not guesswork.
 - Low-confidence Korean text never becomes trusted knowledge.
+- OCR integration stays behind a thin adapter seam so `PaddleOCR` can be added
+  later without rewriting callers if the measured image-share justifies it.
 - Full pytest and ruff pass.
 
 **Dependencies:** B.1.
@@ -258,6 +270,35 @@ one-page brief with slide citations and audit result.
 - Full pytest and ruff pass.
 
 **Dependencies:** B.1-B.7.
+
+---
+
+## B.10 -- Docling hard-layout adapter
+
+**Goal:** Add `Docling` as an optional hard-layout parser for difficult decks and
+documents after the thin native PPTX path is working, without changing the repo
+`Document` contract or bypassing Phase A rails.
+
+**Files:**
+- `engines/docs/docling_adapter.py` (new) -- thin wrapper that converts `Docling` output into the repo `Document` / `Page` shape.
+- `engines/docs/extract.py` (edit) -- add explicit opt-in path for `Docling` on supported formats.
+- `engines/docs/AGENTS.md` (edit).
+- `agent_skills/document_evidence_extraction.md` (edit).
+- `AGENT_SKILL_MAP.md` (edit).
+- `mcp_server/server.py` (edit) -- add `extract_document_hard_layout` or equivalent explicit tool.
+
+**Test file:** `tests/test_docling_adapter.py`
+- Adapter converts a synthetic or fixture `Docling` result into the same `Document` shape used by the native extractor path.
+- Caller-visible page numbers and source format remain stable.
+- Unsupported `Docling` output fails closed with a clear error instead of silently dropping content.
+- Adapter performs no LLM call and no trust promotion on its own.
+
+**Acceptance criteria:**
+- `Docling` is a parser backend only, not a trust shortcut.
+- Existing `extract_document` callers can opt into the hard-layout path without contract churn.
+- Full pytest and ruff pass.
+
+**Dependencies:** B.1.
 
 ---
 
@@ -456,6 +497,7 @@ records, claims, versions, contradictions, and open questions.
 
 **Files:**
 - `engines/brain/search.py` (new).
+- optional later seam file `engines/brain/search_backends.py` if a backend abstraction is needed, but the public search contract remains repo-owned.
 - `agent_skills/knowledge_search.md` (new).
 - `AGENT_SKILL_MAP.md` (edit).
 - `mcp_server/server.py` (edit) -- add `search_knowledge`.
@@ -469,6 +511,7 @@ records, claims, versions, contradictions, and open questions.
 **Acceptance criteria:**
 - Routine retrieval loads one skill, not the whole plan.
 - Facts and claims remain visually separated.
+- Any later `Cognee` backend sits behind this contract instead of replacing it.
 - Full pytest and ruff pass.
 
 **Dependencies:** C.1-C.7.
@@ -771,10 +814,13 @@ brief generation, and regression gates.
 ## F.2 -- MCP access control at dispatch
 
 **Goal:** Enforce `gov/access.py` in the MCP dispatch layer so tools cannot be
-called outside caller scope.
+called outside caller scope. Use the stable `mcp-python-sdk` line if the repo
+modernizes the server surface, but preserve current dispatch semantics and test
+coverage.
 
 **Files:**
 - `mcp_server/server.py` (edit).
+- optional `mcp_server/mcp_app.py` (new) if the SDK-backed server object is split from the existing dispatch helpers.
 - `gov/access.py` (edit only if scope model needs extension).
 - `agent_skills/audit_and_trust.md` (edit).
 - `AGENT_SKILL_MAP.md` (edit).
@@ -788,6 +834,8 @@ called outside caller scope.
 **Acceptance criteria:**
 - Access control is not decorative.
 - Dispatch is the enforcement point.
+- If `mcp-python-sdk` is adopted, it is pinned to the stable v1.x line and the
+  old direct dispatch tests still pass.
 - Full pytest and ruff pass.
 
 **Dependencies:** C gate, F.1 can run in parallel.
@@ -854,6 +902,7 @@ or linking pain justifies graph-like memory.
 **Files:**
 - `engines/brain/ontology.py` (new).
 - `engines/brain/edges.py` (new).
+- optional `engines/brain/graph_backend.py` (new) -- backend seam only if later graph integration is triggered.
 - `engines/brain/AGENTS.md` (edit).
 - `agent_skills/knowledge_search.md` (edit).
 - `AGENT_SKILL_MAP.md` (edit).
@@ -868,6 +917,8 @@ or linking pain justifies graph-like memory.
 **Acceptance criteria:**
 - Synthesis uses IDs, not loose strings.
 - Graph DB remains optional; flat store works first.
+- Any later `Graphiti` or `Cognee` adoption is downstream of this contract, not
+  a replacement for it.
 - Full pytest and ruff pass.
 
 **Dependencies:** C gate and measured trigger.
@@ -1002,4 +1053,3 @@ truthful as the system and AI landscape change.
 - Any changed architecture decision is recorded in control docs.
 
 **Dependencies:** D gate; then recurring.
-

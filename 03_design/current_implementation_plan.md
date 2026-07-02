@@ -35,6 +35,36 @@ Non-negotiables:
 | MCP | `mcp_server/server.py` dispatch table |
 | Skills | `agent_skills/*.md`, routed by `AGENT_SKILL_MAP.md` |
 
+## OSS Leverage Policy
+
+The approved plan remains the boss. We do not replace trust rails, storage
+contracts, or release controls with third-party repos. We do use strong
+open-source components where they fit cleanly.
+
+Wrapper rule:
+- OSS provides the parser/runtime/backend.
+- This repo provides the adapter, trust checks, tests, skill card, routing-map
+  entry, and MCP tool.
+- A capability is only "done" when the wrapper path is green in this repo.
+
+Selected candidates from `03_design/oss_reference_evaluation.md`:
+
+| OSS repo | Phase fit | Repo landing zone | Use rule |
+|---|---|---|---|
+| `docling` | B hard-layout follow-on, later D/E reuse | `engines/docs/docling_adapter.py` beside `extract.py` | Use as an optional hard-layout parser after the thin native PPTX path exists |
+| `rapidocr` | B20 baseline OCR path | `engines/docs/rapidocr_adapter.py` beside `ocr.py` | Use as the first local OCR backend for Korean/image-heavy pages |
+| `paddleocr` | B20/F trigger fallback | `engines/docs/paddleocr_adapter.py` beside `ocr.py` | Add only if RapidOCR confidence and measured image-share say the heavier tier is worth it |
+| `mcp-python-sdk` | F40-F43 | `mcp_server/server.py`, optional `mcp_server/mcp_app.py` | Use stable v1.x only; do not adopt the v2 prerelease line for production work |
+| `cognee` | C/F search and memory trigger | optional `engines/brain/cognee_backend.py` | Only behind repo-owned search/memory contracts; never as a direct app transplant |
+| `graphiti` | F ontology/graph trigger | optional `engines/brain/graphiti_backend.py` | Only after flat-store ontology/edge contracts exist and measured linking pain justifies it |
+
+Explicitly not primary build blocks under the current plan:
+- `MinerU` because of custom license thresholds.
+- `surya` because model-license terms are narrower than the cleaner options.
+- `onyx` because it is a product platform, not a small repo-local engine.
+- `mcp-servers` because the repo itself says it is reference-only, not
+  production-ready.
+
 ## Improvement Build Map
 
 | # | Improvement | Phase | Dependencies | Module/file target | Contract needed | Test target |
@@ -49,7 +79,7 @@ Non-negotiables:
 | 8 | Privacy tier gate | A0 | none | new `gov/privacy.py` | default Tier 1; Tier 1 external send raises | `tests/test_privacy.py` |
 | 9 | External-call ledger | A0 | 8 | new `gov/ledger.py` | append-only `.brain/external_call_ledger.jsonl` | `tests/test_privacy.py` |
 | 10 | Non-numeric audit | B | 4,6,7 | new `engines/audit/brief_audit.py` beside `audit.py` | independent claim re-extraction plus citation re-check | `tests/test_brief_audit.py` |
-| 11 | Native PPTX input extractor | B | A0 gate | new `engines/docs/pptx.py`, edit `engines/docs/extract.py` | PPTX slides produce `Document`/`Page` shape | `tests/test_pptx_extraction.py` |
+| 11 | Native PPTX input extractor | B | A0 gate | new `engines/docs/pptx.py`, edit `engines/docs/extract.py`; later optional `engines/docs/docling_adapter.py` for hard layouts | PPTX slides produce `Document`/`Page` shape; native path stays thin and deterministic | `tests/test_pptx_extraction.py` |
 | 12 | Chunked map-reduce with coverage | B | A0 gate, 11 | new `engines/docs/summarize.py` | chunk manifest covers every page/slide or blocks | `tests/test_chunked_summary.py` |
 | 13 | Repair `report_reader` tests | A0/A1 | 1-9 | `engines/docs/report_reader.py`, `tests/test_report_reader.py` | existing reader behavior plus safety gate wiring | `tests/test_report_reader.py` |
 | 14 | WorkflowRecord schema | B | 11,12 | new `engines/docs/workflow_record.py`, `shared/contracts/models.py` | cited fields: purpose, steps, roles, KPIs, changes, open questions | `tests/test_workflow_record.py` |
@@ -58,12 +88,12 @@ Non-negotiables:
 | 17 | Korean-English glossary | B | 14,15 | new `engines/docs/glossary.py`, `agent_skills/document_evidence_extraction.md` | deterministic glossary match ratio and growth rules | `tests/test_glossary.py` |
 | 18 | Back-translation spot check | B | 17 | new `engines/docs/translation_check.py` | critical terms checked with second model; disagreements flagged | `tests/test_translation_check.py` |
 | 19 | Email and attachment intake | B/C | A0 gate, 21 | new `engines/email/extract.py`, `engines/email/AGENTS.md` | email body, metadata, attachments enter registry and doc spine | `tests/test_email_extraction.py` |
-| 20 | Scanned/image-only Korean handling | B/F | 11,12; F trigger if high share | `engines/docs/ocr.py`, new `engines/docs/image_profile.py` | image-only share metric, Korean OCR readiness, review routing | `tests/test_korean_ocr_profile.py` |
+| 20 | Scanned/image-only Korean handling | B/F | 11,12; F trigger if high share | `engines/docs/ocr.py`, new `engines/docs/image_profile.py`, new `engines/docs/rapidocr_adapter.py`; optional later `engines/docs/paddleocr_adapter.py` | image-only share metric, Korean OCR readiness, review routing, backend seam for local OCR tiers | `tests/test_korean_ocr_profile.py` |
 | 21 | Document registry | C | B gate | new `engines/brain/registry.py` | source hash, tier, family, status, ingest run id | `tests/test_document_registry.py` |
 | 22 | Workflow families and versioning | C | 14,21 | new `engines/brain/workflow_family.py` | valid-time separate from ingest-time | `tests/test_workflow_family.py` |
 | 23 | Diff view | C | 22 | new `engines/brain/workflow_diff.py` | field-level "what changed" with citations | `tests/test_workflow_diff.py` |
-| 24 | Canonical entity IDs and ontology | F | C gate; volume trigger | new `engines/brain/ontology.py`, later `shared/metrics/` | stable IDs for process, role, KPI, factory | `tests/test_ontology.py` |
-| 25 | Typed cross-workflow edges | F | 21,24 | new `engines/brain/edges.py` | depends-on, conflicts-with, refines, supersedes | `tests/test_workflow_edges.py` |
+| 24 | Canonical entity IDs and ontology | F | C gate; volume trigger | new `engines/brain/ontology.py`, optional `engines/brain/graph_backend.py`, later `shared/metrics/` | stable IDs for process, role, KPI, factory; repo-owned contract stays authoritative even if a graph backend is added later | `tests/test_ontology.py` |
+| 25 | Typed cross-workflow edges | F | 21,24 | new `engines/brain/edges.py`, optional later `engines/brain/graphiti_backend.py` or `engines/brain/cognee_backend.py` | depends-on, conflicts-with, refines, supersedes; flat-store edge contract exists before any graph backend | `tests/test_workflow_edges.py` |
 | 26 | Open questions as queryable items | C | 14,21 | new `engines/brain/open_questions.py` | open/resolved/by-what with evidence | `tests/test_open_questions.py` |
 | 27 | Decision-outcome linkage | C | 21,26 | existing `engines/brain/memory.py`, new `engines/learning/outcomes.py` | workflow records link to decision memory ids | `tests/test_decision_outcomes.py` |
 | 28 | Knowledge artifacts in git | C | 14,21 | new `engines/wiki/artifacts.py`, `engines/wiki/AGENTS.md` | markdown artifacts, hash dedup, deterministic filenames | `tests/test_knowledge_artifacts.py` |
@@ -71,7 +101,7 @@ Non-negotiables:
 | 30 | Contradiction-surfacing view | C | 3,21,25 | new `engines/brain/contradictions.py` | conflicts over claims/records, never auto-merged | `tests/test_contradictions.py` |
 | 31 | Factory-vs-factory comparison only when data exists | F | 21,29; data trigger | `engines/brain/comparison.py` | availability gate and not-comparable result | `tests/test_factory_comparison_gate.py` |
 | 32 | Idea-synthesis briefs last | F | 30,37,46 | new `engines/brain/idea_synthesis.py` | outputs labeled `AI-SUGGESTED IDEA` with citations only | `tests/test_idea_synthesis.py` |
-| 33 | Knowledge search skill | C | 21,22,26,30 | `engines/docs/search.py`, new `engines/brain/search.py` | linked records, claims, versions, questions | `tests/test_knowledge_search.py` |
+| 33 | Knowledge search skill | C | 21,22,26,30 | `engines/docs/search.py`, new `engines/brain/search.py`; optional later `engines/brain/cognee_backend.py` | linked records, claims, versions, questions; repo search contract fronts any future backend | `tests/test_knowledge_search.py` |
 | 34 | Decision brief generator | D | C gate, 5,10,33 | new `serving/decision_brief.py` | question, evidence, options, risks, recommendation, signoff | `tests/test_decision_brief.py` |
 | 35 | Meeting pack assembler | D | 34 | new `serving/meeting_pack.py` | pulls audited numbers, workflow knowledge, risks, talking points | `tests/test_meeting_pack.py` |
 | 36 | Report and article generator | D | 34 | new `serving/report_article.py` | management report, process explainer, rollout summary | `tests/test_report_article.py` |
@@ -79,7 +109,7 @@ Non-negotiables:
 | 38 | Reuse dashboard and PPTX rendering | D | 34,37 | existing `serving/open_design.py` | shared rendering adapter for cards, briefs, packs | `tests/test_serving_outputs.py` |
 | 39 | Owner feedback loop | D | 34,37 | new `engines/learning/feedback.py`, `00_control/restart_notes.md` | useful/corrected/wrong verdict stored with output id | `tests/test_feedback_loop.py` |
 | 40 | Capability ships as skill, map, MCP | B-F | each capability | `agent_skills/*.md`, `AGENT_SKILL_MAP.md`, `mcp_server/server.py` | done-rule lint for new capabilities | `tests/test_skill_mcp_sync.py` |
-| 41 | MCP access control at dispatch | F | 40 | `mcp_server/server.py`, `gov/access.py` | every dispatch checks role/scope before tool call | `tests/test_mcp_access.py` |
+| 41 | MCP access control at dispatch | F | 40 | `mcp_server/server.py`, optional `mcp_server/mcp_app.py`, `gov/access.py` | every dispatch checks role/scope before tool call; MCP SDK usage must preserve current dispatch semantics | `tests/test_mcp_access.py` |
 | 42 | Skill token budgets and contracts | F | 40 | `agent_skills/*.md`, `AGENT_SKILL_MAP.md` | each skill declares token budget, inputs, outputs, raw-data ban | `tests/test_skill_contracts.py` |
 | 43 | Fallback model order and resumable runs | F | 12,16 | new `engines/docs/run_state.py`, `engines/docs/llm_bridge.py` | chunk checkpoints and provider fallback chain | `tests/test_resumable_runs.py` |
 | 44 | AI build team operating model | A1/F | docs gate | existing `CLAUDE.md`, `00_control/run_log.md` | operating model remains documented and referenced | doc review plus `tests/test_skill_contracts.py` if linted |
@@ -119,7 +149,10 @@ Gate:
 
 Build native PPTX extraction, chunked coverage, workflow records, provenance,
 glossary, translation checks, email intake baseline, Korean image-share
-measurement, and the non-numeric audit.
+measurement, and the non-numeric audit. In this phase we prefer thin,
+deterministic wrappers around strong local OSS where the plan allows it:
+native `python-pptx` first, `RapidOCR` as the first OCR tier, and `Docling`
+only as a hard-layout follow-on after the basic deck path works.
 
 Gate:
 - One owner-marked Tier 2 Korean HQ deck becomes an English one-page brief with
@@ -209,6 +242,7 @@ flowchart TD
 | Risk or unknown | Why it matters | Decision needed |
 |---|---|---|
 | Korean image-only deck share unknown | Determines whether human review is enough or VLM/OCR becomes urgent | Measure first five real HQ decks; owner decides review capacity threshold |
+| OSS license drift or model-license mismatch | A tempting parser/OCR repo can quietly add non-clean terms and create downstream friction | Stick to the approved clean-default set (`docling`, `rapidocr`, `paddleocr`, stable `mcp-python-sdk`) unless the owner explicitly reopens the choice |
 | Cloud translation quality vs on-prem translation | Tier 2 allows cloud, but trust still depends on repeatable quality | Owner approves preferred translation provider/fallback after B gate evidence |
 | Human review queue capacity | Low-confidence OCR and translation disagreements can overwhelm the owner | Define maximum weekly review load before automation priority increases |
 | Critical glossary ownership | Wrong Korean factory terms can corrupt summaries | Owner names the final reviewer for glossary corrections |
@@ -216,4 +250,3 @@ flowchart TD
 | Git artifact policy | Knowledge artifacts should be committed, but automation needs clear commit rules | Owner decides whether artifact commits are manual only or scheduled |
 | Email privacy tier classification | Emails are normally Tier 1 and often sensitive | Owner confirms whether any email class can ever be Tier 2 |
 | Factory-vs-factory reports | Comparison is blocked until actual comparable reports exist | Owner supplies documents or keeps card gated |
-

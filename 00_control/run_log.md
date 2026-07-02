@@ -124,3 +124,45 @@ asserted by a dedicated test. Full pytest: 42 passed, 4 skipped. Ruff clean.
 Evidence: E19.
 Next step: IS2.3 (multi-sheet Excel) or IS2.4 (per-column type inference) while P2.2 waits on
 the first real export.
+
+---
+Timestamp: 2026-07-02
+Action: Reworked the live planning path so later phases use repo-owned wrappers around the
+strongest clean-licensed OSS components instead of assuming greenfield engine builds.
+Reason: Mohamed explicitly directed the project to reuse robust open-source tools where they fit
+the approved Executive Assistant Master Plan, then evaluate fit, licenses, and plug-in effort
+before hand-building anything expensive.
+Inputs read: `03_design/assistant_master_plan.md`, `03_design/current_implementation_plan.md`,
+`03_design/phase_b_to_f_cards.md`, `00_control/task_queue.md`, downloaded OSS repos under
+`G:\downloads\oss_reference`, and local README/license files for Docling, RapidOCR, PaddleOCR,
+MCP Python SDK, Cognee, Graphiti, MinerU, Surya, Onyx, MCP servers, MarkItDown, Unstructured,
+olmOCR, and Open Design.
+Outputs changed: `03_design/oss_reference_evaluation.md`,
+`03_design/current_implementation_plan.md`, `03_design/phase_b_to_f_cards.md`,
+`00_control/task_queue.md`, `00_control/restart_notes.md`.
+Result: the repo now has a documented OSS leverage policy, later-phase cards that explicitly use
+`RapidOCR` first, `Docling` later, stable `mcp-python-sdk` for MCP hardening, and graph/memory
+backends only behind repo-owned contracts; stale umbrella queue rows were archived and the full
+B-F card queue was added.
+Evidence: planning doc review in current workspace.
+Next step: resume implementation at A0.2; later-phase execution should follow the new queue and
+OSS-backed card path rather than the archived umbrella rows.
+
+---
+Timestamp: 2026-07-02
+Action: Verified the A0 safety-rail stack end-to-end and fixed the remaining provenance-tagging
+gap in the dashboard rendering path.
+Reason: after the planning alignment, Mohamed's standing instruction was to keep moving the real
+project forward; the fastest honest move was to clear the live suite failure instead of stopping at
+documentation.
+Inputs read: `03_design/phase_a_cards.md`, `engines/docs/AGENTS.md`, `engines/docs/verify.py`,
+`tests/test_verify.py`, `serving/open_design.py`, `tests/test_serving.py`, and the full test
+suite output.
+Outputs changed: `serving/open_design.py`, `00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: targeted verifier tests were already green; the only live failure was
+`test_render_dashboard_html_fails_closed_on_unknown_provenance`; the dashboard and PPTX rendering
+paths now surface provenance tags and fail closed on unknown prefixes; full `pytest -q` is green
+at `106 passed, 4 skipped`.
+Evidence: E22.
+Next step: start B.1 (native PPTX extractor, thin deterministic path); external real-data wait is
+unchanged for P2.2.
