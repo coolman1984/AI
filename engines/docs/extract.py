@@ -13,6 +13,7 @@ from typing import Protocol
 
 from engines.docs.models import Document, Page, doc_id_for
 from engines.docs.ocr import extract_page_text, render_pdf_page
+from engines.docs.pptx import PptxExtractor
 
 
 class DocumentExtractor(Protocol):
@@ -87,4 +88,6 @@ def extract_document(path: str, cfg: dict | None = None) -> Document:
         return DoclingExtractor().extract(path)
     if ext == ".pdf":
         return PyPdfExtractor(cascade, threshold).extract(path)
+    if ext == ".pptx":
+        return PptxExtractor().extract(path)
     return PlainTextExtractor().extract(path)

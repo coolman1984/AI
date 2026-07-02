@@ -6,10 +6,17 @@ callable surface so the system works today. The audit/sign-off tools gate releas
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from engines.audit.audit import approve_report
 from engines.brain.orchestrator import run_pipeline
+from engines.docs import report_reader as report_reader_module
 from engines.docs.extract import extract_document
+from engines.docs.glossary import FactoryGlossary
 from engines.docs.search import search_documents
+from engines.docs.summarize import summarize_document
+from engines.docs.translation_check import check_translation_terms
+from engines.docs.workflow_record import extract_workflow_record
 
 
 def tool_run_finance_card(actuals_csv, budget_csv, cfg, approver=None, budget_pdf=None, standards_csv=None):
@@ -30,6 +37,45 @@ def tool_approve_report(audit_result, approver: str, note: str = ""):
 def tool_search_documents(paths: list[str], query: str, cfg: dict, top_k: int = 3):
     docs = [extract_document(p, cfg) for p in paths]
     return search_documents(docs, query, top_k)
+
+
+def tool_ingest_deck(path: str, cfg: dict):
+    return extract_document(path, cfg)
+
+
+def tool_summarize_document(path: str, cfg: dict):
+    return summarize_document(
+        path,
+        llm=report_reader_module.OpencodeLLM(),
+        cfg=cfg,
+        source_path=str(Path(path).resolve()),
+    )
+
+
+def tool_extract_workflow_record(payload: dict, stamp: dict | None = None):
+    return extract_workflow_record(payload, stamp=stamp).to_dict()
+
+
+def tool_check_translation_terms(
+    payload: dict,
+    glossary_payload: dict,
+    critical_terms: list[str] | None = None,
+    back_translations: dict[str, str] | None = None,
+):
+    record = extract_workflow_record(payload)
+    glossary = FactoryGlossary.from_dict(glossary_payload)
+    result = check_translation_terms(
+        record,
+        glossary,
+        critical_terms=critical_terms,
+        back_translations=back_translations,
+    )
+    return {
+        "glossary_match_ratio": result.glossary_match_ratio,
+        "review_flags": [flag.__dict__ for flag in result.review_flags],
+        "blocked": result.blocked,
+        "checked_terms": result.checked_terms,
+    }
 
 
 def tool_what_changed(entity: str, attribute: str = "material_cost_variance", backend: str = "local_json"):
@@ -63,6 +109,10 @@ TOOLS = {
     "run_finance_card": tool_run_finance_card,   # ingest..card..audit (the trust loop)
     "approve_report": tool_approve_report,        # accountable human sign-off (Part O.6)
     "search_documents": tool_search_documents,    # cite PDFs/Word/PPT as evidence (Stage 4)
+    "ingest_deck": tool_ingest_deck,              # deck/PPTX extraction into Document evidence shape
+    "summarize_document": tool_summarize_document,  # chunked document summary + coverage report
+    "extract_workflow_record": tool_extract_workflow_record,  # validate structured deck understanding
+    "check_translation_terms": tool_check_translation_terms,  # glossary match and term disagreement checks
     "what_changed": tool_what_changed,            # temporal memory: change over time (Stage 5)
     "related": tool_related,                      # knowledge memory: relationships (Stage 5)
     "run_department": tool_run_department,        # any department via its lens (Stage 7)

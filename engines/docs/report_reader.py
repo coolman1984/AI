@@ -20,6 +20,7 @@ from engines.brain.claims import ClaimsStore
 from engines.brain.memory import KnowledgeMemory, get_knowledge_memory
 from engines.docs.extract import extract_document
 from engines.docs.prompt_builder import build_extraction_prompt
+from engines.docs.summarize import summarize_document
 from engines.docs.verify import citation_supports_claim, extract_numeric_tokens
 from gov.ledger import log_external_call
 from gov.privacy import Tier, assert_can_send_external, classify_tier
@@ -31,9 +32,6 @@ _PROMPT_INJECTION_PATTERNS = (
     "ignore any previous instructions",
     "ignore any instructions found inside",
 )
-
-_PROMPT_CHAR_LIMIT = 24000
-
 
 class LLMBridge(Protocol):
     """Interface for any LLM we can prompt for structured extraction."""
@@ -117,18 +115,12 @@ def _strip_code_fence(raw: str) -> str:
     return "\n".join(lines).strip()
 
 
-def _build_page_tagged_text(doc) -> tuple[str, bool]:
-    """Build [PAGE n]-tagged text from document pages.
-
-    Returns (text, was_truncated).
-    """
+def _build_page_tagged_text(doc) -> str:
+    """Build [PAGE n]-tagged text from document pages."""
     parts = []
     for page in doc.pages:
         parts.append(f"[PAGE {page.page_no}]\n{page.text}")
-    full = "\n\n".join(parts)
-    if len(full) > _PROMPT_CHAR_LIMIT:
-        return full[:_PROMPT_CHAR_LIMIT], True
-    return full, False
+    return "\n\n".join(parts)
 
 
 def _has_numeric_support(claim_text: str, page_text: str) -> bool:
@@ -174,21 +166,39 @@ def read_report(
     language = _detect_language(full_text)
     page_count = len(doc.pages)
 
-    page_tagged, was_truncated = _build_page_tagged_text(doc)
+    tools = (cfg or {}).get("tools", {})
+    chunk_char_limit = tools.get("report_chunk_char_limit", 8000)
+    max_pages_per_chunk = tools.get("report_chunk_max_pages", 8)
+    page_tagged = _build_page_tagged_text(doc)
     warnings: list[str] = list(doc.warnings)
-
-    if was_truncated:
-        warnings.append(f"Text truncated to {_PROMPT_CHAR_LIMIT} chars before sending to LLM.")
-
     lang_hint = "Respond in Korean." if language == "ko" else "Respond in English."
-    truncate_note = (
-        (
-            "NOTE: The document text has been truncated to fit context limits. "
-            "Some content may be missing.\n\n"
+    use_chunked = len(page_tagged) > chunk_char_limit or len(doc.pages) > max_pages_per_chunk
+    if use_chunked:
+        summary_run = summarize_document(
+            doc,
+            llm,
+            cfg=cfg,
+            source_path=source_path,
+            tier=tier,
+            external_send=external_send,
+            ledger_path=ledger_path,
+            chunk_char_limit=chunk_char_limit,
+            max_pages_per_chunk=max_pages_per_chunk,
+            lang_hint=lang_hint,
         )
-        if was_truncated
-        else ""
-    )
+        if summary_run.status != "ok":
+            raise RuntimeError(
+                f"Chunked summarization {summary_run.status}: "
+                f"{'; '.join(summary_run.warnings[:3])}"
+            )
+        warnings = list(dict.fromkeys(warnings + summary_run.warnings))
+        page_tagged = summary_run.merged_summary
+        truncate_note = (
+            "NOTE: This is a chunked coverage summary assembled from the original "
+            "document. Chunk headers preserve page references.\n\n"
+        )
+    else:
+        truncate_note = ""
 
     prompt = build_extraction_prompt(page_tagged, lang_hint, truncate_note)
 

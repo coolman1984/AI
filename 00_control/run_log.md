@@ -166,3 +166,94 @@ at `106 passed, 4 skipped`.
 Evidence: E22.
 Next step: start B.1 (native PPTX extractor, thin deterministic path); external real-data wait is
 unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.1, the native PPTX extractor, and wired it into the document evidence spine.
+Reason: with Phase A rails green and the later-phase planning aligned, the next highest-value move
+was to start the first HQ deck path for real rather than stop at planning.
+Inputs read: `engines/docs/{extract,models}.py`, `tests/test_documents.py`, `mcp_server/server.py`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`.
+Outputs changed: `engines/docs/pptx.py`, `engines/docs/extract.py`, `mcp_server/server.py`,
+`tests/test_pptx_extraction.py`, `engines/docs/AGENTS.md`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: `.pptx` files now extract into the normalized `Document` shape with slide order preserved,
+table rows captured, and a dispatchable `ingest_deck` MCP tool path; targeted and full test suites
+are green.
+Evidence: E23.
+Next step: start B.2 (chunked map-reduce coverage); external real-data wait is unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.2, the chunked map-reduce coverage path for long document summarization.
+Reason: the plan explicitly bans silent truncation for long decks and reports; we needed the
+coverage-aware chunk path in place before moving on to WorkflowRecord work.
+Inputs read: `engines/docs/{report_reader,summarize}.py`, `tests/test_report_reader.py`,
+`tests/test_chunked_summary.py`, `mcp_server/server.py`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`.
+Outputs changed: `engines/docs/summarize.py`, `engines/docs/report_reader.py`,
+`mcp_server/server.py`, `tests/test_report_reader.py`, `tests/test_chunked_summary.py`,
+`engines/docs/AGENTS.md`, `agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: long documents now chunk deterministically, persist a coverage report, and block on gaps or
+oversize pages instead of truncating; the report reader delegates to that path and the MCP surface
+exposes `summarize_document`.
+Evidence: E24.
+Next step: start B.3 (WorkflowRecord schema); external real-data wait is unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.3, the WorkflowRecord schema and validation path for structured deck
+understanding.
+Reason: the next approved seam after chunk coverage was to stop treating workflow understanding as
+free-form prose and give it a cited record contract that later translation and provenance work can
+build on.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `shared/contracts/models.py`,
+`mcp_server/server.py`, `engines/docs/AGENTS.md`, and existing document-engine tests.
+Outputs changed: `engines/docs/workflow_record.py`, `mcp_server/server.py`,
+`tests/test_workflow_record.py`, `engines/docs/AGENTS.md`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: workflow records now enforce citations on every required field, preserve slide/page
+locators, serialize deterministically, and expose a dispatchable `extract_workflow_record` tool.
+Evidence: E25.
+Next step: start B.4 (original-language retention and provenance stamp); external real-data wait is
+unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.4, original-language retention and provenance stamping for workflow records.
+Reason: the approved plan requires every translated workflow field to keep its Korean source text,
+and every record needs deterministic provenance metadata before glossary and review logic can be
+trusted.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `engines/docs/workflow_record.py`,
+`mcp_server/server.py`, `engines/docs/AGENTS.md`, and the B.3 workflow tests.
+Outputs changed: `engines/docs/provenance.py`, `engines/docs/workflow_record.py`,
+`mcp_server/server.py`, `tests/test_provenance_stamp.py`, `tests/test_workflow_record.py`,
+`engines/docs/AGENTS.md`, `agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: workflow records now carry bilingual field content plus deterministic provenance stamps with
+source hash, stable source identity, ingest run id, model metadata, prompt version, timestamp, and
+confidence derived from explicit inputs rather than model self-rating.
+Evidence: E26.
+Next step: start B.5 (Korean-English glossary and critical-term check); external real-data wait is
+unchanged for P2.2.
+
+---
+Timestamp: 2026-07-02
+Action: Implemented B.5, the glossary-backed translation check path for workflow records.
+Reason: after bilingual field retention and provenance stamping, the next approved trust seam was
+to enforce accepted factory terminology and surface critical-term disagreements before any brief can
+lean on a translation.
+Inputs read: `03_design/phase_b_to_f_cards.md`, `engines/docs/workflow_record.py`,
+`engines/docs/summarize.py`, `mcp_server/server.py`, and the B.4 workflow/provenance tests.
+Outputs changed: `engines/docs/glossary.py`, `engines/docs/translation_check.py`,
+`engines/docs/summarize.py`, `mcp_server/server.py`, `tests/test_translation_check.py`,
+`engines/docs/AGENTS.md`, `agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Result: the document stack now carries an explicit accepted-entry glossary, passes glossary context
+into chunk summaries, computes glossary match ratio deterministically, and flags unknown critical
+terms plus KPI back-translation disagreements through a dispatchable `check_translation_terms` tool.
+Evidence: E27.
+Next step: start B.6 (non-numeric brief audit); external real-data wait is unchanged for P2.2.

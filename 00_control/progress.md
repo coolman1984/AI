@@ -169,3 +169,92 @@ Problems found: none in the Phase A rail stack after the serving fix; the projec
 start B.1 while P2.2 remains externally blocked.
 Next task: B.1 - native PPTX extractor (thin deterministic path).
 Confidence level: High (suite green and queue now matches the repo state).
+
+---
+Date: 2026-07-02 (B.1)
+Completed: built the native PPTX extraction path into the document evidence spine without adding a
+new dependency. The repo now reads `.pptx` package XML directly, preserves slide numbers, captures
+table rows, routes `.pptx` through `extract_document`, and exposes the deck path through the MCP
+tool surface as `ingest_deck`.
+Files changed: `engines/docs/pptx.py`, `engines/docs/extract.py`, `mcp_server/server.py`,
+`tests/test_pptx_extraction.py`, `engines/docs/AGENTS.md`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log}.md`.
+Validation performed: `pytest tests/test_pptx_extraction.py -q` => `2 passed`; document slice
+pytest => `7 passed`; full `pytest -q` => `108 passed, 4 skipped`; targeted `ruff check` on the
+edited code and docs-facing files => clean.
+Evidence recorded: E23.
+Problems found: none in this slice; the next planned build step is B.2 chunked map-reduce coverage.
+Next task: B.2 - chunked map-reduce coverage.
+Confidence level: High (native deck extraction is green and routed through the real repo seams).
+
+---
+Date: 2026-07-02 (B.2)
+Completed: built chunked map-reduce coverage for long document summarization. The new summarizer
+chunks pages/slides, persists a coverage report, and blocks on missing or oversize pages instead of
+silently truncating.
+Files changed: `engines/docs/summarize.py`, `engines/docs/report_reader.py`,
+`mcp_server/server.py`, `engines/docs/AGENTS.md`, `agent_skills/document_evidence_extraction.md`,
+`AGENT_SKILL_MAP.md`, `tests/test_chunked_summary.py`, `tests/test_report_reader.py`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_chunked_summary.py tests/test_report_reader.py -q`
+=> `29 passed`; `ruff check` on changed Python files => clean; full `pytest -q` => `112 passed,
+4 skipped`.
+Evidence recorded: E24.
+Problems found: none in this slice; the next planned build step is B.3 WorkflowRecord schema.
+Next task: B.3 - WorkflowRecord schema.
+Confidence level: High (chunk coverage is green, persisted, and routed through the real repo seams).
+
+---
+Date: 2026-07-02 (B.3)
+Completed: built the WorkflowRecord schema for cited deck understanding. The new record normalizes
+purpose, steps, roles, KPIs, changes, open questions, and optional risks into a validated
+structure, and the MCP surface now exposes a normalization path through `extract_workflow_record`.
+Files changed: `engines/docs/workflow_record.py`, `mcp_server/server.py`,
+`tests/test_workflow_record.py`, `engines/docs/AGENTS.md`,
+`agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_workflow_record.py tests/test_chunked_summary.py
+tests/test_report_reader.py -q` => `34 passed`; `ruff check` on changed Python files => clean;
+full `pytest -q` => `117 passed, 4 skipped`.
+Evidence recorded: E25.
+Problems found: none in this slice; the next planned build step is B.4 original-language retention
+and provenance stamp.
+Next task: B.4 - original-language retention and provenance stamp.
+Confidence level: High (workflow schema is green, cited, and routed through the real repo seams).
+
+---
+Date: 2026-07-02 (B.4)
+Completed: extended workflow records to retain original-language source text beside translated
+fields and added deterministic provenance stamping with source hash, stable source identity, run
+metadata, and confidence inputs.
+Files changed: `engines/docs/provenance.py`, `engines/docs/workflow_record.py`,
+`mcp_server/server.py`, `tests/test_provenance_stamp.py`, `tests/test_workflow_record.py`,
+`engines/docs/AGENTS.md`, `agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_workflow_record.py tests/test_provenance_stamp.py
+tests/test_chunked_summary.py tests/test_report_reader.py -q` => `39 passed`; `ruff check` on
+changed Python files => clean; full `pytest -q` => `122 passed, 4 skipped`.
+Evidence recorded: E26.
+Problems found: none in this slice; the next planned build step is B.5 Korean-English glossary and
+critical-term check.
+Next task: B.5 - Korean-English glossary and critical-term check.
+Confidence level: High (bilingual workflow fields and provenance stamps are green in the live repo).
+
+---
+Date: 2026-07-02 (B.5)
+Completed: added an accepted-entry factory glossary and a deterministic translation-check path for
+workflow records. The repo now computes glossary match ratio from actual text, flags unknown
+critical terms, and blocks KPI back-translation disagreements without relying on model self-scores.
+Files changed: `engines/docs/glossary.py`, `engines/docs/translation_check.py`,
+`engines/docs/summarize.py`, `mcp_server/server.py`, `tests/test_translation_check.py`,
+`engines/docs/AGENTS.md`, `agent_skills/document_evidence_extraction.md`, `AGENT_SKILL_MAP.md`,
+`00_control/{task_queue,restart_notes,evidence_log,progress}.md`.
+Validation performed: targeted `pytest tests/test_translation_check.py tests/test_workflow_record.py
+tests/test_provenance_stamp.py tests/test_chunked_summary.py tests/test_report_reader.py -q` =>
+`45 passed`; `ruff check` on changed Python files => clean; full `pytest -q` => `128 passed,
+4 skipped`.
+Evidence recorded: E27.
+Problems found: none in this slice; the next planned build step is B.6 non-numeric brief audit.
+Next task: B.6 - non-numeric brief audit.
+Confidence level: High (glossary checks are green, local, and wired into the live document seams).

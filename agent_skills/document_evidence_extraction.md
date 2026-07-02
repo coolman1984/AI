@@ -69,13 +69,28 @@ Usually hands off to:
 ## Existing repo anchors
 - `engines/docs/AGENTS.md`
 - `engines/docs/extract.py`
+- `engines/docs/pptx.py`
+- `engines/docs/summarize.py`
+- `engines/docs/glossary.py`
+- `engines/docs/provenance.py`
+- `engines/docs/translation_check.py`
+- `engines/docs/workflow_record.py`
 - `engines/docs/ocr.py`
 - `engines/docs/search.py`
+- `mcp_server/server.py` (summarize_document + ingest_deck + extract_workflow_record routing)
 - `tests/test_documents.py`
+- `tests/test_chunked_summary.py`
+- `tests/test_translation_check.py`
+- `tests/test_workflow_record.py`
+- `tests/test_provenance_stamp.py`
 
 ## Definition of done
 Done means:
 - extracted evidence is citation-bearing
 - OCR quality is labeled honestly
 - review-needed cases are visible
+- long deck/report summarization keeps coverage accounting and blocks on gaps
+- structured workflow understanding keeps citations on every required field
+- translated workflow fields retain source text and deterministic provenance metadata
+- glossary-backed translation checks surface critical-term disagreements before release
 - downstream consumers can use the artifact without guessing source reliability

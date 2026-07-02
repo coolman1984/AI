@@ -45,11 +45,11 @@ Only the Evaluator marks Passed (evidence required).
 | A0.8 | provenance tags (AUDITED/CLAIMED) on every rendered number | Builder->Evaluator | Passed | High | A0.1, shared/contracts/models.py | shared/contracts/models.py (edit), serving/card.py, serving/open_design.py | targeted pytest `tests/test_serving.py` + full pytest | E22 |
 | A1.1 | archive stale top-level plan docs, update AGENTS.md read order | Builder->Evaluator | Passed | Med | doc review list (assistant_master_plan.md item 47) | archive/*, AGENTS.md (edit) | targeted pytest `tests/test_doc_archive.py` + full pytest | completed before A1.2 |
 | A1.2 | update restart_notes.md + AGENT_SKILL_MAP.md for the new plan | Builder->Evaluator | Passed | Med | A1.1, assistant_master_plan.md | docs/control routing updates | owner approval + full pytest | E20 |
-| B.1 | native PPTX extractor (thin deterministic path) | Builder->Evaluator | Pending | High | A0 gate, synthetic PPTX | `engines/docs/pptx.py`, unified `Document` output | pytest `tests/test_pptx_extraction.py` + full pytest | - |
-| B.2 | chunked map-reduce coverage | Builder->Evaluator | Pending | High | A0 gate, B.1, long synthetic deck | `engines/docs/summarize.py`, coverage manifest | pytest `tests/test_chunked_summary.py` + full pytest | - |
-| B.3 | WorkflowRecord schema | Builder->Evaluator | Pending | High | B.1, B.2 | cited workflow record contract + MCP tool + skill/map updates | pytest `tests/test_workflow_record.py` + full pytest | - |
-| B.4 | original-language retention and provenance stamp | Builder->Evaluator | Pending | High | B.3 | Korean source-text retention + provenance stamp | pytest `tests/test_provenance_stamp.py` + full pytest | - |
-| B.5 | Korean-English glossary and critical-term check | Builder->Evaluator | Pending | High | B.3, B.4 | glossary logic + translation review flags | pytest `tests/test_translation_check.py` + full pytest | - |
+| B.1 | native PPTX extractor (thin deterministic path) | Builder->Evaluator | Passed | High | A0 gate, synthetic PPTX | `engines/docs/pptx.py`, unified `Document` output, `ingest_deck` MCP tool | pytest `tests/test_pptx_extraction.py` + full pytest | E23 |
+| B.2 | chunked map-reduce coverage | Builder->Evaluator | Passed | High | A0 gate, B.1, long synthetic deck | `engines/docs/summarize.py`, coverage manifest | pytest `tests/test_chunked_summary.py` + full pytest | E24 |
+| B.3 | WorkflowRecord schema | Builder->Evaluator | Passed | High | B.1, B.2 | cited workflow record contract + MCP tool + skill/map updates | pytest `tests/test_workflow_record.py` + full pytest | E25 |
+| B.4 | original-language retention and provenance stamp | Builder->Evaluator | Passed | High | B.3 | Korean source-text retention + provenance stamp | pytest `tests/test_provenance_stamp.py` + full pytest | E26 |
+| B.5 | Korean-English glossary and critical-term check | Builder->Evaluator | Passed | High | B.3, B.4 | glossary logic + translation review flags | pytest `tests/test_translation_check.py` + full pytest | E27 |
 | B.6 | non-numeric brief audit | Builder->Evaluator | Pending | High | A0 gate, B.3 | `engines/audit/brief_audit.py`, audit tool + skill/map updates | pytest `tests/test_brief_audit.py` + full pytest | - |
 | B.7 | Korean image-share measurement + first local OCR tier | Builder->Evaluator | Pending | High | B.1, OCR fixtures | `engines/docs/image_profile.py`, `rapidocr_adapter.py`, OCR routing | pytest `tests/test_korean_ocr_profile.py` + full pytest | - |
 | B.8 | email and attachment intake baseline | Builder->Evaluator | Pending | High | A0 gate, synthetic `.eml` samples | `engines/email/extract.py`, governed email spine path | pytest `tests/test_email_extraction.py` + full pytest | - |
@@ -84,4 +84,4 @@ Only the Evaluator marks Passed (evidence required).
 | F.9 | session-state persistence | Builder->Evaluator | Pending | Low | D.6 | session-state/restart-note persistence | pytest `tests/test_session_state.py` + full pytest | - |
 | F.10 | quarterly plan review ritual | Planner->Evaluator | Pending | Low | D gate | review checklist and decision log | doc review | - |
 
-**Next best action:** start **B.1** (native PPTX extractor, thin deterministic path). A0.1-A0.8 and A1.1-A1.2 are now green. External track unchanged: P2.2 still waits on the first real export.
+**Next best action:** start **B.6** (non-numeric brief audit). A0.1-A0.8, A1.1-A1.2, B.1, B.2, B.3, B.4, and B.5 are now green. External track unchanged: P2.2 still waits on the first real export.

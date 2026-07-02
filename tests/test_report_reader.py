@@ -21,12 +21,19 @@ from gov.privacy import Tier
 class FakeLLM:
     """Deterministic LLM stub — returns canned JSON for every prompt."""
 
-    def __init__(self, response: str = ""):
+    def __init__(self, response: str = "", responses: list[str] | None = None):
         self._response = response
+        self._responses = list(responses) if responses is not None else None
         self.last_prompt: str = ""
+        self.prompts: list[str] = []
 
     def generate(self, prompt: str) -> str:
         self.last_prompt = prompt
+        self.prompts.append(prompt)
+        if self._responses is not None:
+            if not self._responses:
+                raise AssertionError("FakeLLM ran out of scripted responses")
+            return self._responses.pop(0)
         return self._response
 
 
@@ -86,13 +93,21 @@ def _fake_extract_korean(path, cfg=None):
     )
 
 
-def _fake_extract_long(path, cfg=None):
-    long_text = "A" * 25000
+def _fake_extract_chunked(path, cfg=None):
+    long_text_a = "A" * 500
+    long_text_b = "B" * 500
+    long_text_c = "C" * 500
+    long_text_d = "D" * 500
     return Document(
-        doc_id="test-long",
+        doc_id="test-chunked",
         source_filename=Path(path).name,
         source_format="pdf",
-        pages=[Page(1, long_text)],
+        pages=[
+            Page(1, long_text_a),
+            Page(2, long_text_b),
+            Page(3, long_text_c),
+            Page(4, long_text_d),
+        ],
     )
 
 
@@ -242,14 +257,25 @@ def test_read_report_out_of_range_page_dropped(monkeypatch):
     assert any("page=0" in w for w in knowledge.warnings)
 
 
-def test_read_report_truncation_warning(monkeypatch):
-    monkeypatch.setattr("engines.docs.report_reader.extract_document", _fake_extract_long)
-    llm = FakeLLM(VALID_JSON)
-    knowledge = read_report("/fake/path.pdf", llm=llm)
+def test_read_report_uses_chunked_summary_for_long_documents(monkeypatch):
+    monkeypatch.setattr("engines.docs.report_reader.extract_document", _fake_extract_chunked)
+    llm = FakeLLM(
+        responses=[
+            "Chunk 1 summary line.",
+            "Chunk 2 summary line.",
+            VALID_JSON,
+        ]
+    )
+    knowledge = read_report(
+        "/fake/path.pdf",
+        llm=llm,
+        cfg={"tools": {"report_chunk_char_limit": 1500, "report_chunk_max_pages": 2}},
+    )
 
-    assert any("truncated" in w.lower() for w in knowledge.warnings)
-    assert "NOTE:" in llm.last_prompt
-    assert "truncated" in llm.last_prompt.lower()
+    assert len(llm.prompts) == 3
+    assert llm.prompts[-1].count("[CHUNK") == 2
+    assert "chunked coverage summary" in llm.prompts[-1].lower()
+    assert not any("truncated" in w.lower() for w in knowledge.warnings)
 
 
 def test_read_report_sends_korean_language_hint(monkeypatch):

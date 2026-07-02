@@ -46,6 +46,11 @@ Load:
 - the task starts from PDF, Word, PowerPoint, scans, screenshots, or mixed document bundles
 - the main need is evidence extraction, OCR recovery, or citation-bearing passages
 - the user asks to inspect document text, attachments, page-level evidence, or scanned content
+- the task is to ingest or inspect a PPTX deck while preserving slide-level citations and table evidence
+- the task is to summarize a long PDF/PPTX deck with chunk coverage accounting and no silent truncation
+- the task is to normalize deck understanding into a cited workflow record with purpose, steps, owners, KPIs, changes, and open questions
+- the task is to retain original-language source text and provenance metadata for translated workflow fields
+- the task is to apply a Korean-English factory glossary or flag critical-term translation disagreements
 
 Load:
 `agent_skills/document_evidence_extraction.md`
