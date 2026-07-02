@@ -5,16 +5,24 @@ This module is intentionally pure: no I/O, no subprocesses, no network calls.
 
 from __future__ import annotations
 
-from collections import Counter
 import re
+from collections import Counter
 from decimal import Decimal
 
-_NUMERIC_TOKEN_RE = re.compile(r"(?P<value>\d[\d,]*(?:\.\d+)?)(?P<suffix>%|[억만천])?")
+EOK = "\uC5B5"
+MAN = "\uB9CC"
+CHEON = "\uCC9C"
+
+_NUMERIC_TOKEN_RE = re.compile(
+    rf"(?P<value>\d[\d,]*(?:\.\d+)?)(?:\s*(?P<suffix>%|percent|percentage|[{EOK}{MAN}{CHEON}]))?",
+    re.IGNORECASE,
+)
 _KOREAN_UNIT_SCALE = {
-    "억": Decimal("100000000"),
-    "만": Decimal("10000"),
-    "천": Decimal("1000"),
+    EOK: Decimal("100000000"),
+    MAN: Decimal("10000"),
+    CHEON: Decimal("1000"),
 }
+_WORD_RE = re.compile(r"[A-Za-z][A-Za-z0-9_-]*")
 
 
 def _normalize_decimal_text(value: Decimal) -> str:
@@ -36,7 +44,8 @@ def extract_numeric_tokens(text: str) -> list[str]:
     for match in _NUMERIC_TOKEN_RE.finditer(text):
         value = match.group("value").replace(",", "")
         suffix = match.group("suffix") or ""
-        if suffix == "%":
+        normalized_suffix = suffix.lower()
+        if normalized_suffix in {"%", "percent", "percentage"}:
             tokens.append(f"{_normalize_decimal_text(Decimal(value))}%")
         elif suffix in _KOREAN_UNIT_SCALE:
             scaled = Decimal(str(normalize_korean_unit(value, suffix)))
@@ -54,3 +63,18 @@ def figure_matches(claim_text: str, source_text: str) -> bool:
     source_counter = Counter(extract_numeric_tokens(source_text))
     claim_counter = Counter(claim_tokens)
     return all(source_counter[token] >= count for token, count in claim_counter.items())
+
+
+def citation_supports_claim(claim_text: str, cited_page_text: str) -> bool:
+    if not claim_text.strip() or not cited_page_text.strip():
+        return False
+    if not figure_matches(claim_text, cited_page_text):
+        return False
+
+    claim_words = {word.lower() for word in _WORD_RE.findall(claim_text)}
+    source_words = {word.lower() for word in _WORD_RE.findall(cited_page_text)}
+    if not claim_words:
+        return True
+
+    overlap = claim_words & source_words
+    return len(overlap) >= min(2, len(claim_words))

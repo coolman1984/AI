@@ -35,6 +35,15 @@ class NumberFact:
     value: float
     evidence: EvidenceRef
 
+    @property
+    def tag(self) -> str:
+        source = self.evidence.source or ""
+        if source.startswith("duckdb:") or source.startswith("polars:"):
+            return "AUDITED-FROM-QUERY"
+        if source.startswith("claim:"):
+            return "CLAIMED-FROM-DECK"
+        raise ValueError(f"Unknown evidence source prefix for number tag: {source}")
+
 
 @dataclass
 class VariancePart:

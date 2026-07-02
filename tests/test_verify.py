@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 
 from engines.docs.verify import (
+    citation_supports_claim,
     extract_numeric_tokens,
     figure_matches,
     normalize_korean_unit,
@@ -66,3 +67,27 @@ def test_verify_module_is_pure():
             assert node.module.split(".")[0] not in banned_imports
         if isinstance(node, ast.Name):
             assert node.id not in banned_names
+
+
+def test_citation_supports_claim_when_number_and_terms_match():
+    claim = "Frame cost was 1,234 units."
+    cited_page = "The Frame cost was 1234 units in the monthly review."
+    assert citation_supports_claim(claim, cited_page)
+
+
+def test_citation_supports_claim_rejects_unrelated_page():
+    claim = "Frame cost was 1,234 units."
+    cited_page = "Panel scrap improved to 1234 units this month."
+    assert not citation_supports_claim(claim, cited_page)
+
+
+def test_citation_supports_claim_rejects_missing_number():
+    claim = "Frame cost was 1,234 units."
+    cited_page = "The Frame cost was discussed, but no amount was stated."
+    assert not citation_supports_claim(claim, cited_page)
+
+
+def test_citation_supports_claim_rejects_number_out_of_context():
+    claim = "Factory profit was 12%."
+    cited_page = "The panel yield was 12% during pilot startup."
+    assert not citation_supports_claim(claim, cited_page)

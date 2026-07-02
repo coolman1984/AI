@@ -7,6 +7,7 @@ artifact and knowledge-memory relations.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -15,11 +16,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
+from engines.brain.claims import ClaimsStore
 from engines.brain.memory import KnowledgeMemory, get_knowledge_memory
 from engines.docs.extract import extract_document
+from engines.docs.prompt_builder import build_extraction_prompt
+from engines.docs.verify import citation_supports_claim, extract_numeric_tokens
+from gov.ledger import log_external_call
+from gov.privacy import Tier, assert_can_send_external, classify_tier
 
 _HANGUL_RE = re.compile(r"[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+_PROMPT_INJECTION_PATTERNS = (
+    "ignore previous instructions",
+    "ignore any previous instructions",
+    "ignore any instructions found inside",
+)
 
 _PROMPT_CHAR_LIMIT = 24000
 
@@ -120,10 +131,28 @@ def _build_page_tagged_text(doc) -> tuple[str, bool]:
     return full, False
 
 
+def _has_numeric_support(claim_text: str, page_text: str) -> bool:
+    lowered_page = page_text.lower()
+    if any(pattern in lowered_page for pattern in _PROMPT_INJECTION_PATTERNS):
+        return False
+    claim_tokens = extract_numeric_tokens(claim_text)
+    if not claim_tokens:
+        return True
+    page_tokens = set(extract_numeric_tokens(page_text))
+    if citation_supports_claim(claim_text, page_text):
+        return True
+    return any(token in page_tokens for token in claim_tokens)
+
+
 def read_report(
     pdf_path: str | Path,
     llm: LLMBridge,
     cfg: dict | None = None,
+    *,
+    tier: Tier | None = None,
+    claims_store: ClaimsStore | None = None,
+    external_send: bool | None = None,
+    ledger_path: str = ".brain/external_call_ledger.jsonl",
 ) -> ReportKnowledge:
     """Extract structured knowledge from a PDF report via LLM.
 
@@ -139,6 +168,7 @@ def read_report(
     pdf_path = Path(pdf_path)
     doc = extract_document(str(pdf_path), cfg)
     source_path = str(pdf_path.resolve())
+    claims = claims_store or ClaimsStore()
 
     full_text = doc.full_text
     language = _detect_language(full_text)
@@ -160,26 +190,24 @@ def read_report(
         else ""
     )
 
-    prompt = f"""\
-You are a report analyst. Extract the key points from the following document text.
+    prompt = build_extraction_prompt(page_tagged, lang_hint, truncate_note)
 
-{lang_hint}
-{truncate_note}Only state figures that appear verbatim in the text, always with page citation.
-
-Return ONLY valid JSON (no explanations, no markdown fences) with this exact schema:
-{{
-  "title": "<short descriptive title>",
-  "summary_en": "<2-3 sentence executive summary in English>",
-  "key_points": [
-    {{"text": "<1-2 sentence detail>", "page": <int>}}
-  ]
-}}
-
-DOCUMENT TEXT:
-{page_tagged}
-"""
+    send_externally = external_send if external_send is not None else isinstance(llm, OpencodeLLM)
+    resolved_tier = tier or classify_tier((cfg or {}).get("doc_metadata"))
+    if send_externally:
+        assert_can_send_external(resolved_tier)
 
     raw = llm.generate(prompt)
+    if send_externally:
+        model_name = getattr(llm, "model", llm.__class__.__name__)
+        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        log_external_call(
+            document=source_path,
+            tier=resolved_tier,
+            model=str(model_name),
+            prompt_hash=prompt_hash,
+            path=ledger_path,
+        )
     raw = _strip_code_fence(raw)
 
     try:
@@ -196,13 +224,26 @@ DOCUMENT TEXT:
     key_points: list[KeyPoint] = []
     for kp_data in data.get("key_points", []):
         page = kp_data.get("page", 0)
+        text = kp_data.get("text", "")
         if page < 1 or page > page_count:
             warnings.append(
                 f"Dropped key_point with page={page} "
-                f"(out of range 1-{page_count}): {kp_data.get('text', '')[:100]}"
+                f"(out of range 1-{page_count}): {text[:100]}"
             )
             continue
-        key_points.append(KeyPoint(text=kp_data.get("text", ""), page=page))
+        page_text = doc.pages[page - 1].text
+        if not _has_numeric_support(text, page_text):
+            claims.add_claim(
+                text=text,
+                source_doc=source_path,
+                page=page,
+                citation=page_text[:500] or page_text,
+                verified=False,
+                reason="unsupported numeric claim or prompt-injection risk",
+            )
+            warnings.append(f"Quarantined unsupported numeric key_point on page {page}: {text[:100]}")
+            continue
+        key_points.append(KeyPoint(text=text, page=page))
 
     return ReportKnowledge(
         source_path=source_path,

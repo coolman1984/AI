@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from engines.brain.claims import ClaimsStore
 from engines.docs.models import Document, Page
 from engines.docs.report_reader import (
     KeyPoint,
@@ -14,6 +15,7 @@ from engines.docs.report_reader import (
     read_report,
     store_report_knowledge,
 )
+from gov.privacy import Tier
 
 
 class FakeLLM:
@@ -379,3 +381,48 @@ def test_read_report_with_real_pdf(tmp_path):
     assert knowledge.source_path == str(pdf_path.resolve())
     assert len(knowledge.key_points) == 2
     assert knowledge.key_points[0].page == 1
+
+
+def test_read_report_rejects_forced_external_tier_1(monkeypatch):
+    monkeypatch.setattr("engines.docs.report_reader.extract_document", _fake_extract)
+    llm = FakeLLM(VALID_JSON)
+
+    with pytest.raises(PermissionError):
+        read_report(
+            "/fake/path.pdf",
+            llm=llm,
+            tier=Tier.TIER_1,
+            external_send=True,
+        )
+
+
+def test_read_report_quarantines_unverified_numeric_key_point(monkeypatch, tmp_path):
+    monkeypatch.setattr("engines.docs.report_reader.extract_document", _fake_extract)
+    llm = FakeLLM(
+        json.dumps(
+            {
+                "title": "Monthly Cost Review",
+                "summary_en": "Summary.",
+                "key_points": [
+                    {"text": "Frame 1400 cost 12% over budget.", "page": 1},
+                    {"text": "Revenue was 300,000 KRW.", "page": 2},
+                ],
+            }
+        )
+    )
+    claims_store = ClaimsStore(path=str(tmp_path / "claims.json"))
+
+    knowledge = read_report(
+        "/fake/path.pdf",
+        llm=llm,
+        claims_store=claims_store,
+        external_send=False,
+    )
+
+    assert [kp.text for kp in knowledge.key_points] == ["Frame 1400 cost 12% over budget."]
+    claims = claims_store.all()
+    assert len(claims) == 1
+    assert claims[0]["text"] == "Revenue was 300,000 KRW."
+    assert claims[0]["verified"] is False
+    assert "unsupported" in claims[0]["reason"]
+    assert any("Quarantined unsupported numeric key_point" in warning for warning in knowledge.warnings)

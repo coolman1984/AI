@@ -6,6 +6,8 @@ documents and return cited passages.
 `ocr.ocr_cascade`, `ocr.extract_page_text`, `ocr.extraction_quality`, `ocr.render_pdf_page`,
 `search.search_documents`, `verify.extract_numeric_tokens`,
 `verify.normalize_korean_unit`, `verify.figure_matches`,
+`verify.citation_supports_claim`,
+`prompt_builder.build_extraction_prompt`,
 `report_reader.read_report` (takes PDF path + LLMBridge),
 `report_reader.store_report_knowledge` (writes to ``.brain/reports/``),
 `report_reader.LLMBridge` (Protocol, ``generate(prompt) -> str``),

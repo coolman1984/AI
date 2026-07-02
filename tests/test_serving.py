@@ -4,7 +4,9 @@ import pytest
 import yaml
 
 from engines.brain.orchestrator import run_pipeline
+from serving.card import render_text
 from serving.open_design import export_report, render_dashboard_html
+from shared.contracts.models import EvidenceRef, NumberFact
 
 
 def _ctx():
@@ -39,3 +41,39 @@ def test_export_writes_html_and_pptx(tmp_path):
         assert (tmp_path / "card.pptx").stat().st_size > 0
     else:  # pragma: no cover
         pytest.skip("python-pptx not installed")
+
+
+def test_render_text_shows_audited_and_claimed_tags():
+    ctx = _ctx()
+    claim_fact = NumberFact(
+        "Deck claim",
+        42.0,
+        EvidenceRef(
+            source="claim:deck_page_3",
+            locator="page=3",
+            method="quoted figure",
+            value=42.0,
+        ),
+    )
+    ctx["card"].key_numbers.append(claim_fact)
+
+    rendered = render_text(ctx["card"])
+    assert "AUDITED-FROM-QUERY" in rendered
+    assert "CLAIMED-FROM-DECK" in rendered
+
+
+def test_render_dashboard_html_fails_closed_on_unknown_provenance():
+    ctx = _ctx()
+    ctx["card"].key_numbers[0] = NumberFact(
+        "Mystery number",
+        1.0,
+        EvidenceRef(
+            source="mystery:source",
+            locator="x",
+            method="unknown",
+            value=1.0,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Unknown evidence source prefix"):
+        render_dashboard_html(ctx)

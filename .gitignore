@@ -7,3 +7,4 @@ out_*.html
 out/
 .pytest_cache/
 .ruff_cache/
+downloads/

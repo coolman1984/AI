@@ -130,14 +130,17 @@ def render_text(card: ManagerCard) -> str:
         "KEY NUMBERS:",
     ]
     for n in card.key_numbers:
-        lines.append(f"  - {n.label}: {n.value:+,.2f}   [{n.evidence.source} {n.evidence.method}]")
+        lines.append(
+            f"  - {n.label}: {n.value:+,.2f}   "
+            f"[{n.tag}; {n.evidence.source} {n.evidence.method}]"
+        )
     if card.driver_split is not None:
         lines.append(
             "OPERATING VIEW (vs standard cost): "
-            f"total {card.driver_split.total.value:+,.2f} = "
-            f"price {card.driver_split.price.value:+,.2f}; "
-            f"volume {card.driver_split.volume.value:+,.2f}; "
-            f"mix {card.driver_split.mix.value:+,.2f}"
+            f"total {card.driver_split.total.value:+,.2f} [{card.driver_split.total.tag}] = "
+            f"price {card.driver_split.price.value:+,.2f} [{card.driver_split.price.tag}]; "
+            f"volume {card.driver_split.volume.value:+,.2f} [{card.driver_split.volume.tag}]; "
+            f"mix {card.driver_split.mix.value:+,.2f} [{card.driver_split.mix.tag}]"
         )
     lines.append("DRIVERS  : " + "; ".join(card.drivers))
     if card.risks:

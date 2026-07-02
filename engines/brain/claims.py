@@ -41,6 +41,7 @@ class ClaimsStore:
         page: str | int,
         citation: str,
         verified: bool = False,
+        reason: str = "",
     ) -> None:
         if not citation.strip():
             raise ValueError("citation is required and cannot be whitespace-only")
@@ -57,6 +58,7 @@ class ClaimsStore:
                 "page": page,
                 "citation": citation,
                 "verified": verified,
+                "reason": reason,
             }
         )
         self.path.write_text(json.dumps(self._data, indent=2))
