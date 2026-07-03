@@ -1,7 +1,7 @@
 # FOREMAN Skills Registry — all entries in proposed status, activated in Phase 1–2.
 
 - skill_id: SK-001
-  name: excel-intake
+  name: excel_intake
   domain: data_ingestion
   purpose: >
     Register, fingerprint, and safely stage a spreadsheet into the ingestion
@@ -31,7 +31,7 @@
     - "file open in Excel -> lock error; ask owner to close it"
   test_cases: [tests/test_skill_excel_intake.py]
   last_updated: 2026-07-03
-  status: proposed
+  status: active
 
 - skill_id: SK-002
   name: column-profile-and-map
@@ -61,7 +61,7 @@
   known_failures: []
   test_cases: [tests/test_skill_column_map.py]
   last_updated: 2026-07-03
-  status: proposed
+  status: active
 
 - skill_id: SK-003
   name: load-to-database
@@ -91,7 +91,7 @@
     - "reject rate >5%: stop and show samples to owner"
   test_cases: [tests/test_skill_load_db.py]
   last_updated: 2026-07-03
-  status: proposed
+  status: active
 
 - skill_id: SK-004
   name: reconcile-and-validate
@@ -121,7 +121,7 @@
     - "control total includes quarantined rows: reconcile against detail-only recomputation"
   test_cases: [tests/test_skill_reconcile.py]
   last_updated: 2026-07-03
-  status: proposed
+  status: active
 
 - skill_id: SK-005
   name: management-report
@@ -152,4 +152,4 @@
     - "a wanted-but-unvalidated number omitted with stated reason"
   test_cases: [tests/test_skill_mgmt_report.py]
   last_updated: 2026-07-03
-  status: proposed
+  status: active
