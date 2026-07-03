@@ -102,6 +102,7 @@ G:\AI\
 │   ├── rollback_plan.md            # Rollback plan
 │   ├── skill_os_blueprint.md       # FOREMAN blueprint — skill-OS governance layer over the engines (2026-07-03)
 │   ├── foreman_build_plan.md       # FOREMAN phased build plan — code-writer execution order (2026-07-03)
+│   ├── foreman_review_brief.md     # FOREMAN review charter — hand to a reviewer agent before building (2026-07-03)
 │   ├── unified-ingestion-spine.md  # Bilingual (AR/EN) ingestion spine design
 │   ├── validation_plan.md          # Validation plan
 │   └── reviews/
