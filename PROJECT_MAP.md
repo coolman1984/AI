@@ -36,20 +36,56 @@ number reaching an executive.
 
 ---
 
+## 1b. Project charter & risks (living summary)
+
+**Mission:** Factory decision intelligence — exact numbers, governed memory, audited human-signed
+answers. Locked first workflow: monthly material cost variance (Cost Control / Finance). Engineering
+backbone: unified ingestion spine across Excel/PDF/PPT/email before heavy infra.
+
+**Scope (now):** ingest → clean → governed variance → cited card → independent audit → sign-off;
+documents + OCR; local memory; HTML/PPTX; multi-department by lens config.
+
+**Out of scope until proven:** all departments at once; external data services; full MES/ISA-95 now.
+
+**Key assumptions:** sample shape mirrors SAP exports (verify on real export); on-prem LLM/graph
+when provisioned; Tesseract eng/ara for OCR baseline.
+
+**Open questions:** real export provider/timing; pilot sign-off chain; infra/deployment owners (later).
+
+**Risks (watch):** metric ambiguity (R2); prompt injection via ingested content (R3); real SAP scale
+untested until E.1 (R7); adoption (R8). Mitigated: wrong-number path (audit+sign-off), OCR review queue.
+
+**Bottleneck:** first real SAP-scale export for profiling (P2.2 / E.1). Details and history: `archive/00_control/`.
+
+---
+
+## 1c. FOREMAN governance layer
+
+FOREMAN wraps existing `engines/` with skills, registries, and evidence — see `03_design/skill_os_blueprint.md`.
+
+| Area | Purpose |
+|---|---|
+| `registry/` | `tools.yaml`, `skills.yaml` — machine-checked manifests |
+| `tools/` | `foreman_db`, `fingerprint`, `run_logger`, `run_foreman`, linters, approvals |
+| `skills/` | SK-001…SK-005 MVP pipeline + Phase 4/7 analytics skills |
+| `vault/` | Curated second-brain notes (Obsidian-friendly) |
+| `lessons/`, `reports/`, `runs/`, `approvals/` | Run artifacts and governance data (not agent docs) |
+| `schemas/`, `templates/` | JSON schemas and skill/report templates |
+
+**Verify FOREMAN:** `pytest tests/test_foreman_*.py tests/test_skill_*.py -q`
+
+---
+
 ## 2. Complete Directory Tree
 
 ```
 G:\AI\
 │
-├── AGENTS.md                       # Root agent operating manual (read order, rules, build chain, commands)
-├── AGENT_CORE_CONTRACT.md          # Shared contract all agent skills must obey (run identity, evidence, trust)
-├── AGENT_SKILL_MAP.md              # Lightweight routing: which skill file to load for which task
-├── PROJECT_MAP.md                  # ★ THIS FILE — complete project reference
-├── BUILD.md                        # Build/run instructions
-├── CLAUDE.md                       # AI team orchestration workflow
-├── FACTORY_SECOND_BRAIN.md         # Historical project overview (superseded)
-├── MASTER_PLAN.md                  # Original master plan (superseded by v2)
-├── README.md                       # (not present at root — see 04_execution/README.md)
+├── README.md                       # Root orientation (≤25 lines) → AGENTS.md
+├── AGENTS.md                       # Constitution: rules, Doc Law, core contract, read order
+├── AGENT_SKILL_MAP.md              # Skill routing
+├── PROJECT_MAP.md                  # ★ THIS FILE — current state reference
+├── CLAUDE.md                       # Team orchestration workflow (rules in AGENTS.md)
 ├── config.yaml                     # Main configuration (AI providers, roles, audit thresholds, tool switches)
 ├── column_map.yaml                 # Human-reviewed column name canonicalization mapping
 ├── pyproject.toml                  # Project metadata, pytest config, ruff config
@@ -103,6 +139,7 @@ G:\AI\
 │   ├── skill_os_blueprint.md       # FOREMAN blueprint — skill-OS governance layer over the engines (2026-07-03)
 │   ├── foreman_build_plan.md       # FOREMAN phased build plan — code-writer execution order (2026-07-03)
 │   ├── foreman_review_brief.md     # FOREMAN review charter — hand to a reviewer agent before building (2026-07-03)
+│   ├── doc_system_plan.md          # ★ ACTIVE-PLAN — documentation consolidation to 7 living docs (2026-07-03)
 │   ├── unified-ingestion-spine.md  # Bilingual (AR/EN) ingestion spine design
 │   ├── validation_plan.md          # Validation plan
 │   └── reviews/

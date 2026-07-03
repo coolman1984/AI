@@ -1,14 +1,13 @@
 # AGENTS.md — Operating Manual for All AI Agents on This Repo
 
 This file is read automatically by Codex (and is the convention for other agents).
-It is the **durable, non-negotiable guidance**. The current, live architecture and
-build plan lives in `03_design/assistant_master_plan.md`; current Phase A build cards
-live in `03_design/phase_a_cards.md`. `MASTER_PLAN.md` and the former kickoff brief
-`CODEX_PLAN.md` are historical only.
+It is the **durable, non-negotiable guidance** — rules and read order only, not live status.
+Live status: `PROJECT_MAP.md` and `00_control/task_queue.md`. Architecture REFERENCE:
+`03_design/assistant_master_plan.md`. Active build plan: `03_design/foreman_build_plan.md`.
+Historical material lives under `archive/` (read-never for current work).
 
 This repository builds a **factory-wide Decision Intelligence System** for a large
-TV/mobile manufacturing plant. It is currently a planning workspace about to enter
-implementation. Finance/Costing is the first pilot; the platform is factory-wide.
+TV/mobile manufacturing plant. Finance/Costing is the first pilot; the platform is factory-wide.
 
 ---
 
@@ -20,26 +19,18 @@ is how this drifted out of sync before (four files, four different orders). If y
 edit this list, you do not need to edit it anywhere else; the other files reference it
 by name.
 
-1. **`AGENTS.md`** (this file) — durable, non-negotiable guidance. Read first, always.
-2. **`PROJECT_MAP.md`** — full project reference: directory tree, architecture, module
-   purposes, phase status. Read for orientation before deciding what else you need.
-3. **`AGENT_SKILL_MAP.md`** — the lightweight routing layer: which skill to load for which task.
-4. **`AGENT_CORE_CONTRACT.md`** — the shared spine all skills must obey.
-5. **`03_design/current_implementation_plan.md`** — the live execution plan that turns
-   the v2 architecture into build order, gates, and card expansion rules.
-6. **`03_design/assistant_master_plan.md`** — the current architecture and phase plan,
-   only when architecture context is actually needed (not every task needs it).
-7. **`03_design/phase_a_cards.md`** — the current Phase A build-card source, when
-   working Phase A.
-8. Only the relevant skill file(s) from `agent_skills/`.
-9. The nearest module `AGENTS.md`.
-10. Then the code.
+1. **`README.md`** — 15-line orientation; points here.
+2. **`AGENTS.md`** (this file) — durable rules, Doc Law, core contract, commands. Read first.
+3. **`PROJECT_MAP.md`** — current state: tree, modules, FOREMAN layer, charter & risks.
+4. **`AGENT_SKILL_MAP.md`** — which skill to load for which task.
+5. **`03_design/`** — only when needed: `assistant_master_plan.md` and `skill_os_blueprint.md`
+   (REFERENCE); `foreman_build_plan.md` (ACTIVE-PLAN when building FOREMAN). No other
+   `03_design/` file is current unless its frontmatter says ACTIVE-PLAN (max 2).
+6. Only the relevant skill file(s) from `agent_skills/` (or Hermes `skills/` for FOREMAN).
+7. The nearest module `AGENTS.md`.
+8. Then the code.
 
-`MASTER_PLAN.md` only when historical background is needed. (Note: `archive/` holds
-prior planning docs — `CODEX_PLAN.md`, `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`,
-`IMPLEMENTATION_PLAN_DOCS.md`, `IMPLEMENTATION_PLAN_SECONDBRAIN.md`, `REVIEW.md`,
-`RISK_AND_GAPS_AUDIT.md`, `PROJECT_STATE_AND_ROADMAP.md` — historical only, do not
-read as current guidance.)
+`archive/` is historical evidence only — do not treat as current guidance.
 
 ## The three rules everything obeys
 1. **Golden Rule:** code writes code from samples; engines execute against volumes. The
@@ -52,7 +43,7 @@ read as current guidance.)
 ## Lightweight agent architecture
 - Treat this repository as **lightweight routing + central contract + specialized skills**.
 - Do not load the whole architecture for every task.
-- Load `AGENT_CORE_CONTRACT.md` plus only the relevant skill from `agent_skills/`.
+- Load the **Core contract** section below plus only the relevant skill from `agent_skills/`.
 - The skills may specialize, but shared truth stays centralized.
 - If a task spans multiple stages, compose skills in sequence instead of improvising one giant prompt.
 
@@ -70,8 +61,55 @@ read as current guidance.)
 
 **Method = contracts-first, test-first.** The interface and the test exist before code.
 A card says: *"make `tests/<x>` pass by implementing `<contract>`, editing ONLY
-`<file>`."* See `03_design/current_implementation_plan.md` and
-`03_design/phase_a_cards.md` for the current Task Card format and model routing.
+`<file>`."* FOREMAN build steps: `03_design/foreman_build_plan.md`. Legacy task cards
+are archived under `archive/03_design/`.
+
+---
+
+## Doc Law (documentation discipline)
+
+1. Living docs are ONLY the seven below + module `AGENTS.md` files + skill files. Nothing else
+   is current documentation: `README.md`, `AGENTS.md`, `CLAUDE.md`, `PROJECT_MAP.md`,
+   `AGENT_SKILL_MAP.md`, `00_control/task_queue.md`, `00_control/decisions.md`.
+2. Every design/plan doc in `03_design/` MUST carry frontmatter: `status: ACTIVE-PLAN | REFERENCE |
+   ARCHIVED`, plus `owner` and `date`. At most **2** `ACTIVE-PLAN` docs at any time.
+3. A plan that finishes or is superseded moves to `archive/` **in the same commit** that
+   finishes it. Archive is write-only, read-never for agents doing current work.
+4. Never create a new root-level `.md`. Never create status/progress/notes files — status in
+   `task_queue.md`, decisions in `decisions.md`, knowledge in `vault/`.
+5. Enforced by `tests/test_doc_system.py`. If the test blocks you, fix the docs, not the test.
+
+---
+
+## Core contract (all skills must obey)
+
+Shared operational language: same run identity, storage targets, naming, trust logic, evidence,
+and failure semantics.
+
+**Run identity:** `run_id`, `task_id` when applicable, `source_type`, `source_path`, sheet/page
+when applicable, `started_at`, `finished_at`, `status`.
+
+**Evidence:** Every released claim traces to source location, calculation/query path, confidence,
+and rejection state when relevant.
+
+**Skill I/O:** Declare mission, sources, upstream artifacts, acceptance and blocking conditions.
+Outputs must include `artifact_type`, path, `run_id`, `status`, `confidence`, `evidence_summary`,
+`issues_found`, `recommended_next_step`. Missing upstream → fail clearly, do not invent.
+
+**Naming:** Stable terms (`cost_center`, `run_id`, `evidence`, `sign_off`, …). Map synonyms in
+glossary/vault, do not rename core concepts per skill.
+
+**Storage:** Raw inputs never overwritten; rejects persisted with reason; durable outputs in
+governed locations.
+
+**Trust:** No generated number is a fact; numeric conclusions from trusted query path; audit
+independent; low confidence → review queue; human sign-off before release to decision-makers.
+
+**Failure semantics:** success | partial (labeled) | blocked | failed | needs human review.
+
+**Handoff:** What was produced, where stored, what is unresolved, which skill loads next.
+
+**Priority:** trust over elegance; restartability over breadth; evidence over speed.
 
 ---
 

@@ -1,3 +1,9 @@
+---
+status: ACTIVE-PLAN
+owner: owner
+date: 2026-07-03
+---
+
 # FOREMAN — Build Plan (code-writer execution order)
 
 *Companion to [skill_os_blueprint.md](skill_os_blueprint.md). The blueprint is the WHY and

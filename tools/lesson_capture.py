@@ -1,6 +1,5 @@
 """Lesson capture: after every run, write a lesson template to lessons/."""
 
-import os
 from datetime import datetime
 from pathlib import Path
 

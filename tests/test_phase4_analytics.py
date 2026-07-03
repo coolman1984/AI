@@ -1,6 +1,5 @@
 """Tests for Phase 4 factory analytics modules."""
 
-import pytest
 
 
 def test_period_close_imports():

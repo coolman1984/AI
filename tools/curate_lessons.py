@@ -3,8 +3,6 @@
 Helps the owner curate raw lessons into vault notes during the weekly 15-minute review.
 """
 
-import shutil
-from datetime import datetime
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent

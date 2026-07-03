@@ -4,10 +4,14 @@ from datetime import datetime
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_PENDING_DIR = _PROJECT_ROOT / "approvals" / "pending"
-_DECIDED_DIR = _PROJECT_ROOT / "approvals" / "decided"
+# Tests may monkeypatch this to tmp_path / "approvals"
+_APPROVALS_ROOT = _PROJECT_ROOT / "approvals"
 
 VALID_TYPES = {"external_send", "skill_promotion", "write_action", "sensitive_memory"}
+
+
+def _pending_decided():
+    return _APPROVALS_ROOT / "pending", _APPROVALS_ROOT / "decided"
 
 
 def request_approval(
@@ -23,10 +27,11 @@ def request_approval(
     if approval_type not in VALID_TYPES:
         raise ValueError(f"Invalid approval type: {approval_type}. Must be one of {VALID_TYPES}")
 
-    _PENDING_DIR.mkdir(parents=True, exist_ok=True)
+    pending_dir, _ = _pending_decided()
+    pending_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{timestamp}_{approval_type}_run{run_id or 'none'}.md"
-    filepath = _PENDING_DIR / filename
+    filepath = pending_dir / filename
 
     content = f"""# Approval Request: {approval_type}
 **Date:** {datetime.now().isoformat()}
@@ -74,10 +79,11 @@ def decide_approval(
     if not row:
         raise ValueError(f"Approval {approval_id} not found")
 
+    _, decided_dir = _pending_decided()
     old_path = Path(row["request_path"])
     if old_path.exists():
-        _DECIDED_DIR.mkdir(parents=True, exist_ok=True)
-        new_path = _DECIDED_DIR / old_path.name
+        decided_dir.mkdir(parents=True, exist_ok=True)
+        new_path = decided_dir / old_path.name
         old_path.rename(new_path)
 
     now = datetime.now().isoformat()

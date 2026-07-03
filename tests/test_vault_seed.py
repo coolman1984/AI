@@ -1,6 +1,5 @@
 """Tests for vault seed (Phase 3.1)."""
 
-import os
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent

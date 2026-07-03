@@ -1,3 +1,9 @@
+---
+status: REFERENCE
+owner: architect
+date: 2026-07-02
+---
+
 # Executive Assistant Master Plan — v2 (APPROVED CURRENT PLAN)
 
 Author: Fable (lead architect). Version 2, 2026-07-02.

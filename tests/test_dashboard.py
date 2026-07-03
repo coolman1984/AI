@@ -1,10 +1,6 @@
 """Tests for dashboard builder (Phase 5)."""
 
 import os
-import tempfile
-from pathlib import Path
-
-import pytest
 
 
 def test_build_dashboard_missing_report():
@@ -16,8 +12,8 @@ def test_build_dashboard_missing_report():
 
 def test_build_dashboard_from_fixture(tmp_path):
     """Building a dashboard from a fixture report should produce HTML."""
-    from tools.build_dashboard import build_dashboard
     import tools.build_dashboard as bd
+    from tools.build_dashboard import build_dashboard
 
     # Create a fixture report
     report_path = tmp_path / "2026-06_test_report.md"

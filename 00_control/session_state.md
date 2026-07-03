@@ -1,6 +1,7 @@
-# Session State
+> **Runtime state — not documentation.** Updated by `write_session_state` / MCP; agents use
+> `PROJECT_MAP.md` and `task_queue.md` for current status.
 
-> Auto-updated by `write_session_state`. Concise resume snapshot only.
+# Session State
 
 | Field | Value |
 |---|---|

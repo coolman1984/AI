@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 from tools.foreman_db import init_db
-from tools.memory_gate import check_note_admission
 from tools.lesson_capture import capture_lesson
+from tools.memory_gate import check_note_admission
 
 
 @pytest.fixture

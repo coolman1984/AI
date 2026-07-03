@@ -2,8 +2,16 @@
 
 import pytest
 
+import tools.approvals as approvals_mod
 from tools.approvals import decide_approval, request_approval
 from tools.foreman_db import init_db
+
+
+@pytest.fixture(autouse=True)
+def approvals_isolated(tmp_path, monkeypatch):
+    """Never write approval markdown into the real repo approvals/ folder."""
+    root = tmp_path / "approvals"
+    monkeypatch.setattr(approvals_mod, "_APPROVALS_ROOT", root)
 
 
 @pytest.fixture

@@ -6,7 +6,6 @@ Before a vault note is written, this gate must pass:
 3. Sensitive-data → approval required
 """
 
-import os
 import re
 from pathlib import Path
 

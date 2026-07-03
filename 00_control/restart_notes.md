@@ -1,4 +1,7 @@
-# Restart Notes (read this to continue the project)
+> **Runtime state — not documentation.** Machine-updated resume snapshot; canonical status is
+> `task_queue.md` + `PROJECT_MAP.md`.
+
+# Restart Notes (session resume snapshot)
 
 1. **Current mission:** in-house Factory Second Brain - exact numbers, memory, and audited,
    human-signed management answers. Pilot department: Cost Control / Finance. (mission.md)

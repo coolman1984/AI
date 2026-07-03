@@ -1,3 +1,9 @@
+---
+status: REFERENCE
+owner: architect
+date: 2026-07-03
+---
+
 # FOREMAN — Local-First AI Skill Operating System (Improved Blueprint v1)
 
 *Prepared 2026-07-03. This document is the improved, criticized, and buildable version of the

@@ -4,9 +4,9 @@ This file is the lightweight routing layer for agents working in this repository
 
 Its job is not to explain the whole project. Its job is to help the agent load the right depth at the right time without paying the token cost of loading the entire architecture on every task.
 
-Current architecture reference: `03_design/assistant_master_plan.md`. Current execution
-plan: `03_design/current_implementation_plan.md`. Current Phase A work cards:
-`03_design/phase_a_cards.md`. Historical plans live in `archive/`.
+Current architecture reference: `03_design/assistant_master_plan.md` (REFERENCE).
+Active FOREMAN build: `03_design/foreman_build_plan.md` (ACTIVE-PLAN). Live task status:
+`00_control/task_queue.md`. Historical plans live in `archive/`.
 
 The system design is:
 
@@ -22,8 +22,8 @@ If a task needs more than one skill, the agent should compose them in sequence i
 
 See `AGENTS.md` → "Read order (start here, always)" for the canonical sequence — it
 is kept single-sourced there so this file and `AGENTS.md` cannot silently disagree.
-In short: `AGENTS.md` → `PROJECT_MAP.md` → this file → `AGENT_CORE_CONTRACT.md` →
-the live plan docs (only when needed) → the relevant skill file(s) → nearest module
+In short: `README.md` → `AGENTS.md` → `PROJECT_MAP.md` → this file → Core contract in
+`AGENTS.md` → `03_design/` REFERENCE/ACTIVE-PLAN only when needed → skill file(s) → nearest module
 `AGENTS.md`.
 
 Do **not** load every skill by default.
@@ -154,8 +154,7 @@ The following must stay centralized and must **not** be redefined inside each sk
 - confidence language
 - where outputs belong
 
-Those shared rules live in:
-`AGENT_CORE_CONTRACT.md`
+Those shared rules live in the **Core contract** section of `AGENTS.md`.
 
 ---
 
