@@ -100,6 +100,8 @@ G:\AI\
 │   ├── phase_a_cards.md            # ★ Current Phase A build cards (289 lines)
 │   ├── phase_b_to_f_cards.md       # Phase B-F build cards (1055 lines)
 │   ├── rollback_plan.md            # Rollback plan
+│   ├── skill_os_blueprint.md       # FOREMAN blueprint — skill-OS governance layer over the engines (2026-07-03)
+│   ├── foreman_build_plan.md       # FOREMAN phased build plan — code-writer execution order (2026-07-03)
 │   ├── unified-ingestion-spine.md  # Bilingual (AR/EN) ingestion spine design
 │   ├── validation_plan.md          # Validation plan
 │   └── reviews/
@@ -118,10 +120,11 @@ G:\AI\
 │   ├── handover_notes.md
 │   └── proof_of_completion.md
 │
-├── agent_skills/                   # ★ 6 skill files — the agent's capability library
+├── agent_skills/                   # ★ 7 files — 6 capability skills + 1 external inventory
 │   ├── audit_and_trust.md          # Release gating, independent re-check
 │   ├── cost_variance_analysis.md   # Price/volume/mix driver decomposition
 │   ├── document_evidence_extraction.md  # PDF/PPTX/OCR extraction
+│   ├── EXTERNAL_SKILLS_INVENTORY.md  # Map of external skill libraries in Downloads/Skills
 │   ├── knowledge_search.md         # Retrieval from stored knowledge
 │   ├── management_reporting.md     # Executive output shaping
 │   └── spreadsheet_ingestion.md    # Tabular data ingest/clean
@@ -766,6 +769,12 @@ each other until it was reconciled. In short, the order is:
 | `management_reporting.md` | Task needs executive output | `render_card`, `render_brief`, `render_pack` |
 | `knowledge_search.md` | Task needs retrieval from stored knowledge | `search_knowledge`, `query_open_questions` |
 | `audit_and_trust.md` | Task needs verification/release gating | `audit_numbers`, `audit_claims`, `sign_off` |
+
+**External skill libraries:** The project also keeps a curated inventory of
+external skill libraries from `C:\Users\mflma\Downloads\Skills` in
+`agent_skills/EXTERNAL_SKILLS_INVENTORY.md`. Use it when you want to borrow
+patterns from Addy Osmani agent skills, Anthropic skills, or financial-services
+skills without duplicating them.
 
 ### 7.3 Agent Skill Composition Patterns
 

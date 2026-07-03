@@ -1,0 +1,1 @@
+Templates: SKILL.md, RUN_CONTRACT.md, MANAGEMENT_REPORT.md, LESSON.md

@@ -1,0 +1,155 @@
+# FOREMAN Skills Registry — all entries in proposed status, activated in Phase 1–2.
+
+- skill_id: SK-001
+  name: excel-intake
+  domain: data_ingestion
+  purpose: >
+    Register, fingerprint, and safely stage a spreadsheet into the ingestion
+    spine with quarantine and conservation checks.
+  triggers:
+    - "new Excel/CSV file to analyze"
+    - "SAP export arrived"
+  anti_triggers:
+    - "file is a PDF or scan (use document skills)"
+    - "data already registered this period (use query skills)"
+  required_inputs: [file_path]
+  optional_inputs: [expected_row_count, expected_total, period]
+  allowed_tools: [T-FP-001, T-ING-001, T-PROF-001]
+  forbidden_actions:
+    - editing the source file
+    - sending file content to any cloud model (Tier-1 default)
+    - proceeding past a failed conservation check
+  output_types: [staged_table, profile_report, reject_file]
+  validation_rules: [gate.fingerprint, gate.conservation, gate.profile_complete]
+  evidence_required: [source_fingerprint, sheet_locators, row_counts]
+  risk_level: low
+  approval_required: false
+  version: 1.0.0
+  owner: mflma
+  dependencies: []
+  known_failures:
+    - "file open in Excel -> lock error; ask owner to close it"
+  test_cases: [tests/test_skill_excel_intake.py]
+  last_updated: 2026-07-03
+  status: proposed
+
+- skill_id: SK-002
+  name: column-profile-and-map
+  domain: analysis
+  purpose: >
+    Profile columns from a staged table and produce an owner-confirmable
+    mapping to canonical names with historical prior matching.
+  triggers:
+    - "newly staged table without a confirmed mapping"
+    - "unknown column layout in a known dataset type"
+  anti_triggers:
+    - "mapping already confirmed this period (reuse existing)"
+  required_inputs: [table_name, fingerprint_id]
+  optional_inputs: [prior_mapping_ref, target_lens]
+  allowed_tools: [T-PROF-001]
+  forbidden_actions:
+    - auto-confirming a mapping without owner sign-off
+    - editing the source file
+  output_types: [profile_report, column_mapping_proposal]
+  validation_rules: [gate.column_mapping]
+  evidence_required: [profile_stats_per_column, mapping_confirmer_id]
+  risk_level: low
+  approval_required: false
+  version: 1.0.0
+  owner: mflma
+  dependencies: [SK-001]
+  known_failures: []
+  test_cases: [tests/test_skill_column_map.py]
+  last_updated: 2026-07-03
+  status: proposed
+
+- skill_id: SK-003
+  name: load-to-database
+  domain: data_ingestion
+  purpose: >
+    Apply a confirmed column mapping, clean data through the canonical parser,
+    and load into the analytical store with quarantine and conservation.
+  triggers:
+    - "confirmed mapping exists for a staged table"
+  anti_triggers:
+    - "no confirmed mapping (run SK-002 first)"
+  required_inputs: [table_name, mapping_id]
+  optional_inputs: [qty_col, period]
+  allowed_tools: [T-CLEAN-ACT, T-CLEAN-STD]
+  forbidden_actions:
+    - re-implementing number parsing (use the canonical engine)
+    - silently proceeding past a reject-rate threshold
+  output_types: [clean_table, reject_file, load_summary]
+  validation_rules: [gate.numeric_cleaning, gate.date_cleaning, gate.db_loading, gate.duplicate_detection]
+  evidence_required: [stage_counts, clean_counts, reject_breakdown, reject_rate]
+  risk_level: low
+  approval_required: false
+  version: 1.0.0
+  owner: mflma
+  dependencies: [SK-002]
+  known_failures:
+    - "reject rate >5%: stop and show samples to owner"
+  test_cases: [tests/test_skill_load_db.py]
+  last_updated: 2026-07-03
+  status: proposed
+
+- skill_id: SK-004
+  name: reconcile-and-validate
+  domain: analysis
+  purpose: >
+    Prove loaded data matches control totals before any analysis or reporting.
+  triggers:
+    - "after every load"
+    - "before every report"
+  anti_triggers:
+    - "exploratory profile queries (no validation needed)"
+  required_inputs: [clean_table, control_total_source]
+  optional_inputs: [tolerance]
+  allowed_tools: [T-AUDIT-001]
+  forbidden_actions:
+    - fabricating a control total
+    - skipping reconciliation for a report
+  output_types: [reconciliation_statement]
+  validation_rules: [gate.reconciliation]
+  evidence_required: [expected_total, actual_total, delta, tolerance, by_dimension_drilldown]
+  risk_level: low
+  approval_required: false
+  version: 1.0.0
+  owner: mflma
+  dependencies: [SK-003]
+  known_failures:
+    - "control total includes quarantined rows: reconcile against detail-only recomputation"
+  test_cases: [tests/test_skill_reconcile.py]
+  last_updated: 2026-07-03
+  status: proposed
+
+- skill_id: SK-005
+  name: management-report
+  domain: reporting
+  purpose: >
+    Produce a signed one-page management summary from validated numbers with
+    full provenance tagging.
+  triggers:
+    - "owner asks for a report"
+    - "reconciliation gate green"
+  anti_triggers:
+    - "ad-hoc data exploration (use SK-002/SK-003 instead)"
+  required_inputs: [validated_tables, period]
+  optional_inputs: [report_template, audience, lens]
+  allowed_tools: [T-PVM-001, T-DRV-001, T-CARD-001]
+  forbidden_actions:
+    - rendering a CLAIMED number (unvalidated)
+    - shipping without sign-off
+  output_types: [report_md, report_html, sign_off_record]
+  validation_rules: [gate.report_generation, gate.final_delivery]
+  evidence_required: [evidence_id_per_number, sign_off_row]
+  risk_level: medium
+  approval_required: false
+  version: 1.0.0
+  owner: mflma
+  dependencies: [SK-004]
+  known_failures:
+    - "a wanted-but-unvalidated number omitted with stated reason"
+  test_cases: [tests/test_skill_mgmt_report.py]
+  last_updated: 2026-07-03
+  status: proposed
