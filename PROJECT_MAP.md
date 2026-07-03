@@ -1081,5 +1081,24 @@ only when tests pass. Push to `main`.
 
 ---
 
+## 13. Cloned Open-Source Reference Repositories
+
+To minimize token usage and prevent reinventing already mature modules, the repository contains a `downloads/` folder where high-starred, industry-standard libraries are shallow-cloned (`--depth 1`).
+
+Incoming AI agents MUST review these reference implementations under [downloads/](file:///g:/AI/downloads) before implementing custom parsing, memory graphs, or extraction pipelines:
+
+1. **[pdfplumber](file:///g:/AI/downloads/pdfplumber) (jsvine):** Used for **IS3** (PDF Table Extraction). High-precision coordinate-based text and border extractor.
+2. **[docling](file:///g:/AI/downloads/docling) (IBM-Project):** Used for **IS4/IS5** (Layout-Aware Document Conversion). Native multi-format parser for PDFs, DOCX, and PPTX layout analysis.
+3. **[mail-parser](file:///g:/AI/downloads/mail-parser) (SpamScope):** Used for **IS5** (EML/Email Thread Parsing). Standardized headers, body sections, and base64-decoded attachment extractor.
+4. **[cognee](file:///g:/AI/downloads/cognee) (topoteretes):** Used for **T9** (Knowledge Graph Memory). Graph-database pipeline orchestrator with SQLite and LanceDB connectors.
+5. **[graphiti](file:///g:/AI/downloads/graphiti) (getzep):** Used for **T9** (Temporal Context Memory). Temporal knowledge graph for recording episodic facts over time.
+
+### Quick Onboarding References:
+- **Comprehensive Integration Mapping:** [downloads/oss_reference/README.md](file:///g:/AI/downloads/oss_reference/README.md) details exact code files, python interfaces, and import syntax for each library.
+- **Remediation & Review Backlog:** Refer to the comprehensive diagnostic review [project_codebase_review.md](file:///C:/Users/mflma/.gemini/antigravity/brain/2c464edb-999e-4e21-bc8b-b672249773d5/project_codebase_review.md) in your session directory to understand known bugs and edge cases before modifying the engines.
+
+---
+
 *End of PROJECT_MAP.md — this file is maintained for AI agent onboarding. Update it when
 the architecture or module structure changes significantly.*
+
