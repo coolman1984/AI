@@ -16,6 +16,28 @@ Turn trusted tabular inputs into a grounded explanation of cost movement, with d
 - final manager-card formatting
 - release approval
 
+## Token budget
+- target: <= 1,200 tokens for variance explanation package
+- hard cap: top drivers and unmatched items only
+
+## Input contract
+- trusted loaded tables or query-ready data
+- comparison basis (budget, standard, prior period)
+- approved driver schema for the workflow
+
+## Output contract
+- reconciled variance result and driver decomposition
+- unmatched items list and confidence statement
+
+## Invariants
+- numbers come from the trusted query path only
+- every conclusion must be explainable from evidence
+- mismatches surface loudly
+
+## Raw data ban
+- never dump raw tabular exports into agent context
+- return reconciled totals, driver summaries, and evidence pointers only
+
 ## Inputs expected
 - trusted loaded data or query-ready tables
 - business lens or analysis period

@@ -1,0 +1,15 @@
+{
+  "claims": [
+    {
+      "text": "Material variance versus budget.",
+      "locator": "slide 6",
+      "citation": "deck:hq_weekly_review.pptx#slide=6"
+    }
+  ],
+  "second_extractions": {
+    "slide 6": "Material variance versus budget."
+  },
+  "citations": {
+    "slide 6": "deck:hq_weekly_review.pptx#slide=6"
+  }
+}

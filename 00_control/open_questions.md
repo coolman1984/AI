@@ -24,5 +24,23 @@
    - Who will own deployment, backup, restore, and failure alerts?
    - Not needed for the current slice; needed before productization.
 
+## Real-data issue promotion template (E.4)
+
+When P2.2 / E.1 profiling or first real ingest surfaces a material failure, promote it
+before starting new code:
+
+| Field | Required content |
+|-------|------------------|
+| Issue ID | `I#` in `05_validation/issue_tracker.md` |
+| Source | file path, sheet/page, and run_id |
+| Symptom | what failed visibly (totals, locale, schema drift, OCR, etc.) |
+| Owner | named human or role |
+| Status | `Open`, `Blocked`, or `Resolved` |
+| Next action | one concrete follow-on task row in `00_control/task_queue.md` |
+| Evidence | pytest name, profile output, or reject sample — never management numbers |
+
+Promotion rule: no material real-data finding stays only in run notes. If it needs code,
+add a task row first; if it needs owner input, add an open question first.
+
 > **Gate note:** heavy infrastructure remains blocked until the workflow is locked,
 > one real export is profiled, and the infrastructure owner is known.

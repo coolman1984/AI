@@ -5,15 +5,21 @@ import csv
 import duckdb
 import pytest
 
+import openpyxl
+
 from engines.data.ingest import (
     finish_ingestion_run,
     get_connection,
     ingest_csv,
     ingest_csv_tracked,
+    ingest_excel_tracked,
+    ingest_spreadsheet,
     init_ingestion_schema,
     insert_ingestion_rejects,
+    list_excel_sheets,
     start_ingestion_run,
 )
+from engines.data.types import infer_column_type, parse_date_value
 from shared.contracts.models import RejectRecord
 
 
@@ -44,6 +50,7 @@ def test_ingestion_runs_columns(con: duckdb.DuckDBPyConnection) -> None:
         ("run_id", "NO"),
         ("source_type", "NO"),
         ("source_path", "NO"),
+        ("source_sheet", "YES"),
         ("status", "NO"),
         ("rows_in", "YES"),
         ("reject_count", "YES"),
@@ -269,6 +276,159 @@ def test_ingest_csv_tracked_can_drop_duplicates_when_requested(
         "SELECT reason FROM ingestion_rejects WHERE run_id = ?", [result["run_id"]]
     ).fetchone()[0]
     assert reason == "duplicate"
+
+
+def _write_workbook(path, sheets: dict[str, list[list[str]]]) -> None:
+    workbook = openpyxl.Workbook()
+    default_sheet = workbook.active
+    workbook.remove(default_sheet)
+    for sheet_name, rows in sheets.items():
+        worksheet = workbook.create_sheet(title=sheet_name)
+        for row in rows:
+            worksheet.append(row)
+    workbook.save(path)
+
+
+def test_list_excel_sheets(tmp_path) -> None:
+    path = tmp_path / "multi.xlsx"
+    _write_workbook(
+        path,
+        {
+            "Costs": [["id"], ["1"]],
+            "Budget": [["id"], ["2"]],
+        },
+    )
+
+    assert list_excel_sheets(str(path)) == ["Costs", "Budget"]
+
+
+def test_ingest_excel_tracked_creates_one_run_per_sheet(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path = tmp_path / "workbook.xlsx"
+    _write_workbook(
+        path,
+        {
+            "Costs": [
+                ["material_id", "amount"],
+                ["A1", "100"],
+                ["Total", "100"],
+            ],
+            "Budget": [
+                ["material_id", "amount"],
+                ["B1", "50"],
+            ],
+        },
+    )
+
+    result = ingest_excel_tracked(con, "raw_excel", str(path))
+
+    assert result["sheet_count"] == 2
+    assert result["rows_in"] == 3
+    assert result["reject_count"] == 1
+    assert len(result["sheets"]) == 2
+    assert result["sheets"][0]["source_sheet"] == "Costs"
+    assert result["sheets"][1]["source_sheet"] == "Budget"
+
+    runs = con.execute(
+        "SELECT source_sheet, rows_in, reject_count FROM ingestion_runs ORDER BY run_id"
+    ).fetchall()
+    assert runs == [("Costs", 2, 1), ("Budget", 1, 0)]
+
+    reject_raw = con.execute(
+        "SELECT raw_json FROM ingestion_rejects WHERE reason = 'total_row'"
+    ).fetchone()[0]
+    assert "Costs" in reject_raw
+
+
+def test_ingest_excel_tracked_conserves_rows_per_sheet(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path = tmp_path / "mixed.xlsx"
+    _write_workbook(
+        path,
+        {
+            "SheetA": [
+                ["material_id", "amount"],
+                ["A1", "10"],
+                ["A1", "10"],
+            ],
+        },
+    )
+
+    result = ingest_excel_tracked(con, "raw_excel_mixed", str(path), on_duplicates="drop")
+    sheet = result["sheets"][0]
+
+    kept = con.execute("SELECT count(*) FROM raw_excel_mixed_SheetA").fetchone()[0]
+    assert sheet["rows_in"] == kept + sheet["reject_count"]
+
+
+def test_infer_column_type_detects_numeric_date_and_text() -> None:
+    assert infer_column_type(["100", "1.234,56", "45,50"]) == "numeric"
+    assert infer_column_type(["2026-05-01", "2026-06-01", "2026-07-01"]) == "date"
+    assert infer_column_type(["A1", "B2", "C3"]) == "text"
+    assert parse_date_value("03/07/2026") == parse_date_value("03/07/2026")
+
+
+def test_ingest_csv_tracked_with_type_inference_keeps_raw_and_typed_values(
+    tmp_path,
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    path = tmp_path / "typed.csv"
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["material_id", "amount", "period"])
+        writer.writerow(["A1", "1.234,56", "2026-05-01"])
+        writer.writerow(["A2", "45,50", "2026-06-01"])
+
+    result = ingest_csv_tracked(con, "raw_typed", str(path), infer_types=True)
+
+    assert result["column_types"]["amount"] == "numeric"
+    assert result["column_types"]["period"] == "date"
+    raw_amount = con.execute(
+        "SELECT amount FROM raw_typed ORDER BY __row_id"
+    ).fetchall()
+    assert raw_amount[0][0] == "1.234,56"
+    typed_amount = con.execute(
+        """
+        SELECT typed_value
+        FROM extracted_fields
+        WHERE run_id = ? AND field_name = 'amount'
+        ORDER BY row_id
+        """,
+        [result["run_id"]],
+    ).fetchall()
+    assert typed_amount[0][0] == 1234.56
+    assert typed_amount[1][0] == 45.5
+
+
+def test_ingest_csv_tracked_quarantines_unconvertible_numeric_cells(
+    tmp_path,
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    path = tmp_path / "bad_amount.csv"
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["material_id", "amount"])
+        writer.writerow(["A1", "100"])
+        writer.writerow(["A2", "not-a-number"])
+
+    result = ingest_csv_tracked(con, "raw_bad_amount", str(path), infer_types=True)
+
+    assert result["reject_count"] == 1
+    assert con.execute("SELECT count(*) FROM raw_bad_amount").fetchone()[0] == 1
+    reason = con.execute(
+        "SELECT reason FROM ingestion_rejects WHERE run_id = ?",
+        [result["run_id"]],
+    ).fetchone()[0]
+    assert reason == "unconvertible_amount"
+
+
+def test_ingest_spreadsheet_dispatches_excel(tmp_path, con: duckdb.DuckDBPyConnection) -> None:
+    path = tmp_path / "dispatch.xlsx"
+    _write_workbook(path, {"Data": [["material_id", "amount"], ["X1", "10"]]})
+
+    result = ingest_spreadsheet(con, "raw_dispatch", str(path), infer_types=True)
+
+    assert result["source_type"] == "excel"
+    assert result["sheet_count"] == 1
+    assert result["rows_in"] == 1
 
 
 def test_ingest_csv_tracked_conserves_rows(tmp_path, con: duckdb.DuckDBPyConnection) -> None:

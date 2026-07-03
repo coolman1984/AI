@@ -8,11 +8,36 @@ Turn trusted, audited operational findings into a concise manager-facing output:
 - the task is to produce a card, dashboard, deck, or summary for decision-makers
 - the analysis already exists and needs shaping
 - the question is how to present the result clearly without losing evidence
+- the task is to build a one-page decision brief, CFO/CEO meeting pack, or cited management article
+- the task is to export a signed executive output to HTML or PPTX
 
 ## Do not use this skill for
 - computing core numbers
 - raw ingestion
 - approving release without audit status
+
+## Token budget
+- target: <= 1,000 tokens for one-page executive outputs
+- hard cap: one A4 page equivalent for cards and briefs
+
+## Input contract
+- audited or audit-ready analysis package
+- evidence-bearing numbers with provenance tags
+- output format constraint (card, brief, pack, idea brief)
+
+## Output contract
+- concise manager-facing artifact with visible sign-off state
+- explicit main message, drivers, and risks
+- idea outputs labeled `AI-SUGGESTED IDEA` when applicable
+
+## Invariants
+- render, do not calculate
+- unsigned outputs cannot render as released recommendations
+- every important number traces to evidence
+
+## Raw data ban
+- never dump raw analysis tables or full source documents into agent context
+- return shaped executive artifacts and citation summaries only
 
 ## Inputs expected
 - audited or audit-ready analysis package
@@ -62,10 +87,19 @@ Usually hands off to:
 - `serving/AGENTS.md`
 - `serving/card.py`
 - `serving/decision_brief.py`
+- `engines/brain/idea_synthesis.py`
+- `serving/meeting_pack.py`
+- `serving/report_article.py`
+- `serving/signoff.py`
 - `serving/open_design.py`
 - `tests/test_card_and_audit.py`
 - `tests/test_serving.py`
 - `tests/test_hq_deck_brief.py`
+- `tests/test_decision_brief.py`
+- `tests/test_meeting_pack.py`
+- `tests/test_report_article.py`
+- `tests/test_executive_signoff.py`
+- `tests/test_serving_outputs.py`
 
 ## Definition of done
 Done means:

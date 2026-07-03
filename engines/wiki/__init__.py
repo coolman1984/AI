@@ -1,0 +1,1 @@
+"""Wiki engine — durable markdown knowledge artifacts."""

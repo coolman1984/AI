@@ -16,3 +16,10 @@ def can_access(role: str, scope: str, cfg: dict) -> bool:
     if role_scope.endswith(":*") and scope.startswith(role_scope[:-1]):
         return True
     return False
+
+
+def can_call_tool(role: str, tool_scope: str, cfg: dict) -> bool:
+    """Return True when the role may invoke a tool with the given scope."""
+    if tool_scope in ("general", "public"):
+        return True
+    return can_access(role, tool_scope, cfg)

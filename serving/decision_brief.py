@@ -1,13 +1,21 @@
-"""Minimal HQ deck brief assembly for the first Tier 2 deck gate."""
+"""Executive decision brief assembly (D.1) and HQ deck brief gate (B.9)."""
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from uuid import uuid4
 
 from engines.audit.brief_audit import MappingExtractor, audit_brief_claims
 from engines.docs.glossary import FactoryGlossary
 from engines.docs.translation_check import check_translation_terms
 from engines.docs.workflow_record import WorkflowField, extract_workflow_record
+from shared.contracts.models import EvidenceRef, NumberFact
+
+ONE_PAGE_LIMITS = {
+    "max_evidence": 8,
+    "max_options": 4,
+    "max_risks": 5,
+}
 
 
 @dataclass
@@ -114,4 +122,171 @@ def build_hq_deck_brief(
         coverage_report=coverage_report,
         glossary_flags=[flag.__dict__ for flag in translation.review_flags],
         audit_status=audit_status,
+    )
+
+
+@dataclass
+class DecisionBrief:
+    output_id: str
+    question: str
+    evidence: list[dict]
+    options: list[dict]
+    risks: list[dict]
+    recommendation: dict | None
+    signoff_line: str
+    signoff_status: str
+    release_state: str
+    review_items: list[dict]
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+def _require_citation(item: dict, *, field: str) -> dict:
+    citations = item.get("citations") or []
+    if not citations:
+        raise ValueError(f"{field} requires at least one citation — evidence-free claims refused")
+    for citation in citations:
+        if not citation.get("source") or not citation.get("locator") or not citation.get("method"):
+            raise ValueError(f"{field} citation must include source, locator, and method")
+    return item
+
+
+def _number_fact_from_payload(payload: dict) -> NumberFact:
+    evidence_payload = payload.get("evidence") or {}
+    evidence = EvidenceRef(
+        source=evidence_payload.get("source", ""),
+        locator=evidence_payload.get("locator", ""),
+        method=evidence_payload.get("method", ""),
+        value=payload.get("value"),
+    )
+    fact = NumberFact(
+        label=payload.get("label", "metric"),
+        value=float(payload["value"]),
+        evidence=evidence,
+    )
+    if not evidence.resolves():
+        raise ValueError("numeric evidence requires resolving source, locator, and method")
+    return fact
+
+
+def _render_number_evidence(payload: dict) -> dict:
+    fact = _number_fact_from_payload(payload)
+    return {
+        "text": f"{fact.label}: {fact.value:+,.0f}",
+        "tag": fact.tag,
+        "value": fact.value,
+        "label": fact.label,
+        "citations": [
+            {
+                "source": fact.evidence.source,
+                "locator": fact.evidence.locator,
+                "method": fact.evidence.method,
+            }
+        ],
+    }
+
+
+def _enforce_one_page_budget(*, evidence: list, options: list, risks: list) -> None:
+    if len(evidence) > ONE_PAGE_LIMITS["max_evidence"]:
+        raise ValueError("decision brief exceeds one-page evidence budget")
+    if len(options) > ONE_PAGE_LIMITS["max_options"]:
+        raise ValueError("decision brief exceeds one-page options budget")
+    if len(risks) > ONE_PAGE_LIMITS["max_risks"]:
+        raise ValueError("decision brief exceeds one-page risks budget")
+
+
+def build_decision_brief(
+    *,
+    question: str,
+    evidence_items: list[dict],
+    options: list[dict] | None = None,
+    risks: list[dict] | None = None,
+    recommendation: dict | None = None,
+    signoff_line: str = "Pending owner sign-off",
+) -> DecisionBrief:
+    """Build a one-page executive decision brief from stored evidence only."""
+    if not question.strip():
+        raise ValueError("question is required")
+    if not signoff_line.strip():
+        raise ValueError("signoff_line is mandatory")
+
+    trusted_evidence: list[dict] = []
+    review_items: list[dict] = []
+
+    for item in evidence_items:
+        try:
+            if "value" in item:
+                trusted_evidence.append(_render_number_evidence(item))
+                continue
+            text = (item.get("text") or "").strip()
+            if not text:
+                review_items.append({"text": "", "reason": "empty_evidence"})
+                continue
+            cited = _require_citation(item, field="evidence")
+            trusted_evidence.append(
+                {
+                    "text": text,
+                    "citations": cited["citations"],
+                }
+            )
+        except ValueError as exc:
+            review_items.append({"text": item.get("text", ""), "reason": str(exc)})
+
+    trusted_options: list[dict] = []
+    for option in options or []:
+        text = (option.get("text") or "").strip()
+        if not text:
+            review_items.append({"text": "", "reason": "empty_option"})
+            continue
+        try:
+            cited = _require_citation(option, field="option")
+            trusted_options.append({"text": text, "citations": cited["citations"]})
+        except ValueError as exc:
+            review_items.append({"text": text, "reason": str(exc)})
+
+    trusted_risks: list[dict] = []
+    for risk in risks or []:
+        text = (risk.get("text") or "").strip()
+        if not text:
+            review_items.append({"text": "", "reason": "empty_risk"})
+            continue
+        try:
+            cited = _require_citation(risk, field="risk")
+            trusted_risks.append({"text": text, "citations": cited["citations"]})
+        except ValueError as exc:
+            review_items.append({"text": text, "reason": str(exc)})
+
+    trusted_recommendation = None
+    if recommendation is not None:
+        text = (recommendation.get("text") or "").strip()
+        if not text:
+            review_items.append({"text": "", "reason": "empty_recommendation"})
+        else:
+            try:
+                cited = _require_citation(recommendation, field="recommendation")
+                trusted_recommendation = {"text": text, "citations": cited["citations"]}
+            except ValueError as exc:
+                review_items.append({"text": text, "reason": str(exc)})
+
+    if not trusted_evidence:
+        raise ValueError("decision brief requires at least one cited evidence item")
+
+    _enforce_one_page_budget(
+        evidence=trusted_evidence,
+        options=trusted_options,
+        risks=trusted_risks,
+    )
+
+    return DecisionBrief(
+        output_id=f"brief-{uuid4().hex[:12]}",
+        question=question.strip(),
+        evidence=trusted_evidence,
+        options=trusted_options,
+        risks=trusted_risks,
+        recommendation=trusted_recommendation,
+        signoff_line=signoff_line,
+        signoff_status="pending",
+        release_state="draft",
+        review_items=review_items,
     )

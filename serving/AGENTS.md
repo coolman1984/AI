@@ -1,18 +1,19 @@
-# serving — manager card + output/design
+# serving — manager card + executive outputs + rendering
 
 **Does:** `card.py` builds the one-A4 card (BLUF, ≤5 cited numbers, confidence) and refuses
-any number without evidence. When variance decomposition is available, the card also carries a
-structured `driver_split` (price / volume / mix) without breaking the one-A4 budget.
-`open_design.py` renders it visually: a real HTML dashboard (inline SVG variance-bridge chart)
-plus a real PPTX deck (python-pptx); nexu-io **Open Design** plugs in via `OpenDesignRenderer`
-for branded dashboards/PDF.
+any number without evidence. `decision_brief.py` assembles HQ deck briefs (B.9) and executive
+decision briefs (D.1). `meeting_pack.py` and `report_article.py` assemble CFO/CEO packs and
+cited management articles from brain stores (D.2-D.3). `signoff.py` enforces named human
+sign-off on all executive output types (D.4). `open_design.py` renders finance cards and
+executive outputs to HTML/PPTX through one shared rendering layer (D.5).
 
-**Public interface:** `card.make_manager_card(bridge, data_quality, lens=None, decomposition=None)`,
-`card.compute_data_quality`, `card.render_text`, `open_design.render_dashboard_html`,
-`open_design.export_report`.
+**Public interface:** `card.make_manager_card(...)`, `build_decision_brief(...)`,
+`build_hq_deck_brief(...)`, `build_meeting_pack(...)`, `build_report_article(...)`,
+`sign_off_output(...)`, `open_design.render_dashboard_html`, `open_design.export_report`,
+`open_design.export_executive_output`.
 
-**Invariants:** output-only — never computes or invents a number; renders only an audited,
-signed-off card. If `driver_split` is shown, it must carry evidence and match an audited
-decomposition; management-facing "why" numbers do not bypass the main trust gate.
+**Invariants:** output-only — never computes or invents a number; unsigned outputs render as
+draft/watermarked only; executive recommendations require cited evidence; sign-off cannot
+self-release.
 
-**Tests:** `pytest tests/test_card_and_audit.py tests/test_serving.py`
+**Tests:** `pytest tests/test_card_and_audit.py tests/test_serving.py tests/test_hq_deck_brief.py tests/test_decision_brief.py tests/test_meeting_pack.py tests/test_report_article.py tests/test_executive_signoff.py tests/test_serving_outputs.py`

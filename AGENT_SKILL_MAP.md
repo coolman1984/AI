@@ -38,6 +38,7 @@ Do **not** load every skill by default.
 - the task starts from Excel, CSV, SAP-style exports, or large tabular files
 - the main need is profiling columns, cleaning structure, loading rows, or preserving row-level evidence
 - the user asks how to read, normalize, or store operational tables
+- the task needs multi-sheet Excel ingestion, per-column type inference, or the `ingest_spreadsheet` MCP tool
 
 Load:
 `agent_skills/spreadsheet_ingestion.md`
@@ -53,6 +54,7 @@ Load:
 - the task is to apply a Korean-English factory glossary or flag critical-term translation disagreements
 - the task is to measure image-only slide share or OCR review load for Korean decks before escalating OCR/VLM paths
 - the task is to ingest `.eml` messages, preserve email metadata, or route attachments into the document spine
+- the task needs the explicit Docling hard-layout parser path for difficult PDF/DOCX/PPTX layouts (opt-in only)
 
 Load:
 `agent_skills/document_evidence_extraction.md`
@@ -69,9 +71,22 @@ Load:
 - the task is to produce a manager card, dashboard, presentation, or decision-ready summary
 - the task needs a one-page answer with cited facts, not raw analysis
 - the task is about shaping output for leadership use
+- the task is to build a decision brief, meeting pack, or cited management article from stored knowledge
+- the task is to export a signed executive output to HTML or PPTX
 
 Load:
 `agent_skills/management_reporting.md`
+
+### Use knowledge search skill when
+- the user asks what the system knows about a process, workflow, KPI, or document family
+- the task needs workflow version history, valid-time lookup, or cited diffs
+- the task needs linked claims, open questions, or contradictions for a topic
+- routine retrieval should return compact linked records instead of loading the whole plan
+- the task needs ontology entity resolution, typed workflow edges, or factory comparison gates
+- the task needs labeled `AI-SUGGESTED IDEA` synthesis after contradictions are surfaced
+
+Load:
+`agent_skills/knowledge_search.md`
 
 ### Use audit and trust skill when
 - the task needs release gating, independent re-checking, certainty scoring, reconciliation, or human sign-off
@@ -79,6 +94,8 @@ Load:
 - there is any ambiguity around data quality, missing evidence, or number mismatches
 - the task involves LLM-originated claims, the claims store, claim quarantine, or the facts/claims wall
 - the task needs an independent audit of non-numeric brief claims from documents or decks
+- the task involves open questions, decision outcomes, or contradiction review
+- the task is to sign off or record owner feedback on executive briefs, packs, or reports
 
 Load:
 `agent_skills/audit_and_trust.md`
@@ -101,6 +118,16 @@ Load:
 1. document evidence extraction
 2. audit and trust
 3. management reporting
+
+### Pattern F — stored knowledge to answer
+1. knowledge search
+2. audit and trust when claims or contradictions are involved
+3. management reporting when an executive output is needed
+
+### Pattern G — regression, ops, and resume
+1. audit and trust (golden eval, MCP access, backup/restore)
+2. session-state write when handing off between agents
+3. gated self-evolution (T12) only after golden eval passes
 
 ### Pattern D — existing numbers to management output
 1. management reporting

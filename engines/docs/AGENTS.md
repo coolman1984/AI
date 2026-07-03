@@ -2,7 +2,8 @@
 
 **Does:** extract text/tables from PDF/Word/PPT/scans; OCR with confidence gating; search
 documents and return cited passages.
-**Public interface:** `extract.extract_document`, `extract.PyPdfExtractor`,
+**Public interface:** `extract.extract_document`, `extract.extract_document_hard_layout`,
+`extract.PyPdfExtractor`, `docling_adapter.DoclingAdapter`, `docling_adapter.docling_result_to_document`,
 `pptx.PptxExtractor`,
 `image_profile.profile_deck_images`,
 `ocr.ocr_cascade`, `ocr.extract_page_text`, `ocr.extraction_quality`, `ocr.render_pdf_page`,
@@ -47,7 +48,8 @@ PDF (that stays in DuckDB).
 `pytest tests/test_workflow_record.py`; provenance tests:
 `pytest tests/test_provenance_stamp.py`; translation-check tests:
 `pytest tests/test_translation_check.py`; OCR profile tests:
-`pytest tests/test_korean_ocr_profile.py`
+`pytest tests/test_korean_ocr_profile.py`; hard-layout adapter tests:
+`pytest tests/test_docling_adapter.py`
 **store_report_knowledge:** `base_dir` injectable for tests (default `.brain/reports`);
 `ReportKnowledge` includes `warnings: list[str]` field; out-of-range key_point pages are
 dropped with a warning. Language detection: Hangul → `"ko"`, else `"en"`.

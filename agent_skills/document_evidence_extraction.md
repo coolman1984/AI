@@ -15,6 +15,29 @@ Extract, normalize, and route evidence from PDF, Word, PowerPoint, scans, screen
 - final executive sign-off
 - raw tabular ingestion when the real source is already available as Excel or CSV
 
+## Token budget
+- target: <= 2,000 tokens per extraction response
+- hard cap: page/slide-bounded passages only; no full-deck dumps
+
+## Input contract
+- file path or bundle path with extraction goal
+- known document type and page range when available
+- privacy tier metadata for external LLM routing
+
+## Output contract
+- extracted passages with page/slide locators
+- OCR confidence and review-needed flags
+- coverage report for chunked summarization runs
+
+## Invariants
+- documents are evidence first, not automatic numeric truth
+- weak OCR surfaces as review work
+- resumable runs persist chunk checkpoints without raw full document text
+
+## Raw data ban
+- never dump raw full document text, entire decks, or unbounded OCR output into agent context
+- return cited passages, chunk summaries, and coverage metadata only
+
 ## Inputs expected
 - file path or bundle path
 - document type when known
@@ -67,8 +90,10 @@ Usually hands off to:
 - or `agent_skills/spreadsheet_ingestion.md` if extracted tables must be promoted into the trusted tabular path
 
 ## Existing repo anchors
+- `engines/brain/registry.py` (document registry with hash deduplication)
 - `engines/docs/AGENTS.md`
 - `engines/docs/extract.py`
+- `engines/docs/docling_adapter.py` (hard-layout opt-in parser backend)
 - `engines/docs/pptx.py`
 - `engines/docs/image_profile.py`
 - `engines/docs/summarize.py`
@@ -76,11 +101,12 @@ Usually hands off to:
 - `engines/docs/provenance.py`
 - `engines/docs/rapidocr_adapter.py`
 - `engines/docs/translation_check.py`
+- `engines/docs/run_state.py`, `engines/docs/llm_bridge.py`
 - `engines/docs/workflow_record.py`
 - `engines/docs/ocr.py`
 - `engines/docs/search.py`
 - `engines/email/extract.py`
-- `mcp_server/server.py` (summarize_document + ingest_deck + extract_workflow_record routing)
+- `mcp_server/server.py` (summarize_document + ingest_deck + extract_document_hard_layout + extract_workflow_record + register_document routing)
 - `tests/test_documents.py`
 - `tests/test_chunked_summary.py`
 - `tests/test_korean_ocr_profile.py`

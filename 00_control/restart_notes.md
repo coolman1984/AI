@@ -34,9 +34,13 @@
 8. **Current bottleneck (bottlenecks.md):** P2.2 / real-data track - no real SAP-scale export
    has been profiled yet.
 
-9. **Next best action:** start B.10 (Docling hard-layout adapter) from
-   `03_design/phase_b_to_f_cards.md`; A0, A1, and B.1-B.9 are green; keep
+9. **Next best action:** Phase D executive serving cards D.1-D.6 are implemented;
+   next slice follows `03_design/phase_b_to_f_cards.md` after D gate review; keep
    waiting for the first real export for P2.2.
+
+10. **Session summary pattern:** after executive-output work, record owner verdicts via
+    `record_output_feedback` and note whether glossary candidates were produced without
+    auto-acceptance.
 
 10. **Source-of-truth files:** `03_design/assistant_master_plan.md` (current architecture),
     `03_design/current_implementation_plan.md` (live execution plan),

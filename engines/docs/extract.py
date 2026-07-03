@@ -69,23 +69,26 @@ class PyPdfExtractor:
 
 
 class DoclingExtractor:
-    """Layout/table-aware extractor. Real adapter — uses docling when installed."""
+    """Layout/table-aware extractor. Delegates to the repo-owned Docling adapter."""
+
     def extract(self, path: str) -> Document:
-        try:
-            from docling.document_converter import DocumentConverter
-        except ImportError as e:
-            raise NotImplementedError(
-                "Docling not installed. `pip install docling` for layout/table-aware extraction "
-                "(config tools.document_extractor=docling)."
-            ) from e
-        result = DocumentConverter().convert(path)  # pragma: no cover (needs infra)
-        md = result.document.export_to_markdown()
-        return Document(
-            doc_id=doc_id_for(path),
-            source_filename=Path(path).name,
-            source_format=Path(path).suffix.lstrip("."),
-            pages=[Page(1, md)],
+        from engines.docs.docling_adapter import DoclingAdapter
+
+        return DoclingAdapter().extract(path)
+
+
+def extract_document_hard_layout(path: str, cfg: dict | None = None) -> Document:
+    """Explicit opt-in hard-layout extraction path (parser only, no trust promotion)."""
+    cfg = cfg or {}
+    if not cfg.get("tools", {}).get("hard_layout"):
+        raise ValueError(
+            "hard_layout opt-in required: set cfg['tools']['hard_layout']=true "
+            "to use the Docling hard-layout parser path"
         )
+    ext = Path(path).suffix.lower()
+    if ext not in {".pdf", ".docx", ".pptx"}:
+        raise ValueError(f"hard_layout path does not support {ext}")
+    return DoclingExtractor().extract(path)
 
 
 def extract_document(path: str, cfg: dict | None = None) -> Document:

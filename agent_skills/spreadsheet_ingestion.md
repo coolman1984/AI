@@ -15,6 +15,28 @@ Read tabular operational sources safely, profile them, normalize them, and land 
 - manager-facing report writing
 - release approval or sign-off decisions
 
+## Token budget
+- target: <= 1,500 tokens for ingestion profile summaries
+- hard cap: sample rows only; never full export dumps
+
+## Input contract
+- file path and source type
+- ingestion goal and target table expectation
+- known sheet names or ranges when available
+
+## Output contract
+- column profile, row counts, reject reasons
+- durable storage target and issues list for downstream skills
+
+## Invariants
+- preserve run_id and raw input immutability
+- record rejections explicitly
+- profile values are evidence, not management numbers
+
+## Raw data ban
+- never dump full SAP-scale exports or raw row dumps into agent context
+- return profiles, counts, and sample reject rows only
+
 ## Inputs expected
 - file path
 - source type
@@ -28,6 +50,8 @@ Read tabular operational sources safely, profile them, normalize them, and land 
 - loaded row count
 - rejected row count with reasons
 - durable storage target
+- `source_sheet` when the workbook has multiple tabs
+- typed values in `extracted_fields` when `infer_types=true`
 - issues list for downstream skills
 
 ## Shared rules from the core contract
@@ -42,9 +66,10 @@ Read tabular operational sources safely, profile them, normalize them, and land 
 2. inspect shape: sheets, columns, row count, suspicious totals, duplicates
 3. normalize headings and obvious structural noise
 4. parse values conservatively
-5. reject rows that fail the trust rules with explicit reason
-6. load accepted rows into the trusted local path
-7. produce a short profile for downstream analysis
+5. infer per-column types and keep raw text alongside typed numeric/date values
+6. reject rows that fail the trust rules with explicit reason
+7. load accepted rows into the trusted local path
+8. produce a short profile for downstream analysis
 
 ## Key checks
 - embedded total/subtotal rows
@@ -70,7 +95,9 @@ Usually hands off to:
 ## Existing repo anchors
 - `engines/data/AGENTS.md`
 - `engines/data/ingest.py`
+- `engines/data/types.py`
 - `engines/data/clean.py`
+- `mcp_server/server.py` (`ingest_spreadsheet`)
 - `tests/test_data_pipeline.py`
 - `tests/test_ingestion_spine.py`
 

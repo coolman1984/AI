@@ -9,11 +9,36 @@ Act as the release gate between analysis and decision-making by independently re
 - the user asks if the output is safe to trust
 - there are conflicting numbers, data quality concerns, or missing evidence
 - a sign-off step is required
+- an executive brief, meeting pack, or report needs named human sign-off before release
+- owner feedback on an executive output should feed glossary candidates or trust metrics
 
 ## Do not use this skill for
 - primary raw ingestion
 - initial report drafting from scratch
 - replacing the main data engine’s calculations
+
+## Token budget
+- target: <= 1,200 tokens for audit verdict and issue list
+- hard cap: 15 named issues or questions per response
+
+## Input contract
+- draft result or card with evidence references
+- trusted numeric source path when numbers are involved
+- sign-off context when release is requested
+
+## Output contract
+- pass / fail / blocked gate with explicit reason
+- reconciliation summary and certainty view
+- named human review questions when confidence is insufficient
+
+## Invariants
+- audit is independent from the primary result path
+- disagreements never auto-merge
+- non-numeric brief claims require independent re-extraction
+
+## Raw data ban
+- never dump raw spreadsheet rows, full document text, or email bodies into agent context
+- return compact issue lists and evidence pointers only
 
 ## Inputs expected
 - draft result or card
@@ -62,11 +87,23 @@ Usually hands off to:
 - or directly to final governed outputs when the artifact is already suitable
 
 ## Existing repo anchors
+- `eval/runner.py` (golden regression gate)
+- `engines/learning/evolution.py` (T12 gated self-evolution)
+- `ops/backup.py`, `ops/alerts.py`, `ops/session_state.py`
 - `engines/audit/AGENTS.md`
 - `engines/audit/audit.py`
 - `engines/audit/brief_audit.py`
+- `engines/brain/open_questions.py`
+- `engines/brain/contradictions.py`
+- `engines/learning/outcomes.py`
+- `engines/learning/feedback.py`
+- `serving/signoff.py`
 - `tests/test_card_and_audit.py`
 - `tests/test_brief_audit.py`
+- `tests/test_open_questions.py`
+- `tests/test_contradictions.py`
+- `tests/test_executive_signoff.py`
+- `tests/test_feedback_loop.py`
 
 ## Definition of done
 Done means:
