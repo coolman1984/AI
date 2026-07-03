@@ -13,18 +13,33 @@ implementation. Finance/Costing is the first pilot; the platform is factory-wide
 ---
 
 ## Read order (start here, always)
-1. **`03_design/assistant_master_plan.md`** — the single current architecture and phase
-   plan. Read before proposing code or changing phases.
-2. **`03_design/current_implementation_plan.md`** — the live execution plan that turns
-   the v2 architecture into build order, gates, and card expansion rules.
+
+**This is the one canonical list.** `AGENT_SKILL_MAP.md`, `PROJECT_MAP.md`, and
+`CLAUDE.md` all point back here instead of keeping their own copy — a duplicated list
+is how this drifted out of sync before (four files, four different orders). If you
+edit this list, you do not need to edit it anywhere else; the other files reference it
+by name.
+
+1. **`AGENTS.md`** (this file) — durable, non-negotiable guidance. Read first, always.
+2. **`PROJECT_MAP.md`** — full project reference: directory tree, architecture, module
+   purposes, phase status. Read for orientation before deciding what else you need.
 3. **`AGENT_SKILL_MAP.md`** — the lightweight routing layer: which skill to load for which task.
 4. **`AGENT_CORE_CONTRACT.md`** — the shared spine all skills must obey.
-5. **`03_design/phase_a_cards.md`** — the current Phase A build-card source.
-6. **`MASTER_PLAN.md`** only when historical background is needed.
-   (Note: `archive/` holds prior planning docs — `CODEX_PLAN.md`, `ARCHITECTURE.md`,
-   `IMPLEMENTATION_PLAN.md`, `IMPLEMENTATION_PLAN_DOCS.md`,
-   `IMPLEMENTATION_PLAN_SECONDBRAIN.md`, `REVIEW.md`, `RISK_AND_GAPS_AUDIT.md`,
-   `PROJECT_STATE_AND_ROADMAP.md` — historical only, do not read as current guidance.)
+5. **`03_design/current_implementation_plan.md`** — the live execution plan that turns
+   the v2 architecture into build order, gates, and card expansion rules.
+6. **`03_design/assistant_master_plan.md`** — the current architecture and phase plan,
+   only when architecture context is actually needed (not every task needs it).
+7. **`03_design/phase_a_cards.md`** — the current Phase A build-card source, when
+   working Phase A.
+8. Only the relevant skill file(s) from `agent_skills/`.
+9. The nearest module `AGENTS.md`.
+10. Then the code.
+
+`MASTER_PLAN.md` only when historical background is needed. (Note: `archive/` holds
+prior planning docs — `CODEX_PLAN.md`, `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`,
+`IMPLEMENTATION_PLAN_DOCS.md`, `IMPLEMENTATION_PLAN_SECONDBRAIN.md`, `REVIEW.md`,
+`RISK_AND_GAPS_AUDIT.md`, `PROJECT_STATE_AND_ROADMAP.md` — historical only, do not
+read as current guidance.)
 
 ## The three rules everything obeys
 1. **Golden Rule:** code writes code from samples; engines execute against volumes. The
@@ -78,6 +93,10 @@ Every module's `AGENTS.md` must restate the exact commands to test *that* module
 - Always keep modules small and single-responsibility; split a file before it grows
   past its cap.
 - Always update a module's `AGENTS.md` in the same change that alters its interface.
+- Always update `PROJECT_MAP.md` in the same change that adds/removes/renames a file
+  or module, changes a module's purpose or public interface, or changes phase/task
+  status. It is the file every other routing doc tells agents to trust for
+  orientation — treat it like the module `AGENTS.md` rule above, not as optional.
 - Always commit and push to **`main`** (see git policy below).
 - Always send unparseable rows to `rejects.csv`, failed docs to `failures.csv`, and log
   every assumption to `run.log`. Nothing vanishes silently.

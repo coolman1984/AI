@@ -128,6 +128,10 @@ tests, and audit rules below still bind everyone.
    in the same change that alters its interface.
 
 ## Read order before touching code
-`AGENTS.md` -> `03_design/assistant_master_plan.md` -> `03_design/current_implementation_plan.md` -> `03_design/phase_a_cards.md` when working Phase A -> the nearest module `AGENTS.md` -> then the code.
+See `AGENTS.md` → "Read order (start here, always)" for the canonical sequence
+(`AGENTS.md` -> `PROJECT_MAP.md` -> `AGENT_SKILL_MAP.md` -> `AGENT_CORE_CONTRACT.md` ->
+the live plan docs, only when needed -> the relevant skill file -> the nearest module
+`AGENTS.md` -> then the code). It is kept single-sourced there — do not copy it here
+again, that duplication is exactly how the routing docs drifted out of sync before.
 For where the project stands and what's next: `00_control/restart_notes.md` and
 `00_control/task_queue.md`.

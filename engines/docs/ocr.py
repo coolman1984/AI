@@ -10,20 +10,28 @@ from typing import Protocol
 from engines.docs.rapidocr_adapter import RapidOcrAdapter
 
 _WORD = re.compile(r"[A-Za-z\u0600-\u06FF]{2,}")
+_NUMBER = re.compile(r"\d[\d.,]*\d|\d")
 _HANGUL = re.compile(r"[\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F]")
 
 
 def extraction_quality(text: str) -> float:
-    """0..1 quality score for OCR output."""
+    """0..1 quality score for OCR output.
+
+    Counts numeric tokens alongside alphabetic words so a financial table (almost
+    entirely digits) doesn't score 0.0 and get needlessly escalated to the raster-OCR
+    cascade \u2014 extracted text is extracted text, not just prose.
+    """
     cleaned = (text or "").strip()
     if not cleaned:
         return 0.0
     words = _WORD.findall(cleaned)
-    if not words:
+    numbers = _NUMBER.findall(cleaned)
+    tokens = words + numbers
+    if not tokens:
         return 0.0
     alnum_ratio = sum(char.isalnum() or char.isspace() for char in cleaned) / len(cleaned)
-    word_ratio = sum(len(word) for word in words) / len(cleaned)
-    score = 0.5 * min(1.0, len(words) / 5) + 0.25 * alnum_ratio + 0.25 * word_ratio
+    token_ratio = sum(len(token) for token in tokens) / len(cleaned)
+    score = 0.5 * min(1.0, len(tokens) / 5) + 0.25 * alnum_ratio + 0.25 * token_ratio
     return round(min(1.0, score), 3)
 
 

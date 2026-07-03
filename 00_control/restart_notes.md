@@ -4,22 +4,18 @@
    human-signed management answers. Pilot department: Cost Control / Finance. (mission.md)
 
 2. **Current project state:** Master plan v2 is approved (`03_design/assistant_master_plan.md`,
-   2026-07-02). Phase A safety rails (A0.1-A0.8) are green, A1 documentation consolidation is
-   approved and passed, and B.1-B.9 are now green.
+   2026-07-02). Phase A (A0.1-A0.8, A1), Phase B (B.1-B.10), Phase C (C.1-C.8), Phase D
+   (D.1-D.6), ingestion spine (IS2-IS6, E.2-E.4), and Phase F (F.1-F.10, T12) are green.
 
-3. **Completed work:** foundation; numeric trust loop (DuckDB+Polars, messy-data defenses);
-   independent audit + human sign-off; decision/knowledge/temporal memory (local, real);
-   documents + OCR cascade (Tesseract+RapidOCR real); HTML dashboard + PPTX; second
-   department (Planning) by config; role-scoped factory brief + cross-department links.
+3. **Completed work:** foundation; numeric trust loop; audit + human sign-off; decision/knowledge/
+   temporal memory; documents + OCR cascade; HTML dashboard + PPTX; multi-department factory brain;
+   price/volume/mix drivers; A0 safety rails; HQ deck path (B.1-B.10); document registry and
+   knowledge corpus (C); executive outputs with sign-off (D); unified ingestion spine with
+   multi-sheet Excel, type inference, PDF tables, cross-source query readiness; golden eval,
+   MCP access control, ops backup/restore, gated self-evolution (F/T12).
 
-4. **Pending work:** follow `03_design/current_implementation_plan.md` and
-   `03_design/phase_b_to_f_cards.md` for the next execution slice. The next card is
-   B.10 (Docling hard-layout adapter). Later phases are now planned as clean
-   OSS-backed adapters where appropriate: native PPTX first, `RapidOCR` as the
-   first local OCR tier, `Docling` as the later hard-layout adapter, stable
-   `mcp-python-sdk` for MCP hardening later, and `Cognee` / `Graphiti` only
-   behind repo-owned contracts. External track unchanged: P2.2 still waits on
-   the first real export.
+4. **Pending work:** **P2.2 / E.1** — blocked until the owner supplies the first real SAP-scale
+   export for profiling. No other non-blocked task-queue rows remain open.
 
 5. **Active constraints:** in-house/offline only; one branch `main`; Python 3.11;
    modules small + per-module AGENTS.md; English.
@@ -29,24 +25,17 @@
    variance (A4).
 
 7. **Known risks (risks.md):** metric ambiguity (R2, open); prompt injection (R3, open); real
-   SAP-scale untested (R7, open); adoption (R8, open). R1/R4/R6 mitigated.
+   SAP-scale untested (R7, open until E.1); adoption (R8, open). R1/R4/R6 mitigated.
 
-8. **Current bottleneck (bottlenecks.md):** P2.2 / real-data track - no real SAP-scale export
-   has been profiled yet.
+8. **Current bottleneck (bottlenecks.md):** P2.2 / E.1 — no real SAP-scale export has been
+   profiled yet.
 
-9. **Next best action:** Phase D executive serving cards D.1-D.6 are implemented;
-   next slice follows `03_design/phase_b_to_f_cards.md` after D gate review; keep
-   waiting for the first real export for P2.2.
-
-10. **Session summary pattern:** after executive-output work, record owner verdicts via
-    `record_output_feedback` and note whether glossary candidates were produced without
-    auto-acceptance.
+9. **Next best action:** obtain the first real SAP export from the owner and run E.1 profiling.
+   Until then, the system is feature-complete for synthetic/public fixtures.
 
 10. **Source-of-truth files:** `03_design/assistant_master_plan.md` (current architecture),
     `03_design/current_implementation_plan.md` (live execution plan),
-    `03_design/phase_a_cards.md` (current work cards),
     `03_design/phase_b_to_f_cards.md` (later-phase card queue),
-    `03_design/oss_reference_evaluation.md` (approved OSS fit and license review),
     `00_control/*` (governance), `AGENTS.md` and `AGENT_SKILL_MAP.md` (agent routing),
     `BUILD.md` (run), and the code under engines/ serving/ shared/ mcp_server/ gov/ tests/.
     Archived plans live in `archive/` for historical reference only.

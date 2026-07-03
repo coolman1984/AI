@@ -6,9 +6,9 @@ test targets, and card expansion rules. It is planning only.
 
 ## Operating Rules
 
-Read order: `AGENTS.md`, `CLAUDE.md`, `03_design/assistant_master_plan.md`,
-`03_design/phase_a_cards.md`, `00_control/task_queue.md`, then the nearest module
-`AGENTS.md` and real code.
+Read order: see `AGENTS.md` → "Read order (start here, always)" for the canonical
+sequence — kept single-sourced there so this file can't drift from it again. Also
+worth checking for current status: `00_control/task_queue.md`.
 
 Non-negotiables:
 - A0 safety rails gate all LLM-on-real-document work.

@@ -4,19 +4,21 @@
 
 | Field | Value |
 |---|---|
-| Updated | (not yet written) |
-| Current phase | Phase F implementation |
-| Next action | Run Phase F pytest suite |
+| Updated | 2026-07-03T05:41:26.764512+00:00 |
+| Current phase | Post-F gate complete (B.10-F.10, T12, IS spine green) |
+| Next action | Obtain first real SAP export for P2.2 / E.1 profiling |
 
 ## Blockers
 
-- none
+- P2.2 / E.1 blocked until owner supplies first real SAP-scale export
 
 ## Evidence pointers
 
-- `03_design/phase_b_to_f_cards.md` sections F.1–F.10
-- `eval/golden_manifest.json`
+- 00_control/task_queue.md
+- eval/golden_manifest.json
+- tests/test_golden_eval.py
+- tests/test_ingestion_spine.py
 
 ## Notes
 
-Concise resume snapshot for agent handoff.
+All non-blocked task-queue rows Passed. 277 pytest green as of 2026-07-03.

@@ -26,10 +26,10 @@
 | A0 Safety rails | pytest privacy/claims/LLM chokepoint | Green | `tests/test_privacy.py` etc. |
 | B HQ deck path | B.1–B.10 cards | Green | phase B tests |
 | C Knowledge registry | C.1–C.8 | Green | registry/search tests |
-| D Executive outputs | D.1–D.6 | In progress / verify | serving tests |
-| E Real data | E.1–E.3 + owner export | Waiting on export | `tests/test_ingestion_spine.py` |
-| F Hardening | F.1–F.10 | In progress | Phase F pytest suite |
-| T12 Self-evolution | Golden gate | Gated | `tests/test_gated_evolution.py` |
+| D Executive outputs | D.1–D.6 | Green | `tests/test_decision_brief.py` through `tests/test_feedback_loop.py` |
+| E Real data | E.2–E.4 green; E.1 blocked | Waiting on owner export (P2.2) | `tests/test_ingestion_spine.py`, `tests/test_query_readiness.py` |
+| F Hardening | F.1–F.10 | Green | `tests/test_golden_eval.py` through `tests/test_session_state.py` |
+| T12 Self-evolution | Golden gate | Green (gated) | `tests/test_gated_evolution.py` |
 
 ## 3. Risks and drift
 
@@ -48,7 +48,7 @@
 ## 5. Next-quarter changes
 
 - [ ] Confirm next execution slice from `00_control/task_queue.md`
-- [ ] Defer T12 self-evolution until golden eval is stable and owner agrees on "better"
+- [x] T12 self-evolution gate implemented; owner must still agree on "better" before live optimization
 - [ ] Schedule backup/restore drill if not run this quarter
 - [ ] Plan review for AI landscape changes (models, MCP SDK, OSS adapters)
 

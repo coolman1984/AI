@@ -39,6 +39,13 @@ def normalize_korean_unit(value: str, unit: str) -> float:
     return float(base * _KOREAN_UNIT_SCALE[unit])
 
 
+def _is_parenthesized(text: str, start: int, end: int) -> bool:
+    """SAP/accounting convention: (1,234) means -1,234."""
+    before = text[:start].rstrip()
+    after = text[end:].lstrip()
+    return before.endswith("(") and after.startswith(")")
+
+
 def extract_numeric_tokens(text: str) -> list[str]:
     tokens: list[str] = []
     for match in _NUMERIC_TOKEN_RE.finditer(text):
@@ -46,12 +53,15 @@ def extract_numeric_tokens(text: str) -> list[str]:
         suffix = match.group("suffix") or ""
         normalized_suffix = suffix.lower()
         if normalized_suffix in {"%", "percent", "percentage"}:
-            tokens.append(f"{_normalize_decimal_text(Decimal(value))}%")
+            token = f"{_normalize_decimal_text(Decimal(value))}%"
         elif suffix in _KOREAN_UNIT_SCALE:
             scaled = Decimal(str(normalize_korean_unit(value, suffix)))
-            tokens.append(_normalize_decimal_text(scaled))
+            token = _normalize_decimal_text(scaled)
         else:
-            tokens.append(_normalize_decimal_text(Decimal(value)))
+            token = _normalize_decimal_text(Decimal(value))
+        if _is_parenthesized(text, match.start(), match.end()):
+            token = f"-{token}"
+        tokens.append(token)
     return tokens
 
 

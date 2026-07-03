@@ -324,6 +324,17 @@ def _ingest_staging_tracked(
     if on_duplicates not in {"flag", "drop"}:
         raise ValueError("on_duplicates must be 'flag' or 'drop'")
 
+    # NOTE: this duplicate check is intentionally stricter and different-purposed
+    # from engines.data.clean's dedup: this one matches on every raw text column
+    # (catches literal copy-pasted rows at ingest time). engines.data.clean's
+    # dedup runs later, post-parse, on a config-driven business key (defaults to
+    # every parsed column too, but callers may narrow it) to catch semantic
+    # duplicate transactions. Both are "all columns" by default, so a row that
+    # collides here will also collide there — they only diverge when a caller
+    # explicitly narrows clean's dup_key_cols. The two counts (duplicate_count
+    # here, "duplicate" reasons in clean's rejects) are reported separately by
+    # design — do not expect them to match if clean uses a narrowed key.
+
     run_id = start_ingestion_run(
         con,
         source_type,

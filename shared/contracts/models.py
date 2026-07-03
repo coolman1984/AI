@@ -24,7 +24,7 @@ class EvidenceRef:
 @dataclass
 class RejectRecord:
     row_id: int
-    reason: str          # total_or_missing_key | unparseable_amount | duplicate
+    reason: str          # total_or_missing_key | unparseable_<numeric_col> | duplicate
     raw: dict
     amount: float | None = None
 

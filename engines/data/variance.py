@@ -93,15 +93,30 @@ def price_volume_mix(
     volume = (scale*std_qty - std_qty) * std_price           (overall scale, scale=SUM(aq)/SUM(sq))
     mix    = (actual_qty - scale*std_qty) * std_price         (shifted the proportion of items)
     The three reconcile exactly to line_total = actual_cost - std_cost.
+
+    Callers must pass already-cleaned data (see engines/data/clean.py — clean_actuals
+    with qty_col=..., clean_standards). This function casts strictly and raises if a
+    null slips through, rather than silently coercing junk to 0.0 (a null quantity
+    would otherwise zero out that line's price variance without anyone noticing).
     """
     a = actuals.with_columns(
-        pl.col(qty_col).cast(pl.Float64, strict=False).alias("_aq"),
-        pl.col(amount_col).cast(pl.Float64, strict=False).alias("_ac"),
+        pl.col(qty_col).cast(pl.Float64).alias("_aq"),
+        pl.col(amount_col).cast(pl.Float64).alias("_ac"),
     ).select([key, group, "_aq", "_ac"])
+    if a.select(pl.any_horizontal(pl.col("_aq", "_ac").is_null())).to_series().any():
+        raise ValueError(
+            f"actuals contain null {qty_col}/{amount_col} — clean and quarantine "
+            "before calling price_volume_mix, do not pass raw data"
+        )
     s = standards.with_columns(
-        pl.col(std_qty_col).cast(pl.Float64, strict=False).alias("_sq"),
-        pl.col(std_price_col).cast(pl.Float64, strict=False).alias("_sp"),
+        pl.col(std_qty_col).cast(pl.Float64).alias("_sq"),
+        pl.col(std_price_col).cast(pl.Float64).alias("_sp"),
     ).select([key, "_sq", "_sp"])
+    if s.select(pl.any_horizontal(pl.col("_sq", "_sp").is_null())).to_series().any():
+        raise ValueError(
+            f"standards contain null {std_qty_col}/{std_price_col} — clean and "
+            "quarantine before calling price_volume_mix, do not pass raw data"
+        )
 
     matched = a.join(s, on=key, how="inner")
     unmatched = sorted(set(a[key].to_list()) - set(s[key].to_list()))
@@ -113,7 +128,7 @@ def price_volume_mix(
     parts: list[DriverPart] = []
     t_price = t_vol = t_mix = t_total = 0.0
     for r in matched.iter_rows(named=True):
-        aq, ac, sq, sp = r["_aq"] or 0.0, r["_ac"] or 0.0, r["_sq"] or 0.0, r["_sp"] or 0.0
+        aq, ac, sq, sp = r["_aq"], r["_ac"], r["_sq"], r["_sp"]
         ap = (ac / aq) if aq else 0.0
         price = (ap - sp) * aq
         volume = (scale * sq - sq) * sp

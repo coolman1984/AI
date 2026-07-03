@@ -20,13 +20,11 @@ If a task needs more than one skill, the agent should compose them in sequence i
 
 ## Read order for an agent
 
-1. `AGENTS.md`
-2. `AGENT_SKILL_MAP.md`
-3. `AGENT_CORE_CONTRACT.md`
-4. `03_design/current_implementation_plan.md` when build order or gates matter
-5. `03_design/assistant_master_plan.md` only when architecture context is needed
-6. Only the relevant skill file(s)
-7. Then the nearest module `AGENTS.md`
+See `AGENTS.md` → "Read order (start here, always)" for the canonical sequence — it
+is kept single-sourced there so this file and `AGENTS.md` cannot silently disagree.
+In short: `AGENTS.md` → `PROJECT_MAP.md` → this file → `AGENT_CORE_CONTRACT.md` →
+the live plan docs (only when needed) → the relevant skill file(s) → nearest module
+`AGENTS.md`.
 
 Do **not** load every skill by default.
 
