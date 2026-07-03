@@ -35,3 +35,6 @@ tools:
   knowledge_memory: local_json        # -> cognee when installed
   temporal_memory: local_json         # -> graphiti when installed
   renderer: builtin_html              # -> open_design when installed
+  second_read: off                    # off | sample | on_report_docs | always
+  second_read_word_coverage_min: 0.75
+  second_read_sample_pages: 3

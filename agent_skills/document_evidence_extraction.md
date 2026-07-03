@@ -69,6 +69,19 @@ Extract, normalize, and route evidence from PDF, Word, PowerPoint, scans, screen
 6. package useful passages or tables for downstream use
 7. recommend the next skill based on whether the result is evidence, structured data, or blocked input
 
+## Second-read audit (post-extraction gate)
+
+When `config.yaml` → `tools.second_read` is not `off`, `extract_document` may run a **one-way**
+OCR completeness check after native extraction (`engines/docs/completeness.py`):
+
+- Compares **numeric tokens** (via `extract_numeric_tokens`) and **word coverage** — OCR may only
+  flag tokens missing from extraction, never overwrite extraction.
+- Low OCR quality → page marked `second_read_unavailable` (not “verified”).
+- Modes: `off` (default, byte-identical to pre-gate behavior), `sample`, `on_report_docs`
+  (`document.feed_report` or image-heavy PPTX), `always`.
+- Flagged pages set `needs_review` and warnings name missing tokens (e.g. `4700`).
+- FOREMAN: `record_second_read_foreman` logs `gate_name=second_read`; `gaps_found` → run `blocked`.
+
 ## Key checks
 - born-digital text versus scanned image
 - OCR confidence and completeness
@@ -93,6 +106,7 @@ Usually hands off to:
 - `engines/brain/registry.py` (document registry with hash deduplication)
 - `engines/docs/AGENTS.md`
 - `engines/docs/extract.py`
+- `engines/docs/completeness.py`
 - `engines/docs/docling_adapter.py` (hard-layout opt-in parser backend)
 - `engines/docs/pptx.py`
 - `engines/docs/image_profile.py`
@@ -108,6 +122,7 @@ Usually hands off to:
 - `engines/email/extract.py`
 - `mcp_server/server.py` (summarize_document + ingest_deck + extract_document_hard_layout + extract_workflow_record + register_document routing)
 - `tests/test_documents.py`
+- `tests/test_second_read.py`
 - `tests/test_chunked_summary.py`
 - `tests/test_korean_ocr_profile.py`
 - `tests/test_translation_check.py`

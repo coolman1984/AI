@@ -7,6 +7,8 @@ documents and return cited passages.
 `pptx.PptxExtractor`,
 `image_profile.profile_deck_images`,
 `ocr.ocr_cascade`, `ocr.extract_page_text`, `ocr.extraction_quality`, `ocr.render_pdf_page`,
+`completeness.second_read_page`, `completeness.second_read_audit`, `completeness.apply_second_read_to_document`,
+`completeness.record_second_read_foreman`,
 `rapidocr_adapter.RapidOcrAdapter`,
 `search.search_documents`, `verify.extract_numeric_tokens`,
 `verify.normalize_korean_unit`, `verify.figure_matches`,
@@ -49,7 +51,7 @@ PDF (that stays in DuckDB).
 `pytest tests/test_provenance_stamp.py`; translation-check tests:
 `pytest tests/test_translation_check.py`; OCR profile tests:
 `pytest tests/test_korean_ocr_profile.py`; hard-layout adapter tests:
-`pytest tests/test_docling_adapter.py`
+`pytest tests/test_docling_adapter.py`; second-read gate: `pytest tests/test_second_read.py`
 **store_report_knowledge:** `base_dir` injectable for tests (default `.brain/reports`);
 `ReportKnowledge` includes `warnings: list[str]` field; out-of-range key_point pages are
 dropped with a warning. Language detection: Hangul → `"ko"`, else `"en"`.

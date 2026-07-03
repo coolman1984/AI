@@ -35,6 +35,7 @@ class Document:
     pages: list[Page] = field(default_factory=list)
     tables: list[DocTable] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    completeness_report: dict | None = None
 
     @property
     def full_text(self) -> str:

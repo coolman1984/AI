@@ -101,9 +101,14 @@ def extract_document(path: str, cfg: dict | None = None) -> Document:
     ext = Path(path).suffix.lower()
 
     if tools.get("document_extractor") == "docling" and ext in {".pdf", ".docx", ".pptx"}:
-        return DoclingExtractor().extract(path)
-    if ext == ".pdf":
-        return PyPdfExtractor(cascade, threshold, ocr_langs=ocr_langs).extract(path)
-    if ext == ".pptx":
-        return PptxExtractor().extract(path)
-    return PlainTextExtractor().extract(path)
+        doc = DoclingExtractor().extract(path)
+    elif ext == ".pdf":
+        doc = PyPdfExtractor(cascade, threshold, ocr_langs=ocr_langs).extract(path)
+    elif ext == ".pptx":
+        doc = PptxExtractor().extract(path)
+    else:
+        doc = PlainTextExtractor().extract(path)
+
+    from engines.docs.completeness import apply_second_read_to_document
+
+    return apply_second_read_to_document(doc, path, cfg)

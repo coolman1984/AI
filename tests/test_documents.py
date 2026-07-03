@@ -47,3 +47,36 @@ def test_cascade_escalates_and_flags_when_all_poor():
     )
     assert res["was_ocr"] is True
     assert res["needs_review"] is True   # NullOcrEngine returns nothing -> review
+
+
+def test_extract_document_second_read_off_unchanged():
+    doc_off = extract_document(PDF, {"tools": {"second_read": "off"}})
+    doc_default = extract_document(PDF, {})
+    assert doc_off.full_text == doc_default.full_text
+    assert doc_off.completeness_report is None
+
+
+def test_extract_document_second_read_flags_embedded_number(monkeypatch):
+    from engines.docs import completeness as cr
+
+    def fake_audit(page_texts, image_loader, cfg, *, page_numbers=None, ocr_runner=None):
+        return cr.CompletenessReport(
+            pages=[
+                cr.PageSecondReadResult(
+                    page_no=1,
+                    status="gaps_found",
+                    missing_numeric_tokens=["4700"],
+                    flagged=True,
+                    ocr_engine="tesseract",
+                )
+            ],
+            verdict="gaps_found",
+        )
+
+    monkeypatch.setattr(cr, "second_read_audit", fake_audit)
+    cfg = {"tools": {"second_read": "always"}}
+    doc = extract_document(PDF, cfg)
+    assert doc.completeness_report is not None
+    assert doc.completeness_report["verdict"] == "gaps_found"
+    assert any("4700" in w for w in doc.warnings)
+    assert doc.pages[0].needs_review is True

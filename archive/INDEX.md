@@ -54,3 +54,4 @@ Historical documentation only. Agents must not treat these as current guidance.
 | `REVIEW.md` | Historical |
 | `RISK_AND_GAPS_AUDIT.md` | Historical |
 | `03_design/doc_system_plan.md` | Doc system plan completed — self-archived |
+| `03_design/second_read_audit_plan.md` | Second-read OCR completeness gate shipped (engines/docs/completeness.py) |

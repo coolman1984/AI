@@ -1,10 +1,60 @@
 # Factory Brain — Complete Project Map
 
-**Purpose of this file:** A single comprehensive reference that any AI agent can read to
-understand *everything* in this repository: what it builds, how it is organized, what
-every module does, how the phases and tests are structured, and what state the project
-is in. Read this first, then descend into individual `AGENTS.md` files and skill files
-as needed.
+**Purpose:** Onboarding map for AI agents — what this repo is, where things live, how to
+work safely, and where to drill down. **Rules and read order:** `AGENTS.md` (authoritative).
+
+---
+
+## 0. New agent quickstart (~3 minutes)
+
+### Documentation discipline (enforced)
+
+- **Living docs:** root 5 `.md` + `00_control/task_queue.md` + `decisions.md` + module/skill files.
+- **`tests/test_doc_system.py`** fails CI if someone adds stray root/control design docs.
+- Historical plans: **`archive/INDEX.md`** only.
+- **Live task status:** `00_control/task_queue.md`. **Do not** treat `archive/` or
+  `restart_notes.md` / `session_state.md` as documentation (runtime snapshots).
+
+### Step 1 — Read in this order (do not skip)
+
+| # | File | Why |
+|---|------|-----|
+| 1 | `README.md` | One-screen orientation |
+| 2 | `AGENTS.md` | Doc Law, three rules, **Core contract**, commands, git policy |
+| 3 | `PROJECT_MAP.md` | This file — structure and navigation |
+| 4 | `AGENT_SKILL_MAP.md` | Pick the **one** `agent_skills/*.md` file for your task |
+| 5 | Nearest `AGENTS.md` | Module you will edit (`engines/data/AGENTS.md`, etc.) |
+| 6 | Code + tests | Test-first; `pytest` is definition of done |
+
+**Design docs (only when needed):** `03_design/assistant_master_plan.md` (REFERENCE architecture),
+`03_design/skill_os_blueprint.md` (FOREMAN), `03_design/foreman_build_plan.md` (ACTIVE build plan).
+
+### Step 2 — Pick your lane (task → first open)
+
+| You need to… | Start here |
+|---|---|
+| Ingest Excel/CSV/SAP export | `agent_skills/spreadsheet_ingestion.md` → `engines/data/ingest.py`, `clean.py` |
+| Variance / price-volume-mix | `agent_skills/cost_variance_analysis.md` → `engines/data/variance.py`, `drivers.py` |
+| PDF/PPTX/OCR evidence | `agent_skills/document_evidence_extraction.md` → `engines/docs/` |
+| Manager card / HTML / PPTX | `agent_skills/management_reporting.md` → `serving/` |
+| Audit before release | `agent_skills/audit_and_trust.md` → `engines/audit/` |
+| Search stored knowledge | `agent_skills/knowledge_search.md` → `engines/brain/search.py` |
+| FOREMAN pipeline (SK-001→005) | `registry/skills.yaml` → `tools/run_foreman.py` → `skills/*` |
+| Hermes skills on this machine | `~/AppData/Local/hermes/skills/` + `AGENT_SKILL_MAP.md` Tier routing |
+| Change public contracts | `shared/contracts/models.py` — **ask owner first** |
+| Add a dependency | `requirements.txt` — **ask owner first** |
+
+### Step 3 — Verify before you claim done
+
+```bash
+pip install -r requirements.txt
+pytest                    # ~395 tests; must be green
+ruff check .
+```
+
+**Import rule:** Run from repo root (`G:\AI`) so `engines`, `tools`, `skills` import correctly.
+
+**Blocked on real plant data:** `P2.2` / `E.1` in `task_queue.md` (first real SAP-scale export).
 
 ---
 
@@ -16,12 +66,12 @@ as needed.
 | **Type** | Factory-wide Decision Intelligence System |
 | **Domain** | TV/Mobile manufacturing plant under Korean HQ |
 | **Python** | 3.11+ |
-| **Test framework** | pytest |
+| **Test framework** | pytest (~395 collected, 5 skipped) |
 | **Linter** | ruff (select: E/F/I/UP/B, line-length 100) |
 | **Package manager** | uv (`uv.lock` present) |
 | **Branch policy** | Single `main` branch only. No branches ever. |
 | **Pilot** | Finance / Costing (first department lens) |
-| **Status** | Feature-complete on synthetic data through Phase F. Blocked only on real SAP export (P2.2/E.1). |
+| **Status** | Engines + tests green on synthetic data (Phases A–F). FOREMAN layer shipped (SK-001–005 + analytics). Docs consolidated to 7 living files. **Blocked:** real SAP export (P2.2/E.1). |
 
 **Core mission** (from `03_design/assistant_master_plan.md:12-33`):
 1. Extract everything (spreadsheets, PDFs, PPTX, emails, scans) into governed local DBs
@@ -61,336 +111,84 @@ untested until E.1 (R7); adoption (R8). Mitigated: wrong-number path (audit+sign
 
 ## 1c. FOREMAN governance layer
 
-FOREMAN wraps existing `engines/` with skills, registries, and evidence — see `03_design/skill_os_blueprint.md`.
+FOREMAN sits **on top of** `engines/` — skills call verified engine paths; registries and SQLite
+(`tools/foreman_db.py`) record runs, fingerprints, lessons. Blueprint: `03_design/skill_os_blueprint.md`.
+Build order: `03_design/foreman_build_plan.md`.
 
-| Area | Purpose |
+| Piece | Role |
 |---|---|
-| `registry/` | `tools.yaml`, `skills.yaml` — machine-checked manifests |
-| `tools/` | `foreman_db`, `fingerprint`, `run_logger`, `run_foreman`, linters, approvals |
-| `skills/` | SK-001…SK-005 MVP pipeline + Phase 4/7 analytics skills |
-| `vault/` | Curated second-brain notes (Obsidian-friendly) |
-| `lessons/`, `reports/`, `runs/`, `approvals/` | Run artifacts and governance data (not agent docs) |
-| `schemas/`, `templates/` | JSON schemas and skill/report templates |
+| `registry/tools.yaml`, `skills.yaml` | Declared tools/skills — lint with `registry_lint.py`, `skill_lint.py` |
+| `tools/` | `foreman_db`, `fingerprint`, `run_logger`, `run_foreman`, `approvals`, `memory_gate`, `lesson_capture`, `build_dashboard` |
+| `skills/` | **SK-001** excel_intake → **SK-002** column_profile_and_map → **SK-003** load_to_database → **SK-004** reconcile_and_validate → **SK-005** management_report; plus period_close_pack, variance_driver_decomposition, inventory_exception_scan, rework_cost_analysis, cross_period_comparison, decision_brief |
+| `vault/` | Curated notes; promotion via `memory_gate.py` / `lesson_capture.py` |
+| `runs/`, `reports/`, `lessons/`, `approvals/` | Artifacts — not agent documentation |
 
-**Verify FOREMAN:** `pytest tests/test_foreman_*.py tests/test_skill_*.py -q`
+**Rule:** Do not reimplement number parsing inside `skills/` — delegate to `engines/data`.
+
+**Verify FOREMAN:** `pytest tests/test_foreman_*.py tests/test_skill_*.py tests/test_phase4_analytics.py -q`
 
 ---
 
-## 2. Complete Directory Tree
+## 2. Repository layout (current — 2026-07-03)
+
+Use this tree to **navigate**, not to load everything into context. Drill into each folder's `AGENTS.md` before editing.
 
 ```
 G:\AI\
 │
-├── README.md                       # Root orientation (≤25 lines) → AGENTS.md
-├── AGENTS.md                       # Constitution: rules, Doc Law, core contract, read order
-├── AGENT_SKILL_MAP.md              # Skill routing
-├── PROJECT_MAP.md                  # ★ THIS FILE — current state reference
-├── CLAUDE.md                       # Team orchestration workflow (rules in AGENTS.md)
-├── config.yaml                     # Main configuration (AI providers, roles, audit thresholds, tool switches)
-├── column_map.yaml                 # Human-reviewed column name canonicalization mapping
-├── pyproject.toml                  # Project metadata, pytest config, ruff config
-├── requirements.txt                # Core pinned dependencies (DuckDB, Polars, PyMuPDF, etc.)
-├── requirements-optional.txt       # Heavy/infra-dependent optional deps (Docling, Cognee, etc.)
-├── run_demo.py                     # End-to-end demo script
-├── uv.lock                         # Lock file for uv package manager
+├── README.md, AGENTS.md, CLAUDE.md, PROJECT_MAP.md, AGENT_SKILL_MAP.md   # Living docs only
+├── config.yaml, column_map.yaml, pyproject.toml, requirements.txt, run_demo.py
 │
-├── .brain/                         # (gitignored) Runtime runtime data: memories, claims, ledger
-├── .github/workflows/
-│   └── ci.yml                      # CI: ruff check + pytest on push to main
-├── .gitignore                      # Ignores .venv, __pycache__, .brain/, out/, caches
+├── 00_control/                    # 4 markdown files only
+│   ├── task_queue.md              # ★ Live task status
+│   ├── decisions.md               # Owner decision log
+│   ├── restart_notes.md           # Runtime snapshot — NOT documentation
+│   └── session_state.md           # Runtime snapshot — NOT documentation
 │
-├── 00_control/                     # Governance and project control documents (17 files)
-│   ├── assumptions.md              # Explicit project assumptions
-│   ├── bottlenecks.md              # Current bottlenecks and constraints
-│   ├── decisions.md                # Decision log
-│   ├── evaluation_report.md        # Evaluation results
-│   ├── evidence_log.md             # Evidence tracking
-│   ├── memory_index.md             # Memory index
-│   ├── mission.md                  # Mission statement
-│   ├── open_questions.md           # Open questions
-│   ├── plan_review.md              # Plan review notes
-│   ├── progress.md                 # Progress tracking
-│   ├── project_scope.md            # Project scope definition
-│   ├── restart_notes.md            # Session resumption guide
-│   ├── risks.md                    # Risk register
-│   ├── run_log.md                  # Run log
-│   ├── session_state.md            # Session state
-│   ├── success_contract.md         # Success criteria
-│   └── task_queue.md               # ★ Master task queue (87 rows, A0-F.10 + T-series)
+├── 03_design/                     # keeper architecture files (frontmatter required, ≤2 ACTIVE-PLAN)
+│   ├── assistant_master_plan.md   # REFERENCE — v2 architecture
+│   ├── skill_os_blueprint.md      # REFERENCE — FOREMAN skill OS
+│   └── foreman_build_plan.md      # ACTIVE-PLAN — FOREMAN build order
+│   # Completed: archive/03_design/ (incl. second_read_audit_plan, doc_system_plan, …)
 │
-├── 01_inputs/                      # Raw input source inventory
-│   └── source_inventory.md         # Inventory of data sources
+├── archive/                       # Historical — read-never for current work
+│   ├── INDEX.md
+│   └── 00_control/, 03_design/, 01_inputs/ … 06_final_outputs/
 │
-├── 02_understanding/               # Requirements and terminology
-│   ├── data_map.md                 # Data mapping
-│   ├── extracted_requirements.md   # Extracted requirements
-│   └── terminology.md              # Domain terminology
+├── agent_skills/                  # Load ONE skill per task (routing layer)
+│   ├── spreadsheet_ingestion.md, cost_variance_analysis.md, document_evidence_extraction.md
+│   ├── management_reporting.md, audit_and_trust.md, knowledge_search.md
+│   └── EXTERNAL_SKILLS_INVENTORY.md
 │
-├── 03_design/                      # Architecture and design documents
-│   ├── assistant_master_plan.md    # ★ CURRENT approved architecture (v2, 342 lines — READ THIS)
-│   ├── architecture.md             # Pointer to master plan
-│   ├── codex_planning_prompt.md    # Codex expansion prompt
-│   ├── current_implementation_plan.md  # ★ Live execution plan (252 lines)
-│   ├── implementation_plan.md      # Historical (superseded)
-│   ├── oss_reference_evaluation.md # OSS tool evaluation against v2 plan
-│   ├── phase_a_cards.md            # ★ Current Phase A build cards (289 lines)
-│   ├── phase_b_to_f_cards.md       # Phase B-F build cards (1055 lines)
-│   ├── rollback_plan.md            # Rollback plan
-│   ├── skill_os_blueprint.md       # FOREMAN blueprint — skill-OS governance layer over the engines (2026-07-03)
-│   ├── foreman_build_plan.md       # FOREMAN phased build plan — code-writer execution order (2026-07-03)
-│   ├── foreman_review_brief.md     # FOREMAN review charter — hand to a reviewer agent before building (2026-07-03)
-│   ├── doc_system_plan.md          # ★ ACTIVE-PLAN — documentation consolidation to 7 living docs (2026-07-03)
-│   ├── unified-ingestion-spine.md  # Bilingual (AR/EN) ingestion spine design
-│   ├── validation_plan.md          # Validation plan
-│   └── reviews/
-│       └── opus_critique.md        # Adversarial review of v1 architecture (184 lines)
+├── engines/                       # ★ Deterministic processing — numbers only from data/
+│   ├── data/        ingest, clean, variance, drivers, types, pdf_tables, query_readiness
+│   ├── docs/        extract, pptx, ocr, verify, summarize, workflow_record, llm_bridge, …
+│   ├── brain/       orchestrator, memory, claims, registry, search, factory, ontology, …
+│   ├── audit/       independent re-check, brief_audit, sign-off path
+│   ├── email/       .eml intake
+│   ├── learning/    feedback, outcomes, gated evolution
+│   └── wiki/        git-backed knowledge artifacts
 │
-├── 04_execution/                   # Execution state
-│   └── README.md
+├── FOREMAN (governance — wraps engines, does not replace them)
+│   ├── registry/        tools.yaml, skills.yaml
+│   ├── tools/           foreman_db, run_foreman, fingerprint, approvals, linters, …
+│   ├── skills/          SK-001…005 + analytics + decision_brief (each: SKILL.md + run.py)
+│   ├── vault/, schemas/, templates/, datasets/, dashboards/
+│   └── runs/, reports/, lessons/, approvals/
 │
-├── 05_validation/                  # Validation artifacts
-│   ├── error_log.md
-│   ├── issue_tracker.md
-│   ├── quality_checks.md
-│   └── test_results.md
-│
-├── 06_final_outputs/               # Final outputs
-│   ├── handover_notes.md
-│   └── proof_of_completion.md
-│
-├── agent_skills/                   # ★ 7 files — 6 capability skills + 1 external inventory
-│   ├── audit_and_trust.md          # Release gating, independent re-check
-│   ├── cost_variance_analysis.md   # Price/volume/mix driver decomposition
-│   ├── document_evidence_extraction.md  # PDF/PPTX/OCR extraction
-│   ├── EXTERNAL_SKILLS_INVENTORY.md  # Map of external skill libraries in Downloads/Skills
-│   ├── knowledge_search.md         # Retrieval from stored knowledge
-│   ├── management_reporting.md     # Executive output shaping
-│   └── spreadsheet_ingestion.md    # Tabular data ingest/clean
-│
-├── archive/                        # Superseded historical docs (8 files — do not read unless needed)
-│   ├── ARCHITECTURE.md
-│   ├── CODEX_PLAN.md
-│   ├── IMPLEMENTATION_PLAN.md
-│   ├── IMPLEMENTATION_PLAN_DOCS.md
-│   ├── IMPLEMENTATION_PLAN_SECONDBRAIN.md
-│   ├── PROJECT_STATE_AND_ROADMAP.md
-│   ├── REVIEW.md
-│   └── RISK_AND_GAPS_AUDIT.md
-│
-├── data/sample/                    # Sample data for demo/testing
-│   ├── budget_approval_2026.pdf            # Text PDF (budget evidence)
-│   ├── budget_approval_scanned.pdf         # Scanned PDF (triggers OCR cascade)
-│   ├── finance_actuals.csv                 # Finance actuals (messy — has total rows, duplicates)
-│   ├── finance_actuals_2026_06.csv         # Next period actuals
-│   ├── finance_budget.csv                  # Finance budget baseline
-│   ├── finance_standards.csv               # Standards for driver decomposition
-│   ├── planning_actuals.csv                # Planning department actuals
-│   └── planning_plan.csv                   # Planning baseline
-│
-├── downloads/                      # Cloned OSS reference repos (not built, for reference only)
-│   ├── cognee/                     # Knowledge graph memory (KuzuDB + LanceDB)
-│   ├── docling/                    # IBM Docling — hard-layout document parser
-│   ├── graphiti/                   # Temporal knowledge graph
-│   ├── mail-parser/                # Email parsing library
-│   └── pdfplumber/                 # PDF table extraction
-│
-├── engines/                        # ★ CORE — 6 processing engines (the brains)
-│   ├── __init__.py
-│   ├── audit/                      # Independent audit + human sign-off (Part O)
-│   │   ├── __init__.py
-│   │   ├── AGENTS.md
-│   │   ├── audit.py                # Independent re-run + certainty + sign-off enforcement
-│   │   └── brief_audit.py          # Non-numeric brief claim audit
-│   ├── brain/                      # Memory, claims, registry, ontology, search, orchestrator
-│   │   ├── __init__.py
-│   │   ├── AGENTS.md               # 59 lines — full interface documentation
-│   │   ├── claims.py               # ClaimsStore (physically separate from facts)
-│   │   ├── comparison.py           # IR quarter + factory comparison
-│   │   ├── contradictions.py       # Contradiction surfacing across claims/records
-│   │   ├── edges.py                # Typed cross-workflow edges
-│   │   ├── factory.py              # Multi-department factory brain
-│   │   ├── idea_synthesis.py       # Labeled AI-SUGGESTED IDEA synthesis
-│   │   ├── memory.py               # Knowledge + temporal memory (local + Cognee/Graphiti adapters)
-│   │   ├── ontology.py             # Canonical entity IDs
-│   │   ├── open_questions.py       # Queryable open questions
-│   │   ├── orchestrator.py         # Full pipeline orchestrator
-│   │   ├── registry.py             # Document registry
-│   │   ├── search.py               # Knowledge search contract
-│   │   ├── workflow_diff.py        # Version diff view
-│   │   └── workflow_family.py      # Workflow families + versioning
-│   ├── data/                       # ★ THE ONLY SOURCE OF TRUSTED NUMBERS (DuckDB, Polars)
-│   │   ├── __init__.py
-│   │   ├── AGENTS.md               # 26 lines — full interface documentation
-│   │   ├── clean.py                # Data cleaning: totals detection, dupes, locale amounts
-│   │   ├── drivers.py              # Price/volume/mix decomposition
-│   │   ├── ingest.py               # CSV/Excel/PDF table ingestion spine
-│   │   ├── pdf_tables.py           # PDF table extraction
-│   │   ├── query_readiness.py      # Cross-source query readiness
-│   │   ├── types.py                # Column type inference
-│   │   └── variance.py             # Governed variance computation
-│   ├── docs/                       # Document evidence extraction (PDF, PPTX, OCR)
-│   │   ├── __init__.py
-│   │   ├── AGENTS.md               # 55 lines — full interface documentation
-│   │   ├── docling_adapter.py      # Docling hard-layout parser adapter
-│   │   ├── extract.py              # Main document extraction
-│   │   ├── glossary.py             # Korean-English factory glossary
-│   │   ├── image_profile.py        # Image-only share measurement
-│   │   ├── llm_bridge.py           # LLM bridge abstraction (single chokepoint)
-│   │   ├── models.py               # Document data models
-│   │   ├── ocr.py                  # OCR cascade (Tesseract→RapidOCR→PaddleOCR→Surya→VLM)
-│   │   ├── pptx.py                 # Native PPTX extractor
-│   │   ├── prompt_builder.py       # Prompt construction with injection defense
-│   │   ├── provenance.py           # Provenance stamping
-│   │   ├── rapidocr_adapter.py     # RapidOCR integration
-│   │   ├── report_reader.py        # Legacy report reader (LLM bridge, gated)
-│   │   ├── run_state.py            # Resumable run state
-│   │   ├── search.py               # Document search
-│   │   ├── summarize.py            # Chunked map-reduce summarization
-│   │   ├── translation_check.py    # Back-translation spot check
-│   │   ├── verify.py               # ★ Deterministic figure verifier (Korean-units-aware)
-│   │   └── workflow_record.py      # Structured workflow understanding
-│   ├── email/                      # Email + attachment intake
-│   │   ├── __init__.py
-│   │   ├── AGENTS.md
-│   │   └── extract.py
-│   ├── learning/                   # Feedback, outcomes, gated self-evolution
-│   │   ├── __init__.py
-│   │   ├── AGENTS.md
-│   │   ├── evolution.py            # Gated self-evolution (DSPy/GEPA)
-│   │   ├── feedback.py             # Owner feedback loop
-│   │   ├── learning.py             # Learning engine core
-│   │   └── outcomes.py             # Decision-outcome linkage
-│   └── wiki/                       # Durable knowledge artifacts
-│       ├── __init__.py
-│       ├── AGENTS.md
-│       └── artifacts.py            # Git-backed markdown knowledge artifacts
-│
-├── eval/                           # Golden evaluation set
-│   ├── AGENTS.md
-│   ├── README.md
-│   ├── golden_manifest.json        # 3 fixtures: workflow-record, brief-claims, coverage
-│   ├── runner.py                   # Golden eval runner (155 lines)
-│   └── fixtures/
-│       ├── brief-claims-audit.json
-│       ├── extraction-coverage.json
-│       └── workflow-record-basic.json
-│
-├── gov/                            # Governance layer
-│   ├── __init__.py
-│   ├── access.py                   # Role-scoped access control (G.1)
-│   ├── ledger.py                   # External-call append-only ledger (A0.4)
-│   └── privacy.py                  # Two-tier privacy gate (A0.4, D14)
-│
-├── lenses/                         # Department lens configurations (Part F)
-│   ├── finance.yaml                # ★ Pilot — Finance / Cost Control
-│   └── planning.yaml               # Second department — Planning (config-only, no new code needed)
-│
-├── mcp_server/                     # MCP tool surface — all capabilities as MCP tools
-│   ├── __init__.py
-│   └── server.py                   # 701-line dispatch table (Part D tools)
-│
-├── ops/                            # Operations layer
-│   ├── AGENTS.md
-│   ├── alerts.py                   # Alerting
-│   ├── backup.py                   # Backup/restore
-│   ├── scheduler.py                # Scheduled ingestion
-│   └── session_state.py            # Session persistence
-│
-├── research/skills/                # Cloned OSS skill repos for reference (not integrated)
-│   ├── RESEARCH_REPORT.md          # Evaluation of top 5 skill repos
-│   ├── addyosmani/agent-skills/    # 24 reference skills (MIT)
-│   ├── anthropics/skills/          # 17 reference skills (no license)
-│   ├── ComposioHQ/awesome-claude-skills/  # 864 reference skills (no license)
-│   ├── mattpocock/skills/          # 34 reference skills (MIT)
-│   └── obra/superpowers/           # 14 reference skills (MIT)
-│
-├── schema/
-│   └── document.schema.json        # JSON Schema for normalized document output (177 lines)
-│
-├── serving/                        # Executive output serving
-│   ├── __init__.py
-│   ├── AGENTS.md
-│   ├── card.py                     # One-A4 manager card (177 lines)
-│   ├── decision_brief.py           # Decision brief generator
-│   ├── meeting_pack.py             # Meeting pack assembler
-│   ├── open_design.py              # HTML/PPTX rendering + dashboard
-│   ├── report_article.py           # Report/article generator
-│   └── signoff.py                  # Named human sign-off enforcement (86 lines)
-│
-├── shared/                         # Shared contracts and governed metrics
-│   ├── __init__.py
-│   ├── lenses.py                   # Lens loader (33 lines)
-│   ├── contracts/
-│   │   ├── __init__.py
-│   │   └── models.py               # ★ Data contracts — the system's type spine (162 lines)
-│   └── metrics/
-│       ├── __init__.py
-│       └── registry.py             # Governed metric definitions (24 lines, Part R)
-│
-├── reports/                        # External reports
-│   ├── PLAN_RISK_AUDIT_AND_UPGRADE_REPORT_SUMMARY.md
-│   ├── PLAN_RISK_AUDIT_AND_UPGRADE_REPORT.md
-│   └── target_report.json
-│
-└── tests/                          # ★ 55 test files — each tests one module/feature
-    ├── __init__.py
-    ├── test_brief_audit.py         # Non-numeric brief audit
-    ├── test_card_and_audit.py      # Card + audit integration
-    ├── test_chunked_summary.py     # Chunked map-reduce coverage
-    ├── test_claims.py              # ClaimsStore (A0.1)
-    ├── test_contradictions.py      # Contradiction surfacing
-    ├── test_data_pipeline.py       # Data engine pipeline
-    ├── test_decision_brief.py      # Decision brief generator
-    ├── test_docling_adapter.py     # Docling adapter
-    ├── test_document_registry.py   # Document registry
-    ├── test_documents.py           # Document engine
-    ├── test_drivers.py             # Price/volume/mix decomposition
-    ├── test_email_extraction.py    # Email intake
-    ├── test_executive_signoff.py   # Sign-off enforcement
-    ├── test_factory_comparison_gate.py  # Factory comparison gate
-    ├── test_factory.py             # Multi-department factory brain
-    ├── test_feedback_loop.py       # Owner feedback
-    ├── test_gated_evolution.py     # Gated self-evolution
-    ├── test_golden_eval.py         # Golden eval runner
-    ├── test_hq_deck_brief.py       # HQ deck brief
-    ├── test_idea_synthesis.py      # AI-SUGGESTED IDEA synthesis
-    ├── test_ingestion_spine.py     # Unified ingestion spine
-    ├── test_ir_comparison.py       # Samsung IR comparison
-    ├── test_knowledge_artifacts.py # Git-backed artifacts
-    ├── test_knowledge_search.py    # Knowledge search
-    ├── test_korean_ocr_profile.py  # Korean image-share / OCR
-    ├── test_learning.py            # Learning engine
-    ├── test_llm_chokepoint.py      # LLM chokepoint + bypass guard (A0.5)
-    ├── test_mcp_access.py          # MCP access control
-    ├── test_meeting_pack.py        # Meeting pack
-    ├── test_memory.py              # Knowledge + temporal memory
-    ├── test_nasty_data.py          # Number-safety prevention gate (Sprint 1, 2026-07-03)
-    ├── test_ocr_cascade.py         # OCR cascade
-    ├── test_ontology.py            # Ontology + edges
-    ├── test_open_questions.py      # Open questions + outcomes
-    ├── test_ops_backup.py          # Backup/restore
-    ├── test_orchestrator.py        # Pipeline orchestrator
-    ├── test_pdf_tables.py          # PDF table extraction
-    ├── test_pptx_extraction.py     # PPTX extraction (B.1)
-    ├── test_privacy.py             # Privacy tier gate (A0.4)
-    ├── test_prompt_injection.py    # Prompt injection defense (A0.6)
-    ├── test_provenance_stamp.py    # Provenance stamping
-    ├── test_query_readiness.py     # Query readiness
-    ├── test_report_article.py      # Report/article generator
-    ├── test_report_reader.py       # Report reader (A0.7)
-    ├── test_resumable_runs.py      # Resumable runs
-    ├── test_serving_outputs.py     # Serving outputs
-    ├── test_serving.py             # Serving layer + provenance tags (A0.8)
-    ├── test_session_state.py       # Session state
-    ├── test_skill_contracts.py     # Skill contract linting
-    ├── test_translation_check.py   # Translation checks
-    ├── test_verify.py              # Figure verifier (A0.2 + A0.3)
-    ├── test_workflow_diff.py       # Workflow diff
-    ├── test_workflow_family.py     # Workflow families
-    └── test_workflow_record.py     # Workflow records
+├── serving/             card, decision_brief, meeting_pack, open_design, signoff
+├── mcp_server/          MCP tool dispatch (server.py)
+├── shared/contracts/    models.py — typed spine (EvidenceRef, NumberFact, …)
+├── shared/metrics/      governed metric definitions
+├── lenses/              finance.yaml (pilot), planning.yaml
+├── gov/                 privacy tier, external-call ledger, access
+├── ops/                 scheduler, backup, alerts, session_state writer
+├── eval/                golden_manifest + runner
+├── data/sample/         Demo CSV/PDF fixtures
+├── tests/               76 modules, ~395 tests (see Section 8)
+├── downloads/           Cloned OSS refs — read-only
+└── .brain/              (gitignored) runtime claims/memory
 ```
-
----
 
 ## 3. Architecture Overview
 
@@ -499,6 +297,7 @@ Extract evidence, run OCR, summarize, verify figures, build workflow understandi
 | File | Purpose |
 |---|---|
 | `extract.py` | Main document extraction dispatcher |
+| `completeness.py` | Second-read OCR completeness gate (one-way token diff) |
 | `pptx.py` | Native PPTX extractor (thin deterministic path, slide-by-slide) |
 | `docling_adapter.py` | Docling hard-layout parser (opt-in for difficult layouts) |
 | `ocr.py` | OCR cascade: Tesseract → RapidOCR → PaddleOCR → Surya → VLM |
@@ -778,22 +577,8 @@ engines/brain/registry.py ───→ Document registered
 
 ### 7.1 The Agent Read Order
 
-**Canonical list lives in `AGENTS.md` → "Read order (start here, always)".** This
-file does not keep its own copy — that duplication is exactly what let four routing
-docs (`AGENTS.md`, `AGENT_SKILL_MAP.md`, `PROJECT_MAP.md`, `CLAUDE.md`) disagree with
-each other until it was reconciled. In short, the order is:
-
-```
-1. AGENTS.md                     — root operating manual (read order, rules, commands)
-2. PROJECT_MAP.md                — ★ this file — full project overview
-3. AGENT_SKILL_MAP.md            — routing: which skill for which task
-4. AGENT_CORE_CONTRACT.md        — shared contract (run identity, evidence, trust)
-5. 03_design/current_implementation_plan.md  — live execution plan (when build order/gates matter)
-6. 03_design/assistant_master_plan.md  — architecture context (only when needed)
-7. 03_design/phase_a_cards.md    — when working Phase A
-8. Relevant skill file(s) only   — e.g., agent_skills/spreadsheet_ingestion.md
-9. Nearest module AGENTS.md      — e.g., engines/data/AGENTS.md
-```
+**Canonical sequence is only in `AGENTS.md`** (starts with `README.md`). This map does not
+duplicate it — see **Section 0** for the practical 3-minute path and task→lane table.
 
 **NEVER load every skill or every document by default.** Load only what the task needs.
 
@@ -828,7 +613,7 @@ From `AGENT_SKILL_MAP.md`:
 | **F — Audit after any numeric path** | Always audit before release |
 | **G — Full decision cycle** | Ingest → Analyze → Audit → Report → Sign-off |
 
-### 7.4 Agent Core Contract (from `AGENT_CORE_CONTRACT.md`)
+### 7.4 Agent Core Contract (in `AGENTS.md`)
 
 Every skill must use the same:
 - **Run identity:** `run_id`, `task_id`, `source_type`, `source_path`, timestamps, status
@@ -843,9 +628,11 @@ Every skill must use the same:
 
 ## 8. Test Suite Map
 
+**Scale (2026-07-03):** ~398 tests in 77 files under `tests/`. Doc layout guarded by `tests/test_doc_system.py`. FOREMAN: `test_foreman_*`, `test_skill_*`, `test_phase4_*`, `test_dashboard.py`.
+
 ### 8.1 How Tests Are Organized
 
-55 test files in `tests/`, one file per module/feature. Run with:
+One file per module/feature. Run with:
 ```
 pytest                          # entire suite
 pytest tests/<module>.py       # specific test
@@ -857,12 +644,14 @@ pytest tests/<module>.py       # specific test
 |---|---|---|
 | **Safety Rails (A0)** | test_claims, test_verify, test_privacy, test_llm_chokepoint, test_prompt_injection, test_report_reader, test_serving | Physical claims separation, Korean-unit verifier, privacy gate, single chokepoint, injection defense, provenance tags |
 | **Data Engine** | test_data_pipeline, test_ingestion_spine, test_pdf_tables, test_query_readiness, test_drivers | Ingestion, cleaning, variance, type inference, price/volume/mix |
-| **Document Engine** | test_documents, test_pptx_extraction, test_chunked_summary, test_docling_adapter, test_korean_ocr_profile, test_workflow_record, test_provenance_stamp, test_translation_check, test_email_extraction | Extraction, OCR, summaries, workflow records, provenance |
+| **Document Engine** | test_documents, test_second_read, test_pptx_extraction, test_chunked_summary, test_docling_adapter, test_korean_ocr_profile, test_workflow_record, test_provenance_stamp, test_translation_check, test_email_extraction | Extraction, second-read gate, OCR, summaries, workflow records, provenance |
 | **Brain/Memory** | test_orchestrator, test_memory, test_claims, test_document_registry, test_workflow_family, test_workflow_diff, test_open_questions, test_contradictions, test_ir_comparison, test_ontology, test_idea_synthesis, test_knowledge_search, test_knowledge_artifacts, test_factory_comparison_gate, test_factory | Pipeline orchestration, memory, registry, families, diffs, search, contradictions, ontology |
 | **Serving** | test_card_and_audit, test_decision_brief, test_meeting_pack, test_report_article, test_hq_deck_brief, test_executive_signoff, test_serving_outputs | Card generation, briefs, packs, reports, sign-off, rendering |
 | **Audit** | test_brief_audit, test_card_and_audit | Numeric + non-numeric audit, certainty scoring |
 | **Learning** | test_learning, test_feedback_loop, test_gated_evolution | Feedback, outcomes, self-evolution |
 | **Ops/Eval** | test_ops_backup, test_session_state, test_golden_eval, test_mcp_access, test_skill_contracts, test_resumable_runs | Backup, sessions, golden eval, MCP access, skill linting |
+| **FOREMAN** | test_foreman_db, test_foreman_end_to_end, test_skill_excel_intake, test_skill_column_map, test_skill_reconcile, test_phase4_analytics, test_dashboard, test_approvals, test_vault_seed, test_memory_and_lessons, test_curation | Registries, skill pipeline, vault/lessons, approvals isolation |
+| **Doc system** | test_doc_system | Living-doc allowlists, archive index, 03_design frontmatter |
 
 ### 8.3 CI Pipeline (`.github/workflows/ci.yml`)
 
@@ -1095,10 +884,10 @@ Incoming AI agents MUST review these reference implementations under [downloads/
 
 ### Quick Onboarding References:
 - **Comprehensive Integration Mapping:** [downloads/oss_reference/README.md](file:///g:/AI/downloads/oss_reference/README.md) details exact code files, python interfaces, and import syntax for each library.
-- **Remediation & Review Backlog:** Refer to the comprehensive diagnostic review [project_codebase_review.md](file:///C:/Users/mflma/.gemini/antigravity/brain/2c464edb-999e-4e21-bc8b-b672249773d5/project_codebase_review.md) in your session directory to understand known bugs and edge cases before modifying the engines.
+- **Data-integrity regressions:** `tests/test_nasty_data.py` before changing `engines/data` or `engines/docs`.
 
 ---
 
-*End of PROJECT_MAP.md — this file is maintained for AI agent onboarding. Update it when
-the architecture or module structure changes significantly.*
+*End of PROJECT_MAP.md — update in the same commit when you add/remove modules, change
+public interfaces, or shift phase/FOREMAN status (per `AGENTS.md` Always).*
 
