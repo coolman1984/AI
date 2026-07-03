@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
-from ops.session_state import update_restart_notes, write_session_state
 from mcp_server.server import dispatch
+from ops.session_state import update_restart_notes, write_session_state
 
 
 def test_session_summary_records_phase_next_action_blockers_evidence_pointers(tmp_path):

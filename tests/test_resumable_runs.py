@@ -6,14 +6,14 @@ import json
 
 import pytest
 
-from engines.docs.llm_bridge import CallableLLM, FailingLLM, FallbackLLMBridge, ProviderError
+from engines.docs.llm_bridge import CallableLLM, FailingLLM, FallbackLLMBridge
 from engines.docs.run_state import RunStateStore
 from gov.privacy import Tier
 
 
 def test_completed_chunk_is_skipped_on_retry(tmp_path):
     store = RunStateStore(path=str(tmp_path / "run_state.json"))
-    run = store.start_run(
+    store.start_run(
         "run-1",
         source_path="/fake/deck.pptx",
         doc_id="deck-1",

@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
+from mcp_server.server import dispatch
 from ops.alerts import AlertStore
 from ops.backup import restore_backup, run_backup
 from ops.scheduler import run_scheduled_ingestion
-from mcp_server.server import dispatch
 
 
 def test_backup_includes_brain_stores_and_knowledge_artifacts(tmp_path):

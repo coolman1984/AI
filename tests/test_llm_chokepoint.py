@@ -36,12 +36,15 @@ def _fake_extract(path: str, cfg=None) -> Document:
 
 def test_repo_has_no_second_direct_llm_path():
     repo_root = Path(".").resolve()
-    allowed = repo_root / "engines" / "docs" / "report_reader.py"
+    allowed = {
+        (repo_root / "engines" / "docs" / "report_reader.py").resolve(),
+        (repo_root / "engines" / "docs" / "llm_bridge.py").resolve(),
+    }
     roots = ["engines", "serving", "shared", "gov", "mcp_server"]
 
     for root in roots:
         for path in (repo_root / root).rglob("*.py"):
-            if path.resolve() == allowed:
+            if path.resolve() in allowed:
                 continue
             tree = ast.parse(path.read_text(encoding="utf-8"))
             for node in ast.walk(tree):

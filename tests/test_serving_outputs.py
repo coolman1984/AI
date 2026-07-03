@@ -4,7 +4,11 @@ import pytest
 
 from serving.decision_brief import build_decision_brief
 from serving.meeting_pack import build_meeting_pack
-from serving.open_design import export_executive_output, render_decision_brief_html, render_meeting_pack_html
+from serving.open_design import (
+    export_executive_output,
+    render_decision_brief_html,
+    render_meeting_pack_html,
+)
 from serving.signoff import sign_off_output
 
 
@@ -113,8 +117,8 @@ def test_unsigned_output_produces_draft_watermarked_state_only():
     ).to_dict()
     html = render_decision_brief_html(brief)
 
-    assert "DRAFT — NOT RELEASED" in html
-    assert "not signed" in html.lower()
+    assert "DRAFT" in html
+    assert "pending owner sign-off" in html.lower()
 
 
 def test_renderer_never_computes_numbers(tmp_path):

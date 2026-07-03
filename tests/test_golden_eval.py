@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
-
-import pytest
 
 from eval.runner import load_manifest, run_golden_eval, validate_manifest
 from mcp_server.server import dispatch

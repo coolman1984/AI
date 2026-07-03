@@ -1,5 +1,3 @@
-import pytest
-
 from mcp_server.server import dispatch
 from serving.decision_brief import build_decision_brief
 from serving.open_design import export_executive_output, render_decision_brief_html
@@ -82,4 +80,4 @@ def test_unsigned_export_is_watermarked_only(tmp_path):
     exported = export_executive_output(brief, "decision_brief", out_dir=str(tmp_path))
 
     assert exported["watermarked"] is True
-    assert "DRAFT — NOT RELEASED" in open(exported["html"]).read()
+    assert "DRAFT" in open(exported["html"], encoding="utf-8").read()

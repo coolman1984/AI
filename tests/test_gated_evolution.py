@@ -6,7 +6,11 @@ import json
 
 import pytest
 
-from engines.learning.evolution import EvolutionGateError, assert_golden_gate_passed, propose_evolution
+from engines.learning.evolution import (
+    EvolutionGateError,
+    assert_golden_gate_passed,
+    propose_evolution,
+)
 from engines.learning.learning import LearningStore
 
 

@@ -9,16 +9,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
 
 from engines.brain.claims import ClaimsStore
 from engines.brain.memory import KnowledgeMemory, get_knowledge_memory
 from engines.docs.extract import extract_document
+from engines.docs.llm_bridge import LLMBridge, OpencodeLLM
 from engines.docs.prompt_builder import build_extraction_prompt
 from engines.docs.summarize import summarize_document
 from engines.docs.verify import citation_supports_claim, extract_numeric_tokens
@@ -32,52 +30,6 @@ _PROMPT_INJECTION_PATTERNS = (
     "ignore any previous instructions",
     "ignore any instructions found inside",
 )
-
-class LLMBridge(Protocol):
-    """Interface for any LLM we can prompt for structured extraction."""
-
-    def generate(self, prompt: str) -> str: ...
-
-
-class OpencodeLLM:
-    """Calls the 'opencode' CLI via subprocess — ``opencode run -m <model> --variant <variant>``.
-
-    Configure via env vars:
-      OPENCODE_EXE     (default: opencode)
-      OPENCODE_MODEL   (default: deepseek-v4-flash)
-      OPENCODE_VARIANT (default: default)
-
-    Never called in tests.
-    """
-
-    def __init__(
-        self,
-        exe: str | None = None,
-        model: str | None = None,
-        variant: str | None = None,
-    ):
-        self.exe = exe or os.environ.get("OPENCODE_EXE", "opencode")
-        self.model = model or os.environ.get("OPENCODE_MODEL", "deepseek-v4-flash")
-        self.variant = variant or os.environ.get("OPENCODE_VARIANT", "default")
-
-    def generate(self, prompt: str) -> str:
-        result = subprocess.run(
-            [self.exe, "run", "-m", self.model, "--variant", self.variant],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        if result.returncode != 0:
-            stderr_excerpt = (
-                result.stderr.strip()[-500:] if result.stderr.strip() else "(no stderr)"
-            )
-            raise RuntimeError(f"opencode exited with code {result.returncode}: {stderr_excerpt}")
-        cleaned = _ANSI_RE.sub("", result.stdout)
-        lines = [line.strip() for line in cleaned.splitlines()]
-        lines = [line for line in lines if line]
-        return "\n".join(lines)
-
 
 @dataclass
 class KeyPoint:

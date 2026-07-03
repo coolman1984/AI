@@ -14,9 +14,9 @@ import openpyxl
 
 from engines.data.ingest import (
     get_connection,
-    init_ingestion_schema,
     ingest_csv_tracked,
     ingest_excel_tracked,
+    init_ingestion_schema,
 )
 from engines.data.pdf_tables import ingest_pdf_tables_tracked
 

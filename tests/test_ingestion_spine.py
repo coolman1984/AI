@@ -3,9 +3,8 @@ from __future__ import annotations
 import csv
 
 import duckdb
-import pytest
-
 import openpyxl
+import pytest
 
 from engines.data.ingest import (
     finish_ingestion_run,

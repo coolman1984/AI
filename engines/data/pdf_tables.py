@@ -167,7 +167,7 @@ def ingest_pdf_tables_tracked(
                 accepted_rows.append(row)
 
     staging = f"__staging_{table}"
-    rows_in = _load_pdf_rows_to_staging(con, staging, accepted_rows, headers)
+    _load_pdf_rows_to_staging(con, staging, accepted_rows, headers)
 
     result = _ingest_staging_tracked(
         con,

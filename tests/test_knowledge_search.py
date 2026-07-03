@@ -132,6 +132,8 @@ def test_result_shape_is_compact_and_agent_safe(tmp_path):
         "claims",
         "open_questions",
         "contradictions",
+        "edges",
+        "resolved_entity",
         "notes",
     }
     assert isinstance(result["notes"], list)

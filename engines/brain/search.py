@@ -7,8 +7,8 @@ import re
 from engines.brain.claims import ClaimsStore
 from engines.brain.contradictions import find_contradictions
 from engines.brain.edges import EdgeStore
-from engines.brain.open_questions import OpenQuestionsStore
 from engines.brain.ontology import OntologyStore
+from engines.brain.open_questions import OpenQuestionsStore
 from engines.brain.registry import DocumentRegistry
 from engines.brain.workflow_family import WorkflowFamilyStore
 

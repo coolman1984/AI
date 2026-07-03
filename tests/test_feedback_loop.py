@@ -1,6 +1,10 @@
 import pytest
 
-from engines.learning.feedback import VALID_VERDICTS, glossary_candidate_from_correction, record_output_feedback
+from engines.learning.feedback import (
+    VALID_VERDICTS,
+    glossary_candidate_from_correction,
+    record_output_feedback,
+)
 from mcp_server.server import dispatch
 
 

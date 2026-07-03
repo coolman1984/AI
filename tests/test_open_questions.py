@@ -1,4 +1,3 @@
-import pytest
 
 from engines.brain.open_questions import OpenQuestionsStore
 from engines.learning.outcomes import OutcomeStore

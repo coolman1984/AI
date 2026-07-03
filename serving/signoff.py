@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
 
 from engines.audit.audit import approve_report
 from shared.contracts.models import AuditResult, SignOff

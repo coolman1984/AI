@@ -1,8 +1,7 @@
-import json
 
 import pytest
 
-from engines.brain.registry import DocumentRegistry, VALID_STATUSES
+from engines.brain.registry import VALID_STATUSES, DocumentRegistry
 from mcp_server.server import dispatch
 
 

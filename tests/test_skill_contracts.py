@@ -5,8 +5,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import pytest
-
 SKILLS_DIR = Path("agent_skills")
 SKILL_MAP = Path("AGENT_SKILL_MAP.md")
 

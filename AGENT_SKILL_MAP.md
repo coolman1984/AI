@@ -96,6 +96,8 @@ Load:
 - the task needs an independent audit of non-numeric brief claims from documents or decks
 - the task involves open questions, decision outcomes, or contradiction review
 - the task is to sign off or record owner feedback on executive briefs, packs, or reports
+- the task needs golden eval regression gates, MCP access review, backup/restore drills, or session resume state
+- the task involves gated self-evolution (T12) after golden eval passes
 
 Load:
 `agent_skills/audit_and_trust.md`

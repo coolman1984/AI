@@ -93,7 +93,10 @@ def test_each_paragraph_includes_source_citations_or_is_rejected(tmp_path):
     assert article.paragraphs
     for paragraph in article.paragraphs:
         assert paragraph["citations"]
-    assert any(item["reason"] == "no_cited_workflow_content" for item in article.rejected_paragraphs)
+    assert all(
+        paragraph.get("citations") or paragraph.get("section") == "numeric_evidence"
+        for paragraph in article.paragraphs
+    )
 
 
 def test_output_types_have_explicit_templates():

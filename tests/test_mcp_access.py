@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import yaml
 import pytest
+import yaml
 
 from mcp_server.server import TOOLS, dispatch, tool_run_finance_card
 
