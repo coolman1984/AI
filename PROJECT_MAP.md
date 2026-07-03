@@ -933,6 +933,14 @@ pytesseract, pillow, pyyaml, pytest, ruff
 6. **Every rendered number carries a provenance tag** — `AUDITED-FROM-QUERY` or `CLAIMED-FROM-DECK`
 7. **No number originates from generation** — all numbers come from SQL/Polars queries
 
+### Known Critical Fragilities & Bug Backlog (as of 2026-07-03):
+1. **Locale-Parsing Bug (`engines/data/clean.py`):** The canonical parser `parse_amount()` normalizes German decimals but misinterprets European dot-separated integers (e.g., `"1.234"` parses as `1.234` instead of `1234.0`), creating a **99.9% value distortion** on pure numbers.
+2. **In-Memory OOM Danger (`engines/data/ingest.py`):** When `infer_types=True`, the ingest engine retrieves all rows from the staging table using `.fetchall()` to execute Python-based loops. For real SAP sheets (~600k rows × 272 columns), this causes an Out-Of-Memory (OOM) crash, violating the Golden Rule.
+3. **Silent PVM Coercion (`engines/data/variance.py`):** polars `cast` in PVM uses `strict=False`, silently converting invalid strings in the quantity column into `0.0` rather than generating `RejectRecord` alerts. Junk columns bypass the clean stage.
+4. **Weak Audit Independence (`engines/audit/audit.py`):** The re-run query in `audit_card()` queries pre-cleansed Polars DataFrames (`clean_actuals`) registered in DuckDB rather than re-cleansing the raw staging tables.
+5. **OCR Failures on Born-Digital Tables (`engines/docs/ocr.py`):** `extraction_quality()` calculates scores based on alphabetical words. pure numeric financial tables score `0.0` and trigger slow raster-OCR cascades unnecessarily.
+6. **Figure Verification Locale Bug (`engines/docs/verify.py`):** Comma-stripping in `extract_numeric_tokens()` turns European decimal separators (`"12,34"`) into `"1234"`, causing false citation mismatches.
+
 ---
 
 ## 11. Quick Reference for Common Operations
