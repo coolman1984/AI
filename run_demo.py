@@ -18,12 +18,12 @@ def main() -> None:
     shutil.rmtree(".brain", ignore_errors=True)  # fresh memory for a deterministic demo
     cfg = yaml.safe_load(open("config.yaml"))
     out = run_pipeline(
-        "data/sample/finance_actuals.csv",
-        "data/sample/finance_budget.csv",
+        "datasets/sample/finance_actuals.csv",
+        "datasets/sample/finance_budget.csv",
         cfg,
         approver="analyst_mohamed",
-        budget_pdf="data/sample/budget_approval_2026.pdf",
-        standards_csv="data/sample/finance_standards.csv",
+        budget_pdf="datasets/sample/budget_approval_2026.pdf",
+        standards_csv="datasets/sample/finance_standards.csv",
         period="2026-05",
     )
 
@@ -58,7 +58,7 @@ def main() -> None:
     from engines.docs.extract import extract_document
     print()
     print("OCR CASCADE on a scanned (image-only) PDF:")
-    scanned = extract_document("data/sample/budget_approval_scanned.pdf", cfg)
+    scanned = extract_document("datasets/sample/budget_approval_scanned.pdf", cfg)
     p = scanned.pages[0]
     print(f"  born-digital failed -> OCR engine used: {p.ocr_engine}, "
           f"confidence={p.ocr_confidence:.2f}, needs_review={p.needs_review}")
@@ -66,11 +66,11 @@ def main() -> None:
 
     # --- temporal memory: run a second period and detect what changed ---
     run_pipeline(
-        "data/sample/finance_actuals_2026_06.csv",
-        "data/sample/finance_budget.csv",
+        "datasets/sample/finance_actuals_2026_06.csv",
+        "datasets/sample/finance_budget.csv",
         cfg,
         approver="analyst_mohamed",
-        standards_csv="data/sample/finance_standards.csv",
+        standards_csv="datasets/sample/finance_standards.csv",
         period="2026-06",
     )
     print()
@@ -90,8 +90,8 @@ def main() -> None:
     # --- Stage 7: a SECOND department by config only, then the factory brain ---
     from engines.brain.factory import cross_department_entities, factory_brief, run_department
     plan_out = run_department(
-        "planning", "data/sample/planning_actuals.csv",
-        "data/sample/planning_plan.csv", cfg, approver="planner", period="2026-05",
+        "planning", "datasets/sample/planning_actuals.csv",
+        "datasets/sample/planning_plan.csv", cfg, approver="planner", period="2026-05",
     )
     print()
     print("SECOND DEPARTMENT — Planning (same engines, only a new lens config):")
@@ -110,7 +110,7 @@ def main() -> None:
     # --- T8: explain the variance (price / volume / mix) — the "why" ---
     from engines.data.drivers import run_variance_decomposition
     d = run_variance_decomposition(
-        "data/sample/finance_actuals.csv", "data/sample/finance_standards.csv", cfg
+        "datasets/sample/finance_actuals.csv", "datasets/sample/finance_standards.csv", cfg
     )["decomposition"]
     print()
     print("VARIANCE DECOMPOSITION (why the number moved):")

@@ -34,7 +34,7 @@ def test_skill_md_lint_passes():
 
 def test_reconcile_no_table():
     """Reconciling a non-existent table should fail informatively."""
-    from skills.reconcile_and_validate.run import run_reconcile
+    from skills.reconcile_and_validate.scripts.run import run_reconcile
 
     result = run_reconcile(
         "nonexistent_table", control_total=100.0,
@@ -44,7 +44,7 @@ def test_reconcile_no_table():
 
 def test_reconcile_negative_control():
     """Negative control totals should be handled without crash."""
-    from skills.reconcile_and_validate.run import run_reconcile
+    from skills.reconcile_and_validate.scripts.run import run_reconcile
 
     result = run_reconcile(
         "nonexistent_table", control_total=-100.0, tolerance=0.01,

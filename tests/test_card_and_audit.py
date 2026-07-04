@@ -13,13 +13,13 @@ AUDIT_CFG = {"recompute_tolerance": 0.01, "certainty_release_threshold": 0.80,
 
 def _build():
     con = get_connection()
-    rows_in = ingest_csv(con, "ra", "data/sample/finance_actuals.csv")
-    ingest_csv(con, "rb", "data/sample/finance_budget.csv")
+    rows_in = ingest_csv(con, "ra", "datasets/sample/finance_actuals.csv")
+    ingest_csv(con, "rb", "datasets/sample/finance_budget.csv")
     budget = con.execute("SELECT sub_assembly, budget_amount FROM rb").pl()
     clean, rejects, _ = clean_actuals(con, "ra")
     bridge = material_cost_variance(clean, budget)
     decomp = run_variance_decomposition(
-        "data/sample/finance_actuals.csv", "data/sample/finance_standards.csv", {"audit": AUDIT_CFG}
+        "datasets/sample/finance_actuals.csv", "datasets/sample/finance_standards.csv", {"audit": AUDIT_CFG}
     )["decomposition"]
     dq = compute_data_quality(rows_in, rejects, bridge.total_actual, AUDIT_CFG)
     card = make_manager_card(bridge, dq, decomposition=decomp)

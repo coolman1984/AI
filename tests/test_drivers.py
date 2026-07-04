@@ -24,7 +24,7 @@ def test_pvm_reconciles_and_known_price():
 def test_pvm_on_samples_reconciles_to_the_cent():
     cfg = yaml.safe_load(open("config.yaml"))
     out = run_variance_decomposition(
-        "data/sample/finance_actuals.csv", "data/sample/finance_standards.csv", cfg
+        "datasets/sample/finance_actuals.csv", "datasets/sample/finance_standards.csv", cfg
     )
     d = out["decomposition"]
     assert d.reconciles(0.01)

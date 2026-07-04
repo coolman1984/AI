@@ -2,7 +2,7 @@ from engines.docs.extract import PyPdfExtractor, extract_document
 from engines.docs.ocr import extract_page_text, extraction_quality
 from engines.docs.search import search_documents
 
-PDF = "data/sample/budget_approval_2026.pdf"
+PDF = "datasets/sample/budget_approval_2026.pdf"
 
 
 def test_pypdf_extracts_real_pdf_text():

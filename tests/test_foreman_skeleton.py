@@ -35,7 +35,7 @@ def test_folders_exist(folder):
 
 def test_required_tracked_folders_have_readme():
     """Tracked FOREMAN folders must have a README.md."""
-    tracked = ["skills", "templates", "schemas", "registry", "vault"]
+    tracked = ["skills", "schemas", "registry", "vault"]
     for folder in tracked:
         readme = os.path.join(BASE, folder, "README.md")
         assert os.path.isfile(readme), f"Missing README in {folder}"
@@ -50,12 +50,13 @@ def test_gitignore_ignores_data_folders():
     content = open(gitignore_path).read()
     required = [
         "datasets/registered/",
-        "runs/",
-        "reports/",
-        "logs/",
-        "exports/",
-        "evidence/",
-        "approvals/",
+        "workspace/runs/",
+        "workspace/reports/",
+        "workspace/logs/",
+        "workspace/exports/",
+        "workspace/evidence/",
+        "workspace/approvals/",
+        "workspace/out/",
         "registry/*.db",
     ]
     for entry in required:

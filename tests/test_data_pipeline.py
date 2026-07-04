@@ -5,8 +5,8 @@ from engines.data.variance import material_cost_variance
 
 def _load():
     con = get_connection()
-    rows_in = ingest_csv(con, "raw_actuals", "data/sample/finance_actuals.csv")
-    ingest_csv(con, "raw_budget", "data/sample/finance_budget.csv")
+    rows_in = ingest_csv(con, "raw_actuals", "datasets/sample/finance_actuals.csv")
+    ingest_csv(con, "raw_budget", "datasets/sample/finance_budget.csv")
     budget = con.execute("SELECT sub_assembly, budget_amount FROM raw_budget").pl()
     clean, rejects, _ = clean_actuals(con, "raw_actuals")
     return rows_in, clean, rejects, budget

@@ -1,4 +1,4 @@
-"""Normalized document model (aligns with schema/document.schema.json).
+"""Normalized document model (aligns with schemas/document.schema.json).
 
 Documents are EVIDENCE, never a numeric source of truth. Every page knows whether its text
 came from OCR and how confident that OCR was, so low-confidence text can be routed to the

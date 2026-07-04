@@ -11,12 +11,12 @@ from shared.contracts.models import EvidenceRef, NumberFact
 
 def _ctx():
     out = run_pipeline(
-        "data/sample/finance_actuals.csv",
-        "data/sample/finance_budget.csv",
+        "datasets/sample/finance_actuals.csv",
+        "datasets/sample/finance_budget.csv",
         yaml.safe_load(open("config.yaml")),
         approver="analyst_mohamed",
-        budget_pdf="data/sample/budget_approval_2026.pdf",
-        standards_csv="data/sample/finance_standards.csv",
+        budget_pdf="datasets/sample/budget_approval_2026.pdf",
+        standards_csv="datasets/sample/finance_standards.csv",
     )
     return out["ctx"]
 

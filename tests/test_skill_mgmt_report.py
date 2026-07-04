@@ -34,7 +34,7 @@ def test_skill_md_lint_passes():
 
 def test_report_no_table():
     """Generating a report from a non-existent table should fail informatively."""
-    from skills.management_report.run import run_management_report
+    from skills.management_report.scripts.run import run_management_report
 
     result = run_management_report("nonexistent_table", period="2026-05")
     assert result["status"] in ("failed", "blocked")
@@ -42,7 +42,7 @@ def test_report_no_table():
 
 def test_report_produces_files(tmp_path):
     """A report should produce the expected output files."""
-    from skills.management_report.run import run_management_report
+    from skills.management_report.scripts.run import run_management_report
 
     # Can't fully test without DuckDB, so check graceful handling
     result = run_management_report(

@@ -17,7 +17,7 @@ def test_planning_runs_on_same_engine_via_config_only():
     lens = load_lens("planning")
     assert lens["metric"] == "output_plan_variance" and lens["value_col"] == "output"
     out = run_department(
-        "planning", "data/sample/planning_actuals.csv", "data/sample/planning_plan.csv",
+        "planning", "datasets/sample/planning_actuals.csv", "datasets/sample/planning_plan.csv",
         _cfg(), approver="planner", period="2026-05",
     )
     assert out["bridge"].reconciles()
@@ -39,10 +39,10 @@ def test_access_control_scopes():
 def test_factory_brief_is_role_scoped_and_finds_cross_links():
     shutil.rmtree(".brain", ignore_errors=True)
     cfg = _cfg()
-    fin = run_department("finance", "data/sample/finance_actuals.csv",
-                         "data/sample/finance_budget.csv", cfg, approver="cfo")
-    plan = run_department("planning", "data/sample/planning_actuals.csv",
-                          "data/sample/planning_plan.csv", cfg, approver="planner")
+    fin = run_department("finance", "datasets/sample/finance_actuals.csv",
+                         "datasets/sample/finance_budget.csv", cfg, approver="cfo")
+    plan = run_department("planning", "datasets/sample/planning_actuals.csv",
+                          "datasets/sample/planning_plan.csv", cfg, approver="planner")
     results = {"finance": fin, "planning": plan}
 
     ceo = factory_brief(results, "ceo", cfg)

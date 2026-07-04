@@ -7,7 +7,7 @@ from engines.docs.extract import extract_document
 from engines.docs.ocr import TesseractOcrEngine, ocr_cascade
 
 TESS = shutil.which("tesseract") is not None
-SCANNED_PDF = "data/sample/budget_approval_scanned.pdf"
+SCANNED_PDF = "datasets/sample/budget_approval_scanned.pdf"
 
 
 def _rendered_image():

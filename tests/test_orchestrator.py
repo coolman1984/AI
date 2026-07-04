@@ -10,11 +10,11 @@ def _cfg():
 
 def test_end_to_end_pipeline_releases_after_signoff():
     out = run_pipeline(
-        "data/sample/finance_actuals.csv",
-        "data/sample/finance_budget.csv",
+        "datasets/sample/finance_actuals.csv",
+        "datasets/sample/finance_budget.csv",
         _cfg(),
         approver="analyst_mohamed",
-        standards_csv="data/sample/finance_standards.csv",
+        standards_csv="datasets/sample/finance_standards.csv",
     )
     assert out["audit"].passed is True
     assert out["released"] is True
@@ -27,11 +27,11 @@ def test_end_to_end_pipeline_releases_after_signoff():
 def test_mcp_dispatch_runs_the_tool():
     out = dispatch(
         "run_finance_card",
-        actuals_csv="data/sample/finance_actuals.csv",
-        budget_csv="data/sample/finance_budget.csv",
+        actuals_csv="datasets/sample/finance_actuals.csv",
+        budget_csv="datasets/sample/finance_budget.csv",
         cfg=_cfg(),
         approver="cfo",
-        standards_csv="data/sample/finance_standards.csv",
+        standards_csv="datasets/sample/finance_standards.csv",
     )
     assert out["bridge"].total_variance == 100.0
     assert out["card"].driver_split is not None

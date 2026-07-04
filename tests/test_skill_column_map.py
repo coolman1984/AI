@@ -34,7 +34,7 @@ def test_skill_md_lint_passes():
 
 def test_run_profile_and_map_no_table():
     """Calling without a valid table should return an informative error."""
-    from skills.column_profile_and_map.run import run_profile_and_map
+    from skills.column_profile_and_map.scripts.run import run_profile_and_map
 
     result = run_profile_and_map("nonexistent_table")
     assert result["status"] == "failed"
@@ -43,7 +43,7 @@ def test_run_profile_and_map_no_table():
 
 def test_run_profile_and_map_with_prior():
     """Prior mapping should be reflected in the proposal."""
-    from skills.column_profile_and_map.run import run_profile_and_map
+    from skills.column_profile_and_map.scripts.run import run_profile_and_map
     prior = {"old_col": "new_col"}
     result = run_profile_and_map("test", prior_mapping=prior)
     # Will fail to find table, but prior mapping in args should not crash

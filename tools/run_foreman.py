@@ -63,7 +63,7 @@ def run_foreman(
 
     try:
         # === SK-001: excel-intake ===
-        from skills.excel_intake.run import run_excel_intake
+        from skills.excel_intake.scripts.run import run_excel_intake
 
         if dry_run:
             results["steps"]["sk001"] = {"status": "dry_run", "message": "Skipped (dry run)"}
@@ -81,7 +81,7 @@ def run_foreman(
                 return results
 
         # === SK-002: column-profile-and-map ===
-        from skills.column_profile_and_map.run import run_profile_and_map
+        from skills.column_profile_and_map.scripts.run import run_profile_and_map
 
         if dry_run:
             results["steps"]["sk002"] = {"status": "dry_run"}
@@ -98,7 +98,7 @@ def run_foreman(
                     results["blocked_at"] = "SK-002"
 
         # === SK-003: load-to-database ===
-        from skills.load_to_database.run import run_load_to_database
+        from skills.load_to_database.scripts.run import run_load_to_database
 
         if dry_run:
             results["steps"]["sk003"] = {"status": "dry_run"}
@@ -117,7 +117,7 @@ def run_foreman(
                 return results
 
         # === SK-004: reconcile-and-validate ===
-        from skills.reconcile_and_validate.run import run_reconcile
+        from skills.reconcile_and_validate.scripts.run import run_reconcile
 
         if dry_run:
             results["steps"]["sk004"] = {"status": "dry_run"}
@@ -139,7 +139,7 @@ def run_foreman(
                     results["blocked_at"] = "SK-004"
 
         # === SK-005: management-report ===
-        from skills.management_report.run import run_management_report
+        from skills.management_report.scripts.run import run_management_report
 
         if dry_run:
             results["steps"]["sk005"] = {"status": "dry_run"}

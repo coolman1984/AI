@@ -83,7 +83,7 @@ def test_excel_intake_skill_md_has_required_sections():
 
 def test_excel_intake_missing_file_returns_error(db):
     """Calling run_excel_intake on a non-existent file should return error."""
-    from skills.excel_intake.run import run_excel_intake
+    from skills.excel_intake.scripts.run import run_excel_intake
     result = run_excel_intake("/nonexistent/file.xlsx", db_registry=db)
     assert result["status"] in ("failed", "blocked")
     assert "not found" in result.get("error", "").lower()
@@ -91,7 +91,7 @@ def test_excel_intake_missing_file_returns_error(db):
 
 def test_excel_intake_creates_fingerprint_on_real_file(db):
     """Running intake on a real temp file should produce a fingerprint."""
-    from skills.excel_intake.run import run_excel_intake
+    from skills.excel_intake.scripts.run import run_excel_intake
 
     with tempfile.TemporaryDirectory() as tmp:
         # Create a simple CSV (works without DuckDB engine dependency)

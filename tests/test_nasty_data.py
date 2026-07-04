@@ -102,7 +102,7 @@ def test_extract_numeric_tokens_handles_parenthesized_negative():
 def test_run_variance_decomposition_reports_standards_rejects_separately():
     cfg = yaml.safe_load(open("config.yaml"))
     out = run_variance_decomposition(
-        "data/sample/finance_actuals.csv", "data/sample/finance_standards.csv", cfg
+        "datasets/sample/finance_actuals.csv", "datasets/sample/finance_standards.csv", cfg
     )
     assert "actuals_rejects" in out
     assert "standards_rejects" in out
