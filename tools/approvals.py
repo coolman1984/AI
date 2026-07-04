@@ -5,7 +5,7 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Tests may monkeypatch this to tmp_path / "approvals"
-_APPROVALS_ROOT = _PROJECT_ROOT / "approvals"
+_APPROVALS_ROOT = _PROJECT_ROOT / "workspace" / "approvals"
 
 VALID_TYPES = {"external_send", "skill_promotion", "write_action", "sensitive_memory"}
 

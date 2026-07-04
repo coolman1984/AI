@@ -6,7 +6,7 @@ Helps the owner curate raw lessons into vault notes during the weekly 15-minute 
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_LESSONS_DIR = _PROJECT_ROOT / "lessons"
+_LESSONS_DIR = _PROJECT_ROOT / "workspace" / "lessons"
 _VAULT_NOTES = _PROJECT_ROOT / "vault" / "notes"
 
 

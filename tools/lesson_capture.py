@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_LESSONS_DIR = _PROJECT_ROOT / "lessons"
+_LESSONS_DIR = _PROJECT_ROOT / "workspace" / "lessons"
 _LESSON_TEMPLATE = _PROJECT_ROOT / "templates" / "LESSON.md"
 
 

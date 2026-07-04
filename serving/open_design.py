@@ -173,7 +173,7 @@ class OpenDesignRenderer:
         )
 
 
-def export_report(ctx: dict, out_dir: str = "out") -> dict:
+def export_report(ctx: dict, out_dir: str = "workspace/out") -> dict:
     """Write the artifacts. Built-in HTML always; PPTX if python-pptx is present."""
 
     Path(out_dir).mkdir(parents=True, exist_ok=True)
@@ -368,7 +368,7 @@ EXECUTIVE_RENDERERS = {
 def export_executive_output(
     output: dict,
     output_type: str,
-    out_dir: str = "out",
+    out_dir: str = "workspace/out",
 ) -> dict:
     """Export executive outputs through the shared rendering layer."""
     if output_type not in EXECUTIVE_RENDERERS:

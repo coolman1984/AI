@@ -7,8 +7,8 @@ import hashlib
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_DASHBOARDS_DIR = _PROJECT_ROOT / "dashboards"
-_REPORTS_DIR = _PROJECT_ROOT / "reports"
+_DASHBOARDS_DIR = _PROJECT_ROOT / "workspace" / "dashboards"
+_REPORTS_DIR = _PROJECT_ROOT / "workspace" / "reports"
 
 
 def build_dashboard(

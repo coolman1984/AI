@@ -83,7 +83,7 @@ def main() -> None:
 
     # --- visual output: export the audited, signed card to HTML + PPTX ---
     from serving.open_design import export_report
-    paths = export_report(out["ctx"], out_dir="out")
+    paths = export_report(out["ctx"], out_dir="workspace/out")
     print()
     print(f"VISUAL OUTPUT: dashboard -> {paths['html']}   deck -> {paths['pptx']}")
 

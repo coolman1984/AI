@@ -32,7 +32,7 @@ def run_management_report(
             return {"status": "failed", "error": f"Cannot connect to DuckDB: {e}"}
 
     if output_dir is None:
-        output_dir = str(Path(__file__).resolve().parent.parent.parent / "reports")
+        output_dir = str(Path(__file__).resolve().parent.parent.parent / "workspace" / "reports")
     os.makedirs(output_dir, exist_ok=True)
 
     try:

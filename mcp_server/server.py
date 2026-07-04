@@ -248,7 +248,7 @@ def tool_sign_off_output(
 def tool_export_executive_output(
     output: dict,
     output_type: str,
-    out_dir: str = "out",
+    out_dir: str = "workspace/out",
 ):
     return export_executive_output(output, output_type, out_dir=out_dir)
 
