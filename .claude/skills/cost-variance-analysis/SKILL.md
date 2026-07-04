@@ -1,3 +1,8 @@
+---
+name: cost-variance-analysis
+description: Use whenever the task is budget versus actual, standard versus actual, prior-period comparison, or any question about why cost changed and the answer must come from reconciled driver logic such as price, volume, and mix rather than from raw ingestion or report prose.
+---
+
 # Skill — Cost Variance Analysis
 
 ## Mission
@@ -81,8 +86,8 @@ Turn trusted tabular inputs into a grounded explanation of cost movement, with d
 
 ## Typical downstream handoff
 Usually hands off to:
-- `agent_skills/audit_and_trust.md`
-- then `agent_skills/management_reporting.md`
+- `.claude/skills/audit-and-trust/SKILL.md`
+- then `.claude/skills/management-reporting/SKILL.md`
 
 ## Existing repo anchors
 - `engines/data/variance.py`

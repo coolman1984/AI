@@ -39,7 +39,7 @@ Do **not** load every skill by default.
 - the task needs multi-sheet Excel ingestion, per-column type inference, or the `ingest_spreadsheet` MCP tool
 
 Load:
-`agent_skills/spreadsheet_ingestion.md`
+`.claude/skills/spreadsheet-ingestion/SKILL.md`
 
 ### Use document evidence extraction skill when
 - the task starts from PDF, Word, PowerPoint, scans, screenshots, or mixed document bundles
@@ -55,7 +55,7 @@ Load:
 - the task needs the explicit Docling hard-layout parser path for difficult PDF/DOCX/PPTX layouts (opt-in only)
 
 Load:
-`agent_skills/document_evidence_extraction.md`
+`.claude/skills/document-evidence-extraction/SKILL.md`
 
 ### Use cost variance analysis skill when
 - the task is about variance, cost drivers, budget vs actual, standard vs actual, price/volume/mix, or cost explanation
@@ -63,7 +63,7 @@ Load:
 - the task depends on trusted numeric decomposition
 
 Load:
-`agent_skills/cost_variance_analysis.md`
+`.claude/skills/cost-variance-analysis/SKILL.md`
 
 ### Use management reporting skill when
 - the task is to produce a manager card, dashboard, presentation, or decision-ready summary
@@ -73,7 +73,7 @@ Load:
 - the task is to export a signed executive output to HTML or PPTX
 
 Load:
-`agent_skills/management_reporting.md`
+`.claude/skills/management-reporting/SKILL.md`
 
 ### Use knowledge search skill when
 - the user asks what the system knows about a process, workflow, KPI, or document family
@@ -84,7 +84,15 @@ Load:
 - the task needs labeled `AI-SUGGESTED IDEA` synthesis after contradictions are surfaced
 
 Load:
-`agent_skills/knowledge_search.md`
+`.claude/skills/knowledge-search/SKILL.md`
+
+### Use FOREMAN pipeline skill when
+- the task is to process a new factory spreadsheet end-to-end through FOREMAN
+- the work must follow the exact SK-001 → SK-002 → SK-003 → SK-004 → SK-005 chain
+- the user wants a governed path from inbox file to signed report without improvisation
+
+Load:
+`.claude/skills/foreman-pipeline/SKILL.md`
 
 ### Use audit and trust skill when
 - the task needs release gating, independent re-checking, certainty scoring, reconciliation, or human sign-off
@@ -98,7 +106,7 @@ Load:
 - the task involves gated self-evolution (T12) after golden eval passes
 
 Load:
-`agent_skills/audit_and_trust.md`
+`.claude/skills/audit-and-trust/SKILL.md`
 
 ---
 

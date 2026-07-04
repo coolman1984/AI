@@ -1,3 +1,8 @@
+---
+name: spreadsheet-ingestion
+description: Use whenever the task starts from Excel, CSV, SAP exports, or other wide operational tables and the job is to ingest, clean, profile, or store tabular data with row rejection and conservation checks, even if the user does not say the word ingest.
+---
+
 # Skill — Spreadsheet Ingestion
 
 ## Mission
@@ -89,8 +94,8 @@ Read tabular operational sources safely, profile them, normalize them, and land 
 
 ## Typical downstream handoff
 Usually hands off to:
-- `agent_skills/cost_variance_analysis.md`
-- or `agent_skills/audit_and_trust.md`
+- `.claude/skills/cost-variance-analysis/SKILL.md`
+- or `.claude/skills/audit-and-trust/SKILL.md`
 
 ## Existing repo anchors
 - `engines/data/AGENTS.md`

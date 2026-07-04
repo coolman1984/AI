@@ -22,7 +22,7 @@ work safely, and where to drill down. **Rules and read order:** `AGENTS.md` (aut
 | 1 | `README.md` | One-screen orientation |
 | 2 | `AGENTS.md` | Doc Law, three rules, **Core contract**, commands, git policy |
 | 3 | `PROJECT_MAP.md` | This file — structure and navigation |
-| 4 | `AGENT_SKILL_MAP.md` | Pick the **one** `agent_skills/*.md` file for your task |
+| 4 | `AGENT_SKILL_MAP.md` | Pick the **one** `.claude/skills/*/SKILL.md` file for your task |
 | 5 | Nearest `AGENTS.md` | Module you will edit (`engines/data/AGENTS.md`, etc.) |
 | 6 | Code + tests | Test-first; `pytest` is definition of done |
 
@@ -33,12 +33,12 @@ work safely, and where to drill down. **Rules and read order:** `AGENTS.md` (aut
 
 | You need to… | Start here |
 |---|---|
-| Ingest Excel/CSV/SAP export | `agent_skills/spreadsheet_ingestion.md` → `engines/data/ingest.py`, `clean.py` |
-| Variance / price-volume-mix | `agent_skills/cost_variance_analysis.md` → `engines/data/variance.py`, `drivers.py` |
-| PDF/PPTX/OCR evidence | `agent_skills/document_evidence_extraction.md` → `engines/docs/` |
-| Manager card / HTML / PPTX | `agent_skills/management_reporting.md` → `serving/` |
-| Audit before release | `agent_skills/audit_and_trust.md` → `engines/audit/` |
-| Search stored knowledge | `agent_skills/knowledge_search.md` → `engines/brain/search.py` |
+| Ingest Excel/CSV/SAP export | `.claude/skills/spreadsheet-ingestion/SKILL.md` → `engines/data/ingest.py`, `clean.py` |
+| Variance / price-volume-mix | `.claude/skills/cost-variance-analysis/SKILL.md` → `engines/data/variance.py`, `drivers.py` |
+| PDF/PPTX/OCR evidence | `.claude/skills/document-evidence-extraction/SKILL.md` → `engines/docs/` |
+| Manager card / HTML / PPTX | `.claude/skills/management-reporting/SKILL.md` → `serving/` |
+| Audit before release | `.claude/skills/audit-and-trust/SKILL.md` → `engines/audit/` |
+| Search stored knowledge | `.claude/skills/knowledge-search/SKILL.md` → `engines/brain/search.py` |
 | FOREMAN pipeline (SK-001→005) | `registry/skills.yaml` → `tools/run_foreman.py` → `skills/*` |
 | Hermes skills on this machine | `~/AppData/Local/hermes/skills/` + `AGENT_SKILL_MAP.md` Tier routing |
 | Change public contracts | `shared/contracts/models.py` — **ask owner first** |
@@ -155,10 +155,12 @@ G:\AI\
 │   ├── INDEX.md
 │   └── 00_control/, 03_design/, 01_inputs/ … 06_final_outputs/
 │
-├── agent_skills/                  # Load ONE skill per task (routing layer)
-│   ├── spreadsheet_ingestion.md, cost_variance_analysis.md, document_evidence_extraction.md
-│   ├── management_reporting.md, audit_and_trust.md, knowledge_search.md
-│   └── EXTERNAL_SKILLS_INVENTORY.md
+├── .claude/skills/                # Load ONE skill per task (canonical routing layer)
+│   ├── spreadsheet-ingestion/SKILL.md, cost-variance-analysis/SKILL.md
+│   ├── document-evidence-extraction/SKILL.md, management-reporting/SKILL.md
+│   ├── audit-and-trust/SKILL.md, knowledge-search/SKILL.md
+│   └── foreman-pipeline/SKILL.md
+├── 03_design/external_skills_inventory.md  # REFERENCE study of external skill libraries
 │
 ├── engines/                       # ★ Deterministic processing — numbers only from data/
 │   ├── data/        ingest, clean, variance, drivers, types, pdf_tables, query_readiness
@@ -186,7 +188,6 @@ G:\AI\
 ├── eval/                golden_manifest + runner
 ├── data/sample/         Demo CSV/PDF fixtures
 ├── tests/               76 modules, ~395 tests (see Section 8)
-├── downloads/           Cloned OSS refs — read-only
 └── .brain/              (gitignored) runtime claims/memory
 ```
 
@@ -209,7 +210,7 @@ The system is a **skill library** (not a monolithic app). From `assistant_master
 ```
 
 Three layers:
-1. **Skills** — `agent_skills/*.md` — small single-purpose capability documents
+1. **Skills** — `.claude/skills/*/*.md` — small single-purpose capability documents
 2. **Tools** — deterministic engines behind each skill, exposed via MCP server
 3. **Map** — `AGENT_SKILL_MAP.md` — tells any agent which skill to load for which task
 
@@ -582,20 +583,25 @@ duplicate it — see **Section 0** for the practical 3-minute path and task→la
 
 **NEVER load every skill or every document by default.** Load only what the task needs.
 
-### 7.2 The 6 Skill Files
+### 7.2 The 7 Skill Files
 
 | Skill File | When to Load | Key MCP Tools |
 |---|---|---|
-| `spreadsheet_ingestion.md` | Task starts from Excel/CSV/SAP exports | `profile_spreadsheet`, `ingest_spreadsheet` |
-| `document_evidence_extraction.md` | Task starts from PDF/PPTX/Word/Scans | `ingest_document`, `ingest_deck`, `search_documents` |
-| `cost_variance_analysis.md` | Task asks why cost changed | `query_numbers`, `decompose_variance` |
-| `management_reporting.md` | Task needs executive output | `render_card`, `render_brief`, `render_pack` |
-| `knowledge_search.md` | Task needs retrieval from stored knowledge | `search_knowledge`, `query_open_questions` |
-| `audit_and_trust.md` | Task needs verification/release gating | `audit_numbers`, `audit_claims`, `sign_off` |
+| `spreadsheet-ingestion/SKILL.md` | Task starts from Excel/CSV/SAP exports | `profile_spreadsheet`, `ingest_spreadsheet` |
+| `document-evidence-extraction/SKILL.md` | Task starts from PDF/PPTX/Word/Scans | `ingest_document`, `ingest_deck`, `search_documents` |
+| `cost-variance-analysis/SKILL.md` | Task asks why cost changed | `query_numbers`, `decompose_variance` |
+| `management-reporting/SKILL.md` | Task needs executive output | `render_card`, `render_brief`, `render_pack` |
+| `knowledge-search/SKILL.md` | Task needs retrieval from stored knowledge | `search_knowledge`, `query_open_questions` |
+| `audit-and-trust/SKILL.md` | Task needs verification/release gating | `audit_numbers`, `audit_claims`, `sign_off` |
+| `foreman-pipeline/SKILL.md` | Process new spreadsheet end-to-end through FOREMAN SK-001→SK-005 | `tools/run_foreman.py` |
+
+**Non-canonical skill surfaces (explicitly not part of this repo's live routing):**
+- `~/AppData/Local/hermes/skills/` is **EXTERNAL** — Hermes machine-level skills, not this repo's canonical agent skill library.
+- `.grok/skills/` is tool-local to Grok and not canonical for this repo.
 
 **External skill libraries:** The project also keeps a curated inventory of
 external skill libraries from `C:\Users\mflma\Downloads\Skills` in
-`agent_skills/EXTERNAL_SKILLS_INVENTORY.md`. Use it when you want to borrow
+`03_design/external_skills_inventory.md`. Use it when you want to borrow
 patterns from Addy Osmani agent skills, Anthropic skills, or financial-services
 skills without duplicating them.
 
@@ -870,20 +876,23 @@ only when tests pass. Push to `main`.
 
 ---
 
-## 13. Cloned Open-Source Reference Repositories
+## 13. Cloned Open-Source Reference Repositories (EXTERNAL)
 
-To minimize token usage and prevent reinventing already mature modules, the repository contains a `downloads/` folder where high-starred, industry-standard libraries are shallow-cloned (`--depth 1`).
+Reference clones live **outside this repo** at `G:\reference\oss-clones\` (moved
+2026-07-04 to keep the repo root clean; they are read-only study material, not code
+this project runs). Skill-library research clones live at `G:\reference\skills-research\`;
+the research summary is kept in `vault/notes/skills_research_report.md`.
 
-Incoming AI agents MUST review these reference implementations under [downloads/](file:///g:/AI/downloads) before implementing custom parsing, memory graphs, or extraction pipelines:
+Review these reference implementations before implementing custom parsing, memory
+graphs, or extraction pipelines:
 
-1. **[pdfplumber](file:///g:/AI/downloads/pdfplumber) (jsvine):** Used for **IS3** (PDF Table Extraction). High-precision coordinate-based text and border extractor.
-2. **[docling](file:///g:/AI/downloads/docling) (IBM-Project):** Used for **IS4/IS5** (Layout-Aware Document Conversion). Native multi-format parser for PDFs, DOCX, and PPTX layout analysis.
-3. **[mail-parser](file:///g:/AI/downloads/mail-parser) (SpamScope):** Used for **IS5** (EML/Email Thread Parsing). Standardized headers, body sections, and base64-decoded attachment extractor.
-4. **[cognee](file:///g:/AI/downloads/cognee) (topoteretes):** Used for **T9** (Knowledge Graph Memory). Graph-database pipeline orchestrator with SQLite and LanceDB connectors.
-5. **[graphiti](file:///g:/AI/downloads/graphiti) (getzep):** Used for **T9** (Temporal Context Memory). Temporal knowledge graph for recording episodic facts over time.
+1. **pdfplumber** (jsvine) — `G:\reference\oss-clones\pdfplumber`: Used for **IS3** (PDF Table Extraction). High-precision coordinate-based text and border extractor.
+2. **docling** (IBM-Project) — `G:\reference\oss-clones\docling`: Used for **IS4/IS5** (Layout-Aware Document Conversion). Native multi-format parser for PDFs, DOCX, and PPTX layout analysis.
+3. **mail-parser** (SpamScope) — `G:\reference\oss-clones\mail-parser`: Used for **IS5** (EML/Email Thread Parsing). Standardized headers, body sections, and base64-decoded attachment extractor.
+4. **cognee** (topoteretes) — `G:\reference\oss-clones\cognee`: Used for **T9** (Knowledge Graph Memory). Graph-database pipeline orchestrator with SQLite and LanceDB connectors.
+5. **graphiti** (getzep) — `G:\reference\oss-clones\graphiti`: Used for **T9** (Temporal Context Memory). Temporal knowledge graph for recording episodic facts over time.
 
 ### Quick Onboarding References:
-- **Comprehensive Integration Mapping:** [downloads/oss_reference/README.md](file:///g:/AI/downloads/oss_reference/README.md) details exact code files, python interfaces, and import syntax for each library.
 - **Data-integrity regressions:** `tests/test_nasty_data.py` before changing `engines/data` or `engines/docs`.
 
 ---

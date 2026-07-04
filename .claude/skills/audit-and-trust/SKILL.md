@@ -1,3 +1,8 @@
+---
+name: audit-and-trust
+description: Use whenever a result may reach a manager, trust is in doubt, numbers or claims conflict, data quality is shaky, or named human sign-off is required, even if the user asks only for a quick review or release decision.
+---
+
 # Skill — Audit and Trust
 
 ## Mission
@@ -83,7 +88,7 @@ Act as the release gate between analysis and decision-making by independently re
 
 ## Typical downstream handoff
 Usually hands off to:
-- `agent_skills/management_reporting.md` when re-shaping is needed
+- `.claude/skills/management-reporting/SKILL.md` when re-shaping is needed
 - or directly to final governed outputs when the artifact is already suitable
 
 ## Existing repo anchors

@@ -23,8 +23,9 @@ disagree, the blueprint wins — flag it, don't guess.
 - New FOREMAN folders/files live alongside the existing repo (see blueprint §7). **Never edit
   the existing `engines/`, `serving/`, `gov/`, `shared/` code** except where a step explicitly says so.
 - New skill folders go under `skills/` using the blueprint §10 template. The existing
-  `agent_skills/*.md` files stay put — they are governed by `tests/test_skill_contracts.py`
-  and must keep passing. FOREMAN skills are a NEW, separate set with their own linter.
+  `.claude/skills/*/*.md` files are the canonical agent-facing skill library — they are
+  governed by `tests/test_skill_contracts.py` and must keep passing. FOREMAN skills are
+  a separate executable set under `skills/` with their own linter.
 - Every tool the plan references already exists in `engines/`. The plan mostly *wraps* them;
   it rarely writes new computation. If you find yourself writing math, stop — a tool already does it.
 
@@ -121,7 +122,7 @@ the registry/schema linters pass.
   `status: proposed` for now (they become `active` as each is built in Phase 1–2).
 - **Create:** `tools/skill_lint.py` — for each `skills/<name>/SKILL.md`, assert it has the §10
   sections and that every tool it names is in `tools.yaml`. This is SEPARATE from the existing
-  `tests/test_skill_contracts.py` (which governs `agent_skills/` — do not modify that).
+  `tests/test_skill_contracts.py` (which governs `.claude/skills/*/` — do not modify that).
 - **Test:** `tests/test_foreman_skill_lint.py` — passes on a valid seed skill folder, fails on
   a skill referencing an unknown tool.
 - **DoD:** test green. **Phase 0 done when all of 0.1–0.6 are green and the full suite is green.**

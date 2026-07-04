@@ -26,7 +26,7 @@ by name.
 5. **`03_design/`** — only when needed: `assistant_master_plan.md` and `skill_os_blueprint.md`
    (REFERENCE); `foreman_build_plan.md` (ACTIVE-PLAN when building FOREMAN). No other
    `03_design/` file is current unless its frontmatter says ACTIVE-PLAN (max 2).
-6. Only the relevant skill file(s) from `agent_skills/` (or Hermes `skills/` for FOREMAN).
+6. Only the relevant skill file(s) from `.claude/skills/` (or Hermes `skills/` for FOREMAN).
 7. The nearest module `AGENTS.md`.
 8. Then the code.
 
@@ -43,7 +43,7 @@ by name.
 ## Lightweight agent architecture
 - Treat this repository as **lightweight routing + central contract + specialized skills**.
 - Do not load the whole architecture for every task.
-- Load the **Core contract** section below plus only the relevant skill from `agent_skills/`.
+- Load the **Core contract** section below plus only the relevant skill from `.claude/skills/`.
 - The skills may specialize, but shared truth stays centralized.
 - If a task spans multiple stages, compose skills in sequence instead of improvising one giant prompt.
 

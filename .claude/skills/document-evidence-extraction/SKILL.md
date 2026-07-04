@@ -1,3 +1,8 @@
+---
+name: document-evidence-extraction
+description: Use whenever the task starts from PDF, Word, PowerPoint, scans, screenshots, emails, or mixed document bundles and the job is to extract cited evidence, recover text, inspect attachments, or gate weak OCR instead of treating documents as primary numeric truth.
+---
+
 # Skill — Document Evidence Extraction
 
 ## Mission
@@ -98,9 +103,9 @@ OCR completeness check after native extraction (`engines/docs/completeness.py`):
 
 ## Typical downstream handoff
 Usually hands off to:
-- `agent_skills/audit_and_trust.md`
-- `agent_skills/management_reporting.md`
-- or `agent_skills/spreadsheet_ingestion.md` if extracted tables must be promoted into the trusted tabular path
+- `.claude/skills/audit-and-trust/SKILL.md`
+- `.claude/skills/management-reporting/SKILL.md`
+- or `.claude/skills/spreadsheet-ingestion/SKILL.md` if extracted tables must be promoted into the trusted tabular path
 
 ## Existing repo anchors
 - `engines/brain/registry.py` (document registry with hash deduplication)

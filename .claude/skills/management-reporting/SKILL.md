@@ -1,3 +1,8 @@
+---
+name: management-reporting
+description: Use whenever trusted or audited analysis already exists and the task is to turn it into a card, dashboard, deck, decision brief, meeting pack, article, or signed executive output without recalculating the numbers.
+---
+
 # Skill — Management Reporting
 
 ## Mission
@@ -80,7 +85,7 @@ Turn trusted, audited operational findings into a concise manager-facing output:
 
 ## Typical downstream handoff
 Usually hands off to:
-- `agent_skills/audit_and_trust.md`
+- `.claude/skills/audit-and-trust/SKILL.md`
 - or directly to human review if audit already passed
 
 ## Existing repo anchors

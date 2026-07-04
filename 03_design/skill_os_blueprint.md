@@ -213,7 +213,8 @@ Placed alongside the existing repo (new folders marked ★; existing repo folder
 
 ```
 G:\AI\
-├── skills/            ★ One folder per skill: SKILL.md + tests + examples (existing agent_skills/*.md migrate here over time)
+├── .claude/skills/    ★ Canonical agent-facing skill library: one folder per skill with SKILL.md
+├── skills/            ★ FOREMAN executable layer: SKILL.md + run.py per skill
 ├── tools/             ★ Tool manifest docs only — code stays in engines/ (one MD per tool family, pointing at real code)
 ├── runs/              ★ One folder per run: contract.md, steps.log, outputs/, rejects/
 ├── reports/           ★ Final business reports, named YYYY-MM-DD_<type>_<topic>.md/.html/.pptx

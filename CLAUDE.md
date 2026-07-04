@@ -3,7 +3,18 @@
 This file describes **orchestration** for Claude Code on Factory Brain. **Rules live in
 `AGENTS.md`** — if anything conflicts, `AGENTS.md` wins.
 
-The owner is **non-technical**: TLDR, plain English, clear logic, owner decides / agent executes.
+The owner is **not a programmer and not technical**. Permanent communication rule — saved in
+`~/.grok/rules/00-owner-communication.md`, `~/.grok/memory/MEMORY.md`,
+`~/.config/opencode/owner_rules.md`, and `.grok/rules/00-owner-communication.md` (this repo):
+
+- **TLDR first** — deep, full of logic and ideas, but bottom line in 1–2 sentences. No preamble.
+- **Very simple English** — no jargon or code; define any technical term in one line.
+- **Maximum clear logic** — explain *why* and trade-offs (Option A vs B, cost vs gain) so the
+  owner can **take decisions** and **understand** you. The agent executes; the owner decides.
+- **Short sentences, one idea per line** — simple tables/bullets when comparing options.
+- **Ask before any big or irreversible action** (commit, delete, refactor, spending, external data).
+- **No filler** — no "Here is…", no "Based on…", no "I will now…". Just the answer.
+- **Test:** if a smart non-technical manager can't read it and immediately decide, rewrite it.
 
 ---
 

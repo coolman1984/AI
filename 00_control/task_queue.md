@@ -62,7 +62,7 @@ Only the Evaluator marks Passed (evidence required).
 | C.5 | knowledge artifacts in git | Builder->Evaluator | Passed | Med | C.1, C.2 | markdown artifacts with dedup/provenance | pytest `tests/test_knowledge_artifacts.py` + full pytest | E32 |
 | C.6 | Samsung IR quarter comparison | Builder->Evaluator | Passed | Med | C.1-C.3, public IR fixtures | public comparison proof with citations | pytest `tests/test_ir_comparison.py` + full pytest | E32 |
 | C.7 | contradiction-surfacing view | Builder->Evaluator | Passed | High | C.1, C.2, C.4 | contradiction listing across claims/records | pytest `tests/test_contradictions.py` + full pytest | E32 |
-| C.8 | knowledge search skill and tool | Builder->Evaluator | Passed | High | C.1-C.7 | `engines/brain/search.py`, `agent_skills/knowledge_search.md`, MCP search tool | pytest `tests/test_knowledge_search.py` + full pytest | E32 |
+| C.8 | knowledge search skill and tool | Builder->Evaluator | Passed | High | C.1-C.7 | `engines/brain/search.py`, `.claude/skills/knowledge-search/SKILL.md`, MCP search tool | pytest `tests/test_knowledge_search.py` + full pytest | E32 |
 | D.1 | decision brief generator | Builder->Evaluator | Passed | High | C gate, A0.8, B.6, C.8 | one-page decision brief generator | pytest `tests/test_decision_brief.py` + full pytest | E32 |
 | D.2 | meeting pack assembler | Builder->Evaluator | Passed | High | D.1 | meeting pack assembler | pytest `tests/test_meeting_pack.py` + full pytest | E32 |
 | D.3 | report and article generator | Builder->Evaluator | Passed | Med | D.1 | report/article renderer | pytest `tests/test_report_article.py` + full pytest | E32 |
@@ -83,5 +83,6 @@ Only the Evaluator marks Passed (evidence required).
 | F.8 | scheduled ingestion, backup, restore, alerting | Builder->Evaluator | Passed | Med | stable local loop, C.1, C.5 | ops scheduler/backup/restore/alerts | pytest `tests/test_ops_backup.py` + full pytest | E32 |
 | F.9 | session-state persistence | Builder->Evaluator | Passed | Low | D.6 | session-state/restart-note persistence | pytest `tests/test_session_state.py` + full pytest | E32 |
 | F.10 | quarterly plan review ritual | Planner->Evaluator | Passed | Low | D gate | review checklist and decision log | doc review | E32 |
+| SU-1 | skill unification migration (agent_skills → .claude/skills/, FOREMAN SKILL.md completion, foreman-pipeline wrapper) | Builder->Evaluator | Passed | Med | skill_unification_plan.md | `.claude/skills/*`, `skills/*/SKILL.md`, routing docs, tests | `pytest -q` + `ruff check .` + `git diff --check` | 2026-07-04 |
 
-**Next best action:** wait for the first real SAP-scale export (P2.2 / E.1). All non-blocked cards through F.10 and T12 are now Passed. Run `pytest -q` and `python run_demo.py` before any new work.
+**Next best action:** wait for the first real SAP-scale export (P2.2 / E.1). All non-blocked cards through F.10, T12, and SU-1 are now Passed. Run `pytest -q` and `python run_demo.py` before any new work.

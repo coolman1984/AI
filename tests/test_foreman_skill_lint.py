@@ -2,8 +2,11 @@
 
 import os
 import tempfile
+from pathlib import Path
 
 from tools.skill_lint import REQUIRED_SECTIONS, _load_tools_yaml, lint_skill
+
+SKILLS_DIR = Path("skills")
 
 SAMPLE_TOOL_IDS = {"T-FP-001", "T-ING-001", "T-PROF-001"}
 
@@ -67,3 +70,16 @@ def test_load_tools_yaml(tmp_path):
     )
     ids = _load_tools_yaml(yaml_path)
     assert "T-TEST-001" in ids
+
+
+def test_every_executable_skill_has_skill_md():
+    """Every direct child of skills/ that contains run.py must also contain SKILL.md."""
+    missing = []
+    for skill_dir in SKILLS_DIR.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        if not (skill_dir / "run.py").exists():
+            continue
+        if not (skill_dir / "SKILL.md").exists():
+            missing.append(skill_dir.name)
+    assert missing == [], f"skills missing SKILL.md: {missing}"

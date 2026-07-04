@@ -43,7 +43,7 @@ claim or number reaching an executive.**
 (Owner's directive.) The system is not one monolithic app an agent must swallow
 whole. It is:
 
-- **Skills** — small, single-purpose capability documents (`agent_skills/*.md`,
+- **Skills** — small, single-purpose capability documents (`.claude/skills/*/*.md`,
   which already exist) each describing: purpose, exact tools to call, inputs,
   outputs, invariants, and its edge cases.
 - **Tools** — the deterministic engines behind each skill, exposed through the
@@ -212,7 +212,7 @@ branch `main`.
 ### F. Skill library & agent token economy (owner's directive)
 
 40. **Every capability ships as a skill card + map entry + MCP tool** (the
-    definition of done — see §1). Existing `agent_skills/` and
+    definition of done — see §1). Existing `.claude/skills/*/` and
     `AGENT_SKILL_MAP.md` become the live catalog, kept in sync by rule.
 41. **MCP server enforces access control at dispatch** (`gov/access.py` exists
     but is not enforced at the tool layer — review finding; close it).

@@ -1,3 +1,8 @@
+---
+name: knowledge-search
+description: Use whenever the user asks what the system knows about a process, workflow, KPI, document family, contradiction, claim, or version history and the job is to retrieve compact linked records instead of loading the whole architecture or dumping raw documents.
+---
+
 # Skill — Knowledge Search
 
 ## Mission

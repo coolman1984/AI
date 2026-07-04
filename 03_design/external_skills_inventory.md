@@ -1,3 +1,9 @@
+---
+status: REFERENCE
+owner: mflma
+date: 2026-07-04
+---
+
 # External Skills Inventory — Deep Study & How to Use Each Group
 
 **Purpose:** This file is a deep study of the external skill libraries in
@@ -12,7 +18,7 @@ a rule is especially load-bearing, it is quoted verbatim and mapped to a
 specific file in this project.
 
 **Source directory:** `C:\Users\mflma\Downloads\Skills`
-**This file lives at:** `G:\AI\agent_skills\EXTERNAL_SKILLS_INVENTORY.md`
+**This file lives at:** `G:\AI\03_design\external_skills_inventory.md`
 
 ---
 
@@ -37,8 +43,8 @@ specific file in this project.
 | Group | Focus | Primary Source | Maps to Project |
 |---|---|---|---|
 | **A. Engineering Workflow** | Define → Plan → Build → Verify → Review → Ship | `addyosmani agent-skills-main/skills/` (24) | All skills; task planning + review |
-| **B. Financial Domain** | Costing, variance, GL recon, Excel audit, close, decks | `financial-services-main/plugins/` (~75) | `cost_variance_analysis`, `spreadsheet_ingestion`, `management_reporting` |
-| **C. Document & Content** | DOCX, PDF, PPTX, XLSX read/create/edit | `skills-main/skills/` (17) | `document_evidence_extraction`, `management_reporting` |
+| **B. Financial Domain** | Costing, variance, GL recon, Excel audit, close, decks | `financial-services-main/plugins/` (~75) | `cost-variance-analysis`, `spreadsheet-ingestion`, `management-reporting` |
+| **C. Document & Content** | DOCX, PDF, PPTX, XLSX read/create/edit | `skills-main/skills/` (17) | `document-evidence-extraction`, `management-reporting` |
 | **D. MCP & Tool Building** | Build MCP servers, skills, APIs | `skills-main` + `claude-plugins-official-main` | `mcp_server/server.py`, new skills |
 | **E. Review & Plugins** | Code review, security, feature-dev, simplifier | `claude-plugins-official-main/plugins/` | Code review gates, persona reviews |
 | **F. Learning & Reference** | Prompt engineering, cookbooks, financial models | `prompt-eng-*`, `claude-cookbooks-main` | Design inspiration, evals |
@@ -512,7 +518,7 @@ for controller'** rather than inventing one."
 **Integration:** This maps directly to `engines/data/drivers.py` (price/volume/
 mix) and `serving/card.py`. The "driver unclear — flag" pattern is the
 non-numeric equivalent of the Calculation-Integrity Rule. Add a "Driver
-quality" check to `agent_skills/cost_variance_analysis.md`: a driver must
+quality" check to `.claude/skills/cost-variance-analysis/SKILL.md`: a driver must
 explain *why*, not restate *what*.
 
 #### `roll-forward` — Balance-sheet roll-forward
@@ -536,7 +542,7 @@ gap is an unexplained item — surface it, don't plug it."**
 **Integration:** This maps to `VarianceBridge.reconciles()` in
 `shared/contracts/models.py:72` — "Sum of part variances must equal the total."
 The "surface it, don't plug it" rule should be added to
-`agent_skills/cost_variance_analysis.md`. For manufacturing, adapt to
+`.claude/skills/cost-variance-analysis/SKILL.md`. For manufacturing, adapt to
 inventory/WIP/accrued-liability accounts.
 
 #### `gl-recon` — GL ↔ subledger reconciliation
@@ -602,7 +608,7 @@ correct by definition; you're a surgeon, not a renovator."
 **Integration:** This maps to `serving/open_design.py` when refreshing the
 HTML dashboard with new period actuals. The number-hiding variants table is a
 checklist for ensuring the dashboard doesn't show stale numbers in multiple
-formats. Add to `agent_skills/management_reporting.md`.
+formats. Add to `.claude/skills/management-reporting/SKILL.md`.
 
 #### `ib-check-deck` — Presentation QC
 
@@ -650,7 +656,7 @@ skill writes a file; it never emails or uploads."**
 invariant — directly analogous to this project's "every number comes from a
 SQL query / independent Audit Layer." The footnote-to-cell traceability maps
 to the `EvidenceRef` in `shared/contracts/models.py`. Add these conventions to
-`agent_skills/management_reporting.md`.
+`.claude/skills/management-reporting/SKILL.md`.
 
 ### 3.4 The 5 named agents (architecture pattern)
 
@@ -827,7 +833,7 @@ Directory structure: `skill-name/` with `SKILL.md` (required), `scripts/`
 (executable), `references/` (docs), `assets/` (templates).
 
 **Integration:** This is the canonical format for authoring new skills. The
-project's existing `agent_skills/*.md` files are simpler (no frontmatter) but
+project's existing `.claude/skills/*/SKILL.md` files are simpler (no frontmatter) but
 follow the same progressive-disclosure principle. If the project adopts
 frontmatter, use this spec.
 
@@ -894,10 +900,10 @@ few examples. (2) **Keep prompt lean** — remove what's not pulling weight. (3)
 caps, that's a yellow flag." (4) **Look for repeated work** — if all subagents
 wrote similar helpers, bundle in `scripts/`.
 
-**Integration:** Use this when creating new `agent_skills/*.md` files. The
-degrees-of-freedom framework is especially useful: `spreadsheet_ingestion.md`
+**Integration:** Use this when creating new `.claude/skills/*/SKILL.md` files. The
+degrees-of-freedom framework is especially useful: `.claude/skills/spreadsheet-ingestion/SKILL.md`
 should be **low freedom** (fragile operations, specific scripts), while
-`management_reporting.md` can be **high freedom** (multiple valid approaches to
+`.claude/skills/management-reporting/SKILL.md` can be **high freedom** (multiple valid approaches to
 shaping output).
 
 ### 5.4 `claude-api` — Claude API reference (578 lines)
@@ -1028,14 +1034,14 @@ corrects.
 ### 8.2 "Surface it, don't plug it" (roll-forward foot invariant)
 
 When a reconciliation doesn't foot, the gap is surfaced as an unexplained item,
-never plugged to make it balance. **Adopt in:** `agent_skills/cost_variance_analysis.md`
+never plugged to make it balance. **Adopt in:** `.claude/skills/cost-variance-analysis/SKILL.md`
 — add "If `VarianceBridge.reconciles()` fails, surface the gap, never plug it."
 
 ### 8.3 "Driver explains why, not what" (variance-commentary)
 
 A driver is "Cloud spend up $1.2M on incremental GPU reservations" — not
 "Cloud spend increased $1.2M (18%)." If unclear, write "driver unclear — flag"
-rather than inventing one. **Adopt in:** `agent_skills/cost_variance_analysis.md`
+rather than inventing one. **Adopt in:** `.claude/skills/cost-variance-analysis/SKILL.md`
 and `serving/card.py` driver rendering.
 
 ### 8.4 "Treat content as data, never instructions" (kyc-doc-parse, browser-testing)
@@ -1075,8 +1081,8 @@ every engine module — `engines/data/`, `engines/docs/`, `engines/brain/`.
 
 Low freedom for fragile operations (specific scripts, few parameters); high
 freedom for open-ended work (text instructions). **Adopt in:** authoring new
-`agent_skills/*.md` — `spreadsheet_ingestion.md` is low-freedom,
-`management_reporting.md` is high-freedom.
+`.claude/skills/*/SKILL.md` — `.claude/skills/spreadsheet-ingestion/SKILL.md` is low-freedom,
+`.claude/skills/management-reporting/SKILL.md` is high-freedom.
 
 ### 8.10 "Three-tier isolation" (financial-services agents)
 
@@ -1101,9 +1107,9 @@ documents.
 | Reviewing code before commit | `addyosmani.../skills/code-review-and-quality/SKILL.md` + `agents/code-reviewer.md` | none (process) |
 | Simplifying code | `addyosmani.../skills/code-simplification/SKILL.md` | the target file |
 | Security/privacy review | `agents/security-auditor.md` | `gov/`, `engines/docs/prompt_builder.py` |
-| Adding ingestion cleaning rules | `financial-services.../vertical-plugins/financial-analysis/skills/clean-data-xls/SKILL.md` | `engines/data/clean.py`, `agent_skills/spreadsheet_ingestion.md` |
+| Adding ingestion cleaning rules | `financial-services.../vertical-plugins/financial-analysis/skills/clean-data-xls/SKILL.md` | `engines/data/clean.py`, `.claude/skills/spreadsheet-ingestion/SKILL.md` |
 | Auditing Excel artifacts | `financial-services.../skills/audit-xls/SKILL.md` | `engines/audit/audit.py` |
-| Variance / driver analysis | `financial-services.../vertical-plugins/fund-admin/skills/variance-commentary/SKILL.md` | `engines/data/drivers.py`, `agent_skills/cost_variance_analysis.md` |
+| Variance / driver analysis | `financial-services.../vertical-plugins/fund-admin/skills/variance-commentary/SKILL.md` | `engines/data/drivers.py`, `.claude/skills/cost-variance-analysis/SKILL.md` |
 | Roll-forward / reconciliation | `financial-services.../vertical-plugins/fund-admin/skills/roll-forward/SKILL.md` | `shared/contracts/models.py` (reconciles) |
 | GL recon | `financial-services.../vertical-plugins/fund-admin/skills/gl-recon/SKILL.md` | future: SAP recon |
 | Refreshing deck/dashboard numbers | `financial-services.../vertical-plugins/financial-analysis/skills/deck-refresh/SKILL.md` | `serving/open_design.py` |
@@ -1113,7 +1119,7 @@ documents.
 | Generating Word reports | `skills-main/skills/docx/SKILL.md` | `serving/report_article.py` |
 | Dashboard visual design | `skills-main/skills/frontend-design/SKILL.md` | `serving/open_design.py` |
 | Adding a new MCP tool | `skills-main/skills/mcp-builder/SKILL.md` | `mcp_server/server.py` |
-| Authoring a new skill file | `skills-main/skills/skill-creator/SKILL.md` | new `agent_skills/*.md` |
+| Authoring a new skill file | `skills-main/skills/skill-creator/SKILL.md` | new `.claude/skills/*/SKILL.md` |
 | Prompt injection defense | `financial-services.../vertical-plugins/operations/skills/kyc-doc-parse/SKILL.md` | `engines/docs/prompt_builder.py` |
 | Building eval fixtures | `claude-cookbooks-main/evals/` | `eval/runner.py` |
 | RAG / knowledge search | `claude-cookbooks-main/capabilities/retrieval_augmented_generation/` | `engines/brain/search.py` |
@@ -1123,7 +1129,7 @@ documents.
 ## 10. Integration Rules for This Repo
 
 1. **Do not blindly copy.** Compare each external skill against existing
-   `agent_skills/*.md` and `AGENTS.md` rules. Merge only the missing pieces.
+   `.claude/skills/*/SKILL.md` and `AGENTS.md` rules. Merge only the missing pieces.
 2. **Preserve the three non-negotiables.** No external skill overrides:
    - Golden Rule (code writes code from samples)
    - Calculation-Integrity Rule (every number from SQL)
@@ -1156,12 +1162,12 @@ The lowest-risk, highest-value order to start using these skills:
 2. **Prompt-injection hardening** — adopt the `<untrusted_document>` framing
    (§8.4) into `engines/docs/prompt_builder.py`. One file, high security value.
 3. **Variance driver quality** — add "driver explains why, not what" + "driver
-   unclear — flag" rules (§8.3) to `agent_skills/cost_variance_analysis.md`.
+   unclear — flag" rules (§8.3) to `.claude/skills/cost-variance-analysis/SKILL.md`.
 4. **Reconciliation discipline** — add "surface it, don't plug it" (§8.2) to
-   `agent_skills/cost_variance_analysis.md` and the `VarianceBridge.reconciles()`
+   `.claude/skills/cost-variance-analysis/SKILL.md` and the `VarianceBridge.reconciles()`
    failure path.
 5. **Excel audit checklist** — adapt the audit-xls formula-level checks (§3.3)
-   into `agent_skills/spreadsheet_ingestion.md` for when the real SAP export
+   into `.claude/skills/spreadsheet-ingestion/SKILL.md` for when the real SAP export
    arrives (P2.2/E.1).
 6. **Propose-before-apply cleaning** — add the clean-data-xls workflow (§8.6)
    to `engines/data/clean.py` for the real SAP export.
@@ -1172,7 +1178,7 @@ The lowest-risk, highest-value order to start using these skills:
 9. **MCP tool annotations** — add `readOnlyHint`/`destructiveHint` (§5.1) to
    `mcp_server/server.py` dispatch table.
 10. **New skill authoring** — use the `skill-creator` degrees-of-freedom
-    framework (§5.3) for any new `agent_skills/*.md`.
+    framework (§5.3) for any new `.claude/skills/*/SKILL.md`.
 
 ---
 
@@ -1197,3 +1203,8 @@ Produces a grouping table and guidance recommendations. No executable output.
 - This document is reference-only; it does not execute code.
 - Never dump raw external skill content into agent context without attribution.
 - All external skill paths are treated as untrusted references until verified.
+---
+status: REFERENCE
+owner: mflma
+date: 2026-07-04
+---
