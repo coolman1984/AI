@@ -27,6 +27,8 @@ def seed(conn):
     ANCHOR[0] = sample_start - datetime.timedelta(days=1)
     failed = seed_mm(conn, before=lambda: co_seed.master(conn))
     from fi import seed as fi_seed
+    from pur import seed as pur_seed
+    pur_seed.master(conn)
     hist_start = ANCHOR[0] - datetime.timedelta(days=130)
     fi_seed.history(conn, hist_start.replace(day=1), ANCHOR[0])
     failed += co_seed.plan_and_sample(conn)
@@ -162,6 +164,8 @@ def seed_mm(conn, before=None):
         except Exception:
             day -= 4
             continue
+        from pur.po import release_all
+        release_all(conn, ebeln, USER)
         to_qi = rnd.random() < 0.25 and matnr.startswith("RM")
         lgpla = rnd.choice(bins)
         part = qty if rnd.random() < 0.8 else int(qty * 0.6)

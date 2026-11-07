@@ -108,7 +108,7 @@ def miro(conn, header, items, user, check_only=False):
         acc, base = [], {code: 0}
         for it in items:
             ebelp = int(it.get("ebelp"))
-            pi = conn.execute("SELECT i.*, m.bklas FROM po_item i JOIN material m ON "
+            pi = conn.execute("SELECT i.*, m.bklas FROM po_item i LEFT JOIN material m ON "
                               "m.matnr=i.matnr WHERE ebeln=? AND ebelp=?",
                               (ebeln, ebelp)).fetchone()
             if not pi:
@@ -119,15 +119,30 @@ def miro(conn, header, items, user, check_only=False):
                 raise MMError("Item %s: quantity %.3f exceeds goods received not yet "
                               "invoiced (%.3f) - GR-based invoice verification"
                               % (ebelp, qty / 1000.0, open_qty / 1000.0), "M8", "081")
-            net = parse_amount(it.get("amount")) if it.get("amount") not in (None, "") \
-                else value_of(qty, pi["netpr"], pi["peinh"])
+            if it.get("amount") not in (None, ""):
+                net = parse_amount(it.get("amount"))
+            else:                       # default: PO value + planned freight
+                net = value_of(qty, pi["netpr"], pi["peinh"])
+                if pi["frb"]:
+                    net += rdiv(pi["frb"] * qty, pi["menge"])
             grir = value_of(qty, pi["netpr"], pi["peinh"])
+            fr = rdiv(pi["frb"] * qty, pi["menge"]) if pi["frb"] else 0
             base[code] += net
             acc.append(dict(hkont="191100", amount=grir, wrbtr=grir, ktosl="WRX",
                             ebeln=ebeln, ebelp=ebelp, matnr=pi["matnr"],
                             werks=pi["werks"], menge=qty, mwskz=code,
                             sgtxt="GR/IR %s/%s" % (ebeln, ebelp)))
-            diff = net - grir
+            if fr:
+                acc.append(dict(hkont="193000", amount=fr, wrbtr=fr, ktosl="FRE",
+                                ebeln=ebeln, ebelp=ebelp, mwskz=code,
+                                sgtxt="Planned freight %s/%s" % (ebeln, ebelp)))
+            diff = net - grir - fr
+            if diff and pi["knttp"]:
+                # account-assigned item: difference to the expense / CO object
+                acc.append(dict(hkont=pi["sakto"] or "400000", amount=diff, wrbtr=diff,
+                                kostl=pi["kostl"], aufnr=pi["aufnr"], ebeln=ebeln,
+                                ebelp=ebelp, sgtxt="Invoice price difference"))
+                diff = 0
             if diff:
                 v = conn.execute("SELECT * FROM valuation WHERE matnr=? AND bwkey=?",
                                  (pi["matnr"], pi["werks"])).fetchone()

@@ -116,8 +116,10 @@ def connect(path=None):
     from co.schema import CO_SCHEMA, CO_NUMBER_RANGES, MM_COLUMN_ADDS
     from fi.schema import FI_SCHEMA, FI_COLUMN_ADDS
     from fi.config import CHART, NUMBER_RANGES as FI_RANGES
+    from pur.schema import PUR_SCHEMA, PUR_COLUMN_ADDS, PUR_NUMBER_RANGES
     conn.executescript(CO_SCHEMA)
-    for adds in (MM_COLUMN_ADDS, FI_COLUMN_ADDS):   # upgrade older databases
+    conn.executescript(PUR_SCHEMA)
+    for adds in (MM_COLUMN_ADDS, FI_COLUMN_ADDS, PUR_COLUMN_ADDS):   # upgrades
         for table, cols in adds.items():
             have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
             for col, typ in cols:
@@ -125,7 +127,8 @@ def connect(path=None):
                     conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
     conn.executescript(FI_SCHEMA)
     ranges = list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()) + \
-        [("FI_" + k, v) for k, v in FI_RANGES.items()]
+        [("FI_" + k, v) for k, v in FI_RANGES.items()] + \
+        list(PUR_NUMBER_RANGES.items())
     for obj, start in ranges:
         conn.execute("INSERT OR IGNORE INTO number_range VALUES (?, ?)",
                      (obj, start - 1))
