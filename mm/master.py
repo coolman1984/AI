@@ -60,13 +60,21 @@ def create_vendor(conn, lifnr, name, city=""):
         conn.execute("INSERT INTO vendor VALUES (?,?,?)", (lifnr, name, city))
 
 
-def create_cost_center(conn, kostl, name):
+def create_cost_center(conn, kostl, name, kosar="", khinr="", verak=""):
+    """KS01. kosar = cost center category, khinr = standard hierarchy node."""
     kostl = _key(kostl, "cost center", 10)
+    if not (name or "").strip():
+        raise MMError("Enter a name", "KS", "002")
     with transaction(conn):
         if conn.execute("SELECT 1 FROM cost_center WHERE kostl=?",
                         (kostl,)).fetchone():
             raise MMError("Cost center %s already exists" % kostl, "KS", "001")
-        conn.execute("INSERT INTO cost_center VALUES (?,?)", (kostl, name))
+        if khinr and not conn.execute("SELECT 1 FROM cc_group WHERE khinr=?",
+                                      (khinr,)).fetchone():
+            raise MMError("Hierarchy node %s does not exist" % khinr, "KS", "003")
+        conn.execute("INSERT INTO cost_center (kostl,name,kosar,khinr,verak) "
+                     "VALUES (?,?,?,?,?)", (kostl, name.strip(), kosar or "",
+                                            khinr or "", verak or ""))
 
 
 # ---------------------------------------------------------------- materials
