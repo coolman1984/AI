@@ -70,6 +70,33 @@ Keys: `F8` execute, `Ctrl+S` post/save, `F3` back.
 - **Accounting:** every valuated movement creates a balanced accounting document
   (BSX stock, WRX GR/IR, VBR consumption, PRD price differences, ...).
 
+## Master Data (material, customer, vendor)
+
+Start with `ZMD_COCKPIT` (data quality, risk, dead stock) or `ZMD_PROCESS` (lifecycle map).
+The side menu also has a **Process** tab with the end-to-end flows.
+
+| Area | T-codes |
+|---|---|
+| Material | `MM01` create / extend (views), `MM02`, `MM03`, `ZMM02_LF` / `ZMM03_LF` logistics + financial, `MM06` deletion flag, `MMSC`, `MM50`, `MM60`, `MM04` changes |
+| Localization | `J1ID` India CIN (GSTIN, PAN, chapter ID), `ZMM02_BR` Brazil (NCM, usage, origin), `ZEXIM` foreign trade & licenses |
+| Customer | `XD01`-`XD03` central, `VD01`-`VD03` sales, `FD01`-`FD03` accounting, `XD04` changes, `XD05` block, `XD06` delete, `XD07` account group, `ZXD03_LF`, `S_ALR_87012179` |
+| Vendor | `XK01`-`XK03`, `MK01`-`MK03`, `FK01`-`FK03`, `XK04`-`XK07`, `ZXK03_LF`, `S_ALR_87012086` |
+| Dual control | `FK08`/`FK09` vendors, `FD08`/`FD09` customers |
+| Customizing | `OMS2` material types, `OMS3`, `OMS4` statuses, `OMSF`, `OMSK`, `CUNI`, `OBD2`/`OBD3` account groups, `XDN1`/`XKN1` number ranges |
+
+Logic like SAP:
+
+- **Material type** decides the allowed views, price control and valuation class (stock G/L account).
+- **Material status** blocks purchasing, goods movements or sales (warning or error).
+- **Deletion flag** stops new receipts and purchase orders; remaining stock can still be issued.
+- **QM flag** sends goods receipts to quality stock; **over-delivery tolerance** allows small extra quantities.
+- **Account group** decides number range (internal / external), required fields and partner functions.
+  A ship-to party has no accounting data and cannot be posted in FI.
+- **Blocks**: purchasing, posting, payment (vendor); order, delivery, billing, posting (customer).
+- **Sensitive fields** (bank, payment terms): the vendor is not paid by F110 until a *second* user confirms.
+- **Checks**: valid IBAN, SWIFT, EAN, Egyptian tax number, Indian GSTIN check character; duplicate warnings.
+- Every change is stored as a change document (who, when, old value, new value).
+
 ## Procurement (Procure-to-Pay)
 
 Start with `ZPUR_COCKPIT` (management KPIs) or `ZPUR_PROCESS` (the whole chain step by step).
@@ -112,6 +139,7 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 | Folder | Content |
 |---|---|
 | `mm/` | Business logic: database, movement engine, master data, reports |
+| `md/` | Master data: material views, customers, vendors, change documents, checks, CIN/Brazil/Exim |
 | `pur/` | Procurement: requisitions, sourcing, contracts, RFQ, PO, release, MRP, analytics |
 | `office/` | Office COM bridge |
 | `web/` | Web server and screens |

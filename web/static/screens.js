@@ -56,6 +56,17 @@ register("HOME", { title: "Home", async render(app) {
       ["MR21", "Change Material Price", "Revalue stock", "\u00A4"],
       ["CKM3", "Price History", "Moving average over time", "\u2197"],
     ]],
+    ["Master Data", [
+      ["ZMD_COCKPIT", "Master Data Cockpit", "Quality, risk, dead stock", "\u25D4", "kpi_mdq"],
+      ["MM01", "Create Material", "Views per material type", "\u270E"],
+      ["MM02", "Change Material", "With change documents", "\u270D"],
+      ["ZMM03_LF", "Material 360\u00B0", "Logistics + financial", "\u2399"],
+      ["XD01", "Create Customer", "Account group, sales area", "\u263A"],
+      ["XK01", "Create Vendor", "Account group, bank, purchasing", "\u2302"],
+      ["FK08", "Confirm Sensitive Changes", "Dual control (bank data)", "\u2714", "kpi_sens"],
+      ["MM60", "Materials List", "Types, prices, stock", "\u2261"],
+      ["J1ID", "CIN Master (India)", "GSTIN, PAN, chapter ID", "\u2691"],
+    ]],
     ["Procurement (Procure-to-Pay)", [
       ["ZPUR_COCKPIT", "Procurement Cockpit", "Spend, savings, suppliers", "\u25D4", "kpi_spend"],
       ["ZPUR_PROCESS", "Procurement Process Map", "Requirement \u2192 payment", "\u21BB"],
@@ -161,6 +172,10 @@ register("HOME", { title: "Home", async render(app) {
     kpiEls.kpi_docs.append(String(d.kpi.docs_period), h("small", null, "30 d"));
     kpiEls.kpi_bins.append(`${d.kpi.bins_used}/${d.kpi.bins_total}`);
     kpiEls.kpi_po.append(String(d.kpi.open_po_items), h("small", null, "open"));
+    api("/api/md/cockpit").then(m => {
+      kpiEls.kpi_mdq.append(m.kpi.quality + " %", h("small", null, "quality"));
+      kpiEls.kpi_sens.append(String(m.kpi.pending), h("small", null, "pending"));
+    }).catch(() => {});
     api("/api/pur/cockpit").then(p => {
       kpiEls.kpi_spend.append(App.fmtShort(p.kpi.spend), h("small", null, "EGP"));
       kpiEls.kpi_rel.append(String(p.kpi.pr_waiting + p.kpi.po_blocked), h("small", null, "waiting"));

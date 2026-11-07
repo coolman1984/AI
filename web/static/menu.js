@@ -5,6 +5,16 @@ const { h, $, $$, go, S } = App;
 
 // [folder text, children] or tcode string. "!" prefix = not in scope yet.
 const MENU = [
+  ["Master Data", [
+    ["Material", ["MM01", "MM02", "ZJ1ID_MAT", "ZMM02_BR", "ZMM02_LF", "MM03", "ZMM03_LF", "ZEXIM"]],
+    ["Material - Lists & Tools", ["MM60", "MM50", "MMSC", "MM06", "MM04"]],
+    ["Customer", ["XD01", "XD02", "XD03", "ZXD03_LF", "ZJ1ID_CUS"]],
+    ["Customer - Sales / Accounting", ["VD01", "VD02", "VD03", "FD01", "FD02", "FD03", "XD04", "XD05", "XD06", "XD07", "FD08", "FD09", "S_ALR_87012179"]],
+    ["Vendor", ["XK01", "XK02", "ZJ1ID_VEN", "XK03", "ZXK03_LF"]],
+    ["Vendor - Purchasing / Accounting", ["MK01", "MK02", "MK03", "FK01", "FK02", "FK03", "XK04", "XK05", "XK06", "XK07", "FK08", "FK09", "S_ALR_87012086"]],
+    ["Overview & Governance", ["ZMD_COCKPIT", "ZMD_PROCESS"]],
+    ["Customizing", ["OMS2", "OMS3", "OMS4", "OMSF", "OMSK", "CUNI", "OBD2", "OBD3", "XDN1", "XKN1", "J1ID"]],
+  ]],
   ["Procurement", [
     ["[0] Overview", ["ZPUR_COCKPIT", "ZPUR_PROCESS"]],
     ["[1] Master Data & Sources", ["ME11", "ME1M", "ME01", "MEQ1", "XK01", "XK03"]],
@@ -103,6 +113,14 @@ const MENU = [
   ]],
 ];
 
+// Process view: end-to-end flows across modules
+const PROCESS = [
+  ["Master Data Lifecycle", ["ZMD_PROCESS", "ZMD_COCKPIT", "MM01", "XK01", "XD01", "FK08", "MM06"]],
+  ["Procure-to-Pay", ["ZPUR_PROCESS", "MD01", "ME51N", "ME55", "ME57", "ME21N", "ME29N", "MIGO", "MIRO", "F110"]],
+  ["Order-to-Cash", ["XD01", "FD32", "VF01", "FBL5N", "F-28", "F150"]],
+  ["Plan-to-Produce (CO)", ["ZCO_PROCESS", "KP06", "CK11N", "CO01", "CO11N", "KO88", "KKS2"]],
+  ["Record-to-Report", ["ZFI_PROCESS", "OB52", "FAGL_FCV", "AFAB", "F.01", "ZCO_RECON"]],
+];
 const open = new Set();
 let favs = [];
 try { favs = JSON.parse(localStorage.getItem("mm_favs") || "[]"); open.add("Financial Accounting"); } catch (e) {}
@@ -156,6 +174,8 @@ function draw() {
   if (tab === "fav") {
     if (!favs.length) out.push(h("div.sm-node.na", null, "Click ★ on a transaction to add it here"));
     favs.forEach(c => out.push(leaf(c, 0)));
+  } else if (tab === "process") {
+    PROCESS.forEach(m => node(m, 0, f, out));
   } else MENU.forEach(m => node(m, 0, f, out));
   tree.append(...out);
   markActive();
@@ -191,7 +211,8 @@ function init() {
     else App.msg("E", `Transaction ${v} does not exist`, "00", "343");
   });
   window.addEventListener("hashchange", markActive);
-  open.add("Procurement@0");
+  open.add("Master Data@0");
+  PROCESS.forEach(p => open.add(p[0] + "@0"));
   draw();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

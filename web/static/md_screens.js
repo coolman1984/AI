@@ -227,9 +227,9 @@ function matScreen(tcode, mode, title) {
       }
       body.innerHTML = "";
       const head = m ? `${m.matnr} ${m.maktx}` : `New material · ${mtart} ${t.text}`;
-      body.append(panel(null, h("div.doc-head", null, h("div", null, h("div.k", null, "Material"), h("div.v", null, head)),
-        h("div", null, h("div.k", null, "Type"), h("div.v", null, `${mtart} ${t.text}`)), m ? h("div", null, h("div.k", null, "Views maintained"), h("div.v", null, m.vpsta || "-")) : null,
-        m && m.lvorm ? h("div", null, h("div.k", null, "Deletion flag"), h("div.v", null, badge("Flagged", "B"))) : null)), tabsUI(tabList));
+      body.append(panel(null, h("div.obj-header", null, h("div.attr", null, h("span.k", null, "Material"), h("span.v", null, head)),
+        h("div.attr", null, h("span.k", null, "Type"), h("span.v", null, `${mtart} ${t.text}`)), m ? h("div.attr", null, h("span.k", null, "Views maintained"), h("span.v", null, m.vpsta || "-")) : null,
+        m && m.lvorm ? h("div.attr", null, h("span.k", null, "Deletion flag"), h("span.v", null, badge("Flagged", "B"))) : null)), tabsUI(tabList));
       const save = async () => {
         const b = { mbrsh: ini.mbrsh.value, mtart, tcode };
         if (m) b.matnr = m.matnr; else if (up(ini.matnr)) b.matnr = up(ini.matnr);
@@ -252,12 +252,12 @@ function matScreen(tcode, mode, title) {
           if (hasPlant && plantNew) b.plants = [plant];
           else if (plant.slocs) b.slocs = plant.slocs.map(s => Object.assign({ werks: o.werks }, s));
           if (m) { delete b.maktx; delete b.meins; delete b.matkl; }
-          const r = await run(() => api("/api/md/material", { method: "POST", body: b }));
+          const r = await run(() => api("/api/md/material", b));
           if (r) { await meta(true); App.loadMaterials && App.loadMaterials(); msgLink("S", r.message, "Display", "MM03", { id: r.matnr, werks: o.werks, vtweg: o.vtweg }); body.innerHTML = ""; toolbar([{ label: "Select views", primary: true, onClick: selectViews }]); }
         } else {
           delete plant.price; delete plant.peinh;
           if (hasPlant || plant.slocs) b.plants = [plant];
-          const r = await run(() => api(`/api/md/material/${enc(m.matnr)}/change`, { method: "POST", body: b }));
+          const r = await run(() => api(`/api/md/material/${enc(m.matnr)}/change`, b));
           if (r) msgLink("S", r.message, "Changes (MM04)", "MM04", { id: m.matnr });
         }
       };
@@ -299,10 +299,10 @@ register("ZMM03_LF", { title: "Display Material (Logistics/Financial)", async re
     const stock = m.plants.reduce((a, p) => a + p.lbkum, 0);
     const openPo = m.open_po.reduce((a, p) => a + p.open, 0);
     const sales = m.sales_docs.reduce((a, s) => a + s.value, 0);
-    body.append(panel(null, h("div.doc-head", null, h("div", null, h("div.k", null, "Material"), h("div.v", null, `${m.matnr} ${m.maktx}`)),
-      h("div", null, h("div.k", null, "Type / class"), h("div.v", null, `${m.mtart} · ${m.bklas} ${m.bklas_text}`)),
-      h("div", null, h("div.k", null, "Status"), h("div.v", null, m.lvorm ? badge("Deletion flag", "B") : m.mstae ? badge(m.mstae + " " + m.mstae_text, "Q") : badge("Active", "U"))),
-      h("div", null, h("div.k", null, "Views"), h("div.v", null, m.vpsta)))));
+    body.append(panel(null, h("div.obj-header", null, h("div.attr", null, h("span.k", null, "Material"), h("span.v", null, `${m.matnr} ${m.maktx}`)),
+      h("div.attr", null, h("span.k", null, "Type / class"), h("span.v", null, `${m.mtart} · ${m.bklas} ${m.bklas_text}`)),
+      h("div.attr", null, h("span.k", null, "Status"), h("span.v", null, m.lvorm ? badge("Deletion flag", "B") : m.mstae ? badge(m.mstae + " " + m.mstae_text, "Q") : badge("Active", "U"))),
+      h("div.attr", null, h("span.k", null, "Views"), h("span.v", null, m.vpsta)))));
     body.append(h("div.kpis", null,
       kpi("Total stock", h("span", null, fmtQty(stock), " ", h("small", null, m.meins)), `${m.plants.length} plant(s)`, null),
       kpi("Stock value", fmtShort(m.plants.reduce((a, p) => a + p.salk3, 0)), "EGP (MBEW)", null),
@@ -359,7 +359,7 @@ register("ZMM02_LF", { title: "Change Material (Logistics/Financial)", async ren
       tbl("Logistics (purchasing / MRP)", LOG), tbl("Financial (costing / valuation)", FIN));
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
       const plants = rowsEls.map(r => { const o = { werks: r.werks }; for (const [k] of [...LOG, ...FIN]) o[k] = r[k].value; return o; });
-      const r = await run(() => api(`/api/md/material/${enc(m.matnr)}/change`, { method: "POST", body: { plants, tcode: "ZMM02_LF" } }));
+      const r = await run(() => api(`/api/md/material/${enc(m.matnr)}/change`, { plants, tcode: "ZMM02_LF" }));
       if (r) msgLink("S", r.message, "Display", "ZMM03_LF", { id: m.matnr });
     } }, { label: "Back", ghost: true, onClick: () => go("ZMM02_LF") }]);
   };
@@ -400,7 +400,7 @@ register("MM06", { title: "Flag Material for Deletion", async render(app, params
   app.append(panel("Material", grid(field("Material", k, { req: true }), field("Plant", w), field("Deletion flag", f))), body,
     panel(null, h("p.muted", null, "The deletion flag blocks goods receipts and purchase orders. Remaining stock can still be issued. Archiving (reorganization) needs zero stock.")));
   toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-    const r = await run(() => api(`/api/md/material/${enc(up(k))}/delete`, { method: "POST", body: { werks: w.value, flag: f.checked } }));
+    const r = await run(() => api(`/api/md/material/${enc(up(k))}/delete`, { werks: w.value, flag: f.checked }));
     if (r) { msg(r.warnings.length ? "W" : "S", r.message); body.innerHTML = ""; const wb = warnBox(r.warnings); if (wb) body.append(wb); }
   } }]);
 } });
@@ -422,7 +422,7 @@ register("MMSC", { title: "Enter Storage Locations (Collective)", async render(a
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
       const slocs = els.filter(e2 => e2.lgort.value).map(e2 => ({ werks: w.value, lgort: e2.lgort.value, lgpbe: e2.lgpbe.value }));
       if (!slocs.length) return msg("E", "Enter a storage location");
-      const r = await run(() => api("/api/md/material", { method: "POST", body: { matnr: m.matnr, slocs } }));
+      const r = await run(() => api("/api/md/material", { matnr: m.matnr, slocs }));
       if (r) { msg("S", `Storage locations created for ${m.matnr}`); exec(); }
     } }]);
   };
@@ -479,7 +479,7 @@ register("ZEXIM", { title: "Control for Exim (Material) - Foreign Trade & Legal 
     edit.innerHTML = "";
     edit.append(panel(`Foreign trade data ${x.matnr} ${x.maktx}`, f, h("p.muted", null, "L = license required: purchase orders from foreign vendors need a valid license. B = embargo: blocked.")));
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-      const r = await run(() => api(`/api/md/material/${enc(x.matnr)}/change`, { method: "POST", body: { exim: f.get(), tcode: "ZEXIM" } }));
+      const r = await run(() => api(`/api/md/material/${enc(x.matnr)}/change`, { exim: f.get(), tcode: "ZEXIM" }));
       if (r) { msg("S", r.message); edit.innerHTML = ""; exec(); }
     } }, { label: "Refresh", ghost: true, onClick: exec }]);
   }
@@ -500,7 +500,7 @@ register("ZMM02_BR", { title: "Change Material (Brazil) - NCM, Usage, Origin", a
     { key: "werks", label: "Plant" }, { key: "steuc", label: "NCM" }, { key: "mtuse", label: "Usage", render: x => `${x.mtuse} ${MD.br_usage[x.mtuse]}` },
     { key: "mtorg", label: "Origin", render: x => `${x.mtorg} ${MD.br_origin[x.mtorg]}` }, { key: "cfop_cat", label: "CFOP cat." }] })); };
   toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-    const r = await run(() => api(`/api/md/material/${enc(up(k))}/brazil`, { method: "POST", body: { werks: w.value, steuc: val(ncm), mtuse: use.value, mtorg: org.value, cfop_cat: val(cfop) } }));
+    const r = await run(() => api(`/api/md/material/${enc(up(k))}/brazil`, { werks: w.value, steuc: val(ncm), mtuse: use.value, mtorg: org.value, cfop_cat: val(cfop) }));
     if (r) { msg("S", r.message); list(); }
   } }]);
   list();
@@ -514,7 +514,7 @@ function j1id(tcode, title, tab) {
     const matF = () => { const k = inp({ list: "dl-md-matnr", upper: true, w: "l" }), w = sel(plantOpts(), "1000"),
       c = sel(opts(MD.chapters), Object.keys(MD.chapters)[0], { w: "xl" }), t = sel(opts(MD.cin_mtypes), "R", { w: "l" }), sub = h("input", { type: "checkbox" });
       return h("div", null, panel("Material and chapter ID combination", grid(field("Material", k, { req: true }), field("Plant", w), field("Chapter ID (HSN)", c), field("Material type", t), field("Subcontracting", sub)),
-        h("button.btn.primary", { type: "button", on: { click: async () => { const x = await run(() => api(`/api/md/material/${enc(up(k))}/cin`, { method: "POST", body: { werks: w.value, chapid: c.value, mtype: t.value, subcon: sub.checked } })); if (x) { msg("S", x.message); go(tcode); } } } }, "Save")),
+        h("button.btn.primary", { type: "button", on: { click: async () => { const x = await run(() => api(`/api/md/material/${enc(up(k))}/cin`, { werks: w.value, chapid: c.value, mtype: t.value, subcon: sub.checked })); if (x) { msg("S", x.message); go(tcode); } } } }, "Save")),
         alv({ compact: true, rows: r.materials, columns: [{ key: "matnr", label: "Material" }, { key: "maktx", label: "Description" }, { key: "werks", label: "Plant" },
           { key: "chapid", label: "Chapter ID" }, { key: "hsn", label: "HSN" }, { key: "mtype", label: "Type", render: x => `${x.mtype} ${MD.cin_mtypes[x.mtype]}` }, { key: "gst", label: "GST %", type: "amt" }] })); };
     const partF = (kind) => { const isV = kind === "K";
@@ -522,8 +522,8 @@ function j1id(tcode, title, tab) {
         exc = inp({ upper: true, w: "l" }), ecc = inp({ upper: true, w: "l" }), vt = sel(opts(MD.cin_vtypes), "MA", { w: "l" }), ssi = sel(opts(MD.ssi), ""), cst = inp({ upper: true, w: "l" });
       return h("div", null, panel(isV ? "Vendor excise / GST details" : "Customer excise / GST details", grid(field(isV ? "Vendor" : "Customer", k, { req: true }), field("PAN", pan, { req: true }),
         field("GSTIN", gst, { req: true, hint: "15 chars incl. PAN + check char" }), field("Excise reg. no.", exc), field("ECC no.", ecc), isV ? field("Vendor type", vt) : field("CST no.", cst), isV ? field("SSI status", ssi) : null),
-        h("button.btn.primary", { type: "button", on: { click: async () => { const x = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/cin`, { method: "POST",
-          body: { pan: up(pan), gstin: up(gst), excise_reg: up(exc), ecc_no: up(ecc), vtype: vt.value, ssi: ssi.value, cst_no: up(cst) } })); if (x) { msg("S", x.message); go(tcode); } } } }, "Save")),
+        h("button.btn.primary", { type: "button", on: { click: async () => { const x = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/cin`,
+          { pan: up(pan), gstin: up(gst), excise_reg: up(exc), ecc_no: up(ecc), vtype: vt.value, ssi: ssi.value, cst_no: up(cst) })); if (x) { msg("S", x.message); go(tcode); } } } }, "Save")),
         alv({ compact: true, rows: isV ? r.vendors : r.customers, columns: [{ key: isV ? "lifnr" : "kunnr", label: isV ? "Vendor" : "Customer" }, { key: "name", label: "Name" }, { key: "city", label: "City" },
           { key: "pan", label: "PAN" }, { key: "gstin", label: "GSTIN" }, { key: "excise_reg", label: "Excise reg." }, isV ? { key: "vtype", label: "Type", render: x => `${x.vtype} ${MD.cin_vtypes[x.vtype]}` } : { key: "cst_no", label: "CST" }] })); };
     const chap = alv({ compact: true, rows: Object.entries(MD.chapters).map(([k, v]) => ({ chapid: k, text: v[0], gst: v[1] })), columns: [{ key: "chapid", label: "Chapter ID" }, { key: "text", label: "Description" }, { key: "gst", label: "GST %", type: "int" }] });
@@ -610,7 +610,7 @@ function partnerScreen(kind, tcode, mode, parts, title) {
         toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
           const b = collect(forms); b.tcode = tcode; if (isV) b.ktokk = grp.value; else b.ktokd = grp.value;
           if (k) b[isV ? "lifnr" : "kunnr"] = k;
-          const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}`, { method: "POST", body: b }));
+          const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}`, b));
           if (r) { await meta(true); const id = r.lifnr || r.kunnr; body.innerHTML = ""; const wb = warnBox(r.warnings); if (wb) body.append(wb);
             msgLink(r.warnings && r.warnings.length ? "W" : "S", r.message, "Display", isV ? "XK03" : "XD03", { id }); }
         } }, { label: "Back", ghost: true, onClick: () => go(tcode) }]);
@@ -625,10 +625,10 @@ function partnerScreen(kind, tcode, mode, parts, title) {
       const stat = [d.sperr ? badge("Posting block", "B") : null, d.sperm ? badge("Purchasing block", "B") : null, d.zahls ? badge("Payment block " + d.zahls, "B") : null,
         d.aufsd ? badge("Order block " + d.aufsd, "B") : null, d.faksd ? badge("Billing block " + d.faksd, "B") : null, d.lifsd ? badge("Delivery block " + d.lifsd, "B") : null,
         d.loevm ? badge("Deletion flag", "B") : null, d.payment_exception ? badge(d.payment_exception, "Q") : null].filter(Boolean);
-      body.append(panel(null, h("div.doc-head", null, h("div", null, h("div.k", null, isV ? "Vendor" : "Customer"), h("div.v", null, `${k} ${d.name}`)),
-        h("div", null, h("div.k", null, "Account group"), h("div.v", null, `${d.ktokk || d.ktokd} ${d.ktokk_text || d.ktokd_text}`)),
-        h("div", null, h("div.k", null, "Balance (open items)"), h("div.v", null, `${fmtAmt(d.open_balance)} EGP · ${d.open_items} item(s)`)),
-        h("div", null, h("div.k", null, "Status"), h("div.v", null, stat.length ? stat : badge("Active", "U"))))));
+      body.append(panel(null, h("div.obj-header", null, h("div.attr", null, h("span.k", null, isV ? "Vendor" : "Customer"), h("span.v", null, `${k} ${d.name}`)),
+        h("div.attr", null, h("span.k", null, "Account group"), h("span.v", null, `${d.ktokk || d.ktokd} ${d.ktokk_text || d.ktokd_text}`)),
+        h("div.attr", null, h("span.k", null, "Balance (open items)"), h("span.v", null, `${fmtAmt(d.open_balance)} EGP · ${d.open_items} item(s)`)),
+        h("div.attr", null, h("span.k", null, "Status"), h("span.v", null, stat.length ? stat : badge("Active", "U"))))));
       if (ro) {
         tabs.push(["Changes", changeGrid(d.changes)]);
         if (d.cin) tabs.push(["CIN (India)", form([{ k: "pan", l: "PAN" }, { k: "gstin", l: "GSTIN", w: "l" }, { k: "excise_reg", l: "Excise reg." }, { k: "ecc_no", l: "ECC no." }], d.cin, true)]);
@@ -640,7 +640,7 @@ function partnerScreen(kind, tcode, mode, parts, title) {
         { label: "Block (" + (isV ? "XK05" : "XD05") + ")", ghost: true, onClick: () => go(isV ? "XK05" : "XD05", { id: k }) }]);
       else toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
         const b = collect(forms); b.tcode = tcode;
-        const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(k)}/change`, { method: "POST", body: b }));
+        const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(k)}/change`, b));
         if (r) { const wb = warnBox(r.warnings); if (wb) body.prepend(wb); msgLink(r.sensitive && r.sensitive.length ? "W" : "S", r.message, r.sensitive && r.sensitive.length ? "Confirm (" + (isV ? "FK08" : "FD08") + ")" : "Changes", r.sensitive && r.sensitive.length ? (isV ? "FK08" : "FD08") : (isV ? "XK04" : "XD04"), { id: k }); }
       } }, { label: "Back", ghost: true, onClick: () => go(tcode) }]);
       if (ro) msg("S", `${isV ? "Vendor" : "Customer"} ${k} displayed`);
@@ -692,7 +692,7 @@ function blockScreen(kind, tcode) {
       }
       toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
         const b = {}; for (const [f, e] of Object.entries(els)) b[f] = e.type === "checkbox" ? (e.checked ? 1 : 0) : e.value;
-        const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/block`, { method: "POST", body: b }));
+        const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/block`, b));
         if (r) msgLink("S", r.message + (r.open_po_items ? ` · ${r.open_po_items} open PO item(s) remain` : ""), "Changes", isV ? "XK04" : "XD04", { id: up(k) });
       } }]);
     };
@@ -710,7 +710,7 @@ function deleteScreen(kind, tcode) {
     app.append(panel(isV ? "Vendor" : "Customer", grid(field(isV ? "Vendor" : "Customer", k, { req: true }), field("Deletion flag (all areas)", f)),
       h("p.muted", null, "A deletion flag stops purchasing / billing. The account can only be archived when no open items remain.")));
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-      const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/delete`, { method: "POST", body: { flag: f.checked } }));
+      const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/delete`, { flag: f.checked }));
       if (r) msg(r.open_items ? "W" : "S", r.message + (r.open_items ? ` - ${r.open_items} open item(s), balance ${fmtAmt(r.open_balance)}: cannot be archived yet` : ""));
     } }]);
   } });
@@ -726,7 +726,7 @@ function groupScreen(kind, tcode) {
     app.append(panel("New account group", grid(field(isV ? "Vendor" : "Customer", k, { req: true }), field("New account group", g)),
       h("p.muted", null, "Allowed only when the number lies in the interval of the new group and the required data exists.")));
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-      const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/group`, { method: "POST", body: isV ? { ktokk: g.value } : { ktokd: g.value } }));
+      const r = await run(() => api(`/api/md/${isV ? "vendor" : "customer"}/${enc(up(k))}/group`, isV ? { ktokk: g.value } : { ktokd: g.value }));
       if (r) { msg("S", r.message); meta(true); }
     } }]);
   } });
@@ -756,7 +756,7 @@ function sensScreen(kind, tcode, all) {
       msg("S", `${r.length} ${all ? "change(s)" : "unconfirmed change(s)"}`);
     };
     const act = async (x, reject) => {
-      const r = await run(() => api("/api/md/sensitive/confirm", { method: "POST", body: { koart: kind, id: x.objectid, reject } }));
+      const r = await run(() => api("/api/md/sensitive/confirm", { koart: kind, id: x.objectid, reject }));
       if (r) { await exec(); msg("S", `${x.objectid}: ${r.message}`); }
     };
     toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: exec }, { label: all ? "Confirm (" + (isV ? "FK08" : "FD08") + ")" : "List (" + (isV ? "FK09" : "FD09") + ")", ghost: true, onClick: () => go(all ? (isV ? "FK08" : "FD08") : (isV ? "FK09" : "FD09")) }]);
