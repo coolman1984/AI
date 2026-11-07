@@ -1,7 +1,0 @@
-{
-  "page_to_chunk": {"1": "chunk-001", "2": "chunk-001", "3": "chunk-002"},
-  "chunk_to_pages": {"chunk-001": [1, 2], "chunk-002": [3]},
-  "missing_pages": [],
-  "duplicate_pages": [],
-  "status": "all_pages_accounted"
-}
