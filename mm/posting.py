@@ -258,7 +258,9 @@ def _post_item(doc, raw):
         freight = rdiv(po["frb"] * qty, po["menge"]) if po["frb"] else 0
         if bwart in ("101", "123"):
             open_qty = po["menge"] - po["wemng"]
-            if qty > open_qty:
+            from md.checks import overdelivery_tolerance
+            tol = overdelivery_tolerance(conn, po["matnr"], po["werks"])
+            if qty > open_qty + po["menge"] * tol // 10000:
                 raise MMError("PO quantity exceeded by %s (open quantity %s)"
                               % (_q(qty - open_qty), _q(open_qty)), "M7", "022")
         else:  # 102 / 122
@@ -292,6 +294,8 @@ def _post_item(doc, raw):
     if not line["lgort"]:
         raise MMError("Enter a storage location", "M7", "018")
     _sloc(conn, line["werks"], line["lgort"])
+    from md.checks import goods_movement
+    goods_movement(conn, line, bwart, mt["kind"], raw.get("insmk"), mt.get("st_choice"))
 
     # ------------------------------------------------ by movement kind
     kind = mt["kind"]

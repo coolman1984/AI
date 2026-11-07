@@ -26,6 +26,8 @@ CHART = {
     "211900": ("Accumulated depreciation (legacy)", "BS", "A14", "", 0, ""),
     # ---- inventories (MM)
     "300000": ("Inventory - raw materials", "BS", "A20", "", 0, ""),
+    "300100": ("Inventory - imported raw materials", "BS", "A20", "", 0, ""),
+    "310000": ("Inventory - trading goods", "BS", "A20", "", 0, ""),
     "303000": ("Inventory - operating supplies", "BS", "A20", "", 0, ""),
     "305000": ("Inventory - packaging", "BS", "A20", "", 0, ""),
     "790000": ("Inventory - semi-finished", "BS", "A20", "", 0, ""),

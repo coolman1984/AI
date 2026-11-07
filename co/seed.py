@@ -319,6 +319,8 @@ def plan_and_sample(conn):
     from fi import seed as fi_seed
     from pur import seed as pur_seed
     pur_seed.sample(conn, y, p)
+    from md import seed as md_seed
+    md_seed.sample(conn, y, p)
     fi_seed.sample_before_closing(conn, y, p, oi, ebeln)
     # ------------------------------------------------------------ period end
     period_end.run_cycle(conn, "DIST01", y, p, "04", user=USER)

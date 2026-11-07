@@ -42,8 +42,8 @@ def create_po(conn, data, user):
         v = conn.execute("SELECT * FROM vendor WHERE lifnr=?", (lifnr,)).fetchone()
         if not v:
             raise MMError("Vendor %s does not exist" % lifnr, "06", "301")
-        if v["sperr"]:
-            raise MMError("Vendor %s is blocked for purchasing" % lifnr, "06", "302")
+        from md import checks as mdc
+        mdc.vendor_for_purchasing(conn, v)
         ebeln = str(next_number(conn, "PO"))
         conn.execute("INSERT INTO po_header (ebeln,lifnr,bedat,ernam,erdat,bsart,ekorg,ekgrp,"
                      "zterm,waers,angnr) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -65,6 +65,7 @@ def create_po(conn, data, user):
                 if not m:
                     raise MMError("Material %s not maintained in plant %s" % (matnr, werks),
                                   "06", "302")
+                mdc.purchasing_item(conn, v, matnr, werks, bedat)
             elif not knttp:
                 raise MMError("Item %s: an item without material needs account assignment "
                               "K or F" % ebelp, "06", "042")

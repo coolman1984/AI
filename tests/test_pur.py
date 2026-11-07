@@ -84,11 +84,11 @@ class Orders(unittest.TestCase):
 
     def test_blocked_vendor(self):
         c = demo()
-        c.execute("UPDATE vendor SET sperr=1 WHERE lifnr='100009'")
+        c.execute("UPDATE vendor SET sperm=1 WHERE lifnr='100009'")
         with self.assertRaises(MMError):
             po.create_po(c, {"lifnr": "100009", "bedat": TODAY, "items": [
                 {"matnr": "RM-1004", "menge": "1", "netpr": "500"}]}, "T")
-        c.execute("UPDATE vendor SET sperr=0 WHERE lifnr='100009'")
+        c.execute("UPDATE vendor SET sperm=0 WHERE lifnr='100009'")
 
 
 class Sourcing(unittest.TestCase):
