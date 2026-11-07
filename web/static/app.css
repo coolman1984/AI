@@ -33,6 +33,12 @@ button { font: inherit; }
 .okcode input:focus { outline: none; background: #fff; color: var(--text); }
 .shell-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .shell-sys { font-size: 12px; opacity: .8; white-space: nowrap; }
+.shell-power { width: 30px; height: 30px; border-radius: 50%; border: 1px solid
+  rgba(255,255,255,.35); background: none; color: #fff; font-size: 15px;
+  cursor: pointer; line-height: 1; }
+.shell-power:hover { background: #bb0000; border-color: #bb0000; }
+.stopped { max-width: 520px; margin: 80px auto; text-align: center; }
+.stopped h2 { font-weight: 400; }
 .shell-avatar { width: 30px; height: 30px; border-radius: 50%; border: 0;
   background: #5b738b; color: #fff; font-size: 12px; font-weight: 700;
   cursor: pointer; }

@@ -445,7 +445,30 @@ const App = (() => {
     datalist("tcode-list", Object.values(S.screens).filter(s => s.tcode !== "HOME")
       .map(s => [s.tcode, `${s.tcode} - ${s.title}`]));
     window.addEventListener("hashchange", render);
+    lifecycle();
     render();
+  }
+  // tell the server this tab is open; the server stops when all tabs are closed
+  function lifecycle() {
+    const tab = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const ping = () => fetch("/api/ping", { method: "POST", body: JSON.stringify({ tab }),
+      headers: { "Content-Type": "application/json" } }).catch(() => {});
+    ping();
+    setInterval(ping, 10000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) ping(); });
+    window.addEventListener("pagehide", () => {
+      navigator.sendBeacon("/api/bye", new Blob([JSON.stringify({ tab })], { type: "text/plain" }));
+    });
+    $("#power-btn").addEventListener("click", async () => {
+      if (!await confirmBox("Stop MM Core", "Stop the MM Core server now? All data is already saved.", "Stop")) return;
+      try { await api("/api/shutdown", {}); } catch (e) {}
+      $("#titlebar").hidden = true;
+      toolbar([]);
+      $("#app").innerHTML = "";
+      $("#app").append(h("div.stopped", null, h("h2", null, "MM Core is stopped"),
+        h("p.muted", null, "All data is saved. You can close this tab. To start again, double-click \u201CStart MM Core\u201D.")));
+      msg("S", "Server stopped");
+    });
   }
   async function refreshMeta() {
     S.meta = await api("/api/meta");

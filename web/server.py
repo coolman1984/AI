@@ -8,6 +8,7 @@ import mimetypes
 import os
 import re
 import threading
+import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -415,6 +416,102 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
 
-def serve(host="127.0.0.1", port=8080):
-    httpd = ThreadingHTTPServer((host, port), Handler)
+# ====================================================================== lifecycle
+class Lifecycle:
+    """Stops the server automatically when the last browser tab is closed.
+
+    Every open tab sends a heartbeat ("ping") every 10 seconds and a
+    goodbye ("bye") when it is closed. When no tab is left, the server
+    waits a few seconds (a page reload says bye and hello again) and then
+    stops. Browsers slow down timers in hidden tabs to about once a minute,
+    so a tab only counts as gone after IDLE seconds without a heartbeat.
+    """
+    IDLE = 150          # seconds without heartbeat -> tab counts as closed
+    GRACE = 8           # seconds with no open tab -> stop
+    FIRST_CONTACT = 600  # stop if no browser ever connects
+
+    def __init__(self, httpd, enabled=True):
+        self.httpd = httpd
+        self.enabled = enabled
+        self.tabs = {}
+        self.lock = threading.Lock()
+        self.started = time.time()
+        self.seen = False
+        self.empty_since = None
+        self.stopping = False
+
+    def ping(self, tab):
+        with self.lock:
+            self.tabs[tab] = time.time()
+            self.seen = True
+            self.empty_since = None
+
+    def bye(self, tab):
+        with self.lock:
+            self.tabs.pop(tab, None)
+
+    def stop(self, delay=0.5):
+        if self.stopping:
+            return
+        self.stopping = True
+        threading.Timer(delay, self.httpd.shutdown).start()
+
+    def watch(self):
+        while not self.stopping:
+            time.sleep(2)
+            if not self.enabled:
+                continue
+            now = time.time()
+            with self.lock:
+                for t, last in list(self.tabs.items()):
+                    if now - last > self.IDLE:
+                        del self.tabs[t]
+                if not self.seen:
+                    if now - self.started > self.FIRST_CONTACT:
+                        self.stop(0)
+                    continue
+                if self.tabs:
+                    self.empty_since = None
+                elif self.empty_since is None:
+                    self.empty_since = now
+                elif now - self.empty_since > self.GRACE:
+                    print("All browser tabs closed - server stopped.")
+                    self.stop(0)
+
+
+LIFE = None
+
+
+@route("POST", "/api/ping")
+def api_ping(req, q):
+    if LIFE:
+        LIFE.ping(str(req.body.get("tab") or "?"))
+    return {"ok": True}
+
+
+@route("POST", "/api/bye")
+def api_bye(req, q):
+    if LIFE:
+        LIFE.bye(str(req.body.get("tab") or "?"))
+    return {"ok": True}
+
+
+@route("POST", "/api/shutdown")
+def api_shutdown(req, q):
+    if LIFE:
+        LIFE.stop()
+    return {"message": "Server stopped. You can close this tab."}
+
+
+class _Server(ThreadingHTTPServer):
+    # On Windows, address reuse would let two servers share one port silently.
+    allow_reuse_address = os.name != "nt"
+    daemon_threads = True
+
+
+def serve(host="127.0.0.1", port=8080, auto_stop=True):
+    global LIFE
+    httpd = _Server((host, port), Handler)
+    LIFE = Lifecycle(httpd, enabled=auto_stop)
+    threading.Thread(target=LIFE.watch, daemon=True).start()
     return httpd

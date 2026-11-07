@@ -3,19 +3,29 @@
 A small inventory system that works like SAP MM (Materials Management).
 Pure Python. Nothing to download or install except Python itself.
 
-## Start it
+## Start it (one click)
 
-- **Windows:** double-click `Start MM Core.bat`.
-- **Any computer:** run `python run.py`.
+Double-click **`Start MM Core.bat`** in this folder.
 
-The browser opens at `http://localhost:8080`.
+- The server runs hidden in the background (no black window).
+- The browser opens at `http://localhost:8080`.
+- **Close the browser tab and the server stops by itself** (after about 10 seconds).
+  Reloading the page does not stop it. With several tabs open, it stops after the last one.
+- Clicking the start file again while it runs just opens the browser again.
+- The red power button (top right) stops the server immediately.
+- All data is saved at once in `data/mm.db`. Nothing is lost when it stops.
+
 The first start loads demo data: 2 plants, 10 materials and about 4 months of movements.
 
-| Option | What it does |
+Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when installing).
+
+| In folder `tools/` | What it does |
 |---|---|
-| `python run.py --reset` | Delete everything and load fresh demo data |
-| `python run.py --reset --empty` | Start with an empty system (no demo data) |
-| `python run.py --port 9000` | Use another port |
+| `Reset - fresh demo data.bat` | Delete all data and load fresh demo data |
+| `Reset - empty system.bat` | Delete all data and start with an empty system |
+
+Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running]`.
+The server log (when started hidden) is in `data/server.log`.
 
 ## Transactions (type the code in the top search field)
 
