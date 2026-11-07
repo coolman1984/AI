@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MM Core</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a6ed1'/%3E%3Cpath d='M8 22V10l8 6 8-6v12' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="shell">
+  <a class="shell-brand" href="#/" title="Home (launchpad)">
+    <span class="shell-logo">MM</span><span class="shell-title">MM Core</span>
+  </a>
+  <form class="okcode" id="okcode-form" autocomplete="off">
+    <input id="okcode" list="tcode-list" placeholder="Enter transaction code (e.g. MIGO)" spellcheck="false">
+    <datalist id="tcode-list"></datalist>
+  </form>
+  <div class="shell-right">
+    <span class="shell-sys" id="shell-sys">MMC (100)</span>
+    <button class="shell-avatar" id="user-btn" title="Change user">OW</button>
+  </div>
+</header>
+<div class="titlebar" id="titlebar" hidden>
+  <button class="btn-icon" id="back-btn" title="Back (F3)">&#x2039;</button>
+  <h1 id="screen-title"></h1>
+  <div class="app-toolbar" id="app-toolbar"></div>
+</div>
+<main id="app"></main>
+<footer class="statusbar" id="statusbar">
+  <div class="status-msg" id="status-msg"></div>
+  <div class="status-info"><span id="status-tcode"></span><span id="status-user"></span><span>localhost</span><span>INS</span></div>
+</footer>
+<div class="dialog-backdrop" id="dialog" hidden><div class="dialog" id="dialog-box"></div></div>
+<script src="/core.js"></script>
+<script src="/screens.js"></script>
+<script src="/cockpit.js"></script>
+<script>App.start();</script>
+</body>
+</html>
