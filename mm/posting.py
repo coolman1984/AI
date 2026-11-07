@@ -19,7 +19,7 @@ How one posting works (same idea as SAP):
 from .config import DOC_TYPE, MOVEMENT_TYPES, STOCK_TYPES, gl_for
 from .db import next_number, transaction
 from .util import (MMError, now_ts, parse_amount, parse_date, parse_qty,
-                   price_of, qty_out, value_of)
+                   price_of, qty_out, rdiv, value_of)
 
 
 # ======================================================================
@@ -87,7 +87,14 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
                         xauto=l["xauto"], smbln=mblnr, sjahr=mjahr,
                         smblp=l["zeile"], lgpla="")
             pieces = _pieces(conn, mblnr, mjahr, l["zeile"])
-            if l["shkzg"] == "H":
+            aa = l["ebeln"] and conn.execute(
+                "SELECT knttp FROM po_item WHERE ebeln=? AND ebelp=?",
+                (l["ebeln"], l["ebelp"])).fetchone()
+            if aa and aa["knttp"]:
+                doc._insert_line(dict(line, lgort="", insmk="U"),
+                                 "H" if l["shkzg"] == "S" else "S", l["menge"],
+                                 l["meins"], l["dmbtr"], 0, "")
+            elif l["shkzg"] == "H":
                 # stock went out -> put it back where it came from, same GR date
                 doc.plus_line(line, target=l["salk"] if valuated else None,
                               valuated=valuated, pieces=pieces, keep_bin=True,
@@ -234,10 +241,21 @@ def _post_item(doc, raw):
         if not po:
             raise MMError("Purchase order item %s %s does not exist"
                           % (ebeln, ebelp), "M7", "022")
+        hdr = conn.execute("SELECT * FROM po_header WHERE ebeln=?", (ebeln,)).fetchone()
+        if "frgke" in hdr.keys() and hdr["frgke"] == "B":
+            raise MMError("Purchase order %s is not yet released (release strategy %s, "
+                          "released %s)" % (ebeln, hdr["frgst"], hdr["frgzu"] or "-"),
+                          "ME", "390")
+        if po["loekz"]:
+            raise MMError("Item %s of PO %s is deleted" % (ebelp, ebeln), "ME", "391")
+        if bwart in ("101", "123") and po["elikz"]:
+            raise MMError("Item %s of PO %s is marked 'delivery completed'" % (ebelp, ebeln),
+                          "ME", "392")
         line.update(ebeln=ebeln, ebelp=ebelp, lifnr=po["lifnr"],
-                    matnr=po["matnr"], werks=po["werks"])
-        line["lgort"] = line["lgort"] or po["lgort"]
+                    matnr=po["matnr"] or "", werks=po["werks"])
+        line["lgort"] = line["lgort"] or po["lgort"] or ""
         ext = value_of(qty, po["netpr"], po["peinh"])
+        freight = rdiv(po["frb"] * qty, po["menge"]) if po["frb"] else 0
         if bwart in ("101", "123"):
             open_qty = po["menge"] - po["wemng"]
             if qty > open_qty:
@@ -265,6 +283,8 @@ def _post_item(doc, raw):
         ext = parse_amount(raw.get("amount"))
     if raw.get("lifnr") and not line["lifnr"]:
         line["lifnr"] = str(raw["lifnr"]).strip().upper()
+    if ref == "PO" and po["knttp"]:
+        return _post_account_assigned(doc, line, po, mt, qty, ext, freight)
 
     if not line["matnr"]:
         raise MMError("Enter a material", "M7", "002")
@@ -275,12 +295,20 @@ def _post_item(doc, raw):
 
     # ------------------------------------------------ by movement kind
     kind = mt["kind"]
+    fr = freight if ref == "PO" else 0
     if kind == "receipt":
-        res = doc.plus_line(line, ext=ext)
+        res = doc.plus_line(line, ext=ext + fr if ext is not None else None)
         doc.post_values(line, res, mt["offset"], +1)
+        if fr:                     # planned delivery costs: GR/IR goods only
+            doc.add_acc("WRX", gl_for("WRX", "*"), fr, line, res["zeile"])
+            doc.add_acc("FRE", gl_for("FRE", "*"), -fr, line, res["zeile"])
     elif kind == "issue":
-        res = doc.minus_line(line, ext=ext, only_bin=line["lgpla"] or None)
+        res = doc.minus_line(line, ext=ext + fr if ext is not None else None,
+                             only_bin=line["lgpla"] or None)
         doc.post_values(line, res, mt["offset"], -1)
+        if fr:
+            doc.add_acc("WRX", gl_for("WRX", "*"), -fr, line, res["zeile"])
+            doc.add_acc("FRE", gl_for("FRE", "*"), fr, line, res["zeile"])
     elif kind == "stocktype":
         src = dict(line, insmk=mt["from_st"])
         res = doc.minus_line(src, valuated=False, only_bin=line["lgpla"] or None)
@@ -293,6 +321,33 @@ def _post_item(doc, raw):
         _update_po_received(conn, line["ebeln"], line["ebelp"], d)
     if ref == "ORDGR":
         _update_order_delivered(conn, line["aufnr"], qty if bwart == "101" else -qty)
+
+
+def _post_account_assigned(doc, line, po, mt, qty, value, freight):
+    """GR for a PO item with account assignment K (cost center) or F (order):
+    no stock - the expense goes to the G/L account and the CO object."""
+    conn = doc.conn
+    sign = 1 if mt["kind"] == "receipt" else -1
+    if po["knttp"] == "K":
+        line["kostl"], line["aufnr"] = po["kostl"], None
+    else:
+        line["aufnr"], line["kostl"] = po["aufnr"], None
+    line["matnr"] = po["matnr"] or ""
+    line["lgort"] = ""
+    meins = po["meins"] or "AU"
+    if po["matnr"]:
+        meins = _material(conn, po["matnr"])["meins"]
+    zeile = doc._insert_line(line, "S" if sign > 0 else "H", qty, meins, value + freight,
+                             0, "")
+    total = value + freight
+    doc.add_acc("KBS", po["sakto"] or "400000", sign * total, line, zeile)
+    doc.add_acc("WRX", gl_for("WRX", "*"), -sign * value, line, zeile)
+    if freight:
+        doc.add_acc("FRE", gl_for("FRE", "*"), -sign * freight, line, zeile)
+    if doc.blart is None:
+        doc.blart = "WE"
+    d = qty if line["bwart"] in ("101", "123") else -qty
+    _update_po_received(conn, line["ebeln"], line["ebelp"], d)
 
 
 def _update_order_delivered(conn, aufnr, delta):

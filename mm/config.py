@@ -129,6 +129,7 @@ ACCOUNT_DETERMINATION = {
     ("ZOB", "*"): "399990",
     ("VAX", "*"): "500000",     # goods issue for delivery -> COGS
     ("AUF", "*"): "895000",     # goods receipt from production order
+    ("FRE", "*"): "193000",     # planned delivery costs (freight clearing)
 }
 
 

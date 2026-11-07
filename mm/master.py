@@ -146,8 +146,13 @@ def _add_plant_view(conn, matnr, p):
     if conn.execute("SELECT 1 FROM material_plant WHERE matnr=? AND werks=?",
                     (matnr, werks)).fetchone():
         raise MMError("Material %s already exists in plant %s" % (matnr, werks))
-    conn.execute("INSERT INTO material_plant VALUES (?,?,?,?)",
-                 (matnr, werks, minbe, eisbe))
+    mabst = parse_qty(p.get("mabst") or "0", allow_zero=True) or minbe * 3
+    conn.execute("INSERT INTO material_plant (matnr,werks,minbe,eisbe,dismm,mabst,"
+                 "bstfe,disls,plifz,ekgrp) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 (matnr, werks, minbe, eisbe, p.get("dismm") or ("VB" if minbe else "ND"),
+                  mabst, parse_qty(p.get("bstfe") or "0", allow_zero=True),
+                  p.get("disls") or "HB", int(p.get("plifz") or 7),
+                  p.get("ekgrp") or "001"))
     conn.execute("INSERT INTO valuation (matnr,bwkey,vprsv,verpr,stprs,peinh,"
                  "lbkum,salk3) VALUES (?,?,?,?,?,?,0,0)",
                  (matnr, werks, vprsv, price, price, peinh))
@@ -212,36 +217,9 @@ def search_materials(conn, q="", limit=200):
 
 # ---------------------------------------------------------------- purchasing
 def create_po(conn, data, user):
-    """ME21N. data: lifnr, bedat, items: [{matnr, werks, lgort, menge, netpr,
-    peinh}]"""
-    lifnr = data.get("lifnr")
-    items = data.get("items") or []
-    if not items:
-        raise MMError("Enter at least one item", "06", "001")
-    bedat = parse_date(data.get("bedat"))
-    with transaction(conn):
-        _must(conn, "SELECT 1 FROM vendor WHERE lifnr=?", (lifnr,),
-              "Vendor %s does not exist" % lifnr)
-        ebeln = str(next_number(conn, "PO"))
-        conn.execute("INSERT INTO po_header VALUES (?,?,?,?,?)",
-                     (ebeln, lifnr, bedat, user, now_ts()))
-        for i, it in enumerate(items, start=1):
-            matnr, werks = it.get("matnr"), it.get("werks")
-            _must(conn, "SELECT 1 FROM material_plant WHERE matnr=? AND werks=?",
-                  (matnr, werks),
-                  "Material %s not maintained in plant %s" % (matnr, werks))
-            lgort = it.get("lgort") or ""
-            if lgort:
-                _must(conn, "SELECT 1 FROM sloc WHERE werks=? AND lgort=?",
-                      (werks, lgort),
-                      "Storage location %s %s does not exist" % (werks, lgort))
-            peinh = int(it.get("peinh") or 1)
-            conn.execute("INSERT INTO po_item (ebeln,ebelp,matnr,werks,lgort,menge,"
-                         "netpr,peinh,wemng,elikz) VALUES (?,?,?,?,?,?,?,?,0,0)",
-                         (ebeln, i * 10, matnr, werks, lgort,
-                          parse_qty(it.get("menge")), parse_amount(it.get("netpr")),
-                          peinh))
-    return ebeln
+    """ME21N - see pur/po.py (conditions, account assignment, release)."""
+    from pur import po
+    return po.create_po(conn, data, user)
 
 
 def get_po(conn, ebeln):

@@ -5,6 +5,18 @@ const { h, $, $$, go, S } = App;
 
 // [folder text, children] or tcode string. "!" prefix = not in scope yet.
 const MENU = [
+  ["Procurement", [
+    ["[0] Overview", ["ZPUR_COCKPIT", "ZPUR_PROCESS"]],
+    ["[1] Master Data & Sources", ["ME11", "ME1M", "ME01", "MEQ1", "XK01", "XK03"]],
+    ["[2] Contract Management", ["ME31K", "ME3M", "ME33K"]],
+    ["[3] Material Requirements Planning", ["MD01", "MD04"]],
+    ["[4] Purchase Requisition", ["ME51N", "ME53N", "ME54N", "ME55", "ME5A"]],
+    ["[5] RFQ / Quotation", ["ME41", "ME47", "ME49"]],
+    ["[6] Purchase Order", ["ME57", "ME59N", "ME21N", "ME22N", "ME23N", "ME29N", "ME28", "ME9F"]],
+    ["[7] Material Movement & Invoice", ["MIGO", "MB51", "MIRO", "F110"]],
+    ["[8] Reporting", ["ME2N", "ME2L", "ME2M", "ME2K", "ME80FN", "ME65"]],
+    ["[9] Customizing", ["OX08", "OME4", "OME9", "M/06", "OMGS"]],
+  ]],
   ["Logistics", [
     ["Materials Management", [
       ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5K", "ZMM_COCKPIT"]],
@@ -179,7 +191,7 @@ function init() {
     else App.msg("E", `Transaction ${v} does not exist`, "00", "343");
   });
   window.addEventListener("hashchange", markActive);
-  open.add("Financial Accounting@0");
+  open.add("Procurement@0");
   draw();
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

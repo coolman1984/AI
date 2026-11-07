@@ -103,7 +103,7 @@ def document_list(conn, matnr="", werks="", lgort="", bwart="", date_from="",
                   date_to="", usnam="", limit=2000):
     sql = ("SELECT i.*, h.budat, h.usnam, h.bktxt, h.xblnr, h.cpudt, m.maktx "
            "FROM mat_doc_item i JOIN mat_doc h ON h.mblnr=i.mblnr AND "
-           "h.mjahr=i.mjahr JOIN material m ON m.matnr=i.matnr WHERE 1=1")
+           "h.mjahr=i.mjahr LEFT JOIN material m ON m.matnr=i.matnr WHERE 1=1")
     args = []
     for col, val in (("i.matnr", matnr), ("i.werks", werks), ("i.lgort", lgort),
                      ("i.bwart", bwart), ("h.usnam", usnam)):

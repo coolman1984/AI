@@ -56,10 +56,20 @@ register("HOME", { title: "Home", async render(app) {
       ["MR21", "Change Material Price", "Revalue stock", "\u00A4"],
       ["CKM3", "Price History", "Moving average over time", "\u2197"],
     ]],
-    ["Purchasing", [
-      ["ME21N", "Create Purchase Order", "Vendor, items, prices", "\u270D"],
-      ["ME23N", "Display Purchase Order", "Items & PO history", "\u2399"],
-      ["ME2M", "Purchase Orders by Material", "Open quantities", "\u2261", "kpi_po"],
+    ["Procurement (Procure-to-Pay)", [
+      ["ZPUR_COCKPIT", "Procurement Cockpit", "Spend, savings, suppliers", "\u25D4", "kpi_spend"],
+      ["ZPUR_PROCESS", "Procurement Process Map", "Requirement \u2192 payment", "\u21BB"],
+      ["MD01", "MRP Run", "Reorder point planning", "\u21BA"],
+      ["ME51N", "Create Requisition", "Stock & services", "\u270E"],
+      ["ME55", "Release Requisitions", "Approval worklist", "\u2714"],
+      ["ME57", "Assign & Create POs", "Source determination", "\u21C9"],
+      ["ME21N", "Create Purchase Order", "Conditions, account assignment", "\u270D"],
+      ["ME28", "Release Purchase Orders", "R1 / R2", "\u2714", "kpi_rel"],
+      ["ME23N", "Display Purchase Order", "Items, history, release", "\u2399"],
+      ["ME49", "Price Comparison", "RFQ ranking & award", "\u2696"],
+      ["ME3M", "Contracts", "Target vs released", "\u2630"],
+      ["ME2N", "Purchase Order List", "To deliver / to invoice", "\u2261", "kpi_po"],
+      ["ME65", "Vendor Evaluation", "Scores & ranking", "\u2605"],
     ]],
     ["Financial Accounting", [
       ["ZFI_COCKPIT", "Finance Cockpit", "Cash, AR, AP, balance sheet", "\u25D4", "kpi_cash"],
@@ -151,6 +161,10 @@ register("HOME", { title: "Home", async render(app) {
     kpiEls.kpi_docs.append(String(d.kpi.docs_period), h("small", null, "30 d"));
     kpiEls.kpi_bins.append(`${d.kpi.bins_used}/${d.kpi.bins_total}`);
     kpiEls.kpi_po.append(String(d.kpi.open_po_items), h("small", null, "open"));
+    api("/api/pur/cockpit").then(p => {
+      kpiEls.kpi_spend.append(App.fmtShort(p.kpi.spend), h("small", null, "EGP"));
+      kpiEls.kpi_rel.append(String(p.kpi.pr_waiting + p.kpi.po_blocked), h("small", null, "waiting"));
+    }).catch(() => {});
     api("/api/fi/cockpit").then(f => {
       kpiEls.kpi_cash.append(App.fmtShort(f.kpi.cash), h("small", null, "cash"));
       kpiEls.kpi_overdue.append(App.fmtShort(f.kpi.overdue), h("small", null, "overdue"));

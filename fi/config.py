@@ -56,6 +56,7 @@ CHART = {
     "176000": ("Payroll payable", "BS", "P40", "", 0, ""),
     "190000": ("Accrued expenses", "BS", "P40", "", 0, ""),
     "191100": ("Goods received / invoice received (GR/IR)", "BS", "P40", "", 1, ""),
+    "193000": ("Freight clearing (planned delivery costs)", "BS", "P40", "", 1, ""),
     # ---- P&L: revenue
     "800000": ("Sales revenue - domestic", "PL", "R10", "", 0, ">"),
     "800100": ("Sales revenue - export", "PL", "R10", "", 0, ">"),
