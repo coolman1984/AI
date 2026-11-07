@@ -70,6 +70,32 @@ Keys: `F8` execute, `Ctrl+S` post/save, `F3` back.
 - **Accounting:** every valuated movement creates a balanced accounting document
   (BSX stock, WRX GR/IR, VBR consumption, PRD price differences, ...).
 
+## Procurement (Procure-to-Pay)
+
+Start with `ZPUR_COCKPIT` (management KPIs) or `ZPUR_PROCESS` (the whole chain step by step).
+
+| Step | T-codes |
+|---|---|
+| Master data & sources | `ME11`/`ME1M` info records, `ME01` source list, `MEQ1` quota, `XK01` vendor |
+| Contracts | `ME31K` create, `ME3M` list, `ME33K` display (call-offs vs target) |
+| MRP | `MD01` planning run (reorder point), `MD04` stock / requirements list |
+| Requisition | `ME51N`, `ME53N`, `ME54N`/`ME55` release, `ME5A` list |
+| RFQ / Quotation | `ME41` RFQ, `ME47` quotation, `ME49` price comparison + award |
+| Purchase order | `ME57`/`ME59N` convert PR, `ME21N`, `ME22N`, `ME23N`, `ME29N`/`ME28` release, `ME9F` print |
+| Receipt & invoice | `MIGO` (101/122), `MIRO`, `F110` payment |
+| Reports | `ME2N`, `ME2L`, `ME2M`, `ME2K`, `ME80FN`, `ME65` vendor evaluation |
+| Customizing | `OX08`, `OME4`, `OME9`, `M/06`, `OMGS` |
+
+Logic like SAP:
+
+- **Source determination:** contract → fixed source list → quota → cheapest info record.
+- **Release strategy:** PR above 25,000 needs R1. PO above 100,000 needs R1, above 500,000
+  also R2, in this order. Goods receipt is blocked until the PO is released (ME 390).
+- **Account assignment K/F:** receipt goes straight to expense and the cost center / order.
+- **Freight (FRB1):** added to stock value at receipt, parked on clearing account 193000,
+  cleared by the invoice.
+- **Vendor evaluation:** price 30 %, on-time 30 %, quantity 20 %, quality 20 %.
+
 ## Office (COM)
 
 Python cannot use COM directly without extra packages. MM Core asks Windows
@@ -86,6 +112,7 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 | Folder | Content |
 |---|---|
 | `mm/` | Business logic: database, movement engine, master data, reports |
+| `pur/` | Procurement: requisitions, sourcing, contracts, RFQ, PO, release, MRP, analytics |
 | `office/` | Office COM bridge |
 | `web/` | Web server and screens |
 | `tests/` | Automatic tests (`python -m unittest discover -s tests`) |
