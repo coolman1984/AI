@@ -515,3 +515,7 @@ def serve(host="127.0.0.1", port=8080, auto_stop=True):
     LIFE = Lifecycle(httpd, enabled=auto_stop)
     threading.Thread(target=LIFE.watch, daemon=True).start()
     return httpd
+
+
+# CO module API (registers its routes on import)
+from web import co_api  # noqa: E402,F401
