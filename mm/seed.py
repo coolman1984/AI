@@ -26,6 +26,9 @@ def seed(conn):
     sample_start = co_seed.sample_period_start()
     ANCHOR[0] = sample_start - datetime.timedelta(days=1)
     failed = seed_mm(conn, before=lambda: co_seed.master(conn))
+    from fi import seed as fi_seed
+    hist_start = ANCHOR[0] - datetime.timedelta(days=130)
+    fi_seed.history(conn, hist_start.replace(day=1), ANCHOR[0])
     failed += co_seed.plan_and_sample(conn)
     return failed
 
@@ -82,8 +85,8 @@ def seed_mm(conn, before=None):
         ("RM-1003", "Paint white RAL9010", "ROH", "L", "PAINT", "V", "180.00", 1, "400", ["1000"]),
         ("RM-1004", "Copper wire 1.5mm", "ROH", "KG", "COPPER", "V", "520.00", 1, "150", ["1000"]),
         ("PK-2001", "Carton box 40x30x30", "VERP", "PC", "PACK", "V", "1250.00", 100, "2000", ["1000"]),
-        ("FG-3001", "Kitchen cabinet unit 60cm", "FERT", "PC", "CABINET", "S", "4500.00", 1, "20", both),
-        ("FG-3002", "Wall cabinet unit 40cm", "FERT", "PC", "CABINET", "S", "2800.00", 1, "20", ["1000"]),
+        ("FG-3001", "Kitchen cabinet unit 60cm", "FERT", "PC", "CABINET", "S", "2450.00", 1, "20", both),
+        ("FG-3002", "Wall cabinet unit 40cm", "FERT", "PC", "CABINET", "S", "1580.00", 1, "20", ["1000"]),
         ("SP-4001", "Ball bearing 6205-2RS", "HIBE", "PC", "BEARING", "V", "85.00", 1, "40", ["1000"]),
         ("SP-4002", "V-belt A-42", "HIBE", "PC", "BELT", "V", "60.00", 1, "30", ["1000"]),
         ("SP-4003", "Hydraulic oil ISO 46", "HIBE", "L", "OIL", "V", "95.00", 1, "200", ["1000"]),

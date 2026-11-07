@@ -557,7 +557,9 @@ class _Doc:
                 ktosl=ktosl, hkont=hkont, amount=amount, matnr=line["matnr"],
                 werks=line["werks"], menge=line["qty"], zeile=zeile,
                 kostl=line.get("kostl") if co_relevant else None,
-                aufnr=line.get("aufnr") if co_relevant else None))
+                aufnr=line.get("aufnr") if co_relevant else None,
+                ebeln=line.get("ebeln"), ebelp=line.get("ebelp"),
+                sgtxt=line.get("sgtxt")))
 
     def _insert_line(self, line, shkzg, qty, meins, value, salk, lgpla):
         self.zeile += 1
@@ -616,31 +618,10 @@ class _Doc:
 # ======================================================================
 # helpers
 # ======================================================================
-def _write_acc_doc(conn, blart, budat, user, awkey, bktxt, lines):
-    total = sum(l["amount"] for l in lines)
-    if total != 0:
-        raise MMError("Balance in transaction currency: %s (internal error)"
-                      % (total / 100.0), "F5", "702")
-    lines = [l for l in lines if l["amount"]]
-    if not lines:
-        return None
-    gjahr = int(budat[:4])
-    belnr = str(next_number(conn, "ACCDOC"))
-    conn.execute("INSERT INTO acc_doc VALUES (?,?,?,?,?,?,?)",
-                 (belnr, gjahr, blart, budat, user, awkey, bktxt))
-    from co import integration
-    integration.derive_assignments(conn, lines)   # OKB9 defaults + checks
-    for i, l in enumerate(lines, start=1):
-        conn.execute("INSERT INTO acc_doc_item (belnr,gjahr,buzei,hkont,shkzg,"
-                     "dmbtr,ktosl,matnr,werks,menge,zeile,kostl,aufnr,paobj) "
-                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                     (belnr, gjahr, i, l["hkont"],
-                      "S" if l["amount"] > 0 else "H", abs(l["amount"]),
-                      l["ktosl"], l.get("matnr"), l.get("werks"), l.get("menge"),
-                      l.get("zeile"), l.get("kostl"), l.get("aufnr"),
-                      l.get("paobj")))
-    integration.post_from_fi(conn, belnr, gjahr, budat, user, awkey, bktxt, lines)
-    return belnr
+def _write_acc_doc(conn, blart, budat, user, awkey, bktxt, lines, **kw):
+    """All accounting documents go through the central FI engine."""
+    from fi import document
+    return document.write(conn, blart, budat, user, awkey, bktxt, lines, **kw)
 
 
 def _pieces(conn, mblnr, mjahr, zeile):

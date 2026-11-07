@@ -104,51 +104,13 @@ DOC_TYPE = {"receipt": "WE", "issue": "WA", "transfer": "UM", "stocktype": "WA"}
 # OBYC-like account determination: (transaction key, valuation class) -> G/L
 # "*" means "any valuation class".
 # ---------------------------------------------------------------------------
-GL_ACCOUNTS = {
-    "300000": "Inventory - raw materials",
-    "303000": "Inventory - operating supplies",
-    "305000": "Inventory - packaging",
-    "790000": "Inventory - semi-finished",
-    "792000": "Inventory - finished goods",
-    "191100": "Goods received / invoice received (GR/IR)",
-    "400000": "Consumption of raw materials",
-    "410000": "Scrapping expense",
-    "233000": "Inventory differences",
-    "231500": "Price differences",
-    "231520": "Price differences - transfer postings",
-    "281500": "Revaluation (price change)",
-    "399999": "Initial stock entry clearing",
-    "399990": "Receipts without PO clearing",
-    # --- balance sheet (FI)
-    "113100": "Bank account",
-    "140000": "Customers - receivables",
-    "160000": "Vendors - payables",
-    "176000": "Payroll payable",
-    "211900": "Accumulated depreciation",
-    # --- P&L: revenue and cost of sales
-    "800000": "Sales revenue - domestic",
-    "800100": "Sales revenue - export",
-    "880000": "Sales deductions (discounts)",
-    "500000": "Cost of goods sold (COGS)",
-    "895000": "Factory output of production orders",
-    # --- P&L: primary costs (cost elements category 1)
-    "420000": "Direct wages",
-    "430000": "Salaries",
-    "440000": "Social security costs",
-    "450000": "Energy (electricity, gas)",
-    "460000": "Rent",
-    "470000": "Depreciation",
-    "475000": "External maintenance services",
-    "476000": "Office & IT costs",
-    "477000": "Marketing & advertising",
-    "478000": "Freight out",
-}
+# G/L accounts come from the FI chart of accounts (fi/config.py, FS00)
+from fi.config import CHART as _CHART, pnl_accounts as _pnl  # noqa: E402
+
+GL_ACCOUNTS = {k: v[0] for k, v in _CHART.items()}
 
 # Profit & loss accounts (everything else is balance sheet)
-PNL_ACCOUNTS = {"231500", "231520", "233000", "281500", "400000", "410000",
-                "420000", "430000", "440000", "450000", "460000", "470000",
-                "475000", "476000", "477000", "478000", "500000", "800000",
-                "800100", "880000", "895000"}
+PNL_ACCOUNTS = _pnl()
 
 ACCOUNT_DETERMINATION = {
     ("BSX", "3000"): "300000",

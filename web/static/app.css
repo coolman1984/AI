@@ -309,3 +309,45 @@ table.pnl td.pos { color: var(--positive); }
 .kpi .v.pos { color: var(--positive); }
 .card.wide { grid-column: span 2; }
 @media (max-width: 1100px) { .card.wide { grid-column: auto; } }
+
+/* ---------------------------------------------------------------- SAP menu tree */
+.workspace { flex: 1; display: flex; min-height: 0; }
+.content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.content main { flex: 1; overflow: auto; }
+.shell-menu { border: 0; background: none; color: #fff; font-size: 18px; cursor: pointer;
+  padding: 2px 6px; border-radius: 4px; }
+.shell-menu:hover { background: rgba(255,255,255,.15); }
+.sidemenu { width: 300px; flex: none; background: #fff; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; min-height: 0; }
+.sidemenu.closed { display: none; }
+.sm-tabs { display: flex; gap: 2px; padding: 6px 6px 0; align-items: center; }
+.sm-tab { border: 1px solid var(--brand); background: #fff; color: var(--brand); padding: 3px 10px;
+  font-size: 12px; cursor: pointer; }
+.sm-tab.active { background: var(--brand); color: #fff; }
+.sm-tool { margin-left: auto; border: 0; background: none; color: var(--brand); cursor: pointer;
+  font-size: 15px; }
+.sm-tool + .sm-tool { margin-left: 0; }
+.sm-filter { padding: 6px; }
+.sm-filter input, .sm-search input { width: 100%; height: 26px; border: 1px solid var(--field);
+  border-radius: 2px; padding: 0 6px; font: inherit; font-size: 12px; font-style: italic; }
+.sm-tree { flex: 1; overflow: auto; font-size: 12.5px; border-top: 1px solid var(--border); }
+.sm-node { display: flex; align-items: center; gap: 7px; padding: 5px 8px;
+  border-bottom: 1px solid #eef0f2; cursor: pointer; user-select: none; }
+.sm-node:hover { background: var(--hover); }
+.sm-node.open > .sm-ico { background: #4a5a9a; }
+.sm-ico { width: 13px; height: 13px; border-radius: 50%; background: #6b7bb5; color: #fff; flex: none;
+  font-size: 10px; line-height: 13px; text-align: center; font-weight: 700; }
+.sm-node.leaf .sm-ico { background: none; color: var(--brand); border: 1px solid #b7c3d7; }
+.sm-node.na { color: var(--muted); font-style: italic; }
+.sm-node .code { color: var(--muted); font-family: Consolas, monospace; font-size: 11px; }
+.sm-node .star { margin-left: auto; color: #c8ced6; font-size: 13px; }
+.sm-node .star.on { color: #e9a400; }
+.sm-node.active { background: var(--select); }
+.sm-search { display: flex; gap: 6px; padding: 6px; border-top: 1px solid var(--border); }
+.sm-search .btn { height: 26px; }
+@media (max-width: 900px) { .sidemenu { position: fixed; top: 44px; bottom: 28px; left: 0;
+  z-index: 40; box-shadow: 4px 0 12px rgba(0,0,0,.15); } }
+@media print { .sidemenu { display: none !important; } }
+.tile-foot { gap: 6px; }
+.tile-left { min-width: 0; overflow: hidden; }
+.tile-code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

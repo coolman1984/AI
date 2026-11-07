@@ -63,6 +63,7 @@ def master(conn):
         ("895000", "Factory output production orders", 1),
         ("800000", "Sales revenue domestic", 11), ("800100", "Sales revenue export", 11),
         ("880000", "Sales deductions", 12),
+        ("479000", "Bank charges", 1), ("479500", "Audit & legal fees", 1),
         ("615000", "ILA machine hours", 43), ("616000", "ILA labor hours", 43),
         ("617000", "ILA maintenance hours", 43),
         ("650000", "Assessment internal services", 42),
@@ -100,6 +101,7 @@ def master(conn):
     com.create_skf(conn, "EMPL", "Employees", "EA", fixed=True)
     com.set_default_aa(conn, "233000", "4400")      # OKB9
     com.set_default_aa(conn, "410000", "4400")
+    com.set_default_aa(conn, "479000", "9100")
     for c in [("C1001", "Cairo Home Center", "Cairo", "CAI", "01", "10"),
               ("C1002", "Delta Kitchens Wholesale", "Tanta", "DLT", "02", "10"),
               ("C1003", "Gulf Export Trading", "Jeddah", "EXP", "03", "20")]:
@@ -301,22 +303,6 @@ def plan_and_sample(conn):
         dict(hkont="430000", debit="26000", kostl="8100"),
         dict(hkont="430000", debit="41000", kostl="9100"),
         dict(hkont="176000", credit="221700")], USER)
-    post_gl_document(conn, {"budat": d(10), "bktxt": "Utilities & services"}, [
-        dict(hkont="450000", debit="21800", kostl="4210"),
-        dict(hkont="460000", debit="30000", kostl="9900"),
-        dict(hkont="475000", debit="5400", kostl="4100"),
-        dict(hkont="475000", debit="4600", kostl="4200"),
-        dict(hkont="476000", debit="11200", kostl="9100"),
-        dict(hkont="477000", debit="18500", kostl="8100"),
-        dict(hkont="478000", debit="5900", kostl="8100"),
-        dict(hkont="113100", credit="97400")], USER)
-    post_gl_document(conn, {"budat": eom.isoformat(), "bktxt": "Depreciation run"}, [
-        dict(hkont="470000", debit="60000", kostl="4100"),
-        dict(hkont="470000", debit="6062.50", kostl="4120"),
-        dict(hkont="211900", credit="66062.50")], USER)
-    post_gl_document(conn, {"budat": d(16), "bktxt": "Trade fair booth"}, [
-        dict(hkont="477000", debit="12000", aufnr=oi),
-        dict(hkont="160000", credit="12000")], USER)
     for k, v in SQM.items():
         actual.post_skf(conn, d(28), k, "SQM", v)
     for k, v in {"4100": "6300", "4120": "2100", "4200": "450", "4300": "500",
@@ -329,6 +315,9 @@ def plan_and_sample(conn):
         copa.create_billing(conn, {"kunnr": kunnr, "fkdat": day, "items": [
             dict(matnr=m, qty=q, price=pr, disc=ds, werks="1000", lgort="0003")
             for m, q, pr, ds in items]}, USER)
+    # FI postings of the month that create costs (vendor invoices, depreciation...)
+    from fi import seed as fi_seed
+    fi_seed.sample_before_closing(conn, y, p, oi, ebeln)
     # ------------------------------------------------------------ period end
     period_end.run_cycle(conn, "DIST01", y, p, "04", user=USER)
     period_end.run_cycle(conn, "ASSESS01", y, p, "04", user=USER)
@@ -338,4 +327,5 @@ def plan_and_sample(conn):
     period_end.run_cycle(conn, "COPA01", y, p, "04", user=USER)
     conn.execute("INSERT OR REPLACE INTO settings VALUES ('co_sample', ?)",
                  ("%04d-%02d" % (y, p),))
+    fi_seed.sample_after_closing(conn, y, p)
     return failed

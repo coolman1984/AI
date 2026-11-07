@@ -52,12 +52,29 @@ def set_bin_blocked(conn, werks, lgort, lgpla, blocked):
             raise MMError("Storage bin %s does not exist" % lgpla, "L3", "013")
 
 
-def create_vendor(conn, lifnr, name, city=""):
+def create_vendor(conn, lifnr, name, city="", akont="160000", zterm="NT30",
+                  waers="EGP", land="EG", stcd1="", bankn="", ktokk="0001"):
+    """XK01: general data + company code data (reconciliation account,
+    payment terms) + purchasing currency."""
     lifnr = _key(lifnr, "vendor", 10)
+    if not (name or "").strip():
+        raise MMError("Enter a name", "F2", "002")
+    from fi.config import PAYMENT_TERMS, CURRENCIES
+    if zterm not in PAYMENT_TERMS:
+        raise MMError("Payment terms %s are not defined (OBB8)" % zterm, "F2", "030")
+    if waers not in CURRENCIES:
+        raise MMError("Currency %s is not defined" % waers, "F2", "031")
     with transaction(conn):
         if conn.execute("SELECT 1 FROM vendor WHERE lifnr=?", (lifnr,)).fetchone():
             raise MMError("Vendor %s already exists" % lifnr, "F2", "001")
-        conn.execute("INSERT INTO vendor VALUES (?,?,?)", (lifnr, name, city))
+        acc = conn.execute("SELECT recon FROM gl_account WHERE hkont=?", (akont,)).fetchone()
+        if not acc or acc["recon"] != "K":
+            raise MMError("Account %s is not a vendor reconciliation account" % akont,
+                          "F2", "032")
+        conn.execute("INSERT INTO vendor (lifnr,name,city,ktokk,akont,zterm,waers,"
+                     "stcd1,bankn,land,sperr) VALUES (?,?,?,?,?,?,?,?,?,?,0)",
+                     (lifnr, name.strip(), city, ktokk, akont, zterm, waers, stcd1,
+                      bankn, land))
 
 
 def create_cost_center(conn, kostl, name, kosar="", khinr="", verak=""):
@@ -219,7 +236,8 @@ def create_po(conn, data, user):
                       (werks, lgort),
                       "Storage location %s %s does not exist" % (werks, lgort))
             peinh = int(it.get("peinh") or 1)
-            conn.execute("INSERT INTO po_item VALUES (?,?,?,?,?,?,?,?,0,0)",
+            conn.execute("INSERT INTO po_item (ebeln,ebelp,matnr,werks,lgort,menge,"
+                         "netpr,peinh,wemng,elikz) VALUES (?,?,?,?,?,?,?,?,0,0)",
                          (ebeln, i * 10, matnr, werks, lgort,
                           parse_qty(it.get("menge")), parse_amount(it.get("netpr")),
                           peinh))

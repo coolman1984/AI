@@ -114,15 +114,24 @@ def connect(path=None):
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
     from co.schema import CO_SCHEMA, CO_NUMBER_RANGES, MM_COLUMN_ADDS
-    for table, cols in MM_COLUMN_ADDS.items():   # upgrade older databases
-        have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
-        for col, typ in cols:
-            if col not in have:
-                conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
+    from fi.schema import FI_SCHEMA, FI_COLUMN_ADDS
+    from fi.config import CHART, NUMBER_RANGES as FI_RANGES
     conn.executescript(CO_SCHEMA)
-    for obj, start in list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()):
+    for adds in (MM_COLUMN_ADDS, FI_COLUMN_ADDS):   # upgrade older databases
+        for table, cols in adds.items():
+            have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
+            for col, typ in cols:
+                if col not in have:
+                    conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
+    conn.executescript(FI_SCHEMA)
+    ranges = list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()) + \
+        [("FI_" + k, v) for k, v in FI_RANGES.items()]
+    for obj, start in ranges:
         conn.execute("INSERT OR IGNORE INTO number_range VALUES (?, ?)",
                      (obj, start - 1))
+    for k, v in CHART.items():                      # FS00 initial chart
+        conn.execute("INSERT OR IGNORE INTO gl_account (hkont,txt,typ,fsv,recon,oi,tax)"
+                     " VALUES (?,?,?,?,?,?,?)", (k, v[0], v[1], v[2], v[3], v[4], v[5]))
     return conn
 
 

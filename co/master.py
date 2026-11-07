@@ -242,12 +242,22 @@ def set_costing_sheet(conn, rows_):
             conn.execute("INSERT INTO costing_sheet VALUES (?,?,?,?,?,?,?,?)", r)
 
 
-def create_customer(conn, kunnr, name, city, region, kdgrp, vtweg):
+def create_customer(conn, kunnr, name, city, region, kdgrp, vtweg, zterm="NT30",
+                    klimk="0", akont="140000", stcd1="", land="EG"):
+    """XD01: general data, company code data (reconciliation account, terms),
+    sales data (region, customer group, channel) and credit limit (FD32)."""
+    from fi.config import PAYMENT_TERMS
+    from mm.util import parse_amount
+    kunnr = _key(kunnr, "customer")
+    if zterm not in PAYMENT_TERMS:
+        raise MMError("Payment terms %s are not defined (OBB8)" % zterm, "F2", "030")
     with transaction(conn):
         if conn.execute("SELECT 1 FROM customer WHERE kunnr=?", (kunnr,)).fetchone():
             raise MMError("Customer %s already exists" % kunnr, "F2", "001")
-        conn.execute("INSERT INTO customer VALUES (?,?,?,?,?,?)",
-                     (kunnr.upper(), name, city, region, kdgrp, vtweg))
+        conn.execute("INSERT INTO customer (kunnr,name,city,region,kdgrp,vtweg,akont,"
+                     "zterm,klimk,stcd1,land) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                     (kunnr, name, city, region, kdgrp, vtweg, akont, zterm,
+                      parse_amount(klimk or "0", allow_zero=True), stcd1, land))
 
 
 # ------------------------------------------------------------ cycles

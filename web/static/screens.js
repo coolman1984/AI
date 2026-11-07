@@ -61,6 +61,22 @@ register("HOME", { title: "Home", async render(app) {
       ["ME23N", "Display Purchase Order", "Items & PO history", "\u2399"],
       ["ME2M", "Purchase Orders by Material", "Open quantities", "\u2261", "kpi_po"],
     ]],
+    ["Financial Accounting", [
+      ["ZFI_COCKPIT", "Finance Cockpit", "Cash, AR, AP, balance sheet", "\u25D4", "kpi_cash"],
+      ["ZFI_PROCESS", "FI Closing Cockpit", "Process map A \u2192 Z", "\u21BB"],
+      ["F.01", "Balance Sheet / P&L", "Financial statements", "\u2696"],
+      ["S_ALR_87012277", "Trial Balance", "G/L account balances", "\u2261"],
+      ["FB60", "Vendor Invoice", "With cost center", "\u270D"],
+      ["MIRO", "Invoice Verification", "PO / GR / invoice", "\u2714"],
+      ["F110", "Payment Run", "With cash discount", "\u21D2"],
+      ["F-28", "Incoming Payment", "Clear customer items", "\u21D0"],
+      ["FBL5N", "Customer Line Items", "Open & overdue", "\u2263", "kpi_overdue"],
+      ["FBL1N", "Vendor Line Items", "Open & due", "\u2263"],
+      ["AR01", "Asset Balances", "Book values", "\u2302"],
+      ["AFAB", "Depreciation Run", "To cost centers", "\u2198"],
+      ["FF7A", "Cash Forecast", "Next 8 weeks", "\u2197"],
+      ["S_ALR_87012357", "VAT Return", "Output - input", "%"],
+    ]],
     ["Controlling - Overview & Process", [
       ["ZCO_COCKPIT", "Controlling Cockpit", "Management P&L, plan vs actual", "\u25D4", "kpi_ebit"],
       ["ZCO_PROCESS", "CO Process Map", "Closing cockpit A \u2192 Z", "\u21BB"],
@@ -135,6 +151,10 @@ register("HOME", { title: "Home", async render(app) {
     kpiEls.kpi_docs.append(String(d.kpi.docs_period), h("small", null, "30 d"));
     kpiEls.kpi_bins.append(`${d.kpi.bins_used}/${d.kpi.bins_total}`);
     kpiEls.kpi_po.append(String(d.kpi.open_po_items), h("small", null, "open"));
+    api("/api/fi/cockpit").then(f => {
+      kpiEls.kpi_cash.append(App.fmtShort(f.kpi.cash), h("small", null, "cash"));
+      kpiEls.kpi_overdue.append(App.fmtShort(f.kpi.overdue), h("small", null, "overdue"));
+    }).catch(() => {});
     api("/api/co/cockpit").then(c => {
       kpiEls.kpi_ebit.append(App.fmtShort(c.kpi.ebit), h("small", null, "EBIT"));
       kpiEls.kpi_orders.append(String(c.kpi.open_orders), h("small", null, "open"));
@@ -1069,16 +1089,25 @@ register("FB03", { title: "Display Accounting Document", async render(app, param
     const deb = doc.items.filter(i => i.shkzg === "S").reduce((a, i) => a + i.dmbtr, 0);
     const cre = doc.items.filter(i => i.shkzg === "H").reduce((a, i) => a + i.dmbtr, 0);
     const mat = doc.awkey && /^49/.test(doc.awkey) ? doc.awkey.slice(0, 10) : null;
-    out.append(h("div.panel", null, h("div.obj-header", null, [["Document number", doc.belnr], ["Fiscal year", doc.gjahr],
-      ["Document type", doc.blart], ["Posting date", fmtDate(doc.budat)], ["User", doc.usnam],
-      ["Reference", mat ? h("a", { href: `#/MB03?id=${mat}&year=${doc.awkey.slice(10)}` }, mat) : doc.awkey],
+    out.append(h("div.panel", null, h("div.obj-header", null, [["Document number", doc.belnr], ["Company code", "1000"], ["Fiscal year", doc.gjahr],
+      ["Document type", doc.blart], ["Doc. date", fmtDate(doc.bldat || doc.budat)], ["Posting date", fmtDate(doc.budat)], ["Period", doc.monat || ""],
+      ["Currency", `${doc.waers || "EGP"}${doc.kursf && doc.kursf !== 100000 ? " @ " + (doc.kursf / 100000).toFixed(4) : ""}`],
+      ["Reference", doc.xblnr || "-"], ["Transaction", doc.tcode || "-"], ["User", doc.usnam],
+      ["Origin", mat ? h("a", { href: `#/MB03?id=${mat}&year=${doc.awkey.slice(10)}` }, "Mat. doc. " + mat) : doc.awkey],
+      ["Reversed by", doc.stblg ? h("a", { href: `#/FB03?id=${doc.stblg}&year=${doc.gjahr}` }, doc.stblg) : "-"],
+      ["Planned reversal", doc.stodt ? fmtDate(doc.stodt) : "-"],
       ["Debit = Credit", h("span", { class: Math.abs(deb - cre) < 0.005 ? "pos" : "neg" }, `${fmtAmt(deb)} = ${fmtAmt(cre)}`)]].map(([k, v]) =>
       h("div.attr", null, h("span.k", null, k), h("span.v", null, v))))));
-    out.append(alv({ title: "Line items", rows: doc.items.map(i => ({ ...i, debit: i.shkzg === "S" ? i.dmbtr : null, credit: i.shkzg === "H" ? i.dmbtr : null })),
-      columns: [{ key: "buzei", label: "Itm", type: "int" }, { key: "bschl", label: "PK" }, { key: "hkont", label: "G/L Acct" },
-        { key: "txt", label: "Account Name" }, { key: "ktosl", label: "Trans. key" },
+    toolbar([{ label: "Execute", key: "F8", onClick: exec }, !doc.stblg ? { label: "Reverse (FB08)", ghost: true, onClick: () => go("FB08", { id: doc.belnr, year: doc.gjahr }) } : null]);
+    out.append(alv({ title: "Line items", rows: doc.items.map(i => ({ ...i, debit: i.shkzg === "S" ? i.dmbtr : null, credit: i.shkzg === "H" ? i.dmbtr : null,
+      partner: i.lifnr || i.kunnr || i.anln1 || "", wrbtr_v: i.wrbtr !== null && i.wrbtr !== undefined ? i.wrbtr / 100 : null })),
+      columns: [{ key: "buzei", label: "Itm", type: "int" }, { key: "bschl", label: "PK" }, { key: "koart", label: "AccTy" }, { key: "hkont", label: "G/L Acct" },
+        { key: "txt", label: "Account Name" }, { key: "partner", label: "Vendor/Cust./Asset" },
         { key: "debit", label: "Debit", type: "amt", sum: true }, { key: "credit", label: "Credit", type: "amt", sum: true },
-        { key: "matnr", label: "Material" }, { key: "werks", label: "Plnt" }, { key: "menge", label: "Quantity", type: "qty" }] }));
+        { key: "wrbtr_v", label: "Amount in DC", type: "amt" }, { key: "mwskz", label: "Tx" }, { key: "kostl", label: "Cost ctr" }, { key: "aufnr", label: "Order" },
+        { key: "zterm", label: "Terms" }, { key: "netdt", label: "Due", type: "date" }, { key: "augbl", label: "Clearing doc." },
+        { key: "zuonr", label: "Assignment" }, { key: "ktosl", label: "Trans. key" },
+        { key: "matnr", label: "Material" }, { key: "menge", label: "Quantity", type: "qty" }, { key: "sgtxt", label: "Text" }] }));
   };
   execBar(exec);
   if (params.id) exec();
