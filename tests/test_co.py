@@ -75,11 +75,13 @@ class ClosingResults(unittest.TestCase):
         self.assertEqual(balance(c, "KS"), 0)
         self.assertEqual(balance(c, "OR"), 0)
 
-    def test_fi_result_equals_copa_operating_result(self):
+    def test_fi_result_reconciles_with_copa_operating_result(self):
         r = reports.reconcile(demo(), Y, M, M)
         self.assertTrue(r["ok"], r)
-        self.assertEqual(r["fi_result"], r["copa_ebit"])
+        self.assertEqual(r["difference"], 0)
         self.assertEqual(r["cogs_fi"], r["cogs_copa"])
+        # FI result = CO-PA result + P&L items outside CO (FX, cash discount ...)
+        self.assertEqual(round(r["copa_ebit"] + r["fi_only"], 2), r["fi_result"])
 
     def test_variance_categories_add_up_to_settled_amount(self):
         c = demo()
@@ -126,7 +128,8 @@ class ClosingResults(unittest.TestCase):
 class Checks(unittest.TestCase):
     def test_expense_without_cost_center_rejected(self):
         with self.assertRaises(MMError) as e:
-            post_gl_document(demo(), {"budat": P.isoformat()}, [
+            post_gl_document(demo(), {"budat": __import__("datetime").date.today()
+                                      .isoformat()}, [
                 dict(hkont="476000", debit="100"), dict(hkont="113100", credit="100")], "T")
         self.assertEqual(e.exception.msg_no, "235")
 

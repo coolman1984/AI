@@ -74,6 +74,11 @@ def create_billing(conn, data, user):
                                  net=gross - disc, werks=it.get("werks") or "1000",
                                  lgort=it.get("lgort") or "0003",
                                  lgpla=it.get("lgpla") or ""))
+        # 0. credit check (FD32) before anything is delivered
+        from fi.ar import check_credit as _cc
+        net_total = sum(p["net"] for p in prepared)
+        _cc(conn, c["kunnr"], net_total + (0 if c["vtweg"] == "20" else
+                                           rdiv(net_total * 1400, 10000)))
         # 1. goods issue for delivery (movement type 601) -> COGS
         gi = post_goods_movement(conn, {"budat": fkdat, "xblnr": vbeln,
                                         "bktxt": "Delivery %s" % c["name"][:14]},
@@ -85,21 +90,29 @@ def create_billing(conn, data, user):
                 "SELECT salk FROM mat_doc_item WHERE mblnr=? AND mjahr=? ORDER BY zeile",
                 (gi["mblnr"], gi["mjahr"])).fetchall()):
             p["cogs"] = line["salk"]
-        # 2. revenue posting in FI with profitability segment
+        # 2. revenue posting in FI with profitability segment, output VAT and
+        #    the customer open item (payment terms from the customer master)
         rev_acct = "800100" if c["vtweg"] == "20" else "800000"
-        acc = [dict(ktosl="", hkont="140000", amount=sum(p["net"] for p in prepared),
-                    matnr=None, werks=None, menge=None, zeile=None)]
+        mwskz = "A0" if c["vtweg"] == "20" else "A1"
+        from fi.ap import _tax_lines
+        acc = []
         for p in prepared:
             pa = "%s/%s" % (vbeln, p["posnr"])
             acc.append(dict(ktosl="ERL", hkont=rev_acct, amount=-p["gross"],
                             matnr=p["matnr"], werks=p["werks"], menge=p["qty"],
-                            zeile=p["posnr"], paobj=pa))
+                            zeile=p["posnr"], paobj=pa, mwskz=mwskz))
             if p["disc"]:
                 acc.append(dict(ktosl="ERS", hkont="880000", amount=p["disc"],
                                 matnr=p["matnr"], werks=p["werks"], menge=p["qty"],
-                                zeile=p["posnr"], paobj=pa))
+                                zeile=p["posnr"], paobj=pa, mwskz=mwskz))
+        for a in acc:
+            a["wrbtr"] = a["amount"]
+        acc += _tax_lines({mwskz: sum(p["net"] for p in prepared)}, 100000, -1)
+        total = -sum(a["amount"] for a in acc)
+        acc.append(dict(kunnr=c["kunnr"], koart="D", amount=total, wrbtr=total,
+                        zfbdt=fkdat, sgtxt="Billing %s" % vbeln))
         belnr = _write_acc_doc(conn, "RV", fkdat, user, "VF%s" % vbeln,
-                               "Billing %s" % vbeln, acc)
+                               "Billing %s" % vbeln, acc, xblnr=vbeln, tcode="VF01")
         # 3. CO-PA line items (record type F)
         copa = []
         for p in prepared:
@@ -119,7 +132,7 @@ def create_billing(conn, data, user):
                          (vbeln, p["posnr"], p["matnr"], p["werks"], p["lgort"],
                           p["qty"], p["price"], p["disc_bp"], p["gross"], p["disc"],
                           p["net"], p["cogs"]))
-    return {"vbeln": vbeln, "mblnr": gi["mblnr"], "belnr": belnr,
+    return {"vbeln": vbeln, "mblnr": gi["mblnr"], "belnr": belnr, "gjahr": gjahr,
             "message": "Billing document %s saved (goods issue %s, accounting doc. %s)"
                        % (vbeln, gi["mblnr"], belnr)}
 
