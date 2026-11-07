@@ -23,11 +23,11 @@ def setup_db():
         master.create_bin(c, "1000", "0001", b)
     master.create_vendor(c, "V100", "Steel Co")
     master.create_cost_center(c, "CC100", "Maintenance")
-    master.create_material(c, {"matnr": "MAP1", "maktx": "Moving avg", "mtart": "ROH",
+    master.create_material(c, {"matnr": "MAP1", "maktx": "Moving avg", "mtart": "ROH", "matkl": "STEEL",
                                "meins": "KG", "plants": [
                                    {"werks": "1000", "vprsv": "V", "price": "10"},
                                    {"werks": "1100", "vprsv": "V", "price": "20"}]}, U)
-    master.create_material(c, {"matnr": "STD1", "maktx": "Standard", "mtart": "ROH",
+    master.create_material(c, {"matnr": "STD1", "maktx": "Standard", "mtart": "ROH", "matkl": "STEEL",
                                "meins": "PC", "plants": [
                                    {"werks": "1000", "vprsv": "S", "price": "10"}]}, U)
     return c

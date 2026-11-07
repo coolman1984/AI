@@ -117,6 +117,9 @@ def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
         if koart not in dt[2] and not (koart == "M" and "S" in dt[2]):
             raise MMError("Document type %s does not allow account type %s"
                           % (blart, koart), "F5", "101")
+        if koart in ("K", "D"):
+            from md.checks import posting_block
+            posting_block(conn, koart, l.get("lifnr") if koart == "K" else l.get("kunnr"))
         if koart == "K" and not l.get("hkont"):
             v = conn.execute("SELECT akont FROM vendor WHERE lifnr=?",
                              (l["lifnr"],)).fetchone()

@@ -17,6 +17,7 @@ MATERIAL_TYPES = {
     "FERT": ("Finished product", "7920"),
     "HIBE": ("Operating supplies / spare parts", "3030"),
     "VERP": ("Packaging", "3050"),
+    "HAWA": ("Trading goods", "3100"),
 }
 
 UNITS = {"PC": "Piece", "KG": "Kilogram", "L": "Litre", "M": "Metre",
@@ -114,6 +115,8 @@ PNL_ACCOUNTS = _pnl()
 
 ACCOUNT_DETERMINATION = {
     ("BSX", "3000"): "300000",
+    ("BSX", "3001"): "300100",
+    ("BSX", "3100"): "310000",
     ("BSX", "3030"): "303000",
     ("BSX", "3050"): "305000",
     ("BSX", "7900"): "790000",

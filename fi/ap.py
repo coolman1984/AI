@@ -326,6 +326,8 @@ def payment_run(conn, laufd, laufi, nextd, user, execute=False, vendors=None):
     nextd = parse_date(nextd)
     if nextd <= laufd:
         raise MMError("Next payment date must be after the run date", "F0", "001")
+    from md.checks import payment_exception
+    exc = {}
     with transaction(conn):
         prop = {}
         for r in open_items(conn, "K", key_date=laufd):
@@ -333,7 +335,10 @@ def payment_run(conn, laufd, laufi, nextd, user, execute=False, vendors=None):
                 continue
             v = conn.execute("SELECT sperr, name FROM vendor WHERE lifnr=?",
                              (r["lifnr"],)).fetchone()
-            if v["sperr"]:
+            why = payment_exception(conn, r["lifnr"])
+            if why:
+                exc.setdefault(r["lifnr"], dict(lifnr=r["lifnr"], name=v["name"], reason=why,
+                                                amount=0))["amount"] += signed_fc(r)
                 continue
             dd = discount_date(r)
             if dd and laufd <= dd:
@@ -371,4 +376,4 @@ def payment_run(conn, laufd, laufi, nextd, user, execute=False, vendors=None):
                       json.dumps(props), ",".join(docs), user, now_ts()))
     return {"laufd": laufd, "laufi": laufi, "executed": execute, "payments": props,
             "total": -sum(p["amount"] for p in props if p["waers"] == LOCAL_CURRENCY),
-            "docs": docs}
+            "docs": docs, "exceptions": list(exc.values())}

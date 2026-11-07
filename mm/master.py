@@ -96,100 +96,20 @@ def create_cost_center(conn, kostl, name, kosar="", khinr="", verak=""):
 
 # ---------------------------------------------------------------- materials
 def create_material(conn, data, user):
-    """MM01. data: matnr (optional), maktx, mtart, meins, matkl,
-    plants: [{werks, vprsv, price, peinh, minbe, eisbe}]"""
-    maktx = (data.get("maktx") or "").strip()
-    if not maktx:
-        raise MMError("Enter a material description", "M3", "301")
-    mtart = (data.get("mtart") or "").upper()
-    if mtart not in MATERIAL_TYPES:
-        raise MMError("Material type %s does not exist" % mtart, "M3", "302")
-    meins = (data.get("meins") or "").upper()
-    if meins not in UNITS:
-        raise MMError("Unit of measure %s is not defined" % meins, "M3", "303")
-    plants = data.get("plants") or []
-    if not plants:
-        raise MMError("Maintain at least one plant (plant views)", "M3", "304")
-    bklas = MATERIAL_TYPES[mtart][1]
-    with transaction(conn):
-        matnr = (data.get("matnr") or "").strip().upper()
-        if not matnr:
-            matnr = str(next_number(conn, "MATNR"))
-        if len(matnr) > 18:
-            raise MMError("Material number may have at most 18 characters")
-        if conn.execute("SELECT 1 FROM material WHERE matnr=?", (matnr,)).fetchone():
-            raise MMError("Material %s already exists" % matnr, "M3", "305")
-        conn.execute("INSERT INTO material VALUES (?,?,?,?,?,?,?,?)",
-                     (matnr, maktx, mtart, meins, data.get("matkl") or "",
-                      bklas, now_ts()[:10], user))
-        for p in plants:
-            _add_plant_view(conn, matnr, p)
-    return matnr
+    """MM01 - see md/material.py (views, OMS2 checks, change documents)."""
+    from md.material import create_material as _create
+    return _create(conn, data, user)
 
 
-def _add_plant_view(conn, matnr, p):
-    werks = p.get("werks")
-    _must(conn, "SELECT 1 FROM plant WHERE werks=?", (werks,),
-          "Plant %s does not exist" % werks)
-    vprsv = (p.get("vprsv") or "V").upper()
-    if vprsv not in ("V", "S"):
-        raise MMError("Price control must be V (moving average) or S (standard)",
-                      "M3", "306")
-    peinh = int(p.get("peinh") or 1)
-    if peinh <= 0:
-        raise MMError("Price unit must be greater than zero")
-    price = parse_amount(p.get("price") or "0", allow_zero=True)
-    if vprsv == "S" and price == 0:
-        raise MMError("Enter a standard price for price control S", "M3", "307")
-    minbe = parse_qty(p.get("minbe") or "0", allow_zero=True)
-    eisbe = parse_qty(p.get("eisbe") or "0", allow_zero=True)
-    if conn.execute("SELECT 1 FROM material_plant WHERE matnr=? AND werks=?",
-                    (matnr, werks)).fetchone():
-        raise MMError("Material %s already exists in plant %s" % (matnr, werks))
-    mabst = parse_qty(p.get("mabst") or "0", allow_zero=True) or minbe * 3
-    conn.execute("INSERT INTO material_plant (matnr,werks,minbe,eisbe,dismm,mabst,"
-                 "bstfe,disls,plifz,ekgrp) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                 (matnr, werks, minbe, eisbe, p.get("dismm") or ("VB" if minbe else "ND"),
-                  mabst, parse_qty(p.get("bstfe") or "0", allow_zero=True),
-                  p.get("disls") or "HB", int(p.get("plifz") or 7),
-                  p.get("ekgrp") or "001"))
-    conn.execute("INSERT INTO valuation (matnr,bwkey,vprsv,verpr,stprs,peinh,"
-                 "lbkum,salk3) VALUES (?,?,?,?,?,?,0,0)",
-                 (matnr, werks, vprsv, price, price, peinh))
-    conn.execute("INSERT INTO price_history (matnr,bwkey,ts,budat,ref,reason,"
-                 "old_price,new_price,peinh,lbkum,salk3) VALUES "
-                 "(?,?,?,?,?,?,?,?,?,0,0)",
-                 (matnr, werks, now_ts(), now_ts()[:10], "MM01", "Material created",
-                  None, price, peinh))
+def extend_material(conn, matnr, plant_view, user=""):
+    from md.material import extend_material as _extend
+    return _extend(conn, matnr, {"plants": [plant_view]}, user)
 
 
-def extend_material(conn, matnr, plant_view):
-    with transaction(conn):
-        _must(conn, "SELECT 1 FROM material WHERE matnr=?", (matnr,),
-              "Material %s does not exist" % matnr)
-        _add_plant_view(conn, matnr, plant_view)
-
-
-def change_material(conn, matnr, data):
-    """MM02 (basic fields and MRP fields only; price via MR21)."""
-    with transaction(conn):
-        _must(conn, "SELECT 1 FROM material WHERE matnr=?", (matnr,),
-              "Material %s does not exist" % matnr)
-        if data.get("maktx"):
-            conn.execute("UPDATE material SET maktx=? WHERE matnr=?",
-                         (data["maktx"].strip(), matnr))
-        if "matkl" in data:
-            conn.execute("UPDATE material SET matkl=? WHERE matnr=?",
-                         (data.get("matkl") or "", matnr))
-        for p in data.get("plants") or []:
-            sets, args = [], []
-            for f in ("minbe", "eisbe"):
-                if p.get(f) not in (None, ""):
-                    sets.append("%s=?" % f)
-                    args.append(parse_qty(p[f], allow_zero=True))
-            if sets:
-                conn.execute("UPDATE material_plant SET %s WHERE matnr=? AND werks=?"
-                             % ",".join(sets), args + [matnr, p["werks"]])
+def change_material(conn, matnr, data, user=""):
+    """MM02 - see md/material.py."""
+    from md.material import change_material as _change
+    return _change(conn, matnr, data, user)
 
 
 def get_material(conn, matnr):

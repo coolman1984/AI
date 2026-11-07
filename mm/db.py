@@ -117,9 +117,11 @@ def connect(path=None):
     from fi.schema import FI_SCHEMA, FI_COLUMN_ADDS
     from fi.config import CHART, NUMBER_RANGES as FI_RANGES
     from pur.schema import PUR_SCHEMA, PUR_COLUMN_ADDS, PUR_NUMBER_RANGES
+    from md.schema import MD_SCHEMA, MD_COLUMN_ADDS
     conn.executescript(CO_SCHEMA)
     conn.executescript(PUR_SCHEMA)
-    for adds in (MM_COLUMN_ADDS, FI_COLUMN_ADDS, PUR_COLUMN_ADDS):   # upgrades
+    conn.executescript(MD_SCHEMA)
+    for adds in (MM_COLUMN_ADDS, FI_COLUMN_ADDS, PUR_COLUMN_ADDS, MD_COLUMN_ADDS):   # upgrades
         for table, cols in adds.items():
             have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
             for col, typ in cols:

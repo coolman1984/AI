@@ -521,3 +521,4 @@ def serve(host="127.0.0.1", port=8080, auto_stop=True):
 from web import co_api  # noqa: E402,F401
 from web import fi_api  # noqa: E402,F401
 from web import pur_api  # noqa: E402,F401
+from web import md_api  # noqa: E402,F401

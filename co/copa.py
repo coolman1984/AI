@@ -57,6 +57,8 @@ def create_billing(conn, data, user):
                          ((data.get("kunnr") or "").upper(),)).fetchone()
         if not c:
             raise MMError("Customer %s does not exist" % data.get("kunnr"), "VF", "002")
+        from md import checks as mdc
+        mdc.customer_for_billing(conn, c)
         vbeln = str(next_number(conn, "BILL"))
         prepared = []
         for n, it in enumerate(items, start=1):
@@ -64,6 +66,8 @@ def create_billing(conn, data, user):
             m = conn.execute("SELECT * FROM material WHERE matnr=?", (matnr,)).fetchone()
             if not m:
                 raise MMError("Item %d: material %s does not exist" % (n, matnr))
+            mdc.material_for_sales(conn, matnr, "1000", c["vtweg"] or "10",
+                                   it.get("werks") or "1000")
             qty = parse_qty(it.get("qty"))
             price = parse_amount(it.get("price"))
             disc_bp = _pct(it.get("disc"))

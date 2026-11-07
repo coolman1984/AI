@@ -31,6 +31,8 @@ def seed(conn):
     pur_seed.master(conn)
     hist_start = ANCHOR[0] - datetime.timedelta(days=130)
     fi_seed.history(conn, hist_start.replace(day=1), ANCHOR[0])
+    from md import seed as md_seed
+    md_seed.master(conn)
     failed += co_seed.plan_and_sample(conn)
     return failed
 
