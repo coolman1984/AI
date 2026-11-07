@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS quant (          -- LQUA: stock per bin with GR date
     mblnr TEXT, mjahr INTEGER);
 CREATE INDEX IF NOT EXISTS ix_quant ON quant (matnr, werks, lgort, insmk, wdatu);
 CREATE TABLE IF NOT EXISTS vendor (lifnr TEXT PRIMARY KEY, name TEXT, city TEXT);
-CREATE TABLE IF NOT EXISTS cost_center (kostl TEXT PRIMARY KEY, name TEXT);
+CREATE TABLE IF NOT EXISTS cost_center (
+    kostl TEXT PRIMARY KEY, name TEXT,
+    kosar TEXT, khinr TEXT, verak TEXT);   -- category, hierarchy node, owner
 CREATE TABLE IF NOT EXISTS po_header (      -- EKKO
     ebeln TEXT PRIMARY KEY, lifnr TEXT, bedat TEXT, ernam TEXT, erdat TEXT);
 CREATE TABLE IF NOT EXISTS po_item (        -- EKPO
@@ -89,7 +91,9 @@ CREATE TABLE IF NOT EXISTS acc_doc (        -- BKPF
 CREATE TABLE IF NOT EXISTS acc_doc_item (   -- BSEG
     belnr TEXT, gjahr INTEGER, buzei INTEGER, hkont TEXT, shkzg TEXT,
     dmbtr INTEGER, ktosl TEXT, matnr TEXT, werks TEXT, menge INTEGER,
-    zeile INTEGER, PRIMARY KEY (belnr, gjahr, buzei));
+    zeile INTEGER,
+    kostl TEXT, aufnr TEXT, paobj TEXT,     -- CO account assignment
+    PRIMARY KEY (belnr, gjahr, buzei));
 CREATE TABLE IF NOT EXISTS price_history (  -- like MBEWH / CKM3 view
     id INTEGER PRIMARY KEY AUTOINCREMENT, matnr TEXT, bwkey TEXT,
     ts TEXT, budat TEXT, ref TEXT, reason TEXT,
@@ -109,7 +113,14 @@ def connect(path=None):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
-    for obj, start in NUMBER_RANGES.items():
+    from co.schema import CO_SCHEMA, CO_NUMBER_RANGES, MM_COLUMN_ADDS
+    for table, cols in MM_COLUMN_ADDS.items():   # upgrade older databases
+        have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
+        for col, typ in cols:
+            if col not in have:
+                conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
+    conn.executescript(CO_SCHEMA)
+    for obj, start in list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()):
         conn.execute("INSERT OR IGNORE INTO number_range VALUES (?, ?)",
                      (obj, start - 1))
     return conn
@@ -122,23 +133,35 @@ def next_number(conn, obj):
                         (obj,)).fetchone()[0]
 
 
+_DEPTH = {}
+
+
 class transaction:
-    """with transaction(conn): ... -> commit, or rollback on any error."""
+    """with transaction(conn): ... -> commit, or rollback on any error.
+    Nested use (e.g. billing posts a goods issue inside its own transaction)
+    joins the outer transaction: everything is saved or nothing."""
 
     def __init__(self, conn):
         self.conn = conn
 
     def __enter__(self):
         WRITE_LOCK.acquire()
-        self.conn.execute("BEGIN IMMEDIATE")
+        k = id(self.conn)
+        if _DEPTH.get(k, 0) == 0:
+            self.conn.execute("BEGIN IMMEDIATE")
+        _DEPTH[k] = _DEPTH.get(k, 0) + 1
         return self.conn
 
     def __exit__(self, exc_type, exc, tb):
+        k = id(self.conn)
         try:
-            if exc_type is None:
-                self.conn.execute("COMMIT")
-            else:
-                self.conn.execute("ROLLBACK")
+            _DEPTH[k] -= 1
+            if _DEPTH[k] == 0:
+                del _DEPTH[k]
+                if exc_type is None:
+                    self.conn.execute("COMMIT")
+                else:
+                    self.conn.execute("ROLLBACK")
         finally:
             WRITE_LOCK.release()
         return False

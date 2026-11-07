@@ -61,6 +61,54 @@ register("HOME", { title: "Home", async render(app) {
       ["ME23N", "Display Purchase Order", "Items & PO history", "\u2399"],
       ["ME2M", "Purchase Orders by Material", "Open quantities", "\u2261", "kpi_po"],
     ]],
+    ["Controlling - Overview & Process", [
+      ["ZCO_COCKPIT", "Controlling Cockpit", "Management P&L, plan vs actual", "\u25D4", "kpi_ebit"],
+      ["ZCO_PROCESS", "CO Process Map", "Closing cockpit A \u2192 Z", "\u21BB"],
+      ["KE30", "Profitability Report", "Contribution margin P&L", "\u2211"],
+      ["ZCO_RECON", "FI \u2194 CO-PA Reconciliation", "Proof to the cent", "\u2696"],
+    ]],
+    ["Cost Center Accounting", [
+      ["KSH1", "Hierarchy & Cost Centers", "OKEON / KS01", "\u2302"],
+      ["KA03", "Cost Elements", "Primary & secondary", "\u2630"],
+      ["KL01", "Activity Types", "Machine, labor, maintenance", "\u23F1"],
+      ["KK01", "Statistical Key Figures", "m2, kWh, employees", "\u2116"],
+      ["KP06", "Cost Center Planning", "Fixed & variable costs", "\u270E"],
+      ["KP26", "Activity Planning", "Hours, capacity, prices", "\u23F2"],
+      ["KP46", "Stat. Key Figures Plan/Actual", "KP46 / KB31N", "\u2116"],
+      ["KSPI", "Plan Price Calculation", "Iterative", "\u00A4"],
+      ["FB50", "Enter G/L Document", "Expenses to cost centers", "\u270D"],
+      ["KB11N", "Repost Primary Costs", "Manual correction", "\u21C4"],
+      ["KB21N", "Activity Allocation", "Direct, at plan price", "\u21C9"],
+      ["KSV5", "Distribution", "Rent by m2", "\u2AA6"],
+      ["KSU5", "Assessment", "Energy by kWh", "\u2AA7"],
+      ["KSU3", "Allocation Cycles", "Senders, receivers, tracing", "\u2699"],
+      ["S_ALR_87013611", "Actual/Plan/Variance", "Cost center report", "\u2263"],
+      ["S_ALR_87013625", "Actual/Target/Variance", "Fixed vs variable", "\u2264"],
+      ["KSB1", "Line Items", "KSB1 / KSBP / KOB1", "\u2261"],
+      ["KSBT", "Activity Prices", "Plan & actual quantities", "\u00A4"],
+    ]],
+    ["Internal Orders & Product Cost Controlling", [
+      ["KO01", "Create Internal Order", "With settlement rule", "\u2295"],
+      ["CS03", "BOM & Routing", "Quantity structure", "\u2637"],
+      ["KZS2", "Costing Sheet", "Overhead rates", "%"],
+      ["CK11N", "Cost Estimate", "Standard cost of product", "\u2211"],
+      ["CK13N", "Display Cost Estimate", "Cost component split", "\u24D8"],
+      ["CK24", "Release Standard Price", "Mark & release", "\u2714"],
+      ["CO01", "Production Order", "Create & release", "\u2692"],
+      ["CO11N", "Confirmation", "Machine & labor hours", "\u23F1"],
+      ["KOK5", "Order List", "Status, balances", "\u2630", "kpi_orders"],
+      ["KKBC_ORD", "Order Analysis", "Plan / target / actual", "\u2696"],
+      ["KGI2", "Overhead", "Costing sheet on orders", "%"],
+      ["KKS2", "Variances", "Price, quantity, remaining", "\u0394"],
+      ["KO88", "Settlement", "Orders \u2192 CC / CO-PA", "\u21D2"],
+    ]],
+    ["Profitability Analysis (CO-PA)", [
+      ["VF01", "Create Billing", "Delivery 601 + revenue + CO-PA", "\u270D"],
+      ["VF03", "Billing Documents", "Revenue, discount, COGS", "\u2399"],
+      ["KE11", "Sales & Profit Plan", "Qty, price, discount", "\u270E"],
+      ["KEU5", "Assessment to CO-PA", "Cost centers \u2192 P&L", "\u21D2"],
+      ["KE24", "CO-PA Line Items", "Record types F/C/D", "\u2261"],
+    ]],
     ["Accounting, Customizing & Tools", [
       ["FB03", "Display Accounting Document", "Automatic postings", "\u2696"],
       ["OMJJ", "Movement Types", "Customizing (display)", "\u2699"],
@@ -87,6 +135,10 @@ register("HOME", { title: "Home", async render(app) {
     kpiEls.kpi_docs.append(String(d.kpi.docs_period), h("small", null, "30 d"));
     kpiEls.kpi_bins.append(`${d.kpi.bins_used}/${d.kpi.bins_total}`);
     kpiEls.kpi_po.append(String(d.kpi.open_po_items), h("small", null, "open"));
+    api("/api/co/cockpit").then(c => {
+      kpiEls.kpi_ebit.append(App.fmtShort(c.kpi.ebit), h("small", null, "EBIT"));
+      kpiEls.kpi_orders.append(String(c.kpi.open_orders), h("small", null, "open"));
+    }).catch(() => {});
     if (d.kpi.below_reorder) {
       const t = $(".tile[href='#/ZMM_COCKPIT'] .tile-sub");
       t.innerHTML = ""; t.append(h("span.crit", null, `\u26A0 ${d.kpi.below_reorder} below reorder point`));
@@ -98,7 +150,7 @@ register("HOME", { title: "Home", async render(app) {
 const ACTIONS = { A01: "Goods Receipt", A07: "Goods Issue", A08: "Transfer Posting",
   A03: "Cancellation", A04: "Display" };
 const ACTION_KINDS = { A01: ["receipt"], A07: ["issue"], A08: ["transfer", "stocktype"] };
-const DEFAULT_BWART = { A01R01: "101", A01R10: "501", A07R10: "201", A08R10: "311" };
+const DEFAULT_BWART = { A01R01: "101", A01R08: "101", A01R10: "501", A07R10: "201", A08R10: "311" };
 
 register("MIGO", { title: "Goods Movement", async render(app, params) {
   const st = { action: params.action || "A01", ref: params.po ? "R01" : (params.ref || "R01"),
@@ -118,9 +170,9 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
       st.bwart = DEFAULT_BWART[st.action + st.ref];
       bwartIn.value = st.bwart; st.items = []; draw();
     } });
-  const refSel = sel([["R01", "R01 Purchase Order"], ["R10", "R10 Other"]], st.ref, { w: "l",
+  const refSel = sel([["R01", "R01 Purchase Order"], ["R08", "R08 Order"], ["R10", "R10 Other"]], st.ref, { w: "l",
     onchange: () => {
-      if (st.action !== "A01" && refSel.value === "R01") { refSel.value = "R10"; return msg("W", "Purchase order reference only for goods receipt"); }
+      if (st.action !== "A01" && refSel.value !== "R10") { refSel.value = "R10"; return msg("W", "Purchase order / order reference only for goods receipt"); }
       st.ref = refSel.value; st.bwart = DEFAULT_BWART[st.action + st.ref];
       bwartIn.value = st.bwart; st.items = []; draw(); } });
   const poIn = inp({ value: params.po || "", ph: "Purchase order", w: "m" });
@@ -131,7 +183,7 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
     if (!okKinds.includes(m.kind)) { bwartIn.classList.add("err");
       return msg("E", `Movement type ${m.bwart} is not allowed for ${ACTIONS[st.action]}`, "M7", "098"); }
     if (st.ref === "R01" && m.ref !== "PO") { refSel.value = st.ref = "R10"; }
-    if (m.ref === "PO" && st.action === "A01") { refSel.value = st.ref = "R01"; }
+    if (m.ref === "PO" && st.action === "A01" && st.ref === "R10") { refSel.value = st.ref = "R01"; }
     bwartIn.classList.remove("err"); msg("", "");
     st.bwart = m.bwart; for (const it of st.items) it.bwart = m.bwart; draw(); } });
   const bwartText = h("span.hint");
@@ -154,6 +206,7 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
   ]);
 
   async function loadPO() {
+    if (st.ref === "R08") return loadOrder();
     const e = poIn.value.trim();
     if (!e) return msg("E", "Enter a purchase order number", "M7", "037");
     const po = await run(() => api("/api/po/" + enc(e)));
@@ -166,6 +219,19 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
     st.cur = 0;
     draw();
     msg("I", `Purchase order ${po.ebeln} (${po.vendor_name}) adopted - set "OK" for each item, enter bins, then Post`);
+  }
+
+  async function loadOrder() {
+    const a = poIn.value.trim();
+    if (!a) return msg("E", "Enter an order number", "M7", "024");
+    const o = await run(() => api("/api/co/rep/order/" + enc(a)));
+    if (!o) return;
+    if (o.auart !== "PP01") return msg("E", `Order ${a} is not a production order`, "KO", "013");
+    const open = Math.max(o.gamng - o.wemng, 0);
+    st.items = [{ bwart: "101", aufnr: o.aufnr, matnr: o.matnr, werks: o.werks, lgort: o.lgort || "0003",
+      qty: String(open), insmk: "U", lgpla: "", ok: false, fromPO: true }];
+    st.cur = 0; draw();
+    msg("I", `Order ${o.aufnr} adopted: ${o.matnr}, open quantity ${fmtQty(open)} - set "OK", enter the bin, then Post`);
   }
 
   function newItem() {
@@ -183,7 +249,7 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
       ["lgpla", m.kind === "receipt" ? "Bin" : "Bin (blank = FIFO)"]];
     if (m.st_choice) c.push(["insmk", "Stock type"]);
     if (m.kind === "stocktype") c.push(["stx", "Stock type change"]);
-    if (m.ref === "PO") c.push(["po", "Purchase order"]);
+    if (m.ref === "PO") c.push(st.ref === "R08" ? ["ord", "Order"] : ["po", "Purchase order"]);
     if (m.ref === "KOSTL") c.push(["kostl", "Cost center"]);
     if (m.ref === "AUFNR") c.push(["aufnr", "Order"]);
     if (m.value === "entered") c.push(["amount", "Amount (LC)"]);
@@ -198,7 +264,9 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
   function draw() {
     const m = mt(st.bwart);
     bwartText.textContent = m ? m.text : "";
-    poIn.style.display = poBtn.style.display = st.ref === "R01" ? "" : "none";
+    poIn.style.display = poBtn.style.display = st.ref !== "R10" ? "" : "none";
+    poIn.placeholder = st.ref === "R08" ? "Production order" : "Purchase order";
+    poBtn.textContent = st.ref === "R08" ? "\u2713 Adopt order" : "\u2713 Adopt PO";
     if (st.ref !== "R01" && !st.items.length) st.items.push(newItem());
     const c = cols();
     const table = h("table.grid.items");
@@ -262,6 +330,7 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
         }
         case "insmk": el = sel(Object.entries(ST_TEXT), it.insmk, { onchange: e => { it.insmk = e.target.value; drawDetail(); } }); break;
         case "stx": { const m = mt(st.bwart); el = h("span", null, stBadge(m.from_st), " \u2192 ", stBadge(m.to_st)); break; }
+        case "ord": el = h("span.mono", null, it.aufnr || ""); break;
         case "po": el = it.fromPO ? h("span.mono", null, `${it.ebeln}/${it.ebelp}`) :
           h("span.split", null, inp({ value: it.ebeln, w: "m", ph: "PO", oninput: set("ebeln") }),
             inp({ value: it.ebelp || "10", w: "s", oninput: set("ebelp") })); break;
@@ -422,7 +491,8 @@ register("MIGO", { title: "Goods Movement", async render(app, params) {
         "Cost center": "4100", Text: "example line" }]);
   }
   draw();
-  if (params.po) loadPO();
+  if (params.order) { refSel.value = st.ref = "R08"; poIn.value = params.order; draw(); loadOrder(); }
+  else if (params.po) loadPO();
 }});
 
 // ================================================================== MMBE

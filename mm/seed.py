@@ -8,11 +8,29 @@ from . import master, posting
 USER = "DEMO"
 
 
+ANCHOR = [datetime.date.today()]
+
+
 def _d(days_ago):
-    return (datetime.date.today() - datetime.timedelta(days=days_ago)).isoformat()
+    """Date 'days_ago' before the anchor. The MM history ends on the last day
+    before the CO sample month, so that month only holds the CO sample."""
+    return (ANCHOR[0] - datetime.timedelta(days=days_ago)).isoformat()
 
 
 def seed(conn):
+    """Full demo: CO master data, ~4 months of MM history, then the CO plan
+    and one complete CO sample month (see co/seed.py)."""
+    if conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0]:
+        return None
+    from co import seed as co_seed
+    sample_start = co_seed.sample_period_start()
+    ANCHOR[0] = sample_start - datetime.timedelta(days=1)
+    failed = seed_mm(conn, before=lambda: co_seed.master(conn))
+    failed += co_seed.plan_and_sample(conn)
+    return failed
+
+
+def seed_mm(conn, before=None):
     if conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0]:
         return None
     rnd = random.Random(42)
@@ -20,6 +38,8 @@ def seed(conn):
     # ---------------------------------------------------------- org structure
     master.create_plant(conn, "1000", "Cairo Plant", "Cairo")
     master.create_plant(conn, "1100", "Alexandria Plant", "Alexandria")
+    if before:
+        before()
     slocs = [("1000", "0001", "Raw Material WH", True),
              ("1000", "0002", "Production Supply", False),
              ("1000", "0003", "Finished Goods WH", True),
@@ -50,7 +70,9 @@ def seed(conn):
     for k in [("4100", "Production Line 1"), ("4200", "Maintenance"),
               ("4300", "Quality Control"), ("4400", "Warehouse"),
               ("4500", "Sales Samples")]:
-        master.create_cost_center(conn, *k)
+        if not conn.execute("SELECT 1 FROM cost_center WHERE kostl=?",
+                            (k[0],)).fetchone():
+            master.create_cost_center(conn, *k)
 
     # ---------------------------------------------------------- materials
     both = ["1000", "1100"]
@@ -156,23 +178,23 @@ def seed(conn):
             continue
         order += 1
         items = [
-            {"bwart": "261", "matnr": "RM-1001", "werks": "1000", "lgort": "0001",
-             "qty": rnd.randint(60, 140), "aufnr": str(order)},
-            {"bwart": "261", "matnr": "RM-1002", "werks": "1000", "lgort": "0001",
-             "qty": rnd.randint(40, 90), "aufnr": str(order)},
+            {"bwart": "201", "matnr": "RM-1001", "werks": "1000", "lgort": "0001",
+             "qty": rnd.randint(60, 140), "kostl": "4100"},
+            {"bwart": "201", "matnr": "RM-1002", "werks": "1000", "lgort": "0001",
+             "qty": rnd.randint(40, 90), "kostl": "4100"},
         ]
         if day % 2 == 0:
-            items.append({"bwart": "261", "matnr": "RM-1003", "werks": "1000",
+            items.append({"bwart": "201", "matnr": "RM-1003", "werks": "1000",
                           "lgort": "0001", "qty": rnd.randint(8, 18),
-                          "aufnr": str(order)})
+                          "kostl": "4100"})
         if day % 3 == 0:
-            items.append({"bwart": "261", "matnr": "PK-2001", "werks": "1000",
+            items.append({"bwart": "201", "matnr": "PK-2001", "werks": "1000",
                           "lgort": "0001", "qty": rnd.randint(80, 200),
-                          "aufnr": str(order)})
+                          "kostl": "4100"})
         if day % 4 == 0:
-            items.append({"bwart": "261", "matnr": "RM-1004", "werks": "1000",
+            items.append({"bwart": "201", "matnr": "RM-1004", "werks": "1000",
                           "lgort": "0001", "qty": rnd.randint(4, 12),
-                          "aufnr": str(order)})
+                          "kostl": "4100"})
         post(day, items, "Prod. order %s" % order)
         if day % 5 == 0:
             post(day, [{"bwart": "201", "matnr": rnd.choice(["SP-4001", "SP-4002",

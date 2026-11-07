@@ -103,6 +103,9 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
                 # undo PO history: a reversed receipt lowers the received qty
                 d = -l["menge"] if l["shkzg"] == "S" else l["menge"]
                 _update_po_received(conn, l["ebeln"], l["ebelp"], d)
+            elif l["aufnr"] and l["bwart"] in ("101", "102"):
+                d = -l["menge"] if l["shkzg"] == "S" else l["menge"]
+                _update_order_delivered(conn, l["aufnr"], d)
         # accounting: mirror every non-stock line of the original document
         acc = conn.execute("SELECT i.* FROM acc_doc_item i JOIN acc_doc h ON "
                            "h.belnr=i.belnr AND h.gjahr=i.gjahr WHERE h.awkey=?",
@@ -114,7 +117,8 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
             doc.acc_lines.append(dict(ktosl=a["ktosl"], hkont=a["hkont"],
                                       amount=amount, matnr=a["matnr"],
                                       werks=a["werks"], menge=a["menge"],
-                                      zeile=None))
+                                      zeile=None, kostl=a["kostl"],
+                                      aufnr=a["aufnr"], paobj=a["paobj"]))
         conn.execute("UPDATE mat_doc_item SET canceled=1 WHERE mblnr=? AND mjahr=?",
                      (mblnr, mjahr))
         return doc.finish()
@@ -199,10 +203,29 @@ def _post_item(doc, raw):
     if not mt.get("st_choice"):
         line["insmk"] = "U"
     ref = mt.get("ref")
+    if bwart in ("101", "102") and str(raw.get("aufnr") or "").strip() and \
+            not str(raw.get("ebeln") or "").strip():
+        # goods receipt for a production order (valued at the material price,
+        # credit to the order with cost element 895000 "factory output")
+        mt = dict(mt, ref="ORDGR", value="price", offset="AUF",
+                  text="GR for order")
+        ref = "ORDGR"
 
     # ------------------------------------------------ references
     ext = None
-    if ref == "PO":
+    if ref == "ORDGR":
+        from co import integration
+        aufnr = str(raw.get("aufnr")).strip()
+        o = integration.check_order(conn, aufnr, for_gr=True)
+        line.update(aufnr=aufnr, matnr=o["matnr"], werks=o["werks"])
+        line["lgort"] = line["lgort"] or (o["lgort"] or "")
+        if bwart == "101" and o["wemng"] + qty > o["gamng"] * 11 // 10:
+            raise MMError("Order %s: delivered quantity would exceed the order "
+                          "quantity by more than 10 %%" % aufnr, "M7", "028")
+        if bwart == "102" and qty > o["wemng"]:
+            raise MMError("Quantity exceeds the delivered quantity of order %s"
+                          % aufnr, "M7", "029")
+    elif ref == "PO":
         ebeln = (raw.get("ebeln") or "").strip()
         ebelp = int(raw.get("ebelp") or 0)
         po = conn.execute("SELECT i.*, h.lifnr FROM po_item i JOIN po_header h "
@@ -235,6 +258,8 @@ def _post_item(doc, raw):
         aufnr = (raw.get("aufnr") or "").strip()
         if not aufnr:
             raise MMError("Enter an order number", "M7", "024")
+        from co import integration
+        integration.check_order(conn, aufnr)
         line["aufnr"] = aufnr
     if mt.get("value") == "entered" and str(raw.get("amount") or "").strip():
         ext = parse_amount(raw.get("amount"))
@@ -266,6 +291,16 @@ def _post_item(doc, raw):
     if line["ebeln"]:
         d = qty if bwart in ("101", "123") else -qty
         _update_po_received(conn, line["ebeln"], line["ebelp"], d)
+    if ref == "ORDGR":
+        _update_order_delivered(conn, line["aufnr"], qty if bwart == "101" else -qty)
+
+
+def _update_order_delivered(conn, aufnr, delta):
+    conn.execute("UPDATE orders SET wemng = wemng + ? WHERE aufnr=?", (delta, aufnr))
+    conn.execute("UPDATE orders SET stat='DLV' WHERE aufnr=? AND stat='REL' AND "
+                 "wemng >= gamng", (aufnr,))
+    conn.execute("UPDATE orders SET stat='REL' WHERE aufnr=? AND stat='DLV' AND "
+                 "wemng < gamng", (aufnr,))
 
 
 def _post_transfer(doc, mt, line, raw):
@@ -517,9 +552,12 @@ class _Doc:
 
     def add_acc(self, ktosl, hkont, amount, line, zeile):
         if amount:
-            self.acc_lines.append(dict(ktosl=ktosl, hkont=hkont, amount=amount,
-                                       matnr=line["matnr"], werks=line["werks"],
-                                       menge=line["qty"], zeile=zeile))
+            co_relevant = ktosl not in ("BSX", "PRD", "AUM", "WRX")
+            self.acc_lines.append(dict(
+                ktosl=ktosl, hkont=hkont, amount=amount, matnr=line["matnr"],
+                werks=line["werks"], menge=line["qty"], zeile=zeile,
+                kostl=line.get("kostl") if co_relevant else None,
+                aufnr=line.get("aufnr") if co_relevant else None))
 
     def _insert_line(self, line, shkzg, qty, meins, value, salk, lgpla):
         self.zeile += 1
@@ -590,11 +628,18 @@ def _write_acc_doc(conn, blart, budat, user, awkey, bktxt, lines):
     belnr = str(next_number(conn, "ACCDOC"))
     conn.execute("INSERT INTO acc_doc VALUES (?,?,?,?,?,?,?)",
                  (belnr, gjahr, blart, budat, user, awkey, bktxt))
+    from co import integration
+    integration.derive_assignments(conn, lines)   # OKB9 defaults + checks
     for i, l in enumerate(lines, start=1):
-        conn.execute("INSERT INTO acc_doc_item VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        conn.execute("INSERT INTO acc_doc_item (belnr,gjahr,buzei,hkont,shkzg,"
+                     "dmbtr,ktosl,matnr,werks,menge,zeile,kostl,aufnr,paobj) "
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      (belnr, gjahr, i, l["hkont"],
                       "S" if l["amount"] > 0 else "H", abs(l["amount"]),
-                      l["ktosl"], l["matnr"], l["werks"], l["menge"], l["zeile"]))
+                      l["ktosl"], l.get("matnr"), l.get("werks"), l.get("menge"),
+                      l.get("zeile"), l.get("kostl"), l.get("aufnr"),
+                      l.get("paobj")))
+    integration.post_from_fi(conn, belnr, gjahr, budat, user, awkey, bktxt, lines)
     return belnr
 
 
