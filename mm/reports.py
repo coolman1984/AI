@@ -197,7 +197,9 @@ def get_acc_document(conn, belnr, gjahr):
         it["menge"] = qty_out(r["menge"] or 0)
         it["txt"] = GL_ACCOUNTS.get(r["hkont"], "")
         debit = r["shkzg"] == "S"
-        if r["ktosl"] == "BSX":
+        if "bschl" in r.keys() and r["bschl"]:
+            pass                                       # stored by the FI engine
+        elif r["ktosl"] == "BSX":
             it["bschl"] = "89" if debit else "99"      # stock posting keys
         elif r["ktosl"] == "WRX":
             it["bschl"] = "86" if debit else "96"      # GR/IR posting keys

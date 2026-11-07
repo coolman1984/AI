@@ -519,3 +519,4 @@ def serve(host="127.0.0.1", port=8080, auto_stop=True):
 
 # CO module API (registers its routes on import)
 from web import co_api  # noqa: E402,F401
+from web import fi_api  # noqa: E402,F401

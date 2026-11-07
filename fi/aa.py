@@ -28,7 +28,7 @@ def create_asset(conn, anlkl, txt, kostl, ndjar=None, invnr="", user=""):
             raise MMError("Cost center %s does not exist" % kostl, "KI", "248")
         obj = "AA_" + anlkl
         conn.execute("INSERT OR IGNORE INTO number_range VALUES (?,?)",
-                     (obj, ASSET_CLASSES[anlkl][5]))
+                     (obj, ASSET_CLASSES[anlkl][5] - 1))
         anln1 = str(next_number(conn, obj))
         conn.execute("INSERT INTO asset (anln1,anlkl,txt,kostl,afasl,ndjar,invnr,erdat,ernam)"
                      " VALUES (?,?,?,?,?,?,?,?,?)",

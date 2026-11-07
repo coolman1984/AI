@@ -9,6 +9,7 @@
 </head>
 <body>
 <header class="shell">
+  <button class="shell-menu" id="menu-btn" title="SAP menu (show / hide)">&#x2630;</button>
   <a class="shell-brand" href="#/" title="Home (launchpad)">
     <span class="shell-logo">MM</span><span class="shell-title">MM Core</span>
   </a>
@@ -22,12 +23,23 @@
     <button class="shell-power" id="power-btn" title="Stop MM Core (server)">&#x23FB;</button>
   </div>
 </header>
+<div class="workspace">
+<aside class="sidemenu" id="sidemenu">
+  <div class="sm-tabs"><button class="sm-tab active" data-tab="menu">Menu</button><button class="sm-tab" data-tab="fav">Favorite</button>
+    <button class="sm-tool" id="sm-expand" title="Expand all">&#x2295;</button><button class="sm-tool" id="sm-collapse" title="Collapse all">&#x2296;</button></div>
+  <div class="sm-filter"><input id="sm-filter" placeholder="Filter" autocomplete="off"></div>
+  <div class="sm-tree" id="sm-tree"></div>
+  <form class="sm-search" id="sm-search"><input id="sm-search-in" placeholder="Search Program (T-code)" autocomplete="off"><button class="btn primary" type="submit">Go</button></form>
+</aside>
+<div class="content">
 <div class="titlebar" id="titlebar" hidden>
   <button class="btn-icon" id="back-btn" title="Back (F3)">&#x2039;</button>
   <h1 id="screen-title"></h1>
   <div class="app-toolbar" id="app-toolbar"></div>
 </div>
 <main id="app"></main>
+</div>
+</div>
 <footer class="statusbar" id="statusbar">
   <div class="status-msg" id="status-msg"></div>
   <div class="status-info"><span id="status-tcode"></span><span id="status-user"></span><span>localhost</span><span>INS</span></div>
@@ -37,6 +49,8 @@
 <script src="/screens.js"></script>
 <script src="/cockpit.js"></script>
 <script src="/co_screens.js"></script>
+<script src="/fi_screens.js"></script>
+<script src="/menu.js"></script>
 <script>App.start();</script>
 </body>
 </html>
