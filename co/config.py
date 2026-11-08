@@ -59,6 +59,7 @@ ORDER_TYPES = {
     "ZP03": "Rework order",
     "ZREF": "Refurbishment order",
     "ZP07": "Production order without material",
+    "SM01": "Service order (customer service)",
 }
 ORDER_STATUS = {
     "CRTD": "Created",

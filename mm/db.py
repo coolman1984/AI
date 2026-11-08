@@ -119,12 +119,14 @@ def connect(path=None):
     from pur.schema import PUR_SCHEMA, PUR_COLUMN_ADDS, PUR_NUMBER_RANGES
     from md.schema import MD_SCHEMA, MD_COLUMN_ADDS
     from pp.schema import PP_SCHEMA, PP_COLUMN_ADDS
+    from sd.schema import SD_SCHEMA, SD_COLUMN_ADDS, SD_NUMBER_RANGES
     conn.executescript(CO_SCHEMA)
     conn.executescript(PUR_SCHEMA)
     conn.executescript(MD_SCHEMA)
     conn.executescript(PP_SCHEMA)
+    conn.executescript(SD_SCHEMA)
     for adds in (MM_COLUMN_ADDS, FI_COLUMN_ADDS, PUR_COLUMN_ADDS, MD_COLUMN_ADDS,
-                 PP_COLUMN_ADDS):   # upgrades
+                 PP_COLUMN_ADDS, SD_COLUMN_ADDS):   # upgrades
         for table, cols in adds.items():
             have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
             for col, typ in cols:
@@ -133,7 +135,7 @@ def connect(path=None):
     conn.executescript(FI_SCHEMA)
     ranges = list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()) + \
         [("FI_" + k, v) for k, v in FI_RANGES.items()] + \
-        list(PUR_NUMBER_RANGES.items())
+        list(PUR_NUMBER_RANGES.items()) + list(SD_NUMBER_RANGES.items())
     for obj, start in ranges:
         conn.execute("INSERT OR IGNORE INTO number_range VALUES (?, ?)",
                      (obj, start - 1))

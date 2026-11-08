@@ -70,6 +70,40 @@ Keys: `F8` execute, `Ctrl+S` post/save, `F3` back.
 - **Accounting:** every valuated movement creates a balanced accounting document
   (BSX stock, WRX GR/IR, VBR consumption, PRD price differences, ...).
 
+## Sales (Order to Cash)
+
+Start with `ZSD_COCKPIT` (orders, revenue, margin, OTIF, credit) or `ZSD_PROCESS`.
+
+| Area | T-codes |
+|---|---|
+| Master | `XD01`-`XD03`, `VD51` customer material number, `VB01` listing / exclusion, `FD32` credit limit |
+| Conditions | `VK11`/`VK12`/`VK13`, `V/LD` pricing report, `ZPRICE` simulation, `V/06`, `V/08`, `VKOA` |
+| Pre-sales | `VC01N`/`VC05` activities, `VA11` inquiry, `VA21` quotation, `VA25` / `ZSD_PIPE` pipeline, `VB21`/`VB23` promotions |
+| Orders | `VA01`/`VA02`/`VA03`/`VA05` (OR, RO rush, ZSP spare parts), `V.02` incomplete, `VKM1` credit release, `V.15` backorders, `V_V2` |
+| Shipping | `VL10A`, `VL01N`, `VL02N` picking + goods issue, `VL03N`, `VL06O`, `VL09` |
+| Billing | `VF04`, `VF01`, `VF03`, `VF11` cancel, `VF05`, `VF31` invoice form, `ZEINV` Egyptian e-invoice (ETA) |
+| Returns & memos | `ZRETURN` (RE / CR / DR), `ZRET_MON` (blocked stock: back to stock or scrap) |
+| Samples | `ZSD_SAMPLE` free-of-charge delivery, `ZSD_SAMPLES` |
+| Service | `IE01`/`IE03` equipment + warranty, `BGM1`, `IW51`/`IW52`, `IW31`, `IW41`, `DP90`, `ZWR01` warranty replacement |
+| Credit & analysis | `F.31`, `FD33`, `MCTA`, `MCTC`, `ZSLM` (OTIF, fill rate, lead time) |
+
+Logic like SAP:
+
+- **Pricing** by condition records. The access sequence takes the customer-specific price before the list price.
+  Scales, material / customer discounts, promotions (with budget), freight by Incoterms and 14 % VAT
+  (export procedure without VAT). The cost (VPRS) gives the margin per item.
+- **Availability (ATP):** stock minus confirmed orders and reservations, plus receipts. If not everything is
+  available, the rest is confirmed on the date of the next receipt (backorder).
+- **Credit check (dynamic):** open receivables + open orders. An item overdue more than 30 days blocks the order.
+  Only a second person can release it (`VKM1`).
+- **Goods issue** posts the cost of sales. Serialised products create equipment with a 24-month warranty.
+- **Billing:** FI (receivable, revenue by account determination, discounts, freight, VAT) and CO-PA (revenue +
+  real cost of sales). Cancellation reverses both. E-invoice per ETA v1.0 with a SHA-256 UUID.
+- **Returns** go into blocked stock and get a credit. Credit memo requests have billing block 08,
+  released by a second person.
+- **Samples / warranty replacements** are free: their cost goes to CO-PA. Repairs outside warranty are billed with
+  `DP90` (hours x labour rate + parts); warranty repairs are settled to CO-PA.
+
 ## Production (Plan to Produce)
 
 Start with `ZPP_COCKPIT` (orders, capacity, WIP, variances) or `ZPP_PROCESS` (the whole chain).
@@ -173,6 +207,7 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 | Folder | Content |
 |---|---|
 | `mm/` | Business logic: database, movement engine, master data, reports |
+| `sd/` | Sales: pricing, orders, ATP, credit, delivery, billing, returns, service, e-invoice |
 | `pp/` | Production: BOM, routing, MRP, SOP, orders, confirmations, subcontracting, forecast, WIP |
 | `md/` | Master data: material views, customers, vendors, change documents, checks, CIN/Brazil/Exim |
 | `pur/` | Procurement: requisitions, sourcing, contracts, RFQ, PO, release, MRP, analytics |

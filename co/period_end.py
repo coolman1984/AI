@@ -402,7 +402,7 @@ def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
                     continue
                 m = conn.execute("SELECT matkl FROM material WHERE matnr=?",
                                  (o["matnr"] or r["receiver"],)).fetchone()
-                vv = "vv080" if o["auart"] == "PP01" else \
+                vv = "vv080" if o["auart"] == "PP01" else "vv100" if o["auart"] == "SM01" else \
                     "vv100" if o["kosar"] == "W" else \
                     "vv110" if o["kosar"] == "V" else "vv090"
                 _copa_post(conn, "C", 0, gjahr, perio,

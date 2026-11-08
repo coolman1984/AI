@@ -150,7 +150,7 @@ def consumption(conn, matnr, werks, month, bedae):
     goods issues for delivery (601) of the month."""
     if bedae == "VSF":
         return conn.execute("SELECT COALESCE(SUM(i.fkimg),0) FROM billing_item i JOIN billing b "
-                            "USING (vbeln) WHERE i.matnr=? AND i.werks=? AND b.cancelled=0 AND "
+                            "USING (vbeln) WHERE i.matnr=? AND i.werks=? AND b.cancelled=0 AND COALESCE(b.fkart,'F2')='F2' AND "
                             "substr(b.fkdat,1,7)=?", (matnr, werks, month)).fetchone()[0]
     return conn.execute("SELECT COALESCE(SUM(CASE WHEN i.shkzg='H' THEN i.menge ELSE -i.menge END),0) "
                         "FROM mat_doc_item i JOIN mat_doc h ON h.mblnr=i.mblnr AND h.mjahr=i.mjahr "
