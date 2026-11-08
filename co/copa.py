@@ -132,7 +132,8 @@ def create_billing(conn, data, user):
                      (vbeln, fkdat, c["kunnr"], sum(p["net"] for p in prepared), user,
                       gi["mblnr"], gi["mjahr"], belnr, ",".join(copa)))
         for p in prepared:
-            conn.execute("INSERT INTO billing_item VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            conn.execute("INSERT INTO billing_item (vbeln,posnr,matnr,werks,lgort,fkimg,price,disc_pct,"
+                         "gross,disc,net,cogs) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                          (vbeln, p["posnr"], p["matnr"], p["werks"], p["lgort"],
                           p["qty"], p["price"], p["disc_bp"], p["gross"], p["disc"],
                           p["net"], p["cogs"]))

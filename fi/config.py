@@ -85,6 +85,8 @@ CHART = {
     "470000": ("Depreciation", "PL", "R70", "", 0, ""),
     # ---- P&L: production / valuation
     "895000": ("Factory output of production orders", "PL", "R80", "", 0, ""),
+    "805000": ("Freight revenue", "PL", "R10", "", 0, ">"),
+    "810000": ("Service revenue", "PL", "R10", "", 0, ">"),
     "893000": ("Change in work in process", "PL", "R80", "", 0, ""),
     "417000": ("Subcontracting & external processing", "PL", "R40", "", 0, "<"),
     "400900": ("Consumption of material provided to subcontractors", "PL", "R40", "", 0, ""),

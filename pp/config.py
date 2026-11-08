@@ -18,6 +18,8 @@ ORDER_TYPES = {
                  release_missing="E"),
     "ZP07": dict(text="Production order without material (CO07)", settle="KS",
                  material=False, variance=False, release_missing="W"),
+    "SM01": dict(text="Service order (customer service)", settle="PA", material=False,
+                 variance=False, release_missing="W"),
 }
 PROD_TYPES = tuple(ORDER_TYPES)
 

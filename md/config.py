@@ -42,7 +42,7 @@ MATERIAL_TYPE_ATTR = {
                  bklas=["7900"], ref="0004", ext=True),
     "FERT": dict(text="Finished product", views="KCVDPALSQBGX", vprsv="S", fixed=False,
                  bklas=["7920"], ref="0009", ext=True),
-    "HIBE": dict(text="Operating supplies / spare parts", views="KCEDLSQBG", vprsv="V",
+    "HIBE": dict(text="Operating supplies / spare parts", views="KCVEDLSQBG", vprsv="V",
                  fixed=False, bklas=["3030"], ref="0002", ext=True),
     "VERP": dict(text="Packaging", views="KCVEDLSBG", vprsv="V", fixed=True,
                  bklas=["3050"], ref="0003", ext=True),

@@ -93,7 +93,7 @@ def create_order(conn, data, user):
     if auart not in ORDER_TYPES:
         raise MMError("Order type %s does not exist" % auart, "KO", "002")
     with transaction(conn):
-        prod = auart in ("PP01", "ZP03", "ZREF", "ZP07")
+        prod = auart in ("PP01", "ZP03", "ZREF", "ZP07", "SM01")
         aufnr = str(next_number(conn, "ORD_PP" if prod else "ORD_INT"))
         matnr = werks = lgort = None
         gamng = 0
@@ -108,7 +108,7 @@ def create_order(conn, data, user):
                   % (matnr, werks), "CO", "006")
             ktext = data.get("ktext") or "%s %s" % (
                 "Rework" if auart == "ZP03" else "Refurbishment", matnr)
-        elif auart == "ZP07":
+        elif auart in ("ZP07", "SM01"):
             werks = data.get("werks") or "1000"
             gamng = parse_qty(data.get("gamng") or "1")
             ktext = (data.get("ktext") or "").strip()
