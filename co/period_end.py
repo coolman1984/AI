@@ -270,7 +270,10 @@ def variances(conn, gjahr, perio, aufnr=None, user=""):
     summary = []
     with transaction(conn):
         orders = [o for o in _prod_orders(conn, gjahr, perio, aufnr)
-                  if o["stat"] in ("DLV", "TECO") and o["auart"] == "PP01"]
+                  if o["stat"] in ("DLV", "TECO") and o["auart"] == "PP01" and
+                  conn.execute("SELECT 1 FROM co_item WHERE objnr=? AND wrttp='04' AND gjahr=? "
+                               "AND perio=? AND vrgng<>'KOAO' LIMIT 1",
+                               (orn(o["aufnr"]), gjahr, perio)).fetchone()]
         for o in orders:
             if not o["estimate_id"]:
                 raise MMError("Order %s has no released cost estimate" % o["aufnr"],

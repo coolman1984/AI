@@ -85,8 +85,10 @@ class ClosingResults(unittest.TestCase):
 
     def test_variance_categories_add_up_to_settled_amount(self):
         c = demo()
+        sample = c.execute("SELECT DISTINCT aufnr FROM order_variance WHERE gjahr=? AND perio=?",
+                           (Y, M)).fetchall()
+        self.assertEqual(len(sample), 2)
         orders = c.execute("SELECT DISTINCT aufnr FROM order_variance").fetchall()
-        self.assertEqual(len(orders), 2)
         for o in orders:
             v = c.execute("SELECT SUM(price_var+qty_var+res_var+rem_var) FROM "
                           "order_variance WHERE aufnr=?", (o["aufnr"],)).fetchone()[0]
