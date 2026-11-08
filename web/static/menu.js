@@ -157,6 +157,7 @@ MENU.push(
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],
     ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV"]],
+    ["e-Learning & Quality", ["ZLMS", "ZQA_TEST"]],
   ]]);
 // N-ERP order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
@@ -172,6 +173,7 @@ const PROCESS = [
   ["Plan-to-Produce", ["ZPP_PROCESS", "MC81", "MD01", "MD04", "CO40", "CO05N", "CO27", "CO11N", "KKAX", "KKS2", "CO88"]],
   ["Subcontracting", ["MD04", "ZME21_SC", "ME2O", "MBLB", "MIGO"]],
   ["Service parts", ["MP38", "MP33", "MB21", "MB25", "ZREF01"]],
+  ["Test & e-Learning", ["ZQA_TEST", "ZLMS", "ZPROCESS_ALL"]],
   ["Record-to-Report", ["ZFI_PROCESS", "OB52", "FAGL_FCV", "AFAB", "F.01", "ZCO_RECON"]],
 ];
 const open = new Set();

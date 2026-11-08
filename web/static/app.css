@@ -432,3 +432,57 @@ table.pnl td.pos { color: var(--positive); }
 .home-foot { text-align: center; padding: 12px; font-family: Georgia, serif; font-size: 12px; color: #6a6d70; }
 @media (max-width: 1100px) { .portal-row { grid-template-columns: repeat(2, 1fr); } .hero-page { grid-template-columns: repeat(3, 1fr); } .hero { padding: 30px 12px; }
   .shell-workplace { padding: 4px 18px; } .shell-system { display: none; } }
+
+/* e-Learning (ZLMS) and Test Center (ZQA_TEST) */
+.qa-filter { display: flex; gap: 40px; align-items: flex-end; padding: 6px 4px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.qa-filter label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 13px; }
+.qa-filter input[type=checkbox] { width: 18px; height: 18px; }
+.qa-filter select { min-width: 150px; }
+.qa-body { background: #f5f6f7; padding: 12px 20px 20px; margin-top: 10px; }
+.qa-settabs { background: transparent; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.qa-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+table.qa-repo { background: #fff; }
+table.qa-repo th { text-align: center; }
+table.qa-repo th.curr { font-weight: 400; }
+table.qa-repo td.num { text-align: center; color: var(--brand); border-left: 1px solid var(--border); }
+table.qa-repo tr.sub td { background: #fafbfc; font-size: 12px; }
+table.qa-repo tr.total td { font-weight: 400; }
+table.qa-repo .qa-tog { display: inline-block; width: 16px; color: var(--brand); text-decoration: none; font-weight: 700; white-space: pre; }
+.qa-list { margin-top: 16px; }
+.qa-total { color: var(--brand); margin: 6px 0; }
+table.qa-docs { background: #fff; }
+table.qa-docs td.c, table.grid td.c { text-align: center; }
+.qa-st { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%;
+  color: #fff; font-size: 11px; background: #b8bfc7; }
+.qa-st.ok { background: #188918; }
+.qa-st.bad { background: var(--negative); }
+.qa-tc { margin-right: 6px; }
+.qa-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 12px 0; }
+.qa-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.qa-card-h { display: flex; justify-content: space-between; align-items: baseline; }
+.qa-ratio { font-weight: 700; font-size: 18px; }
+.qa-ratio.ok { color: #188918; } .qa-ratio.bad { color: var(--negative); }
+.qa-bar { height: 6px; background: #f1d6d6; border-radius: 3px; margin: 8px 0; overflow: hidden; }
+.qa-bar span { display: block; height: 100%; background: #22b04b; }
+.qa-card-l { font-size: 12px; }
+.qa-err { white-space: pre-wrap; color: var(--negative); font-size: 11px; max-height: 160px; overflow: auto; }
+.lms-lanes { position: relative; height: 260px; width: 960px; max-width: 100%; margin: 10px 0 16px; overflow-x: auto; }
+.lms-lane { position: absolute; left: 0; width: 900px; height: 130px; background: #f0f2f5; border-bottom: 2px solid #fff; display: flex; align-items: center; }
+.lms-lane:nth-child(2) { top: 130px; background: #e8ebef; }
+.lms-lane span { padding-left: 20px; color: var(--muted); }
+.lms-arrows { position: absolute; left: 0; top: 0; pointer-events: none; }
+.lms-node { position: absolute; height: 58px; background: #fff; border: 1px solid #9aa7b5; display: flex; align-items: center;
+  justify-content: center; text-align: center; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.lms-node.dia { background: transparent; border: 0; box-shadow: none; }
+.lms-node.dia::before { content: ""; position: absolute; width: 62px; height: 62px; transform: rotate(45deg); background: #fff;
+  border: 1px solid #9aa7b5; z-index: 0; }
+.lms-node.dia .lms-txt { position: relative; z-index: 1; font-size: 12px; width: 80px; }
+.lms-node.end { border-radius: 14px; background: #e1ecf9; }
+.lms-node.done { border-color: #22b04b; background: #eaf7ee; }
+.lms-node.dia.done::before { border-color: #22b04b; background: #eaf7ee; }
+.lms-node.cur { border: 2px solid var(--brand); }
+.lms-num { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; border-radius: 50%;
+  background: #8e9aa8; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.lms-node.done .lms-num { background: #22b04b; }
+.lms-node.dia.done { background: transparent; border: 0; }
+.lms-node.end { font-size: 12px; padding: 0 6px; }

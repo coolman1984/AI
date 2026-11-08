@@ -40,6 +40,7 @@ const PORTAL_ICON = {
   globe: '<circle cx="24" cy="24" r="13"/><path d="M11 24h26M24 11c4 4 4 22 0 26M24 11c-4 4-4 22 0 26"/>',
   board: '<rect x="10" y="10" width="28" height="20"/><path d="M24 30v8M18 38h12M15 24l5-5 4 3 6-6"/>',
   people: '<circle cx="18" cy="17" r="4"/><circle cx="31" cy="17" r="4"/><path d="M11 29c1-4 4-6 7-6s6 2 7 6M24 29c1-4 4-6 7-6s6 2 7 6"/><path d="M15 35h18M18 32l-3 3 3 3M30 32l3 3-3 3"/>',
+  check: '<rect x="11" y="10" width="26" height="28" rx="2"/><path d="M17 20l3 3 6-6M17 30l3 3 6-6M29 21h4M29 31h4"/>',
   doc: '<path d="M14 10h14l7 7v21H14z"/><path d="M28 10v7h7M18 24h12M18 29h12"/>',
 };
 
@@ -61,6 +62,8 @@ const HERO = [
   ["ZPUR_COCKPIT", "Procurement HUB", "cart", "green"],
 ];
 const PORTAL = [
+  ["ZLMS", "e-Learning", "On-line Academy", "learn"],
+  ["ZQA_TEST", "Test Center", "End-to-end process tests", "check"],
   ["ZPROCESS_ALL", "Process Maps", "All end-to-end processes", "board"],
   ["ZMM_COCKPIT", "Inventory Cockpit", "Stock, bins and FIFO", "cockpit"],
   ["ZSD_COCKPIT", "Sales Cockpit", "Revenue, margin, OTIF, credit", "people"],
@@ -77,6 +80,7 @@ const NOTICES = [
   ["Credit-blocked sales orders are released only by the credit manager (VKM1)", "VKM1"],
   ["Changes of vendor bank details need a second confirmation (FK08) before payment", "FK08"],
   ["E-invoices must be generated for every invoice and credit memo (ZEINV)", "ZEINV"],
+  ["Run the end-to-end process tests after every change - Test Center (ZQA_TEST)", "ZQA_TEST"],
 ];
 
 function heroApps() {

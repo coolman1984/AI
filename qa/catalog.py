@@ -1,0 +1,333 @@
+"""QA catalog: end-to-end processes, swimlane flow charts, best-practice
+controls and test cases.
+
+The same catalog drives
+  * the automatic test run (qa/runner.py, screen ZQA_TEST),
+  * the e-Learning manuals repository (screen ZLMS),
+  * the PowerPoint process manuals (tools/make_manuals.js -> web/static/manuals).
+
+Step tuple: (no, lane index, column, kind, title, T-code, [next steps])
+  kind: s = start event, t = task, d = decision (yes path = first next), e = end event.
+Test case: (id, title, T-codes, expected result, [unittest ids])
+"""
+
+FOLDERS = [  # like a content repository of a global manufacturer
+    ("1", "Marketing"), ("2", "Sales Distribution"), ("3", "Service"), ("4", "Procurement"),
+    ("5", "Production"), ("6", "Logistics"), ("7", "Business Management"), ("8", "Master Data"),
+    ("9", "Business Intelligence"), ("A", "Common"), ("B", "Training Video etc"),
+]
+
+PROCESSES = [
+    # ------------------------------------------------------------------ O2C
+    dict(id="O2C", folder="2", module="SD", map="ZSD_PROCESS", version="2.1",
+         name="Order to Cash",
+         purpose="From the customer request to the cash in the bank: price, promise, ship, bill, collect.",
+         lanes=["Customer", "Sales", "Credit / Finance", "Warehouse"],
+         steps=[
+             (1, 0, 0, "s", "Customer inquiry", "VA11", [2]),
+             (2, 1, 1, "t", "Quotation with probability", "VA21", [3]),
+             (3, 1, 2, "t", "Sales order: pricing + ATP", "VA01", [4]),
+             (4, 2, 3, "d", "Credit OK?", "VKM3", [5]),
+             (5, 3, 4, "t", "Delivery + picking", "VL01N", [6]),
+             (6, 3, 5, "t", "Goods issue 601 (COGS)", "VL09", [7]),
+             (7, 1, 6, "t", "Billing + e-invoice", "VF01", [8]),
+             (8, 2, 7, "t", "Incoming payment", "F-28", [9]),
+             (9, 0, 8, "e", "Cash received, OTIF", "ZSD_COCKPIT", []),
+         ],
+         controls=[
+             ("Price only from condition records", "No manual price without a reason - margin leakage is visible in KE30", "O2C-01"),
+             ("Available-to-promise before confirming", "Confirmed date = real date; backorders are planned, not promised", "O2C-05"),
+             ("Credit block released by a second person", "Segregation of duties: the sales clerk cannot release his own order", "O2C-06"),
+             ("Bill from the delivery, never from the order", "Invoice quantity = shipped quantity; COGS and revenue in the same period", "O2C-09"),
+             ("E-invoice for every billing document", "Tax-authority compliance; hash makes the document tamper-proof", "O2C-11"),
+         ],
+         kpis=["OTIF %", "Order-to-cash days", "DSO", "Gross margin %", "Credit-blocked value"],
+         cases=[
+             ("O2C-01", "Customer price before list price (access sequence)", "VK11 VA01", "A305 customer price 7,600 used instead of A304 list 7,900", ["test_sd.Pricing.test_access_sequence_customer_price_before_list_price"]),
+             ("O2C-02", "Scale price, customer discount, freight and VAT", "VA01", "Scale 20+ = 4,150; K007 5 %; DAP freight 1.5 %; VAT 14 %", ["test_sd.Pricing.test_scale_discounts_freight_and_tax"]),
+             ("O2C-03", "Export order without VAT", "VA01", "Pricing procedure RVAA02, tax = 0", ["test_sd.Pricing.test_export_procedure_has_no_tax"]),
+             ("O2C-04", "Inquiry -> quotation -> order with document flow", "VA11 VA21 VA01", "Quotation completed; flow A-B-C-J-M-H-O", ["test_sd.Orders.test_quotation_to_order_flow"]),
+             ("O2C-05", "Partial confirmation and backorder", "VA01 V.02", "Only available quantity confirmed, rest scheduled later", ["test_sd.Orders.test_partial_confirmation_backorder"]),
+             ("O2C-06", "Credit block and release rules", "VA01 VKM3", "Order blocked; creator cannot release; credit manager can", ["test_sd.Orders.test_credit_block_and_release_rules", "test_fi.Receivables.test_credit_limit_blocks_billing"]),
+             ("O2C-07", "Material exclusion, incompletion and references", "VB01 V.02", "Excluded material rejected; incomplete order cannot be delivered", ["test_sd.Orders.test_exclusion_incompletion_and_references"]),
+             ("O2C-08", "Goods issue posts COGS and creates equipment", "VL02N", "Movement 601, stock down, COGS = stock value, serial equipment", ["test_sd.ShippingBilling.test_goods_issue_cogs_and_equipment"]),
+             ("O2C-09", "Invoice to FI and CO-PA", "VF01 KE30", "Revenue + VAT + receivable; CO-PA revenue = FI revenue", ["test_sd.ShippingBilling.test_invoice_fi_and_copa", "test_fi.Receivables.test_fb70_revenue_goes_to_copa"]),
+             ("O2C-10", "Cancel invoice and re-bill", "VF11 VF01", "S1 reverses FI and CO-PA; new invoice posted", ["test_sd.ShippingBilling.test_cancellation_and_rebilling"]),
+             ("O2C-11", "E-invoice hash (tax authority)", "ZEINV", "SHA-256 UUID reproducible from the document", ["test_sd.ShippingBilling.test_einvoice_hash"]),
+             ("O2C-12", "Returns, credit memo and debit memo", "VA01 VF01", "Return to blocked stock; credit / debit memo without discounts", ["test_sd.ShippingBilling.test_returns_credit_memo_and_debit_memo"]),
+             ("O2C-13", "Partial payment and dunning", "F-28 F150", "Residual item stays open and is dunned", ["test_fi.Receivables.test_partial_payment_residual_is_dunned"]),
+             ("O2C-14", "Sales cockpit and books", "ZSD_COCKPIT", "KPIs filled; books balanced", ["test_sd.Reports.test_cockpit_and_books"]),
+             ("O2C-15", "End-to-end: order -> GI -> invoice -> e-invoice -> payment", "VA01 VL01N VF01 F-28", "Stock -2, flow C-J-M, item cleared, FI = CO-PA", ["test_e2e.E2E_O2C.test_order_to_cash_cycle"]),
+         ]),
+    # ------------------------------------------------------------------ P2P
+    dict(id="P2P", folder="4", module="PUR", map="ZPUR_PROCESS", version="2.1",
+         name="Procure to Pay",
+         purpose="From the requirement to the vendor payment: buy the right thing, at the right price, only once.",
+         lanes=["Requester / MRP", "Purchasing", "Warehouse", "Accounts payable"],
+         steps=[
+             (1, 0, 0, "s", "Requirement (MRP / PR)", "ME51N", [2]),
+             (2, 1, 1, "d", "PR released?", "ME54N", [3]),
+             (3, 1, 2, "t", "RFQ + price comparison", "ME49", [4]),
+             (4, 1, 3, "t", "Purchase order + release", "ME21N", [5]),
+             (5, 2, 4, "t", "Goods receipt 101", "MIGO", [6]),
+             (6, 2, 5, "d", "Quality OK?", "MB21", [7]),
+             (7, 3, 6, "t", "Invoice: 3-way match", "MIRO", [8]),
+             (8, 3, 7, "t", "Payment run", "F110", [9]),
+             (9, 1, 8, "e", "Vendor evaluation", "ME61", []),
+         ],
+         controls=[
+             ("No PO without released requisition", "Release strategy by value; approver is not the requester", "P2P-03"),
+             ("Three quotations above the limit", "Price comparison ME49 documents why a vendor won", "P2P-05"),
+             ("Three-way match PO / GR / invoice", "Pay only what was ordered and received; tolerance checked", "P2P-10"),
+             ("Blocked vendor cannot be ordered from", "Master data block stops the process at the first step", "P2P-07"),
+             ("GR/IR cleared at month end", "Open receipts are visible, accruals are correct", "P2P-12"),
+         ],
+         kpis=["Spend under contract %", "PO cycle time", "Price variance", "Vendor score", "Maverick buying %"],
+         cases=[
+             ("P2P-01", "MRP creates requisition up to maximum stock", "MD01 ME5A", "PR quantity = max stock - available", ["test_pur.Requisitions.test_mrp_creates_requisition_to_max_stock"]),
+             ("P2P-02", "Quota arrangement selects the vendor", "MEQ1 ME57", "Vendor with the lowest quota rating is assigned", ["test_pur.Requisitions.test_quota_arrangement_picks_vendor"]),
+             ("P2P-03", "Requisition above limit needs release", "ME54N", "PR blocked until released", ["test_pur.Requisitions.test_requisition_above_limit_needs_release"]),
+             ("P2P-04", "Two-level release for a large PO", "ME29N", "Both codes needed before output", ["test_pur.Orders.test_two_level_release_for_large_order"]),
+             ("P2P-05", "RFQ price comparison and award", "ME41 ME47 ME49", "Cheapest quotation wins, PO created", ["test_pur.Sourcing.test_price_comparison_and_award"]),
+             ("P2P-06", "Contract call-off and target value", "ME31K ME21N", "Release order updates contract; target exceeded warns", ["test_pur.Orders.test_contract_call_off_and_target_check"]),
+             ("P2P-07", "Blocked vendor", "XK05 ME21N", "PO for blocked vendor rejected", ["test_pur.Orders.test_blocked_vendor", "test_md.Partners.test_purchasing_block"]),
+             ("P2P-08", "Goods receipt blocked until release", "MIGO", "GR on unreleased PO rejected", ["test_pur.Orders.test_goods_receipt_blocked_until_released"]),
+             ("P2P-09", "Over-delivery tolerance", "MIGO", "GR above tolerance rejected", ["test_engine.Movements.test_po_over_delivery_rejected"]),
+             ("P2P-10", "Invoice quantity check and price difference", "MIRO", "Invoice > GR rejected; price difference to stock", ["test_fi.Payables.test_miro_quantity_check", "test_fi.Payables.test_miro_price_difference_to_stock"]),
+             ("P2P-11", "Freight capitalised, service to cost center", "MIRO MIGO", "Freight in stock value; service expense on cost center", ["test_pur.Postings.test_freight_capitalized_and_cleared", "test_pur.Postings.test_service_goes_to_cost_center"]),
+             ("P2P-12", "Return to vendor and GR/IR clearing", "MIGO F.13", "122 return reduces PO history; GR/IR cleared", ["test_pur.Postings.test_return_and_delivery_completed", "test_fi.Closing.test_grir_cleared_for_invoiced_po"]),
+             ("P2P-13", "Payment run with cash discount", "F110", "Discount taken within terms", ["test_fi.Payables.test_cash_discount_taken_in_payment_run"]),
+             ("P2P-14", "Direct invoice FB60 with tax and due date", "FB60", "Tax line and net due date correct", ["test_fi.Payables.test_fb60_tax_and_due_date", "test_fi.Payables.test_expense_without_cost_center_rejected"]),
+             ("P2P-15", "Books balanced after procurement", "F.01", "Balance sheet balanced", ["test_pur.Postings.test_books_still_balanced"]),
+             ("P2P-16", "End-to-end: PO -> release -> GR -> MIRO -> payment", "ME21N MIGO MIRO F-53", "Stock +20, over-invoice blocked, vendor item cleared", ["test_e2e.E2E_P2P.test_procure_to_pay_cycle"]),
+         ]),
+    # ------------------------------------------------------------------ Plan to produce
+    dict(id="PTP", folder="5", module="PP", map="ZPP_PROCESS", version="2.1",
+         name="Plan to Produce",
+         purpose="From the sales plan to the finished product in stock, with the real cost of every order.",
+         lanes=["Planning", "Shop floor", "Warehouse", "Controlling"],
+         steps=[
+             (1, 0, 0, "s", "S&OP + demand", "MC81", [2]),
+             (2, 0, 1, "t", "MRP run", "MD01", [3]),
+             (3, 0, 2, "t", "Convert planned order", "CO40", [4]),
+             (4, 1, 3, "d", "Parts OK? Release", "CO02", [5]),
+             (5, 2, 4, "t", "Picking 261", "CO27", [6]),
+             (6, 1, 5, "t", "Confirmation + backflush", "CO11N", [7]),
+             (7, 2, 6, "t", "Goods receipt 101", "MIGO", [8]),
+             (8, 3, 7, "t", "WIP, variances, settlement", "CO88", [9]),
+             (9, 1, 8, "e", "Order TECO / closed", "ZPP_COCKPIT", []),
+         ],
+         controls=[
+             ("Production version mandatory", "One valid BOM + routing per lot size and date - no wrong recipe", "PTP-03"),
+             ("Availability check before release", "Missing parts are seen before the line stops", "PTP-08"),
+             ("Confirm in sequence, scrap with reason", "Yield and scrap feed first-pass yield and costing", "PTP-07"),
+             ("Month-end order: WIP -> variance -> settle", "Order balance goes to zero; variances explained by category", "PTP-13"),
+             ("MRP daily, exceptions worked", "Plan follows demand; no manual shadow lists", "PTP-04"),
+         ],
+         kpis=["Schedule adherence", "First-pass yield", "Scrap %", "WIP value", "Production variance"],
+         cases=[
+             ("PTP-01", "BOM recursion and routing rules", "CS01 CA01", "Recursive BOM rejected; routing needs work centers", ["test_pp.MasterData.test_bom_recursion_and_routing_rules"]),
+             ("PTP-02", "Multi-level explosion and low-level codes", "CS11 MD01", "Components planned on the right level", ["test_pp.MasterData.test_multilevel_explosion_and_low_level_codes"]),
+             ("PTP-03", "Production version required", "C223 CO01", "Order without valid version rejected", ["test_pp.MasterData.test_production_version_required"]),
+             ("PTP-04", "MRP explodes to semi-finished and subcontracting", "MD01 MD04", "Planned orders + subcontract PR created", ["test_pp.Planning.test_mrp_explodes_to_semi_finished_and_subcontracting"]),
+             ("PTP-05", "S&OP disaggregation to PIRs", "MC81 MD61", "Group plan split by proportion", ["test_pp.Planning.test_sop_disaggregation_to_pirs"]),
+             ("PTP-06", "Stock / requirements list balances", "MD04", "Available quantity per element correct", ["test_pp.Planning.test_stock_requirements_list_balances"]),
+             ("PTP-07", "Confirmation rules and cancellation", "CO11N CO13", "No over-confirmation; cancellation reverses", ["test_pp.Execution.test_confirmation_rules", "test_pp.Execution.test_cancel_confirmation"]),
+             ("PTP-08", "Missing parts and WIP", "CO24 KKAX", "Missing parts listed; WIP for open order", ["test_pp.Execution.test_missing_parts_and_wip"]),
+             ("PTP-09", "Backflush, scrap and automatic GR", "CO11N", "Components issued on confirmation, GR automatic", ["test_pp.Execution.test_backflush_scrap_and_auto_gr"]),
+             ("PTP-10", "External operation cost on the order", "ZPP_EXTOP", "PO cost of the operation on the order", ["test_pp.Execution.test_external_operation_cost_on_order"]),
+             ("PTP-11", "Subcontracting value", "ZME21_SC MIGO", "Components 543 + fee = product value", ["test_pp.Execution.test_subcontracting_value"]),
+             ("PTP-12", "Rework and refurbishment settlement", "CO01 KO88", "Rework to cost center, refurb to material", ["test_pp.Execution.test_rework_and_refurbishment_settlement"]),
+             ("PTP-13", "Cost estimate includes external + subcontracting", "CK11N", "Cost components 60 present", ["test_pp.MasterData.test_cost_estimate_contains_external_and_subcontracting", "test_co.ProductCosting.test_cost_estimate_structure"]),
+             ("PTP-14", "Books balanced and FI = CO", "F.01 ZCO_RECON", "Balanced and reconciled", ["test_pp.Books.test_balanced_and_reconciled"]),
+             ("PTP-15", "End-to-end: order -> release -> pick -> confirm -> GR -> TECO -> settle", "CO01 CO27 CO11N MIGO CO88", "Stock +2, TECO, books balanced, FI = CO-PA", ["test_e2e.E2E_PlanToProduce.test_production_order_cycle"]),
+         ]),
+    # ------------------------------------------------------------------ Inventory
+    dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",
+         name="Inventory & Warehouse",
+         purpose="Right quantity, right bin, right value - first in, first out.",
+         lanes=["Warehouse", "Quality", "Inventory control", "Finance"],
+         steps=[
+             (1, 0, 0, "s", "Goods receipt to bin", "MIGO", [2]),
+             (2, 1, 1, "d", "Quality OK? 321", "MB21", [3]),
+             (3, 0, 2, "t", "FIFO put-away", "LX02", [4]),
+             (4, 0, 3, "t", "Issue / transfer 201-311", "MIGO", [5]),
+             (5, 2, 4, "t", "Physical inventory count", "MI01", [6]),
+             (6, 2, 5, "d", "Difference?", "MI07", [7]),
+             (7, 3, 6, "t", "Price change / revaluation", "MR21", [8]),
+             (8, 3, 7, "e", "Stock = G/L", "MB5L", []),
+         ],
+         controls=[
+             ("FIFO by goods-receipt date", "Oldest quant is issued first, also after transfers", "INV-01"),
+             ("Bin mandatory in managed locations", "Every piece can be found; no 'somewhere' stock", "INV-03"),
+             ("No negative stock", "Posting is rejected and nothing is posted", "INV-04"),
+             ("Quality stock blocked until release", "Only released goods go to production or customers", "INV-06"),
+             ("Reversal instead of correction", "Audit trail keeps the original document", "INV-08"),
+         ],
+         kpis=["Inventory accuracy", "Stock days", "Dead stock value", "Blocked stock", "Bin utilisation"],
+         cases=[
+             ("INV-01", "FIFO issue across bins", "MIGO", "Oldest quant taken first", ["test_engine.Fifo.test_issue_takes_oldest_quant_first_across_bins"]),
+             ("INV-02", "Transfer keeps the goods receipt date", "MIGO", "FIFO date survives 311", ["test_engine.Fifo.test_transfer_keeps_goods_receipt_date"]),
+             ("INV-03", "Bin required in bin-managed location", "MIGO", "Posting without bin rejected", ["test_engine.Movements.test_bin_required_in_bin_managed_location"]),
+             ("INV-04", "Deficit rejected, nothing posted", "MIGO", "No partial posting", ["test_engine.Movements.test_deficit_is_rejected_and_nothing_is_posted"]),
+             ("INV-05", "Plant-to-plant transfer updates MAP", "MB1B", "Receiving plant price recalculated", ["test_engine.Movements.test_plant_to_plant_transfer_updates_receiving_map"]),
+             ("INV-06", "Quality release 321 and inspection stock", "MIGO", "Q stock moves to unrestricted", ["test_engine.Movements.test_quality_release_321", "test_md.MaterialMaster.test_qm_inspection_stock_and_overdelivery_tolerance"]),
+             ("INV-07", "Moving average price and rounding", "MIGO MR21", "MAP recalculated; last issue clears value", ["test_engine.MovingAveragePrice.test_map_recalculated_on_receipts_and_issues_at_map", "test_engine.MovingAveragePrice.test_rounding_last_issue_clears_value"]),
+             ("INV-08", "Reversal of receipts and issues", "MBST", "Stock, value, bins and dates restored", ["test_engine.Reversal.test_cancel_gr_after_price_moved_posts_difference", "test_engine.Reversal.test_cancel_gr_restores_stock_value_and_po", "test_engine.Reversal.test_cancel_issue_puts_stock_back_in_same_bins_and_dates"]),
+             ("INV-09", "Standard price: difference and revaluation", "MR21", "Difference to PRD; price change revalues stock", ["test_engine.StandardPrice.test_gr_difference_goes_to_price_difference_account", "test_engine.StandardPrice.test_price_change_revalues_stock"]),
+             ("INV-10", "MM consistency stock = G/L", "MB5L", "No differences", ["test_co.Checks.test_mm_consistency_still_ok"]),
+         ]),
+    # ------------------------------------------------------------------ R2R
+    dict(id="R2R", folder="7", module="FI", map="ZFI_PROCESS", version="2.1",
+         name="Record to Report",
+         purpose="Every transaction recorded once, closed on time, reported true and fair.",
+         lanes=["General ledger", "AP / AR / Assets", "Treasury", "Controller"],
+         steps=[
+             (1, 0, 0, "s", "Journal entries", "FB50", [2]),
+             (2, 1, 1, "t", "Sub-ledgers AP / AR", "FBL1N", [3]),
+             (3, 1, 2, "t", "Depreciation run", "AFAB", [4]),
+             (4, 2, 3, "t", "Bank statement", "FF67", [5]),
+             (5, 0, 4, "t", "FX valuation, GR/IR", "FAGL_FCV", [6]),
+             (6, 0, 5, "t", "VAT settlement", "FB41", [7]),
+             (7, 3, 6, "d", "Books balanced?", "S_ALR_87012277", [8]),
+             (8, 3, 7, "t", "Close period", "OB52", [9]),
+             (9, 3, 8, "e", "Financial statements", "F.01", []),
+         ],
+         controls=[
+             ("Debit = credit in every document", "Unbalanced entries are impossible", "R2R-01"),
+             ("Reconciliation accounts only via sub-ledger", "AP/AR always agree with the G/L", "R2R-02"),
+             ("Closed periods are locked", "No back-dated postings after reporting", "R2R-03"),
+             ("Reverse, never delete", "Full audit trail", "R2R-07"),
+             ("FX valuation reversed next month", "Unrealised result is not double counted", "R2R-06"),
+         ],
+         kpis=["Days to close", "Manual journal %", "Open GR/IR", "Unreconciled bank items", "Audit findings"],
+         cases=[
+             ("R2R-01", "Trial balance debit = credit", "S_ALR_87012277", "Totals equal", ["test_fi.Ledger.test_trial_balance_debit_equals_credit"]),
+             ("R2R-02", "Reconciliation account cannot be posted directly", "FB50", "Posting rejected", ["test_fi.Ledger.test_reconciliation_account_cannot_be_posted_directly"]),
+             ("R2R-03", "Closed period rejected", "OB52", "Posting rejected", ["test_fi.Ledger.test_closed_period_rejected"]),
+             ("R2R-04", "Document type controls account types", "FB50", "SA with vendor rejected", ["test_fi.Ledger.test_document_type_sa_does_not_allow_vendor"]),
+             ("R2R-05", "Balance sheet balances every month", "F.01", "Assets = liabilities + equity", ["test_fi.Ledger.test_balance_sheet_balances_every_month"]),
+             ("R2R-06", "FX valuation, reversal and realised loss", "FAGL_FCV F-53", "Unrealised reversed, realised posted", ["test_fi.Payables.test_fx_valuation_and_reversal", "test_fi.Payables.test_realized_exchange_loss"]),
+             ("R2R-07", "Reverse vendor invoice", "FB08", "Reversal document clears original", ["test_fi.Closing.test_reverse_vendor_invoice"]),
+             ("R2R-08", "VAT settlement", "FB41", "Input and output VAT cleared to payable", ["test_fi.Closing.test_vat_settled"]),
+             ("R2R-09", "Assets: depreciation, start month, scrapping", "AFAB ABAVN", "Depreciation to cost center; loss = book value", ["test_fi.Assets.test_depreciation_to_cost_center", "test_fi.Assets.test_new_asset_depreciation_starts_next_month", "test_fi.Assets.test_scrapping_loss_equals_book_value"]),
+             ("R2R-10", "End-to-end: journal entry, controls, statements", "FB50 F.01", "Accrual posted; unbalanced and reconciliation postings rejected", ["test_e2e.E2E_R2R.test_record_to_report"]),
+         ]),
+    # ------------------------------------------------------------------ CO
+    dict(id="CTL", folder="7", module="CO", map="ZCO_PROCESS", version="2.1",
+         name="Plan, Control & Close",
+         purpose="Plan costs, collect actuals on cost objects, close the month and explain profit by segment.",
+         lanes=["Cost centers", "Product costing", "Profitability", "Controller"],
+         steps=[
+             (1, 0, 0, "s", "Cost & activity plan", "KP06", [2]),
+             (2, 1, 1, "t", "Standard cost estimate", "CK11N", [3]),
+             (3, 0, 2, "t", "Actual postings", "KSB1", [4]),
+             (4, 0, 3, "t", "Assessment cycles", "KSU5", [5]),
+             (5, 1, 4, "t", "Overhead, WIP, variances", "KKAX", [6]),
+             (6, 1, 5, "t", "Settlement", "CO88", [7]),
+             (7, 2, 6, "t", "CO-PA result", "KE30", [8]),
+             (8, 3, 7, "d", "FI = CO?", "ZCO_RECON", [9]),
+             (9, 3, 8, "e", "Closing cockpit", "ZCO_PROCESS", []),
+         ],
+         controls=[
+             ("No expense without cost object", "Every cost has an owner", "CTL-01"),
+             ("Fixed closing sequence", "Overhead -> WIP -> variances -> settlement -> assessment", "CTL-04"),
+             ("Test run before update", "Simulate cycles before posting", "CTL-06"),
+             ("FI = CO reconciliation every month", "Management result equals the books", "CTL-07"),
+             ("Variances split by category", "Price, quantity, scrap, lot size explained", "CTL-05"),
+         ],
+         kpis=["Plan / actual %", "Activity price", "Under-absorption", "Contribution margin", "Reconciliation difference"],
+         cases=[
+             ("CTL-01", "Expense without cost center rejected", "FB50 MIGO", "Posting rejected", ["test_co.Checks.test_expense_without_cost_center_rejected"]),
+             ("CTL-02", "Issue to unreleased order rejected", "MIGO", "Posting rejected", ["test_co.Checks.test_issue_to_unreleased_order_rejected"]),
+             ("CTL-03", "Plan prices (iterative) and plan balances", "KP06 KSPI", "Activity prices computed; centers closed", ["test_co.Planning.test_plan_prices_iterative", "test_co.Planning.test_plan_balances_close_except_overhead_cost_centers"]),
+             ("CTL-04", "All cost centers and orders cleared", "KSB1 KOB1", "Balance zero after closing", ["test_co.ClosingResults.test_all_cost_centers_and_orders_are_cleared", "test_co.ClosingResults.test_copa_assessment_cleared_sales_costs"]),
+             ("CTL-05", "Variance categories and quantity variance", "KKS2", "Categories add up to settled amount", ["test_co.ClosingResults.test_variance_categories_add_up_to_settled_amount", "test_co.ClosingResults.test_quantity_variance_steel"]),
+             ("CTL-06", "Test run posts nothing; rerun reverses first", "KSU5", "No documents in test; rerun reverses", ["test_co.ClosingResults.test_test_run_posts_nothing", "test_co.ClosingResults.test_cycle_rerun_reverses_first"]),
+             ("CTL-07", "FI result = CO-PA operating result", "ZCO_RECON", "Reconciled", ["test_co.ClosingResults.test_fi_result_reconciles_with_copa_operating_result", "test_e2e.E2E_Control.test_period_close_reconciles"]),
+         ]),
+    # ------------------------------------------------------------------ MD
+    dict(id="MDM", folder="8", module="MD", map="ZMD_PROCESS", version="2.1",
+         name="Master Data Lifecycle",
+         purpose="Create once, correct everywhere, block before delete - clean data runs every process.",
+         lanes=["Requester", "Master data team", "Approver", "Process users"],
+         steps=[
+             (1, 0, 0, "s", "Request new data", "MM01", [2]),
+             (2, 1, 1, "t", "Create material views", "MM01", [3]),
+             (3, 1, 2, "t", "Customer / vendor", "XD01", [4]),
+             (4, 2, 3, "d", "Change confirmed?", "FK08", [5]),
+             (5, 3, 4, "t", "Use in orders", "ME21N", [6]),
+             (6, 1, 5, "t", "Quality cockpit", "ZMD_COCKPIT", [7]),
+             (7, 1, 6, "t", "Block / deletion flag", "MM06", [8]),
+             (8, 3, 7, "e", "Archived", "ZMD_PROCESS", []),
+         ],
+         controls=[
+             ("Dual control on bank data", "Payment fraud prevention: second person confirms", "MDM-04"),
+             ("Duplicate check on create", "One partner = one number", "MDM-05"),
+             ("Status blocks instead of deletes", "Open documents stay consistent", "MDM-02"),
+             ("Change documents on every field", "Who changed what and when", "MDM-03"),
+             ("Views allowed by material type", "No sales view on raw materials", "MDM-06"),
+         ],
+         kpis=["Complete records %", "Duplicates", "Blocked partners", "Change requests / week", "Dead stock"],
+         cases=[
+             ("MDM-01", "All views of a trading good", "MM01 MM03", "Basic, sales, purchasing, MRP, accounting views", ["test_md.MaterialMaster.test_all_views_of_trading_good"]),
+             ("MDM-02", "Status and deletion flag block processes", "MM02 MM06", "Purchasing / inventory blocked", ["test_md.MaterialMaster.test_status_blocks_purchasing_and_inventory", "test_md.MaterialMaster.test_deletion_flag_blocks_receipts_and_orders"]),
+             ("MDM-03", "MM02 rules and change documents", "MM02 MM04", "Change logged old/new", ["test_md.MaterialMaster.test_mm02_rules_and_change_documents"]),
+             ("MDM-04", "Sensitive change needs dual control", "FK08", "Payment blocked until confirmed by another user", ["test_md.Partners.test_sensitive_change_dual_control"]),
+             ("MDM-05", "Duplicate warning and number ranges", "XD01 XK01", "Duplicate found; correct number range", ["test_md.Partners.test_duplicate_warning", "test_md.Partners.test_number_ranges_and_field_status"]),
+             ("MDM-06", "View / valuation rules by material type", "MM01", "Not allowed views rejected", ["test_md.MaterialMaster.test_view_not_allowed_for_type", "test_md.MaterialMaster.test_valuation_class_and_price_control_rules"]),
+             ("MDM-07", "Partner functions, billing block, sales view", "XD01 XD05", "Ship-to used; billing blocked", ["test_md.Partners.test_partner_functions_and_ship_to", "test_md.Partners.test_billing_blocks_and_sales_view"]),
+             ("MDM-08", "Localisation: CIN, Brazil, import licence, embargo", "J1ID ZEXIM", "Data maintained; embargo blocks", ["test_md.MaterialMaster.test_cin_and_brazil", "test_md.MaterialMaster.test_import_license_and_embargo"]),
+             ("MDM-09", "Governance cockpit and books", "ZMD_COCKPIT", "Cockpit filled; books balanced", ["test_md.Governance.test_cockpit", "test_md.Governance.test_books_still_balanced", "test_e2e.E2E_MasterData.test_master_data_quality"]),
+         ]),
+    # ------------------------------------------------------------------ Service
+    dict(id="SVC", folder="3", module="CS", map="ZSD_PROCESS", version="2.1",
+         name="After-sales Service",
+         purpose="Fix the customer's product fast, charge what is billable and learn from warranty cost.",
+         lanes=["Customer", "Service desk", "Technician", "Billing"],
+         steps=[
+             (1, 0, 0, "s", "Complaint", "IW51", [2]),
+             (2, 1, 1, "d", "Under warranty?", "IE03", [3]),
+             (3, 1, 2, "t", "Service order", "IW31", [4]),
+             (4, 2, 3, "t", "Spare parts issue", "CO27", [5]),
+             (5, 2, 4, "t", "Confirm work", "IW41", [6]),
+             (6, 1, 5, "t", "Complete notification", "IW52", [7]),
+             (7, 3, 6, "t", "Resource-related billing", "DP90", [8]),
+             (8, 0, 7, "e", "Invoice / warranty cost", "KE30", []),
+         ],
+         controls=[
+             ("Warranty decided by equipment data", "Serial number and start date decide, not opinion", "SVC-01"),
+             ("Parts only by reservation", "Every spare part has a receiver", "SVC-03"),
+             ("Bill from actual resources", "Hours and parts confirmed = billed", "SVC-01"),
+             ("Free samples to CO-PA", "Marketing cost visible by customer", "SVC-02"),
+             ("Forecast spare parts", "Service level target with safety stock", "SVC-04"),
+         ],
+         kpis=["First-time fix %", "Repair turnaround", "Warranty cost / sales", "Spare-part service level"],
+         cases=[
+             ("SVC-01", "Warranty vs paid repair", "IW51 IW31 DP90", "Warranty free; paid repair billed by resources", ["test_sd.Service.test_warranty_vs_paid_repair"]),
+             ("SVC-02", "Free samples cost to CO-PA", "VA01 KE30", "Sample cost on customer segment", ["test_sd.Service.test_samples_cost_to_copa"]),
+             ("SVC-03", "Reservation partial issue", "MB21 MB1A", "Open quantity remains reserved", ["test_pp.ServiceParts.test_reservation_partial_issue"]),
+             ("SVC-04", "Forecast and safety stock for spare parts", "MP30 MP38", "Forecast and safety stock computed", ["test_pp.ServiceParts.test_forecast_and_safety_stock"]),
+         ]),
+]
+
+
+def process(pid):
+    return next(p for p in PROCESSES if p["id"] == pid)
+
+
+def all_tests():
+    return sorted({t for p in PROCESSES for c in p["cases"] for t in c[4]})
+
+
+def as_json():
+    """Catalog as plain JSON for the UI and the PowerPoint generator."""
+    out = []
+    for p in PROCESSES:
+        q = dict(p)
+        q["steps"] = [dict(no=s[0], lane=s[1], col=s[2], kind=s[3], title=s[4], tcode=s[5], next=s[6])
+                      for s in p["steps"]]
+        q["controls"] = [dict(title=c[0], why=c[1], case=c[2]) for c in p["controls"]]
+        q["cases"] = [dict(id=c[0], title=c[1], tcodes=c[2], expected=c[3], tests=c[4]) for c in p["cases"]]
+        out.append(q)
+    return dict(folders=FOLDERS, processes=out)
