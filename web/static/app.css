@@ -351,3 +351,84 @@ table.pnl td.pos { color: var(--positive); }
 .tile-foot { gap: 6px; }
 .tile-left { min-width: 0; overflow: hidden; }
 .tile-code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ================================================================ N-ERP style portal layout */
+:root { --navy: #0b1d44; --navy-2: #0e2556; --ring: #1f8bff; --ring-green: #22b04b; }
+.shell { background: var(--navy); height: 46px; gap: 14px; }
+.shell-logo { background: #13285a; border-radius: 3px; font-size: 22px; font-weight: 800; letter-spacing: .5px;
+  padding: 3px 10px; font-family: Arial, sans-serif; }
+.shell-logo i { color: #5fa8ff; font-style: normal; margin: 0 2px; }
+.shell-system { font-size: 16px; font-weight: 700; white-space: nowrap; opacity: .95; }
+.shell-system .caret { font-size: 13px; margin-left: 10px; opacity: .8; }
+.shell-client { font-size: 12px; font-weight: 700; opacity: .85; }
+.shell .okcode { max-width: 300px; }
+.shell-workplace { background: #fff; color: var(--brand); border-radius: 16px; padding: 4px 70px; font-size: 13px; }
+.shell-workplace:hover { text-decoration: none; background: #e9f2ff; }
+.shell-menu { font-size: 20px; }
+
+/* side menu */
+.sidemenu { width: 400px; }
+.sm-tabs { padding: 6px 4px 6px; border-bottom: 1px solid var(--border); }
+.sm-tabgroup { display: flex; }
+.sm-tab { border-radius: 0; font-size: 14px; padding: 3px 9px; margin-left: -1px; }
+.sm-tools { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.sm-tool { margin-left: 0; font-size: 16px; width: 30px; height: 26px; border-radius: 3px; color: #2a4a8a; }
+.sm-tool:hover { background: var(--hover); }
+.sm-tool.pin { color: #fff; background: #2a5bd7; font-size: 13px; filter: grayscale(.3); }
+.sm-tool.pin:not(.on) { background: #9fb1d6; }
+.sm-filter { position: relative; padding: 4px; }
+.sm-filter input { height: 26px; padding-right: 26px; font-style: italic; }
+.sm-filter-ico { position: absolute; right: 12px; top: 6px; color: #2a5bd7; font-size: 16px; }
+.sm-tree { font-size: 14px; }
+.sm-node { padding: 6px 8px; border-bottom: 1px solid #e6e8eb; }
+.sm-node.root { font-size: 14.5px; }
+.sm-ico { background: #3d4fa8; width: 13px; height: 13px; }
+.sm-node.open > .sm-ico { background: #26357a; }
+
+/* home */
+#app.home-main { padding: 0; overflow-x: hidden; }
+.hero { position: relative; background: radial-gradient(ellipse at 70% 10%, #13306e 0%, var(--navy) 55%, #07142f 100%);
+  padding: 50px 56px 46px; overflow: hidden; min-height: 400px; display: flex; align-items: center; }
+.hero-waves { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero-strip { position: relative; display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  scrollbar-width: none; flex: 1; }
+.hero-page { flex: 0 0 100%; scroll-snap-align: start; display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: 34px 14px; align-content: start; }
+.hero-strip::-webkit-scrollbar { display: none; }
+.hero-app { display: flex; flex-direction: column; align-items: center; text-align: center; color: #fff;
+  scroll-snap-align: start; padding: 4px; border-radius: 8px; }
+.hero-app:hover { text-decoration: none; background: rgba(255,255,255,.06); }
+.hero-label { margin-top: 12px; font-size: 14px; line-height: 1.3; max-width: 170px; }
+.ring { position: relative; width: 74px; height: 74px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9);
+  display: flex; align-items: center; justify-content: center; }
+.ring::before { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 4px solid transparent;
+  border-top-color: var(--ring); border-left-color: var(--ring); transform: rotate(-20deg); }
+.ring.green::before { border-top-color: var(--ring-green); border-left-color: var(--ring-green); }
+.hero-app:hover .ring { background: rgba(31,139,255,.18); }
+.hero-nav { position: relative; z-index: 1; width: 34px; height: 60px; border: 0; background: rgba(255,255,255,.08);
+  color: #fff; font-size: 30px; cursor: pointer; border-radius: 4px; flex: none; }
+.hero-nav.left { margin-right: 18px; } .hero-nav.right { margin-left: 18px; }
+.hero-nav:hover { background: rgba(255,255,255,.18); }
+.portal { background: #f3f3f3; padding: 46px 20px 18px; }
+.portal-wrap { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.portal-row { display: grid; grid-template-columns: repeat(5, minmax(150px, 210px)); gap: 18px; justify-content: center; }
+.portal-row.wrap { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); padding: 20px; }
+.portal-item { display: flex; flex-direction: column; align-items: center; text-align: center; color: #1d2a3a; padding: 8px; border-radius: 6px; }
+.portal-item:hover { text-decoration: none; background: #e7ebf1; }
+.portal-icon { height: 52px; display: flex; align-items: center; }
+.portal-title { font-weight: 700; font-size: 15px; margin-top: 10px; }
+.portal-sub { font-size: 11px; color: #7a7f86; margin-top: 4px; }
+.portal-nav { border: 0; background: none; font-size: 42px; color: #c3c8d0; cursor: pointer; width: 34px; }
+.portal-nav:hover { color: var(--brand); }
+.portal-dots { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
+.portal-dots .dot { width: 6px; height: 6px; border-radius: 50%; background: #9aa6b8; cursor: pointer; }
+.portal-dots .dot.on { width: 9px; height: 9px; background: #1d4f9e; margin-top: -1px; }
+.notice { display: flex; align-items: center; gap: 14px; padding: 12px 20px; background: #f7f7f7;
+  border-top: 1px solid #dcdcdc; border-bottom: 1px solid #dcdcdc; justify-content: center; flex-wrap: wrap; }
+.notice b { font-size: 19px; font-family: Georgia, serif; }
+.notice-icon { font-size: 18px; }
+.notice-link { font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 700; color: #1b3a9a; }
+.notice-date { font-family: Georgia, serif; font-size: 12px; color: #7d7d7d; border-left: 1px solid #ccc; padding-left: 14px; }
+.home-foot { text-align: center; padding: 12px; font-family: Georgia, serif; font-size: 12px; color: #6a6d70; }
+@media (max-width: 1100px) { .portal-row { grid-template-columns: repeat(2, 1fr); } .hero-page { grid-template-columns: repeat(3, 1fr); } .hero { padding: 30px 12px; }
+  .shell-workplace { padding: 4px 18px; } .shell-system { display: none; } }

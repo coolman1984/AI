@@ -27,6 +27,15 @@ Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when instal
 Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running]`.
 The server log (when started hidden) is in `data/server.log`.
 
+## Screen layout
+
+- **Home** (like the N-ERP portal): navy banner with round app icons (your ★ favorites from the menu come first,
+  then the main reports and hubs), a carousel of cockpits, the notice line and the footer.
+- **Workplace** (button top right, `ZWORKPLACE`): all apps as tiles with live KPIs.
+- **Side menu**: Menu / Process / Favorite tabs, expand / collapse, ⚙ show or hide T-codes, 📌 pin.
+  Areas in this order: Sales, Logistics Execution, Procurement, Production, Financial Accounting,
+  Controlling, Marketing, Master Data, Common.
+
 ## Transactions (type the code in the top search field)
 
 | Code | What it does |
