@@ -56,6 +56,20 @@ register("HOME", { title: "Home", async render(app) {
       ["MR21", "Change Material Price", "Revalue stock", "\u00A4"],
       ["CKM3", "Price History", "Moving average over time", "\u2197"],
     ]],
+    ["Production (Plan to Produce)", [
+      ["ZPP_COCKPIT", "Production Cockpit", "Orders, capacity, WIP, variances", "\u25D4", "kpi_ppord"],
+      ["ZPP_PROCESS", "Production Process Map", "SOP \u2192 settlement", "\u21BB"],
+      ["MC81", "Sales & Operations Plan", "Product group plan", "\u2637"],
+      ["MD01", "MRP Run", "Multi-level planning", "\u21BA"],
+      ["MD04", "Stock/Requirements List", "Elements & exceptions", "\u2261"],
+      ["CO01", "Create Production Order", "BOM, routing, scheduling", "\u270E"],
+      ["CO11N", "Confirmation", "Activities, backflush, auto GR", "\u2714"],
+      ["CO24", "Missing Parts", "Availability check", "\u26A0", "kpi_ppmiss"],
+      ["CM01", "Capacity Load", "Work centers per week", "\u2593"],
+      ["ME2O", "Subcontracting", "Provide components", "\u21C4"],
+      ["KKAX", "Work in Process", "WIP to FI", "\u29D6"],
+      ["MP38", "Spare Parts Forecast", "Safety stock / ROP", "\u2197"],
+    ]],
     ["Master Data", [
       ["ZMD_COCKPIT", "Master Data Cockpit", "Quality, risk, dead stock", "\u25D4", "kpi_mdq"],
       ["MM01", "Create Material", "Views per material type", "\u270E"],
@@ -172,6 +186,10 @@ register("HOME", { title: "Home", async render(app) {
     kpiEls.kpi_docs.append(String(d.kpi.docs_period), h("small", null, "30 d"));
     kpiEls.kpi_bins.append(`${d.kpi.bins_used}/${d.kpi.bins_total}`);
     kpiEls.kpi_po.append(String(d.kpi.open_po_items), h("small", null, "open"));
+    api("/api/pp/cockpit").then(p => {
+      kpiEls.kpi_ppord.append(String(p.kpi.open_orders), h("small", null, "open"));
+      kpiEls.kpi_ppmiss.append(String(p.kpi.missing), h("small", null, "orders"));
+    }).catch(() => {});
     api("/api/md/cockpit").then(m => {
       kpiEls.kpi_mdq.append(m.kpi.quality + " %", h("small", null, "quality"));
       kpiEls.kpi_sens.append(String(m.kpi.pending), h("small", null, "pending"));

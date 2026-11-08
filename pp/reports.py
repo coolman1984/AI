@@ -60,7 +60,7 @@ def cockpit(conn, d1, d2):
     late = [o for o in open_o if o["late"]]
     return {
         "kpi": dict(
-            orders=len(per), open=len(open_o), late=len(late),
+            orders=len(per), open_orders=len(open_o), late=len(late),
             released=sum(1 for o in orders if o["stat"] == "REL"),
             delivered=len(deliv), on_time=round(100.0 * on_time / len(deliv), 1) if deliv else None,
             yield_qty=conf["y"], scrap_qty=conf["x"],

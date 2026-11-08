@@ -484,7 +484,7 @@ def _conf_status(conn, aufnr):
     if 0 < o["wemng"] < o["gamng"]:
         sysstat(conn, aufnr, ["PDLV"])
     elif o["wemng"] >= o["gamng"] and o["gamng"]:
-        sysstat(conn, aufnr, ["DLV"], ["PDLV"])
+        sysstat(conn, aufnr, ["DLV"], ["PDLV", "MSPT"])
 
 
 def cancel_confirmation(conn, rueck, user, budat=None):
