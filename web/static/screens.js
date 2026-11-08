@@ -56,6 +56,20 @@ register("HOME", { title: "Home", async render(app) {
       ["MR21", "Change Material Price", "Revalue stock", "\u00A4"],
       ["CKM3", "Price History", "Moving average over time", "\u2197"],
     ]],
+    ["Sales (Order to Cash)", [
+      ["ZSD_COCKPIT", "Sales Cockpit", "Revenue, margin, OTIF, credit", "\u25D4", "kpi_sdrev"],
+      ["ZSD_PROCESS", "Order-to-Cash Map", "Inquiry \u2192 cash", "\u21BB"],
+      ["VA21", "Create Quotation", "Probability & validity", "\u270E"],
+      ["VA01", "Create Sales Order", "Pricing, ATP, credit", "\u270D"],
+      ["VKM1", "Credit Blocked Orders", "Release by credit manager", "\u26A0", "kpi_sdblk"],
+      ["VL10A", "Delivery Due List", "Pick & goods issue", "\u21C9"],
+      ["VF04", "Billing Due List", "Invoice to FI & CO-PA", "\u2709"],
+      ["ZEINV", "E-Invoices (ETA)", "UUID & status", "\u2611"],
+      ["V/LD", "Price Conditions", "PR00, discounts, deals", "\u2696"],
+      ["ZRET_MON", "Returns", "Credit & stock decision", "\u21A9"],
+      ["IW52", "Service Notifications", "Warranty & DP90", "\u2692"],
+      ["MCTA", "Customer Analysis", "Revenue & margin", "\u2261"],
+    ]],
     ["Production (Plan to Produce)", [
       ["ZPP_COCKPIT", "Production Cockpit", "Orders, capacity, WIP, variances", "\u25D4", "kpi_ppord"],
       ["ZPP_PROCESS", "Production Process Map", "SOP \u2192 settlement", "\u21BB"],
@@ -186,6 +200,10 @@ register("HOME", { title: "Home", async render(app) {
     kpiEls.kpi_docs.append(String(d.kpi.docs_period), h("small", null, "30 d"));
     kpiEls.kpi_bins.append(`${d.kpi.bins_used}/${d.kpi.bins_total}`);
     kpiEls.kpi_po.append(String(d.kpi.open_po_items), h("small", null, "open"));
+    api("/api/sd/cockpit").then(s => {
+      kpiEls.kpi_sdrev.append(App.fmtShort(s.kpi.revenue), h("small", null, "EGP"));
+      kpiEls.kpi_sdblk.append(String(s.kpi.credit_blocked_n), h("small", null, "blocked"));
+    }).catch(() => {});
     api("/api/pp/cockpit").then(p => {
       kpiEls.kpi_ppord.append(String(p.kpi.open_orders), h("small", null, "open"));
       kpiEls.kpi_ppmiss.append(String(p.kpi.missing), h("small", null, "orders"));

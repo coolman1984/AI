@@ -55,14 +55,14 @@ def sis(conn, d1, d2, by="kunnr"):
                           % (col, col), (d1, d2)):
         d = s.setdefault(r["k"], dict(key=r["k"], qty=0, revenue=0, deductions=0, net=0, cost=0, returns=0,
                                       credits=0, invoices=0, margin=0, margin_pct=0))
-        d["orders"] = r["v"]
+        d["order_value"] = r["v"]
         d["order_qty"] = r["q"]
     names = {r[0]: r[1] for r in conn.execute("SELECT kunnr, name FROM customer")} if by == "kunnr" else \
         {r[0]: r[1] for r in conn.execute("SELECT matnr, maktx FROM material")}
     out = sorted(s.values(), key=lambda x: -x["net"])
     for d in out:
         d["name"] = names.get(d["key"], "")
-        d.setdefault("orders", 0)
+        d.setdefault("order_value", 0)
     return out
 
 
