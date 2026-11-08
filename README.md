@@ -225,3 +225,20 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 | `tests/` | Automatic tests (`python -m unittest discover -s tests`) |
 | `data/` | The database file (created on first start) |
 | `exports/` | Excel files created by the Excel buttons |
+
+## Process tests, manuals and e-Learning
+
+- **ZQA_TEST - Process Test Center**: *Execute* runs every process end to end on a fresh
+  sample system (your data is not touched): 86 business test cases across 8 processes, made of
+  115 automated checks (unit tests + cross-module end-to-end cycles in `tests/test_e2e.py`).
+  Each case shows its T-codes, the expected and the actual result; click a line for the checks.
+- **ZLMS - e-Learning (On-line Academy)**: manuals repository by folder (Set) or module (DS),
+  process manuals (PR, PowerPoint) and program manuals (PG, one per T-code), status from the
+  last test run, manual search, and the LMS ID flow (request -> HQ registers -> connect).
+- **PowerPoint manuals** in `web/static/manuals/`: one deck per process (swimlane flow chart,
+  best-practice controls with their test case, KPIs, test script with result) and the full
+  `MM_Core_Process_Test_Book.pptx` with summary, test approach, landscape and sign-off.
+- Command line: `python -m qa.runner` (log in `exports/qa_last_run.json`). The catalog of
+  processes, steps, controls and test cases is `qa/catalog.py`; decks are regenerated with
+  `python -m qa.export qa.json` and `node tools/manuals/make_manuals.js qa.json web/static/manuals`
+  (needs pptxgenjs, react, react-dom, react-icons, sharp).
