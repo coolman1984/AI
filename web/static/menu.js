@@ -62,7 +62,7 @@ const MENU = [
     ["[8] Reporting", ["ME2N", "ME2L", "ME2M", "ME2K", "ME80FN", "ME65"]],
     ["[9] Customizing", ["OX08", "OME4", "OME9", "M/06", "OMGS"]],
   ]],
-  ["Logistics", [
+  ["Logistics Execution", [
     ["Materials Management", [
       ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5K", "ZMM_COCKPIT"]],
       ["Purchasing", ["ME21N", "ME23N", "ME2M"]],
@@ -72,11 +72,8 @@ const MENU = [
       ["Valuation", ["MR21", "CKM3"]],
       ["Customizing", ["OMJJ", "ZORG", "OX10", "OX09"]],
     ]],
-    ["Sales and Distribution", [
-      ["Billing", ["VF01", "VF03"]],
-      ["Customer master", ["XD01", "XD03"]],
-    ]],
-    ["Production", [["Production orders", ["CO01", "CO11N", "KOK5", "CS03"]]]],
+    ["Shipping", ["VL10A", "VL01N", "VL02N", "VL06O", "VL09"]],
+    ["Stock with Subcontractor", ["ME2O", "MBLB"]],
   ]],
   ["Financial Accounting", [
     ["My Request", ["ZFI_COCKPIT", "ZFI_PROCESS"]],
@@ -148,6 +145,24 @@ const MENU = [
   ]],
 ];
 
+MENU.push(
+  ["Marketing", [
+    ["Sales Analysis", ["ZSD_COCKPIT", "MCTA", "MCTC", "ZSLM"]],
+    ["Profitability (CO-PA)", ["KE30", "KE24", "KE11", "KEU5"]],
+    ["Promotions & Pricing", ["VB21", "VB23", "V/LD", "ZPRICE"]],
+    ["Customer Activities", ["VC01N", "VC05", "ZSD_PIPE"]],
+  ]],
+  ["Common", [
+    ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
+    ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
+    ["Change Documents", ["MM04", "XD04", "XK04"]],
+    ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV"]],
+  ]]);
+// N-ERP order of the top-level areas
+const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
+  "Marketing", "Master Data", "Common"];
+MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));
+
 // Process view: end-to-end flows across modules
 const PROCESS = [
   ["Master Data Lifecycle", ["ZMD_PROCESS", "ZMD_COCKPIT", "MM01", "XK01", "XD01", "FK08", "MM06"]],
@@ -161,7 +176,9 @@ const PROCESS = [
 ];
 const open = new Set();
 let favs = [];
-try { favs = JSON.parse(localStorage.getItem("mm_favs") || "[]"); open.add("Financial Accounting"); } catch (e) {}
+let showCodes = true;
+let pinned = true;
+try { favs = JSON.parse(localStorage.getItem("mm_favs") || "[]"); showCodes = localStorage.getItem("mm_codes") !== "0"; } catch (e) {}
 let tab = "menu";
 
 function title(code) { return (S.screens[code] || {}).title || ""; }
@@ -177,8 +194,12 @@ function leaf(code, path) {
   });
   const n = h("div.sm-node.leaf" + (known ? "" : ".na"), { style: { paddingLeft: (8 + path * 16) + "px" },
     title: known ? `${code} - ${title(code)}` : "Not available yet", dataset: { code } },
-    h("span.sm-ico", null, "•"), h("span", null, h("span.code", null, code), " ", title(code)), star);
-  if (known) n.addEventListener("click", () => go(code));
+    h("span.sm-ico", null, "•"), h("span", null, showCodes ? h("span.code", null, code) : null, showCodes ? " " : "",
+      title(code) || code), star);
+  if (known) n.addEventListener("click", () => {
+    go(code);
+    if (!pinned && window.innerWidth < 1400) $("#sidemenu").classList.add("closed");
+  });
   return n;
 }
 
@@ -196,7 +217,7 @@ function node(item, depth, filter, out) {
   kids.forEach(k => node(k, depth + 1, filter, sub));
   if (filter && !sub.length && !text.toLowerCase().includes(filter)) return;
   const isOpen = filter ? true : open.has(text) || open.has(key);
-  const n = h("div.sm-node" + (isOpen ? ".open" : "") + (na ? ".na" : ""), { style: { paddingLeft: (8 + depth * 16) + "px" },
+  const n = h("div.sm-node" + (depth === 0 ? ".root" : "") + (isOpen ? ".open" : "") + (na ? ".na" : ""), { style: { paddingLeft: (8 + depth * 16) + "px" },
     title: na ? "Not in scope of this version" : text },
     h("span.sm-ico", null, na ? "·" : isOpen ? "−" : "+"), h("span", null, text + (na ? " (not in scope)" : "")));
   if (!na) n.addEventListener("click", () => { open.has(key) || open.has(text) ? (open.delete(key), open.delete(text)) : open.add(key); draw(); });
@@ -241,6 +262,18 @@ function init() {
   $("#sm-filter").addEventListener("input", draw);
   $("#sm-expand").addEventListener("click", () => { allFolders(MENU, 0, []).forEach(k => open.add(k)); draw(); });
   $("#sm-collapse").addEventListener("click", () => { open.clear(); draw(); });
+  try { pinned = localStorage.getItem("mm_pin") !== "0"; } catch (e) {}
+  $("#sm-pin").classList.toggle("on", pinned);
+  $("#sm-pin").addEventListener("click", () => {
+    pinned = !pinned; $("#sm-pin").classList.toggle("on", pinned);
+    try { localStorage.setItem("mm_pin", pinned ? "1" : "0"); } catch (e) {}
+    App.msg("S", pinned ? "Menu pinned - stays open" : "Menu unpinned - closes after choosing a transaction");
+  });
+  $("#sm-codes").addEventListener("click", () => {
+    showCodes = !showCodes;
+    try { localStorage.setItem("mm_codes", showCodes ? "1" : "0"); } catch (e) {}
+    draw();
+  });
   $("#sm-search").addEventListener("submit", e => {
     e.preventDefault();
     const v = $("#sm-search-in").value.trim().toUpperCase();
@@ -249,7 +282,6 @@ function init() {
     else App.msg("E", `Transaction ${v} does not exist`, "00", "343");
   });
   window.addEventListener("hashchange", markActive);
-  open.add("Sales@0");
   PROCESS.forEach(p => open.add(p[0] + "@0"));
   draw();
 }

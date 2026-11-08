@@ -9,25 +9,27 @@
 </head>
 <body>
 <header class="shell">
-  <button class="shell-menu" id="menu-btn" title="SAP menu (show / hide)">&#x2630;</button>
-  <a class="shell-brand" href="#/" title="Home (launchpad)">
-    <span class="shell-logo">MM</span><span class="shell-title">MM Core</span>
+  <button class="shell-menu" id="menu-btn" title="Menu (show / hide)">&#x2630;</button>
+  <a class="shell-brand" href="#/" title="Home">
+    <span class="shell-logo">MM<i>&middot;</i>CORE</span>
   </a>
+  <span class="shell-system" title="System">MM Core &hellip; <span class="caret">&#x2304;</span></span>
+  <span class="shell-client" id="shell-sys">MMC</span>
   <form class="okcode" id="okcode-form" autocomplete="off">
-    <input id="okcode" list="tcode-list" placeholder="Enter transaction code (e.g. MIGO)" spellcheck="false">
+    <input id="okcode" list="tcode-list" placeholder="Enter transaction code (e.g. VA01)" spellcheck="false">
     <datalist id="tcode-list"></datalist>
   </form>
   <div class="shell-right">
-    <span class="shell-sys" id="shell-sys">MMC (100)</span>
+    <a class="shell-workplace" href="#/ZWORKPLACE">Workplace</a>
     <button class="shell-avatar" id="user-btn" title="Change user">OW</button>
     <button class="shell-power" id="power-btn" title="Stop MM Core (server)">&#x23FB;</button>
   </div>
 </header>
 <div class="workspace">
 <aside class="sidemenu" id="sidemenu">
-  <div class="sm-tabs"><button class="sm-tab active" data-tab="menu">Menu</button><button class="sm-tab" data-tab="process">Process</button><button class="sm-tab" data-tab="fav">Favorite</button>
-    <button class="sm-tool" id="sm-expand" title="Expand all">&#x2295;</button><button class="sm-tool" id="sm-collapse" title="Collapse all">&#x2296;</button></div>
-  <div class="sm-filter"><input id="sm-filter" placeholder="Filter" autocomplete="off"></div>
+  <div class="sm-tabs"><span class="sm-tabgroup"><button class="sm-tab active" data-tab="menu">Menu</button><button class="sm-tab" data-tab="process">Process</button><button class="sm-tab" data-tab="fav">Favorite</button></span>
+    <span class="sm-tools"><button class="sm-tool" id="sm-expand" title="Expand all">&#x2193;&#x2261;</button><button class="sm-tool" id="sm-collapse" title="Collapse all">&#x2191;&#x203E;</button><button class="sm-tool" id="sm-codes" title="Settings: show / hide transaction codes">&#x2699;</button><button class="sm-tool pin" id="sm-pin" title="Pin menu (stays open)">&#x1F4CC;</button></span></div>
+  <div class="sm-filter"><input id="sm-filter" placeholder="Filter" autocomplete="off"><span class="sm-filter-ico">&#x2315;</span></div>
   <div class="sm-tree" id="sm-tree"></div>
   <form class="sm-search" id="sm-search"><input id="sm-search-in" placeholder="Search Program (T-code)" autocomplete="off"><button class="btn primary" type="submit">Go</button></form>
 </aside>
@@ -54,6 +56,7 @@
 <script src="/md_screens.js"></script>
 <script src="/pp_screens.js"></script>
 <script src="/sd_screens.js"></script>
+<script src="/home.js"></script>
 <script src="/menu.js"></script>
 <script>App.start();</script>
 </body>

@@ -33,7 +33,7 @@ function execBar(fn) { toolbar([{ label: "Execute", key: "F8", primary: true, on
 function result() { return h("div#result"); }
 
 // ================================================================== HOME
-register("HOME", { title: "Home", async render(app) {
+register("ZWORKPLACE", { title: "Workplace - All Apps", async render(app) {
   const groups = [
     ["Inventory Management", [
       ["ZMM_COCKPIT", "Inventory Cockpit", "Dashboard & KPIs", "\u25D4", "kpi_value"],

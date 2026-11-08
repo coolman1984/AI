@@ -379,6 +379,7 @@ const App = (() => {
   async function render() {
     const { code, params } = parseHash();
     const app = $("#app");
+    app.className = "";
     app.innerHTML = "";
     const def = S.screens[code || "HOME"];
     if (!def) {
