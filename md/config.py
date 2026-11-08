@@ -80,6 +80,7 @@ MATERIAL_GROUPS = {            # OMSF
     "OIL": "Oils & lubricants",
     "HANDLE": "Handles & fittings",
     "SERVICE": "Services",
+    "GLASS": "Glass",
 }
 
 DIVISIONS = {"00": "Cross-division", "10": "Kitchen furniture", "20": "Components"}

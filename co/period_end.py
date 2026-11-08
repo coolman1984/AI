@@ -203,7 +203,8 @@ def reverse_run(conn, run_id, user=""):
 
 # ====================================================================== KGI2
 def _prod_orders(conn, gjahr, perio, aufnr=None):
-    sql = ("SELECT * FROM orders WHERE auart='PP01' AND stat NOT IN ('CRTD','CLSD') "
+    sql = ("SELECT * FROM orders WHERE auart IN ('PP01','ZP03','ZREF','ZP07') AND "
+           "stat NOT IN ('CRTD','CLSD') "
            "AND aufnr IN (SELECT DISTINCT substr(objnr,3) FROM co_item WHERE "
            "wrttp='04' AND gjahr=? AND perio<=? AND objnr LIKE 'OR%')")
     args = [gjahr, perio]
@@ -269,7 +270,7 @@ def variances(conn, gjahr, perio, aufnr=None, user=""):
     summary = []
     with transaction(conn):
         orders = [o for o in _prod_orders(conn, gjahr, perio, aufnr)
-                  if o["stat"] in ("DLV", "TECO")]
+                  if o["stat"] in ("DLV", "TECO") and o["auart"] == "PP01"]
         for o in orders:
             if not o["estimate_id"]:
                 raise MMError("Order %s has no released cost estimate" % o["aufnr"],
@@ -360,7 +361,7 @@ def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
                                (orn(o["aufnr"]), gjahr, perio)).fetchone()[0]
             if bal == 0:
                 continue
-            if o["auart"] == "PP01" and o["stat"] not in ("DLV", "TECO"):
+            if o["auart"] in ("PP01", "ZP03", "ZREF") and o["stat"] not in ("DLV", "TECO"):
                 out.append(dict(aufnr=o["aufnr"], amount=bal, receiver="-",
                                 note="Not delivered: balance is work in process, not "
                                      "settled"))
@@ -370,6 +371,12 @@ def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
             if not rules:
                 raise MMError("Order %s has no settlement rule (KO02)" % o["aufnr"],
                               "KD", "003")
+            if any(r["konty"] == "MA" for r in rules):
+                if not test:
+                    _settle_to_material(conn, o, bal, gjahr, perio, user)
+                out.append(dict(aufnr=o["aufnr"], amount=bal, receiver="MA %s" % o["matnr"],
+                                note="Settled to material stock (FI)"))
+                continue
             parts = split(bal, [r["prozs"] for r in rules])
             items = []
             for r, p in zip(rules, parts):
@@ -400,3 +407,36 @@ def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
                                 matkl=m["matkl"] if m else None, werks=o["werks"]),
                            {vv: p}, aufnr=o["aufnr"], refdoc=belnr, user=user)
     return out
+
+
+def _settle_to_material(conn, o, bal, gjahr, perio, user):
+    """Settlement to material (refurbishment / MAP materials): the order balance
+    revalues the stock (as far as stock exists), the rest goes to the price
+    difference account - FI document Dr stock, Cr 895000 with the order."""
+    import calendar
+    from fi.document import write
+    from mm.config import gl_for
+    m = conn.execute("SELECT bklas FROM material WHERE matnr=?", (o["matnr"],)).fetchone()
+    v = conn.execute("SELECT * FROM valuation WHERE matnr=? AND bwkey=?",
+                     (o["matnr"], o["werks"])).fetchone()
+    budat = "%04d-%02d-%02d" % (gjahr, perio, calendar.monthrange(gjahr, perio)[1])
+    to_stock = bal if v and v["lbkum"] > 0 else 0
+    lines = []
+    if to_stock:
+        lines.append(dict(hkont=gl_for("BSX", m["bklas"]), ktosl="BSX", amount=to_stock,
+                          matnr=o["matnr"], werks=o["werks"], menge=0,
+                          sgtxt="Settlement order %s to stock" % o["aufnr"]))
+        salk3 = v["salk3"] + to_stock
+        conn.execute("UPDATE valuation SET salk3=?, verpr=CASE WHEN vprsv='V' THEN ? ELSE "
+                     "verpr END WHERE matnr=? AND bwkey=?",
+                     (salk3, rdiv(salk3 * v["peinh"] * 1000, v["lbkum"]), o["matnr"],
+                      o["werks"]))
+    if bal - to_stock:
+        lines.append(dict(hkont=gl_for("PRD", m["bklas"]), ktosl="PRD",
+                          amount=bal - to_stock, matnr=o["matnr"], werks=o["werks"],
+                          sgtxt="Settlement order %s (no stock coverage)" % o["aufnr"]))
+    lines.append(dict(hkont="895000", amount=-bal, aufnr=o["aufnr"],
+                      sgtxt="Settlement order %s" % o["aufnr"]))
+    return write(conn, "SA", budat, user, "KO88%s" % o["aufnr"],
+                 "Settlement order %s to material %s" % (o["aufnr"], o["matnr"]), lines,
+                 tcode="KO88")

@@ -34,6 +34,8 @@ def seed(conn):
     from md import seed as md_seed
     md_seed.master(conn)
     failed += co_seed.plan_and_sample(conn)
+    from pp import seed as pp_seed
+    pp_seed.sample(conn, pp_seed.master(conn))
     return failed
 
 
