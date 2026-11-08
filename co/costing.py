@@ -29,11 +29,14 @@ def cost_estimate(conn, matnr, werks, kadky, losgr="100", user=""):
         if not bom:
             raise MMError("No BOM for material %s plant %s" % (matnr, werks), "CK", "380")
         ops = conn.execute("SELECT r.*, w.kostl, w.lstar, a.ktext AS atext, a.meinh, "
-                           "a.kstar AS akstar, a.ccomp FROM routing r JOIN "
-                           "work_center w ON w.arbpl=r.arbpl JOIN activity_type a ON "
+                           "a.kstar AS akstar, a.ccomp FROM routing r LEFT JOIN "
+                           "work_center w ON w.arbpl=r.arbpl LEFT JOIN activity_type a ON "
                            "a.lstar=w.lstar WHERE r.matnr=? AND r.werks=? ORDER BY "
                            "vornr", (matnr, werks)).fetchall()
-        if not ops:
+        mp = conn.execute("SELECT * FROM material_plant WHERE matnr=? AND werks=?",
+                          (matnr, werks)).fetchone()
+        subcon = mp is not None and "sobsl" in mp.keys() and mp["sobsl"] == "30"
+        if not ops and not subcon:
             raise MMError("No routing for material %s plant %s" % (matnr, werks),
                           "CK", "381")
         items = []
@@ -56,8 +59,26 @@ def cost_estimate(conn, matnr, werks, kadky, losgr="100", user=""):
             if s["base"] == "MAT":
                 items.append(_overhead(s, mat_total))
         act_total = 0
+        if subcon:
+            ir = conn.execute("SELECT * FROM info_record WHERE matnr=? AND COALESCE(loekz,0)=0 "
+                              "ORDER BY brutto LIMIT 1", (matnr,)).fetchone()
+            if not ir:
+                raise MMError("Subcontracting material %s: no info record with the "
+                              "subcontracting fee" % matnr, "CK", "382")
+            items.append(dict(typ="F", ressource="417000", ktext="Subcontracting fee vendor %s"
+                              % ir["lifnr"], menge=lot, meinh="", price=ir["brutto"],
+                              peinh=ir["peinh"], wert=value_of(lot, ir["brutto"], ir["peinh"]),
+                              wkf=0, ccomp=60, kstar="417000"))
         for o in ops:
+            if "steus" in o.keys() and o["steus"] == "PP02":
+                items.append(dict(typ="F", ressource="417000", ktext="External processing "
+                                  "%s (op. %s, vendor %s)" % (o["ltxa1"], o["vornr"], o["lifnr"]),
+                                  menge=lot, meinh="", price=o["preis"], peinh=1,
+                                  wert=value_of(lot, o["preis"], 1), wkf=0, ccomp=60,
+                                  kstar="417000"))
+                continue
             q = rdiv(o["vgw"] * lot, o["basis"])
+            q += o["vgw_setup"] if "vgw_setup" in o.keys() and o["vgw_setup"] else 0
             p = price(conn, gjahr, perio, o["kostl"], o["lstar"])
             w, f = act_value(q, p["price_fix"], p["price_var"])
             act_total += w

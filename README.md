@@ -70,6 +70,40 @@ Keys: `F8` execute, `Ctrl+S` post/save, `F3` back.
 - **Accounting:** every valuated movement creates a balanced accounting document
   (BSX stock, WRX GR/IR, VBR consumption, PRD price differences, ...).
 
+## Production (Plan to Produce)
+
+Start with `ZPP_COCKPIT` (orders, capacity, WIP, variances) or `ZPP_PROCESS` (the whole chain).
+
+| Area | T-codes |
+|---|---|
+| Master data | `CS01`-`CS03` BOM (scrap %, backflush, issue SLoc), `CS11`/`CS15`, `CR01`-`CR03`/`CR05` work centers (capacity + cost center), `CA01`-`CA03` routings, `C223` production versions, `OPL8`, `SCAL` |
+| SOP & demand | `MC84` product group, `MC81` rough-cut plan, `MC75` transfer, `MD61`-`MD63` planned independent requirements |
+| Planning | `MD01`/`MD02`/`MD03` MRP, `MD04`/`MD05`, `MD06`/`MD07`, `MD09` pegging, `MD11`-`MD13`/`MD16` planned orders, `CO40`/`CO41` convert, `CM01` capacity |
+| Availability | `CO09` ATP, `COMAC`, `CO24` missing parts |
+| Execution | `CO01`, `CO02`, `CO03`, `CO05N`, `CO11N`, `CO13`, `CO14`, `CO27` picking, `MF60` staging, `COHV`, `COOIS` |
+| Exceptional | `ZPP_REWORK` rework order, `CO07` order without material, `ZREF01`/`ZREF03` refurbishment |
+| External | `ZPP_EXTOP` external operations, `ZME21_SC` subcontracting PO, `ME2O` provide components, `MBLB` stock at vendor |
+| Service parts | `MP30`/`MP38`/`MP33` forecast, `MB21`/`MB25` reservations |
+| Period end | `KGI2` overhead, `KKAX` WIP, `KKS2` variances, `CO88` settlement, `KKBC_ORD` |
+
+Logic like SAP:
+
+- **MRP** works level by level (finished product first): net requirement = requirements - stock - receipts,
+  lot size (EX / FX / HB), lead-time offset with the factory calendar (Friday off), BOM explosion to
+  dependent requirements, planned orders (in-house / subcontracting) or purchase requisitions, exception messages.
+- **Release** checks availability (stock - committed + receipts). Missing parts give status `MSPT`
+  (refurbishment orders cannot be released with missing parts). External operations (control key PP02)
+  create a purchase requisition assigned to the order.
+- **Confirmation** posts activities at the planned price, backflushes components and, for control key PP03,
+  posts the goods receipt automatically. Scrap shows up as a quantity variance.
+- **Subcontracting:** components go to the vendor (541). The goods receipt consumes them (543), and the
+  product value = fee + component value.
+- **Period end:** WIP for orders not yet delivered is posted to FI (793000 / 893000). Variances are calculated
+  for delivered / TECO orders. Settlement goes to CO-PA (production), a cost center (rework) or the material
+  stock (refurbishment raises the moving average price).
+- **Spare parts:** forecast (moving average / exponential smoothing / trend) gives the safety stock
+  (service level) and the reorder point.
+
 ## Master Data (material, customer, vendor)
 
 Start with `ZMD_COCKPIT` (data quality, risk, dead stock) or `ZMD_PROCESS` (lifecycle map).
@@ -139,6 +173,7 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 | Folder | Content |
 |---|---|
 | `mm/` | Business logic: database, movement engine, master data, reports |
+| `pp/` | Production: BOM, routing, MRP, SOP, orders, confirmations, subcontracting, forecast, WIP |
 | `md/` | Master data: material views, customers, vendors, change documents, checks, CIN/Brazil/Exim |
 | `pur/` | Procurement: requisitions, sourcing, contracts, RFQ, PO, release, MRP, analytics |
 | `office/` | Office COM bridge |

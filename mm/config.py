@@ -53,7 +53,7 @@ MOVEMENT_TYPES = {
     "202": dict(text="RE for cost center", kind="receipt", value="price",
                 offset="VBR", reverse="201", ref="KOSTL"),
     "261": dict(text="GI for order", kind="issue", value="price",
-                offset="VBR", reverse="262", ref="AUFNR"),
+                offset="VBR", reverse="262", ref="AUFNR", st_choice=True),
     "262": dict(text="RE for order", kind="receipt", value="price",
                 offset="VBR", reverse="261", ref="AUFNR"),
     "301": dict(text="TF trfr plnt to plnt", kind="transfer", value="price",
@@ -80,6 +80,14 @@ MOVEMENT_TYPES = {
                 offset="ZOB", reverse="502", st_choice=True),
     "502": dict(text="Receipt w/o PO rev.", kind="issue", value="entered",
                 offset="ZOB", reverse="501", st_choice=True),
+    "541": dict(text="TF to subcontractor stock", kind="transfer", value=None,
+                offset=None, reverse="542", ref="UMLGO"),
+    "542": dict(text="TF from subcontractor stock", kind="transfer", value=None,
+                offset=None, reverse="541", ref="UMLGO", swap=True),
+    "543": dict(text="GI consumption subcontr. stock", kind="issue", value="price",
+                offset="VBO", reverse="544"),
+    "544": dict(text="RE consumption subcontr. stock", kind="receipt", value="price",
+                offset="VBO", reverse="543"),
     "551": dict(text="GI scrapping", kind="issue", value="price",
                 offset="VNG", reverse="552", ref="KOSTL", st_choice=True),
     "552": dict(text="RE scrapping", kind="receipt", value="price",
@@ -132,7 +140,9 @@ ACCOUNT_DETERMINATION = {
     ("ZOB", "*"): "399990",
     ("VAX", "*"): "500000",     # goods issue for delivery -> COGS
     ("AUF", "*"): "895000",     # goods receipt from production order
-    ("FRE", "*"): "193000",     # planned delivery costs (freight clearing)
+    ("FRE", "*"): "193000",
+    ("VBO", "*"): "400900",     # consumption of material provided to subcontractor
+    ("BSV", "*"): "400900",     # change in stock (subcontracting) - nets with VBO     # planned delivery costs (freight clearing)
 }
 
 

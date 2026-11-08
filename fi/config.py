@@ -32,6 +32,7 @@ CHART = {
     "305000": ("Inventory - packaging", "BS", "A20", "", 0, ""),
     "790000": ("Inventory - semi-finished", "BS", "A20", "", 0, ""),
     "792000": ("Inventory - finished goods", "BS", "A20", "", 0, ""),
+    "793000": ("Work in process (WIP)", "BS", "A20", "", 0, ""),
     # ---- receivables, tax, cash
     "140000": ("Customers - receivables (reconciliation)", "BS", "A30", "D", 1, ""),
     "140099": ("Customers - FX valuation adjustment", "BS", "A30", "", 0, ""),
@@ -84,6 +85,9 @@ CHART = {
     "470000": ("Depreciation", "PL", "R70", "", 0, ""),
     # ---- P&L: production / valuation
     "895000": ("Factory output of production orders", "PL", "R80", "", 0, ""),
+    "893000": ("Change in work in process", "PL", "R80", "", 0, ""),
+    "417000": ("Subcontracting & external processing", "PL", "R40", "", 0, "<"),
+    "400900": ("Consumption of material provided to subcontractors", "PL", "R40", "", 0, ""),
     "231500": ("Price differences", "PL", "R80", "", 0, ""),
     "231520": ("Price differences - transfer postings", "PL", "R80", "", 0, ""),
     "281500": ("Revaluation (price change)", "PL", "R80", "", 0, ""),

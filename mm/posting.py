@@ -220,6 +220,7 @@ def _post_item(doc, raw):
 
     # ------------------------------------------------ references
     ext = None
+    sc = False
     if ref == "ORDGR":
         from co import integration
         aufnr = str(raw.get("aufnr")).strip()
@@ -255,6 +256,11 @@ def _post_item(doc, raw):
                     matnr=po["matnr"] or "", werks=po["werks"])
         line["lgort"] = line["lgort"] or po["lgort"] or ""
         ext = value_of(qty, po["netpr"], po["peinh"])
+        sc = "pstyp" in po.keys() and po["pstyp"] == "L"
+        if sc and bwart != "101":
+            raise MMError("Subcontracting item %s/%s: reverse the receipt with MBST "
+                          "(component consumption is reversed too)" % (ebeln, ebelp),
+                          "M7", "301")
         freight = rdiv(po["frb"] * qty, po["menge"]) if po["frb"] else 0
         if bwart in ("101", "123"):
             open_qty = po["menge"] - po["wemng"]
@@ -301,8 +307,15 @@ def _post_item(doc, raw):
     kind = mt["kind"]
     fr = freight if ref == "PO" else 0
     if kind == "receipt":
-        res = doc.plus_line(line, ext=ext + fr if ext is not None else None)
+        sc_val = 0
+        if sc:                     # subcontracting: consume provided components (543)
+            from pp.subcon import consume_components
+            sc_val = consume_components(doc, po, qty, line)
+        res = doc.plus_line(line, ext=ext + fr + sc_val if ext is not None else None)
         doc.post_values(line, res, mt["offset"], +1)
+        if sc_val:                 # GR/IR only for the fee, components via BSV
+            doc.add_acc("WRX", gl_for("WRX", "*"), sc_val, line, res["zeile"])
+            doc.add_acc("BSV", gl_for("BSV", "*"), -sc_val, line, res["zeile"])
         if fr:                     # planned delivery costs: GR/IR goods only
             doc.add_acc("WRX", gl_for("WRX", "*"), fr, line, res["zeile"])
             doc.add_acc("FRE", gl_for("FRE", "*"), -fr, line, res["zeile"])
@@ -320,6 +333,9 @@ def _post_item(doc, raw):
         doc.plus_line(dst, valuated=False, pieces=res["pieces"], keep_bin=True)
     elif kind == "transfer":
         _post_transfer(doc, mt, line, raw)
+    if bwart in ("261", "262", "201", "202") and (line.get("aufnr") or raw.get("rsnum")):
+        from pp.order import withdrawn
+        withdrawn(conn, line, raw, bwart, qty)
     if line["ebeln"]:
         d = qty if bwart in ("101", "123") else -qty
         _update_po_received(conn, line["ebeln"], line["ebelp"], d)

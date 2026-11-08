@@ -135,7 +135,7 @@ def _plant(conn, p, mtart, new=True):
         raise MMError("Material type %s cannot be produced in-house" % mtart, "M3", "322")
     if out.get("dismm") == "VB" and not out.get("minbe") and new:
         raise MMError("MRP type VB (reorder point) needs a reorder point", "M3", "323")
-    if out.get("dismm") and out["dismm"] not in ("VB", "ND", "PD", "V1"):
+    if out.get("dismm") and out["dismm"] not in ("VB", "ND", "PD", "V1", "VV"):
         raise MMError("MRP type %s does not exist" % out["dismm"], "M3", "324")
     if out.get("disls") and out["disls"] not in ("EX", "FX", "HB", "WB", "MB"):
         raise MMError("Lot size %s does not exist" % out["disls"], "M3", "325")

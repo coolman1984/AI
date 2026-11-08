@@ -93,11 +93,28 @@ def create_order(conn, data, user):
     if auart not in ORDER_TYPES:
         raise MMError("Order type %s does not exist" % auart, "KO", "002")
     with transaction(conn):
-        aufnr = str(next_number(conn, "ORD_PP" if auart == "PP01" else "ORD_INT"))
+        prod = auart in ("PP01", "ZP03", "ZREF", "ZP07")
+        aufnr = str(next_number(conn, "ORD_PP" if prod else "ORD_INT"))
         matnr = werks = lgort = None
         gamng = 0
         est = None
-        if auart == "PP01":
+        if auart in ("ZP03", "ZREF"):
+            matnr = (data.get("matnr") or "").upper()
+            werks = data.get("werks") or "1000"
+            lgort = data.get("lgort") or ""
+            gamng = parse_qty(data.get("gamng"))
+            _need(conn, "SELECT 1 FROM material_plant WHERE matnr=? AND werks=?",
+                  (matnr, werks), "Material %s is not maintained in plant %s"
+                  % (matnr, werks), "CO", "006")
+            ktext = data.get("ktext") or "%s %s" % (
+                "Rework" if auart == "ZP03" else "Refurbishment", matnr)
+        elif auart == "ZP07":
+            werks = data.get("werks") or "1000"
+            gamng = parse_qty(data.get("gamng") or "1")
+            ktext = (data.get("ktext") or "").strip()
+            if not ktext:
+                raise MMError("Enter a description", "KO", "003")
+        elif auart == "PP01":
             matnr = (data.get("matnr") or "").upper()
             werks = data.get("werks") or "1000"
             lgort = data.get("lgort") or ""
@@ -129,7 +146,10 @@ def create_order(conn, data, user):
         rules = data.get("rules")
         if rules is None:
             rules = [{"konty": "PA", "receiver": matnr, "prozs": 100}] \
-                if auart == "PP01" else []
+                if auart == "PP01" else \
+                [{"konty": "MA", "receiver": matnr, "prozs": 100}] if auart == "ZREF" else \
+                [{"konty": "KS", "receiver": kostl, "prozs": 100}] \
+                if auart in ("ZP03", "ZP07") and kostl else []
         _set_rules(conn, aufnr, rules)
         if data.get("release"):
             conn.execute("UPDATE orders SET stat='REL' WHERE aufnr=?", (aufnr,))
@@ -146,10 +166,10 @@ def _set_rules(conn, aufnr, rules):
         if konty == "KS":
             _need(conn, "SELECT 1 FROM cost_center WHERE kostl=?", (rec,),
                   "Settlement receiver cost center %s does not exist" % rec)
-        elif konty == "PA":
+        elif konty in ("PA", "MA"):
             pass
         else:
-            raise MMError("Settlement receiver type %s not supported (KS, PA)"
+            raise MMError("Settlement receiver type %s not supported (KS, PA, MA)"
                           % konty, "KD", "001")
         total += pct
         conn.execute("INSERT INTO settle_rule VALUES (?,?,?,?,?)",
@@ -203,7 +223,8 @@ def create_bom(conn, matnr, werks, basis, items):
             _need(conn, "SELECT 1 FROM material_plant WHERE matnr=? AND werks=?",
                   (comp, werks), "Component %s not in plant %s" % (comp, werks),
                   "29", "001")
-            conn.execute("INSERT INTO bom VALUES (?,?,?,?,?,?)",
+            conn.execute("INSERT INTO bom (matnr,werks,posnr,idnrk,menge,basis) VALUES "
+                         "(?,?,?,?,?,?)",
                          (matnr, werks, i * 10, comp, parse_qty(q), b))
 
 
@@ -213,7 +234,8 @@ def create_work_center(conn, arbpl, werks, ktext, kostl, lstar):
               "Cost center %s does not exist" % kostl)
         _need(conn, "SELECT 1 FROM activity_type WHERE lstar=?", (lstar,),
               "Activity type %s does not exist" % lstar)
-        conn.execute("INSERT OR REPLACE INTO work_center VALUES (?,?,?,?,?)",
+        conn.execute("INSERT OR REPLACE INTO work_center (arbpl,werks,ktext,kostl,lstar) "
+                     "VALUES (?,?,?,?,?)",
                      (arbpl.upper(), werks, ktext, kostl, lstar))
 
 
@@ -225,7 +247,8 @@ def create_routing(conn, matnr, werks, basis, ops):
         for vornr, arbpl, txt, vgw in ops:
             _need(conn, "SELECT 1 FROM work_center WHERE arbpl=?", (arbpl,),
                   "Work center %s does not exist" % arbpl, "CR", "001")
-            conn.execute("INSERT INTO routing VALUES (?,?,?,?,?,?,?)",
+            conn.execute("INSERT INTO routing (matnr,werks,vornr,arbpl,ltxa1,vgw,basis) "
+                     "VALUES (?,?,?,?,?,?,?)",
                          (matnr, werks, vornr, arbpl, txt, parse_qty(vgw), b))
 
 

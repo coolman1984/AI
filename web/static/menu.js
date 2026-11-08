@@ -15,6 +15,23 @@ const MENU = [
     ["Overview & Governance", ["ZMD_COCKPIT", "ZMD_PROCESS"]],
     ["Customizing", ["OMS2", "OMS3", "OMS4", "OMSF", "OMSK", "CUNI", "OBD2", "OBD3", "XDN1", "XKN1", "J1ID"]],
   ]],
+  ["Production", [
+    ["Production Master Data", ["CS01", "CS02", "CS03", "CS11", "CS15", "CR01", "CR02", "CR03", "CR05", "CA01", "CA02", "CA03", "C223", "OPL8", "SCAL"]],
+    ["SOP & Demand Management", ["MC84", "MC81", "MC75", "MD61", "MD62", "MD63"]],
+    ["Production Planning", ["MD01", "MD02", "MD03", "MD11", "MD12", "MD13", "MD16", "CO40", "CO41", "CM01"]],
+    ["Exceptional Production", ["ZPP_REWORK", "CO07", "CO13"]],
+    ["Material Availability Check", ["CO09", "COMAC", "CO24"]],
+    ["Material Requirement Management", ["MD04", "MD05", "MD06", "MD07", "MD09"]],
+    ["Production Execution", ["CO01", "CO02", "CO03", "CO05N", "CO11N", "CO13", "CO14", "COHV", "COOIS"]],
+    ["Period-End Closing", ["KGI2", "KKAX", "KKS2", "CO88", "KKBC_ORD"]],
+    ["External processing", ["ZPP_EXTOP", "ME5A", "ME59N", "ME2N"]],
+    ["External Production Planning", ["ZME21_SC", "ME2O", "MBLB"]],
+    ["Component Supply", ["CO27", "MF60"]],
+    ["SVC Parts Forecasting", ["MP30", "MP38", "MP33"]],
+    ["SVC Parts Operation", ["MB21", "MB25", "MB24"]],
+    ["SVC Refurbish", ["ZREF01", "ZREF03"]],
+    ["Overview", ["ZPP_COCKPIT", "ZPP_PROCESS"]],
+  ]],
   ["Procurement", [
     ["[0] Overview", ["ZPUR_COCKPIT", "ZPUR_PROCESS"]],
     ["[1] Master Data & Sources", ["ME11", "ME1M", "ME01", "MEQ1", "XK01", "XK03"]],
@@ -118,7 +135,9 @@ const PROCESS = [
   ["Master Data Lifecycle", ["ZMD_PROCESS", "ZMD_COCKPIT", "MM01", "XK01", "XD01", "FK08", "MM06"]],
   ["Procure-to-Pay", ["ZPUR_PROCESS", "MD01", "ME51N", "ME55", "ME57", "ME21N", "ME29N", "MIGO", "MIRO", "F110"]],
   ["Order-to-Cash", ["XD01", "FD32", "VF01", "FBL5N", "F-28", "F150"]],
-  ["Plan-to-Produce (CO)", ["ZCO_PROCESS", "KP06", "CK11N", "CO01", "CO11N", "KO88", "KKS2"]],
+  ["Plan-to-Produce", ["ZPP_PROCESS", "MC81", "MD01", "MD04", "CO40", "CO05N", "CO27", "CO11N", "KKAX", "KKS2", "CO88"]],
+  ["Subcontracting", ["MD04", "ZME21_SC", "ME2O", "MBLB", "MIGO"]],
+  ["Service parts", ["MP38", "MP33", "MB21", "MB25", "ZREF01"]],
   ["Record-to-Report", ["ZFI_PROCESS", "OB52", "FAGL_FCV", "AFAB", "F.01", "ZCO_RECON"]],
 ];
 const open = new Set();
@@ -211,7 +230,7 @@ function init() {
     else App.msg("E", `Transaction ${v} does not exist`, "00", "343");
   });
   window.addEventListener("hashchange", markActive);
-  open.add("Master Data@0");
+  open.add("Production@0");
   PROCESS.forEach(p => open.add(p[0] + "@0"));
   draw();
 }

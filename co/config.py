@@ -56,6 +56,9 @@ ORDER_TYPES = {
     "ZINT": "Internal order (overhead)",
     "ZINV": "Internal order (investment / project)",
     "PP01": "Production order",
+    "ZP03": "Rework order",
+    "ZREF": "Refurbishment order",
+    "ZP07": "Production order without material",
 }
 ORDER_STATUS = {
     "CRTD": "Created",
@@ -72,6 +75,7 @@ COST_COMPONENTS = {
     30: "Labor",
     40: "Machine",
     50: "Production overhead",
+    60: "External processing / subcontracting",
 }
 
 # CO-PA value fields (KEA6) of operating concern EG01
@@ -99,6 +103,7 @@ CCOMP_TO_VV = {
     30: ("vv050", "vv051"),
     40: ("vv060", "vv061"),
     50: ("vv070", "vv070"),
+    60: ("vv030", "vv030"),
 }
 
 # CO-PA record types
