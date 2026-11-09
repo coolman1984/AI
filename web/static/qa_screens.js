@@ -45,6 +45,9 @@ function buildDocs(opt) {
   const run = CAT.run || {};
   docs.push({ folder: "", key: "MM CORE", status: run.cases ? (run.failed ? "F" : "P") : "", module: "QA", course: "S_QA00001_1.0",
     doc: "Material", type: "PR", title: "Process Manual & Test Book - all processes(EN)", href: "/manuals/" + book, dl: true });
+  docs.push({ folder: "", key: "MM CORE", lang: "AR", status: run.cases ? (run.failed ? "F" : "P") : "", module: "QA",
+    course: "S_QA00002_AR", doc: "Material", type: "PR", title: "دليل العمليات بالعربي - شرح كل Process في كل موديول(AR)",
+    href: "/manuals/MM_Core_Process_Guide_AR.pptx", dl: true });
   for (const p of CAT.processes) {
     const r = runOf(p.id);
     const st = r ? (r.passed === r.total ? "P" : "F") : "";
@@ -54,6 +57,8 @@ function buildDocs(opt) {
       title: `Process Manual ${p.module} ${p.version} ${p.name}(EN)` });
     for (const s of p.steps) docs.push({ ...base, status: st, course: `S_${p.module}${p.id}${String(s.no).padStart(2, "0")}_${p.version}`,
       title: `Process Manual ${p.module} ${p.version}.${s.no} ${s.title} [${s.tcode}](EN)` });
+    docs.push({ ...base, lang: "AR", status: st, course: `S_${p.module}${p.id}_AR`, href: "/manuals/MM_Core_Process_Guide_AR.pptx",
+      title: `شرح العملية بالعربي - ${p.name} (${p.module})(AR)` });
     if (opt.all) for (const c of p.cases) {
       const cr = caseRun(p.id, c.id);
       docs.push({ ...base, doc: "Test script", type: "TS", status: cr ? cr.status : "", course: c.id, dl: false,
@@ -82,14 +87,15 @@ function buildDocs(opt) {
 register("ZLMS", { title: "e-Learning - On-line Academy (Manuals)", async render(app) {
   await catalog(true);
   const lms = await api("/api/qa/lms");
-  const f = { lang: h("select.inp", null, h("option", null, "EN")), all: h("input", { type: "checkbox" }),
+  const f = { lang: h("select.inp", null, h("option", null, "EN"), h("option", { value: "AR" }, "AR - عربي")), all: h("input", { type: "checkbox" }),
     show: h("input", { type: "checkbox" }), dup: h("input", { type: "checkbox" }) };
   const search = h("input.inp", { placeholder: "Search title, T-code or course code", style: { width: "260px" } });
   const tree = h("div"), list = h("div.qa-list");
   let mode = "Set";
   const open = new Set();
   const draw = () => {
-    const docs = buildDocs({ all: f.all.checked, dup: f.dup.checked });
+    const docs = buildDocs({ all: f.all.checked, dup: f.dup.checked })
+      .filter(d => d.type === "PG" || (d.lang || "EN") === f.lang.value);
     tree.innerHTML = "";
     const tb = h("tbody");
     const count = (arr, t) => arr.filter(d => d.type === t || (t === "PR" && d.type === "TS")).length;
@@ -130,10 +136,10 @@ register("ZLMS", { title: "e-Learning - On-line Academy (Manuals)", async render
       h("thead", null, h("tr", null, ["Status", "Module", "Course Code", "Doc. Type", "Manual Type", "Title", "Language"].map(t => h("th", null, t)))),
       h("tbody", null, arr.map(d => h("tr", null, h("td.c", null, tick(d.status)), h("td", null, d.module), h("td", null, d.course),
         h("td", null, d.doc), h("td", null, d.type), h("td", null, h("a", d.dl ? { href: d.href, download: "" } : { href: d.href }, d.title)),
-        h("td", null, f.lang.value))))));
+        h("td", null, d.lang || "EN"))))));
     list.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  [f.all, f.show, f.dup].forEach(x => x.addEventListener("change", draw));
+  [f.all, f.show, f.dup, f.lang].forEach(x => x.addEventListener("change", draw));
   const tabs = h("div.tabs.qa-settabs", null, ["Set", "DS"].map(t => h("button.tab" + (t === mode ? ".active" : ""), { type: "button",
     on: { click: e => { mode = t; $$(".tab", tabs).forEach(b => b.classList.toggle("active", b === e.currentTarget)); draw(); } } }, t)));
   const doSearch = () => {
