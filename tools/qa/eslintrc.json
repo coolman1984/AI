@@ -1,0 +1,19 @@
+{
+  "root": true,
+  "env": { "browser": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": 2022, "sourceType": "script" },
+  "globals": { "App": "writable" },
+  "rules": {
+    "no-undef": "error",
+    "no-unused-vars": ["warn", { "args": "none", "varsIgnorePattern": "^_" }],
+    "no-dupe-keys": "error",
+    "no-unreachable": "error",
+    "no-redeclare": ["error", { "builtinGlobals": false }],
+    "no-const-assign": "error",
+    "no-self-assign": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+    "no-dupe-else-if": "error",
+    "no-duplicate-case": "error"
+  }
+}

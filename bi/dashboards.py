@@ -145,7 +145,6 @@ def inventory_status(ctx):
     mon = P.inventory_monthly(ctx.conn)
     months = sorted({f["month"] for f in mon})
     total = {m: sum(f["value"] for f in mon if f["month"] == m) for m in months}
-    old = {m: 0 for m in months}
     cur_total = sum(f["value"] for f in inv) or 0
     old_now = sum(f["value"] for f in inv if f["aging"] in ("181-365", ">365"))
     trend = _combo("Stock value at month end", months, "Stock value", [ctx.amt(total[m] / 100.0) for m in months],
