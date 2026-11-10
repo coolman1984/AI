@@ -22,7 +22,7 @@ const caseRun = (pid, cid) => ((runOf(pid) || {}).cases || []).find(c => c.id ==
 // ------------------------------------------------------------------ repository model
 const AREA = { "1": [[["Marketing"]], "MKT"], "2": [[["Sales"]], "SD"], "3": [[], "CS"], "4": [[["Procurement"]], "MM"],
   "5": [[["Production"]], "PP"], "6": [[["Logistics Execution"]], "LE"], "7": [[["Financial Accounting"], ["Controlling"]], "FI"],
-  "8": [[["Master Data"]], "MD"], "9": [[["Common", "Cockpits"]], "BI"], "A": [[["Common"]], "CA"], "B": [[], "TV"] };
+  "8": [[["Master Data"]], "MD"], "9": [[["Common", "Cockpits"]], "BI"], "A": [[["Common"], ["Administration"]], "CA"], "B": [[], "TV"] };
 const SERVICE = ["IW51", "IW52", "IW53", "IW31", "IW41", "IE01", "IE03", "DP90", "MP30", "MP33", "MP38"];
 
 function codesOf(item, out) {

@@ -17,6 +17,26 @@ Double-click **`Start MM Core.bat`** in this folder.
 
 The first start loads demo data: 2 plants, 10 materials and about 4 months of movements.
 
+**Log on.** Every person has an own user (AMS - ID & Authorization).
+Demo users: `ADMIN / admin` (everything), `SALES1 / sales1`, `CREDIT1`, `BUYER1`, `PURMGR1`,
+`WH1`, `QM1`, `PLAN1`, `SHOP1`, `AP1`, `AR1`, `GL1`, `CTRL1`, `MDM1`, `MDA1`, `AUDIT1`
+(password = user name in small letters). A database without demo data gets one `ADMIN`
+user with a one-time password in `data/first_login.txt`.
+
+- **ZAMS** (AMS home): my roles with validity, last logon and status, my information,
+  *Access Request* (role + reason -> approval inbox) and *Unlock / Change password*.
+- **ZINBOX**: everything waiting for my approval (access requests, PR / PO release, credit
+  blocks, blocked invoices, sensitive master data, payment runs). Own items cannot be approved.
+- **SU01** users (create, lock, unlock, reset password, roles with validity), **PFCG** roles
+  (transactions: codes, patterns `ME*`, whole menu areas `@SD`, or `*`; authorizations:
+  area display / change and critical objects), **SUIM** who may start a transaction / what a
+  user may do, **SU53** last refused check, **SM04** sessions, **SM20** security audit log.
+- Rules: 5 wrong passwords lock the user; no logon for 90 days = *Locked: long-term unused*;
+  initial passwords must be changed (8 characters, letters and digits); sessions end after 8
+  hours without use. The server checks every call: the transaction, the area (display /
+  change) and the critical object (release, payment run, periods, reversals, user admin).
+- `python run.py --dev` starts without logon (developer mode for tests and tools).
+
 Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when installing).
 
 | In folder `tools/` | What it does |
@@ -24,7 +44,7 @@ Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when instal
 | `Reset - fresh demo data.bat` | Delete all data and load fresh demo data |
 | `Reset - empty system.bat` | Delete all data and start with an empty system |
 
-Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running]`.
+Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running] [--dev]`.
 The server log (when started hidden) is in `data/server.log`.
 
 ## Screen layout
@@ -229,8 +249,8 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 ## Process tests, manuals and e-Learning
 
 - **ZQA_TEST - Process Test Center**: *Execute* runs every process end to end on a fresh
-  sample system (your data is not touched): 86 business test cases across 8 processes, made of
-  115 automated checks (unit tests + cross-module end-to-end cycles in `tests/test_e2e.py`).
+  sample system (your data is not touched): 113 business test cases across 9 processes, made of
+  151 automated checks on the fixed business date 9 Nov 2026 (unit tests + cross-module end-to-end cycles in `tests/test_e2e.py`).
   Each case shows its T-codes, the expected and the actual result; click a line for the checks.
 - **ZLMS - e-Learning (On-line Academy)**: manuals repository by folder (Set) or module (DS),
   process manuals (PR, PowerPoint) and program manuals (PG, one per T-code), status from the

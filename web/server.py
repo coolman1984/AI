@@ -354,7 +354,54 @@ class Handler(BaseHTTPRequestHandler):
 
     @property
     def user(self):
+        u = getattr(self, "_user", None)
+        if u:
+            return u
         return (self.headers.get("X-User") or "OWNER").upper()[:12]
+
+    def _auth_on(self):
+        """Logon and authorisation checks; off only in developer mode (run.py --dev,
+        MM_DEV=1), where the X-User header names the user (tests, tools)."""
+        return getattr(self.server, "auth", False)
+
+    def _authorize(self, method, path):
+        """Session -> user, then S_TCODE (X-Tcode header of the screen), the area
+        activity (GET display / POST change) and the business object of critical steps.
+        Returns (http code, message) to refuse, or None."""
+        from sec import auth as A, config as C, users as U
+        if path in C.PUBLIC:
+            return None
+        c = db()
+        user = U.session_user(c, self.token)
+        if not user:
+            return 401, {"type": "E", "class": "00", "number": "076", "logon": True,
+                         "text": "Please log on (no session or the session has expired)"}
+        self._user = user
+        if any(path == p or path.startswith(p + "/") for p in C.OPEN_PATHS):
+            return None
+        if U.must_change(c, user):
+            return 403, {"type": "E", "class": "00", "number": "190", "must_change": True,
+                         "text": "Change your initial password first (AMS - Unlock / Change password)"}
+        prof = A.profile(c, user)
+        tc = (self.headers.get("X-Tcode") or "").upper()[:20]
+        if tc and tc not in C.ALWAYS and not A.tcode_allowed(prof, tc):
+            return 403, A.refuse(c, user, "S_TCODE", tc, "Start transaction", tc, self.ip).as_dict()
+        area = A.area_of_path(path)
+        act = "03" if method == "GET" else "02"
+        if not A.area_allowed(prof, area, act):
+            return 403, A.refuse(c, user, "S_AREA", area, "%s - %s" % (C.AREAS.get(area, area),
+                                                                       C.ACTIVITIES[act]), tc, self.ip).as_dict()
+        for m, rx, obj, fld in C.ROUTE_OBJECTS:
+            if m == method and re.fullmatch(rx, path):
+                val = str(self.body.get(fld) or "*").upper() if fld else "*"
+                if not A.object_allowed(prof, obj, val, "02"):
+                    return 403, A.refuse(c, user, obj, val, C.OBJECTS.get(obj, obj), tc, self.ip).as_dict()
+                self._audit = obj
+                return None
+        for m, rx in C.AUDIT_ROUTES:
+            if m == method and re.fullmatch(rx, path):
+                self._audit = "DISPLAY" if method == "GET" else "EXECUTE"
+        return None
 
     def do_GET(self):
         self._dispatch("GET")
@@ -390,6 +437,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(bad[0], {"type": "E", "text": "Request refused: %s" % bad[1]})
         q = {k: v[0] for k, v in parse_qs(u.query).items()}
         self.body = {}
+        self._user, self._audit, self._cookies = None, None, []
+        self.ip = self.client_address[0] if self.client_address else ""
+        self.token = None
+        for part in (self.headers.get("Cookie") or "").split(";"):
+            k, _, v = part.strip().partition("=")
+            if k == "mmcore_session":
+                self.token = v
         if method == "POST":
             n = int(self.headers.get("Content-Length") or 0)
             raw = self.rfile.read(n) if n else b"{}"
@@ -397,13 +451,22 @@ class Handler(BaseHTTPRequestHandler):
                 self.body = json.loads(raw.decode("utf-8") or "{}")
             except ValueError:
                 return self._json(400, {"type": "E", "text": "Invalid JSON"})
+            if not isinstance(self.body, dict):
+                return self._json(400, {"type": "E", "text": "JSON object expected"})
+        if self._auth_on():
+            bad = self._authorize(method, u.path)
+            if bad:
+                return self._json(*bad)
         for m, rx, fn in ROUTES:
             if m != method:
                 continue
             mt = rx.match(u.path)
             if mt:
                 try:
-                    return self._json(200, fn(self, q, **mt.groupdict()))
+                    result = fn(self, q, **mt.groupdict())
+                    if self._audit:
+                        self._write_audit(method, u.path)
+                    return self._json(200, result)
                 except MMError as e:
                     return self._json(422, e.as_dict())
                 except com_bridge.ComError as e:
@@ -419,9 +482,22 @@ class Handler(BaseHTTPRequestHandler):
                                             "reference %s (details in data/mm_core.log)" % ref})
         self._json(404, {"type": "E", "text": "Unknown function %s" % u.path})
 
+    def _write_audit(self, method, path):
+        from sec import auth as A
+        key = {k: v for k, v in (self.body or {}).items() if isinstance(v, (str, int, float))}
+        try:
+            A.audit(db(), self.user, "EXECUTE" if method == "POST" else "DISPLAY", self._audit,
+                    path, json.dumps(key, ensure_ascii=False)[:300],
+                    tcode=(self.headers.get("X-Tcode") or "")[:20], ip=self.ip)
+        except Exception:      # noqa - the audit line must not undo a posted document
+            from mm.log import LOG
+            LOG.exception("audit log write failed")
+
     def _json(self, code, obj):
         data = json.dumps(obj, ensure_ascii=False, default=str).encode("utf-8")
         self.send_response(code)
+        for ck in getattr(self, "_cookies", None) or []:
+            self.send_header("Set-Cookie", ck)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Cache-Control", "no-store")
@@ -540,9 +616,11 @@ class _Server(ThreadingHTTPServer):
     daemon_threads = True
 
 
-def serve(host="127.0.0.1", port=8080, auto_stop=True):
+def serve(host="127.0.0.1", port=8080, auto_stop=True, auth=True):
+    """auth=False (run.py --dev / MM_DEV=1): no logon, the X-User header names the user."""
     global LIFE
     httpd = _Server((host, port), Handler)
+    httpd.auth = auth and not os.environ.get("MM_DEV")
     LIFE = Lifecycle(httpd, enabled=auto_stop)
     threading.Thread(target=LIFE.watch, daemon=True).start()
     return httpd
@@ -556,3 +634,4 @@ from web import md_api  # noqa: E402,F401
 from web import pp_api  # noqa: E402,F401
 from web import sd_api  # noqa: E402,F401
 from web import qa_api  # noqa: E402,F401
+from web import sec_api  # noqa: E402,F401

@@ -14,3 +14,7 @@ FIXED = datetime.date(2026, 11, 9)
 util.set_clock(FIXED)
 T = FIXED
 TODAY = FIXED.isoformat()
+
+from sec import users as _sec_users  # noqa: E402
+
+_sec_users.ITER = 1000          # fast password hashing in tests (production: 200000)

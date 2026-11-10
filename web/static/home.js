@@ -42,6 +42,8 @@ const PORTAL_ICON = {
   people: '<circle cx="18" cy="17" r="4"/><circle cx="31" cy="17" r="4"/><path d="M11 29c1-4 4-6 7-6s6 2 7 6M24 29c1-4 4-6 7-6s6 2 7 6"/><path d="M15 35h18M18 32l-3 3 3 3M30 32l3 3-3 3"/>',
   check: '<rect x="11" y="10" width="26" height="28" rx="2"/><path d="M17 20l3 3 6-6M17 30l3 3 6-6M29 21h4M29 31h4"/>',
   doc: '<path d="M14 10h14l7 7v21H14z"/><path d="M28 10v7h7M18 24h12M18 29h12"/>',
+  lock: '<circle cx="17" cy="15" r="5"/><path d="M8 32c1-6 5-9 9-9 2 0 4 .6 5.5 1.8"/><circle cx="32" cy="29" r="9"/><rect x="28" y="28" width="8" height="6" rx="1"/><path d="M29.5 28v-2a2.5 2.5 0 0 1 5 0v2"/>',
+  inbox: '<path d="M10 26l5-14h18l5 14v10H10z"/><path d="M10 26h9l2 4h6l2-4h9"/>',
 };
 
 // default banner apps (favorites of the menu come first)
@@ -62,6 +64,8 @@ const HERO = [
   ["ZPUR_COCKPIT", "Procurement HUB", "cart", "green"],
 ];
 const PORTAL = [
+  ["ZAMS", "AMS", "ID & Authorization", "lock"],
+  ["ZINBOX", "Approval Inbox", "My work items", "inbox"],
   ["ZLMS", "e-Learning", "On-line Academy", "learn"],
   ["ZQA_TEST", "Test Center", "End-to-end process tests", "check"],
   ["ZPROCESS_ALL", "Process Maps", "All end-to-end processes", "board"],
@@ -86,8 +90,9 @@ const NOTICES = [
 function heroApps() {
   let favs = [];
   try { favs = JSON.parse(localStorage.getItem("mm_favs") || "[]"); } catch (e) { favs = []; }
-  const list = favs.filter(c => S.screens[c]).map(c => [c, S.screens[c].title, "report"]);
-  for (const x of HERO) if (!list.find(y => y[0] === x[0]) && S.screens[x[0]]) list.push(x);
+  const ok = c => S.screens[c] && App.allowed(c);
+  const list = favs.filter(ok).map(c => [c, S.screens[c].title, "report"]);
+  for (const x of HERO) if (!list.find(y => y[0] === x[0]) && ok(x[0])) list.push(x);
   return list;
 }
 
@@ -122,14 +127,16 @@ register("HOME", { title: "Home", async render(app) {
 
   // ---------------------------------------------------------------- portal carousel
   const per = 5;
-  const pages = Math.ceil(PORTAL.length / per);
+  const items = PORTAL.filter(x => App.allowed(x[0]));
+  const pages = Math.ceil(items.length / per);
   let page = 0;
   const row = h("div.portal-row"), dots = h("div.portal-dots");
   const draw = () => {
     row.innerHTML = "";
-    PORTAL.slice(page * per, page * per + per).forEach(([code, title, sub, icon]) => row.append(
+    items.slice(page * per, page * per + per).forEach(([code, title, sub, icon]) => row.append(
       h("a.portal-item", { href: "#/" + code }, h("span.portal-icon", null, svg(PORTAL_ICON[icon], 44, "#1d2a3a")),
-        h("span.portal-title", null, title), h("span.portal-sub", null, sub))));
+        h("span.portal-title", null, title), h("span.portal-sub" + (code === "ZINBOX" ? ".inbox-count" : ""), null,
+          code === "ZINBOX" && inboxN !== null ? (inboxN ? `${inboxN} waiting for you` : "nothing waiting") : sub))));
     dots.innerHTML = "";
     for (let i = 0; i < pages; i++) {
       const d = h("span.dot" + (i === page ? ".on" : ""));
@@ -140,7 +147,9 @@ register("HOME", { title: "Home", async render(app) {
   const pl = h("button.portal-nav", { type: "button" }, "‹"), pr = h("button.portal-nav", { type: "button" }, "›");
   pl.addEventListener("click", () => { page = (page - 1 + pages) % pages; draw(); });
   pr.addEventListener("click", () => { page = (page + 1) % pages; draw(); });
+  let inboxN = null;
   draw();
+  if (S.auth) App.api("/api/sec/inbox").then(r => { inboxN = r.length; draw(); }).catch(() => {});
   app.append(h("section.portal", null, h("div.portal-wrap", null, pl, row, pr), dots));
 
   // ---------------------------------------------------------------- notice + footer
