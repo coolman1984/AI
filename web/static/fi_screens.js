@@ -345,6 +345,72 @@ register("FB08", { title: "Reverse Document", async render(app, params) {
       if (r) msgLink("S", r.message, "Display", "FB03", { id: r.belnr, year: b.value.slice(0, 4) }); } }]);
 }});
 
+register("MR8M", { title: "Cancel Invoice Document", async render(app, params) {
+  const d = inp({ value: params.id || "", w: "m" }), y = inp({ value: params.year || today().slice(0, 4), w: "s" });
+  const b = inp({ type: "date", value: today(), w: "m" });
+  const rs = sel([["01", "01 Wrong posting"], ["02", "02 Wrong price"], ["03", "03 Wrong quantity"]], "01", { w: "l" });
+  app.append(panel("Invoice document", grid(field("Invoice document", d, { req: true }), field("Fiscal year", y), field("Reversal reason", rs), field("Posting date", b))),
+    h("div.note", null, "Every line is reversed and the PO history (invoiced quantity) is restored. A price difference that went to stock comes back from stock only as far as the stock is still there; the rest goes to price differences. A paid invoice needs FBRA first."));
+  toolbar([{ label: "Display invoice", onClick: () => go("FB03", { id: val(d), year: val(y) }) },
+    { label: "Cancel invoice", key: "Ctrl+S", primary: true, onClick: async () => {
+      if (!await confirmBox("Cancel invoice", `Cancel invoice document ${val(d)} / ${val(y)}?`, "Cancel invoice")) return;
+      const r = await run(() => api("/api/fi/mr8m", { belnr: val(d), gjahr: val(y), budat: b.value, reason: rs.value }));
+      if (r) msgLink("S", r.message, "Display", "FB03", { id: r.belnr, year: String(r.gjahr) }); } }]);
+}});
+
+register("MRBR", { title: "Release Blocked Invoices", async render(app) {
+  const body = out(); app.append(body);
+  const load = async () => {
+    const rows = await run(() => api("/api/fi/mrbr")); if (!rows) return; body.innerHTML = "";
+    body.append(panel(null, h("p.muted", null, "Invoices with a price variance above the tolerance are blocked for payment (R). They must be released by another person than the one who posted them.")),
+      alv({ rows, columns: [{ key: "belnr", label: "Document", link: r => go("FB03", { id: r.belnr, year: String(r.gjahr) }) }, { key: "gjahr", label: "Year" },
+        { key: "lifnr", label: "Vendor" }, { key: "name", label: "Name" }, { key: "xblnr", label: "Reference" }, { key: "budat", label: "Posted", type: "date" },
+        { key: "usnam", label: "Posted by" }, { key: "wrbtr", label: "Amount", type: "amt" }, { key: "waers", label: "Curr." },
+        { key: "rel", label: "", render: r => h("button.btn.ghost", { type: "button", on: { click: async () => {
+          const x = await run(() => api("/api/fi/mrbr", { belnr: r.belnr, gjahr: r.gjahr })); if (x) { msg("S", x.message); load(); } } } }, "Release") }] }));
+  };
+  toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: load }]); load();
+}});
+
+register("FBRA", { title: "Reset Cleared Items", async render(app, params) {
+  const d = inp({ value: params.id || "", w: "m" }), y = inp({ value: params.year || today().slice(0, 4), w: "s" });
+  const rv = h("input", { type: "checkbox" }), list = out();
+  app.append(panel("Clearing document", grid(field("Clearing document", d, { req: true }), field("Fiscal year", y),
+    field("Reset and reverse", rv))), h("div.note", null, "All items cleared with this document are open again. With 'reverse' the clearing document itself (e.g. a payment) is reversed too."), list);
+  const show = async () => {
+    const rows = await run(() => api(`/api/fi/fbra?augbl=${enc(val(d))}`)); if (!rows) return; list.innerHTML = "";
+    list.append(alv({ rows, columns: [{ key: "belnr", label: "Document" }, { key: "buzei", label: "Item" }, { key: "koart", label: "Type" },
+      { key: "lifnr", label: "Vendor" }, { key: "kunnr", label: "Customer" }, { key: "hkont", label: "Account" }, { key: "budat", label: "Posted", type: "date" },
+      { key: "tcode", label: "T-code" }, { key: "amount", label: "Amount", type: "amt", sum: true }] }));
+  };
+  toolbar([{ label: "Items", onClick: show }, { label: "Reset clearing", key: "Ctrl+S", primary: true, onClick: async () => {
+    if (!await confirmBox("Reset clearing", `Reset clearing ${val(d)}${rv.checked ? " and reverse the document" : ""}?`, "Reset")) return;
+    const r = await run(() => api("/api/fi/fbra", { augbl: val(d), gjahr: val(y), reverse: rv.checked })); if (r) { msg("S", r.message); show(); } } }]);
+  if (params.id) show();
+}});
+
+register("F.16", { title: "Balance Carry-Forward (Year End)", async render(app) {
+  const y = inp({ value: String(Number(today().slice(0, 4)) - 1), w: "s" }), body = out();
+  app.append(panel("Fiscal year to close", grid(field("Carry forward from year", y, { req: true }))),
+    h("div.note", null, "The P&L result of the year is carried to retained earnings (081000). The balance is always derived from the postings, so a late posting into the old year is carried automatically; the run confirms the year and can be repeated."), body);
+  const exec = async test => {
+    const r = await run(() => api("/api/fi/f16", { gjahr: val(y), test })); if (!r) return; msg("S", r.message);
+    body.innerHTML = ""; body.append(panel(test ? "Test run" : "Carried forward", h("p", null, `Result ${fmtAmt(r.result)} to account ${r.account} for ${r.to_year}`)),
+      alv({ rows: r.accounts, columns: [{ key: "hkont", label: "Account" }, { key: "txt", label: "Text" }, { key: "balance", label: "Year balance", type: "amt", sum: true }] }));
+  };
+  toolbar([{ label: "Test run", onClick: () => exec(true) }, { label: "Execute", key: "F8", primary: true, onClick: () => exec(false) }]);
+  const st = await api("/api/fi/f16"); if (st && st.missing && st.missing.length) msg("W", `Balance carry-forward not yet run for: ${st.missing.join(", ")}`);
+}});
+
+register("ZAFAB_REV", { title: "Reverse Depreciation Run", async render(app) {
+  const y = inp({ value: today().slice(0, 4), w: "s" }), p = inp({ value: String(Number(today().slice(5, 7))), w: "s" });
+  app.append(panel("Period", grid(field("Fiscal year", y, { req: true }), field("Period", p, { req: true }))),
+    h("div.note", null, "Only the last posted depreciation period can be reversed. Afterwards AFAB posts the period again."));
+  toolbar([{ label: "Reverse", key: "Ctrl+S", primary: true, onClick: async () => {
+    if (!await confirmBox("Reverse depreciation", `Reverse depreciation ${val(p)}/${val(y)}?`, "Reverse")) return;
+    const r = await run(() => api("/api/fi/afab-reverse", { gjahr: val(y), perio: val(p) })); if (r) msg("S", r.message); } }]);
+}});
+
 register("FBS1", { title: "Enter Accrual / Deferral Document", async render(app) {
   await meta();
   const b = inp({ type: "date", value: today(), w: "m" }), r = inp({ type: "date", w: "m" }), t = inp({ w: "l", value: "Accrual" });
@@ -564,7 +630,8 @@ invoiceScreen("FB75", "D", true);
 register("MIRO", { title: "Enter Incoming Invoice (Logistics Invoice Verification)", async render(app, params) {
   await meta();
   const e = inp({ value: params.po || "", w: "m" }), f = { bldat: inp({ type: "date", value: today(), w: "m" }), budat: inp({ type: "date", value: today(), w: "m" }),
-    xblnr: inp({ w: "m" }), gross: inp({ w: "m" }), mwskz: taxSel("I", "V1") };
+    xblnr: inp({ w: "m" }), gross: inp({ w: "m" }), mwskz: taxSel("I", "V1"),
+    trx: sel([["1", "Invoice"], ["2", "Credit memo"], ["3", "Subsequent debit"], ["4", "Subsequent credit"]], params.trx || "1", { w: "m" }) };
   const head = h("div"), box = h("div.panel"), o = out();
   let items = [];
   const bal = h("span.badge");
@@ -590,10 +657,10 @@ register("MIRO", { title: "Enter Incoming Invoice (Logistics Invoice Verificatio
     calc();
   };
   e.addEventListener("keydown", ev => { if (ev.key === "Enter") load(); });
-  app.append(panel("Basic data - transaction: invoice", grid(field("Purchase order", h("span.split", null, e, h("button.btn", { type: "button", on: { click: load } }, "Adopt"))),
+  app.append(panel("Basic data", grid(field("Transaction", f.trx), field("Purchase order", h("span.split", null, e, h("button.btn", { type: "button", on: { click: load } }, "Adopt"))),
     field("Invoice date", f.bldat), field("Posting date", f.budat), field("Reference", f.xblnr), field("Amount (gross)", f.gross, { req: true }), field("Tax code", f.mwskz)), head),
-  box, o, h("div.note", null, "3-way match: quantity ≤ goods received - already invoiced. GR/IR is debited at the PO price; a price difference goes to stock (moving average) as long as stock exists, otherwise to 231500."));
-  const payload = sim => ({ simulate: sim, header: { ebeln: val(e), bldat: f.bldat.value, budat: f.budat.value, xblnr: val(f.xblnr), gross: val(f.gross), mwskz: f.mwskz.value },
+  box, o, h("div.note", null, "3-way match: quantity ≤ goods received - already invoiced. GR/IR is cleared with the value of the goods receipts; a price (or exchange-rate) difference goes to stock (moving average) as long as stock exists, otherwise to 231500. A price variance above 5 % / 100.00 blocks the invoice for payment (MRBR). Cancel with MR8M."));
+  const payload = sim => ({ simulate: sim, credit: ["2", "4"].includes(f.trx.value), subsequent: ["3", "4"].includes(f.trx.value), header: { ebeln: val(e), bldat: f.bldat.value, budat: f.budat.value, xblnr: val(f.xblnr), gross: val(f.gross), mwskz: f.mwskz.value },
     items: items.filter(i => i.ok).map(i => ({ ebelp: i.ebelp, qty: i.qty, amount: i.amount })) });
   toolbar([{ label: "Simulate", onClick: async () => {
     const r = await run(() => api("/api/fi/miro", payload(true))); if (!r) return;
@@ -601,7 +668,8 @@ register("MIRO", { title: "Enter Incoming Invoice (Logistics Invoice Verificatio
       { key: "hkont", label: "G/L", render: l => h("span", null, l.hkont || `vendor ${l.lifnr}`) }, { key: "txt", label: "Text" }, { key: "ktosl", label: "Key" },
       { key: "amount", label: "Amount", type: "amt", sum: true, signed: true }, { key: "sgtxt", label: "Item text" }] })); msg("S", r.message); } },
   { label: "Post", key: "Ctrl+S", primary: true, onClick: async () => { const r = await run(() => api("/api/fi/miro", payload(false)));
-    if (r) { msgLink("S", r.message, "Display", "FB03", { id: r.belnr, year: f.budat.value.slice(0, 4) }); load(); } } }]);
+    if (r) { msgLink(r.type || "S", r.message, "Display", "FB03", { id: r.belnr, year: f.budat.value.slice(0, 4) }); load(); } } },
+  { label: "Cancel invoice (MR8M)", ghost: true, onClick: () => go("MR8M") }, { label: "Blocked invoices (MRBR)", ghost: true, onClick: () => go("MRBR") }]);
   if (params.po) load();
 }});
 
@@ -657,10 +725,16 @@ register("F110", { title: "Automatic Payment Transactions", async render(app) {
       { key: "lifnr", label: "Vendor" }, { key: "name", label: "Name" }, { key: "belnr", label: "Invoice doc.", link: x => go("FB03", { id: x.belnr, year: x.gjahr }) },
       { key: "xblnr", label: "Reference" }, { key: "netdt", label: "Due", type: "date" }, { key: "waers", label: "Crcy" },
       { key: "amount", label: "Amount", type: "amt", sum: true, signed: true }, { key: "discount", label: "Cash discount", type: "amt", sum: true, signed: true },
-      { key: "pdoc", label: "Payment doc.", link: x => x.pdoc && go("FB03", { id: x.pdoc }) }] }));
+      { key: "pdoc", label: "Payment doc.", link: x => x.pdoc && go("FB03", { id: x.pdoc }) },
+      { key: "ex", label: "", render: x => execute ? "" : h("button.btn.ghost", { type: "button", on: { click: async () => {
+        const y = await run(() => api("/api/fi/f110/exclude", { laufd: laufd.value, laufi: val(laufi), belnr: x.belnr, gjahr: x.gjahr, buzei: x.buzei, exclude: !x.excluded }));
+        if (y) { x.excluded = !x.excluded; msg("S", y.message); } } } }, x.excluded ? "Include" : "Exclude") }] }));
+    if (r.exceptions && r.exceptions.length) o.append(gap(), alv({ title: "Exception list (not paid)", rows: r.exceptions, columns: [{ key: "lifnr", label: "Vendor" },
+      { key: "name", label: "Name" }, { key: "reason", label: "Reason" }, { key: "amount", label: "Amount", type: "amt" }] }));
     msg("S", r.message); listRuns();
   };
-  toolbar([{ label: "Proposal", key: "F8", onClick: () => go_(false) }, { label: "Payment run", primary: true, onClick: () => go_(true) }]);
+  toolbar([{ label: "Proposal", key: "F8", onClick: () => go_(false) }, { label: "Payment run", primary: true, onClick: () => go_(true) },
+    { label: "Delete proposal", ghost: true, onClick: async () => { const r = await run(() => api("/api/fi/f110/delete", { laufd: laufd.value, laufi: val(laufi) })); if (r) { msg("S", r.message); o.innerHTML = ""; listRuns(); } } }]);
   listRuns();
 }});
 

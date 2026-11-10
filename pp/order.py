@@ -504,9 +504,6 @@ def cancel_confirmation(conn, rueck, user, budat=None):
             mj = conn.execute("SELECT mjahr FROM mat_doc WHERE mblnr=?", (c["mblnr"],)).fetchone()
             cancel_document(conn, c["mblnr"], mj["mjahr"], budat, user,
                             "Cancel confirmation %s" % rueck)
-            for l in conn.execute("SELECT * FROM mat_doc_item WHERE mblnr=? AND bwart='261'",
-                                  (c["mblnr"],)).fetchall():
-                withdrawn(conn, dict(l), {}, "262", l["menge"])
         conn.execute("UPDATE pp_oper SET ism=ism-?, lmnga=lmnga-?, xmnga=xmnga-?, status=CASE "
                      "WHEN lmnga-?+xmnga-?>0 THEN 'PCNF' ELSE 'REL' END WHERE aufnr=? AND vornr=?",
                      (c["ism"], c["lmnga"], c["xmnga"], c["lmnga"], c["xmnga"], c["aufnr"],

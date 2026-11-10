@@ -10,7 +10,7 @@ FF67        manual bank statement (incoming payments + bank charges)
 import datetime
 
 from mm.db import next_number, transaction
-from mm.util import MMError, now_ts, parse_amount, parse_date
+from mm.util import MMError, now_ts, parse_amount, parse_date, parse_key, parse_rate
 
 from .ap import open_items, pay
 from .config import (CHART, FX_ACCOUNTS, LOCAL_CURRENCY, POSTING_KEYS, TAX_CODES,
@@ -73,12 +73,10 @@ def set_periods(conn, y1, p1, y2, p2):
 
 def set_rate(conn, waers, gdatu, ukurs):
     gdatu = parse_date(gdatu)
-    v = float(str(ukurs).replace(",", "."))
-    if v <= 0:
-        raise MMError("Exchange rate must be positive", "SG", "100")
+    v = parse_rate(ukurs)
+    waers = parse_key(waers, "currency")
     with transaction(conn):
-        conn.execute("INSERT OR REPLACE INTO exch_rate VALUES (?,?,?)",
-                     (waers.upper(), gdatu, int(round(v * RATE_SCALE))))
+        conn.execute("INSERT OR REPLACE INTO exch_rate VALUES (?,?,?)", (waers, gdatu, v))
 
 
 # ---------------------------------------------------------------- F-02
@@ -111,7 +109,13 @@ def general_posting(conn, header, lines, user):
 
 
 # ---------------------------------------------------------------- FB08
-def reverse(conn, belnr, gjahr, budat=None, reason="01", user=""):
+SOURCE_REVERSAL = {"MIGO": "MBST", "VL02N": "VL09", "CO27": "MBST", "CO11N": "CO13",
+                   "VF01": "VF11", "MIRO": "MR8M", "AFAB": "AFAB reversal (ZAFAB_REV)",
+                   "F-90": "ABAVN", "ABZON": "ABAVN", "F-92": "-", "ABAVN": "-"}
+
+
+def reverse(conn, belnr, gjahr, budat=None, reason="01", user="", _from_source=False):
+    gjahr = int(gjahr)
     with transaction(conn):
         h = conn.execute("SELECT * FROM acc_doc WHERE belnr=? AND gjahr=?",
                          (belnr, gjahr)).fetchone()
@@ -120,11 +124,11 @@ def reverse(conn, belnr, gjahr, budat=None, reason="01", user=""):
         if h["stblg"]:
             raise MMError("Document %s was already reversed by %s" % (belnr, h["stblg"]),
                           "F5", "805")
-        if h["awkey"] and (h["awkey"][:2] in ("49",) or h["tcode"] in (
-                "MIGO", "VF01", "MIRO", "AFAB", "F110") or h["blart"] in ("WE", "WA", "RV",
-                                                                          "RE", "AF")):
-            raise MMError("Document %s comes from %s - reverse it there (MBST, VF11, "
-                          "MR8M, AFAB repeat)" % (belnr, h["tcode"] or h["blart"]),
+        src = h["tcode"] or ""
+        if not _from_source and (src in SOURCE_REVERSAL or (h["awkey"] or "")[:2] == "49" or
+                                 h["blart"] in ("WE", "WA", "RV", "RE")):
+            raise MMError("Document %s comes from %s - reverse it there (%s)"
+                          % (belnr, src or h["blart"], SOURCE_REVERSAL.get(src, "source document")),
                           "F5", "807")
         items = conn.execute("SELECT * FROM acc_doc_item WHERE belnr=? AND gjahr=? ORDER "
                              "BY buzei", (belnr, gjahr)).fetchall()
@@ -163,6 +167,48 @@ def reverse(conn, belnr, gjahr, budat=None, reason="01", user=""):
         from co.period_end import _reverse_copa
         _reverse_copa(conn, belnr, user)
     return new
+
+
+# ---------------------------------------------------------------- FBRA
+def reset_clearing(conn, augbl, gjahr, user, reverse_doc=False, budat=None):
+    """FBRA: reopen all items cleared by clearing document augbl; with reverse_doc the
+    clearing document itself (payment, manual clearing) is reversed as well."""
+    gjahr = int(gjahr)
+    with transaction(conn):
+        items = conn.execute("SELECT i.*, h.tcode FROM acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr "
+                             "AND h.gjahr=i.gjahr WHERE i.augbl=?", (augbl,)).fetchall()
+        if not items:
+            raise MMError("No items are cleared with document %s" % augbl, "F5", "821")
+        h = conn.execute("SELECT * FROM acc_doc WHERE belnr=? AND gjahr=?", (augbl, gjahr)).fetchone()
+        if h and h["tcode"] in ("MR8M", "FB08", "VF11") or (h and h["stblg"]):
+            raise MMError("Clearing %s comes from a reversal - it cannot be reset" % augbl,
+                          "F5", "822")
+        # a residual item created by this payment must still be open
+        for r in conn.execute("SELECT * FROM acc_doc_item WHERE belnr=? AND gjahr=? AND rebzg IS NOT "
+                              "NULL", (augbl, gjahr)).fetchall():
+            if r["augbl"]:
+                raise MMError("Residual item of %s is cleared by %s - reset that clearing first"
+                              % (augbl, r["augbl"]), "F5", "820")
+        conn.execute("UPDATE acc_doc_item SET augbl=NULL, augdt=NULL WHERE augbl=?", (augbl,))
+        rev = None
+        if reverse_doc:
+            if not h:
+                raise MMError("%s is a clearing number without document - nothing to reverse"
+                              % augbl, "F5", "823")
+            rev = reverse(conn, augbl, gjahr, budat or h["budat"], "01", user, _from_source=True)
+        pr = conn.execute("SELECT * FROM payrun WHERE ','||docs||',' LIKE ?", ("%," + augbl + ",%",)
+                          ).fetchone()
+        if pr:
+            conn.execute("UPDATE payrun SET status='PAID/RESET' WHERE laufd=? AND laufi=?",
+                         (pr["laufd"], pr["laufi"]))
+        conn.execute("UPDATE vat_run SET belnr=belnr||' (reset)' WHERE belnr=?", (augbl,))
+        conn.execute("DELETE FROM vat_run WHERE belnr=? ", (augbl,))
+        from md.changes import log
+        log(conn, "BELEG", "%s/%s" % (augbl, gjahr), "FBRA", user,
+            [("BSEG", augbl, "augbl", augbl, "reset" + (" + reversed %s" % rev if rev else ""))])
+    return {"augbl": augbl, "reopened": len(items), "reversal": rev,
+            "message": "Clearing %s reset: %d items open again%s" % (
+                augbl, len(items), ", document reversed by %s" % rev if rev else "")}
 
 
 # ---------------------------------------------------------------- FBS1 / F.81
@@ -221,13 +267,25 @@ def fx_valuation(conn, key_date, user, test=True):
                 lines.append(dict(hkont=adj, amount=diff,
                                   sgtxt="FX valuation %s" % r["belnr"]))
         belnr = None
+        if not test:
+            prev = conn.execute("SELECT * FROM fx_run WHERE key_date=?", (key_date,)).fetchone()
+            if prev and prev["belnr"] and not prev["reversal"]:
+                raise MMError("Key date %s was already valued (document %s) - reverse it first"
+                              % (key_date, prev["belnr"]), "F5", "830")
         if lines and not test:
             next_day = (datetime.date.fromisoformat(key_date) +
                         datetime.timedelta(days=1)).isoformat()
             belnr = write(conn, "SA", key_date, user, "FAGL_FCV",
                           "FX valuation %s" % key_date, lines, tcode="FAGL_FCV")
+            gj = int(key_date[:4])
             conn.execute("UPDATE acc_doc SET stodt=? WHERE belnr=? AND gjahr=?",
-                         (next_day, belnr, int(key_date[:4])))
+                         (next_day, belnr, gj))
+            from .document import period_open
+            rev = None
+            if period_open(conn, next_day):       # SAP: reversal on the next day right away
+                rev = reverse(conn, belnr, gj, next_day, "05", user)
+            conn.execute("INSERT OR REPLACE INTO fx_run (key_date,belnr,gjahr,reversal,usnam,ts) "
+                         "VALUES (?,?,?,?,?,?)", (key_date, belnr, gj, rev, user, now_ts()))
     return {"belnr": belnr, "test": test, "lines": out,
             "total": sum(o["difference"] for o in out)}
 
@@ -248,31 +306,31 @@ def grir_clearing(conn, budat, user, test=True):
             out.append(dict(zuonr=key, items=len(items), balance=bal / 100.0,
                             cleared=bal == 0 and key != "-"))
         if not test and any(o["cleared"] for o in out):
-            augbl = str(next_number(conn, "FI_01"))
-            conn.execute("INSERT INTO acc_doc (belnr,gjahr,blart,budat,usnam,awkey,bktxt,"
-                         "waers,monat,tcode,bldat) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                         (augbl, int(budat[:4]), "AB", budat, user, "F.13",
-                          "Automatic clearing GR/IR", LOCAL_CURRENCY, int(budat[5:7]),
-                          "F.13", budat))
+            augbl = str(next_number(conn, "FI_01"))       # clearing number, no document
+            n = 0
             for o in out:
                 if o["cleared"]:
                     for i in groups[o["zuonr"]]:
                         conn.execute("UPDATE acc_doc_item SET augbl=?, augdt=? WHERE "
                                      "belnr=? AND gjahr=? AND buzei=?",
                                      (augbl, budat, i["belnr"], i["gjahr"], i["buzei"]))
+                        n += 1
+            conn.execute("INSERT INTO grir_run (augbl,budat,items,usnam,ts) VALUES (?,?,?,?,?)",
+                         (augbl, budat, n, user, now_ts()))
             return {"augbl": augbl, "lines": out, "test": False}
     return {"augbl": None, "lines": out, "test": test}
 
 
 # ---------------------------------------------------------------- VAT
-def vat_report(conn, d1, d2):
-    """S_ALR_87012357: tax base and tax per tax code."""
+def vat_report(conn, d1, d2, open_only=False):
+    """S_ALR_87012357: tax base and tax per tax code. open_only: only tax lines not yet
+    settled (FB41 clears the lines it settles)."""
     out = {}
     for r in conn.execute("SELECT i.mwskz, i.shkzg, i.dmbtr, i.txbase, i.hkont FROM "
-                          "acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND "
-                          "h.gjahr=i.gjahr WHERE i.hkont IN ('154000','175000') AND "
-                          "i.mwskz IS NOT NULL AND h.budat BETWEEN ? AND ? AND "
-                          "COALESCE(h.tcode,'')<>'FB41'", (d1, d2)):
+                          "acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND h.gjahr=i.gjahr "
+                          "WHERE i.hkont IN ('154000','175000') AND i.mwskz IS NOT NULL AND "
+                          "h.budat BETWEEN ? AND ? AND COALESCE(h.tcode,'')<>'FB41'%s"
+                          % (" AND i.augbl IS NULL" if open_only else ""), (d1, d2)):
         t = TAX_CODES[r["mwskz"]]
         o = out.setdefault(r["mwskz"], dict(mwskz=r["mwskz"], text=t[0], typ=t[2],
                                             base=0, tax=0, pct=t[1] / 100.0))
@@ -289,17 +347,30 @@ def vat_report(conn, d1, d2):
 
 
 def vat_settlement(conn, d1, d2, budat, user):
-    """FB41: move output and input tax of the period to the tax payable account."""
-    rep = vat_report(conn, d1, d2)
-    if not rep["output"] and not rep["input"]:
-        raise MMError("No tax postings in the period", "FF", "010")
-    lines = [dict(hkont="175000", amount=rep["output"], sgtxt="VAT settlement output"),
-             dict(hkont="154000", amount=-rep["input"], sgtxt="VAT settlement input"),
-             dict(hkont=VAT_PAYABLE, amount=-(rep["output"] - rep["input"]),
-                  sgtxt="VAT payable %s - %s" % (d1, d2))]
+    """FB41: move the not yet settled output and input tax of the period to the tax
+    payable account and clear the settled tax lines (a second run finds nothing)."""
+    d1, d2, budat = parse_date(d1), parse_date(d2), parse_date(budat)
     with transaction(conn):
-        return write(conn, "SA", parse_date(budat), user, "FB41",
-                     "VAT settlement %s" % d1[:7], lines, tcode="FB41")
+        rep = vat_report(conn, d1, d2, open_only=True)
+        if not rep["output"] and not rep["input"]:
+            raise MMError("No tax postings to settle in %s - %s (already settled?)" % (d1, d2),
+                          "FF", "010")
+        lines = [dict(hkont="175000", amount=rep["output"], sgtxt="VAT settlement output"),
+                 dict(hkont="154000", amount=-rep["input"], sgtxt="VAT settlement input"),
+                 dict(hkont=VAT_PAYABLE, amount=-(rep["output"] - rep["input"]),
+                      sgtxt="VAT payable %s - %s" % (d1, d2))]
+        belnr = write(conn, "SA", budat, user, "FB41", "VAT settlement %s" % d1[:7], lines,
+                      tcode="FB41")
+        gj = int(budat[:4])
+        conn.execute("UPDATE acc_doc_item SET augbl=?, augdt=? WHERE augbl IS NULL AND hkont IN "
+                     "('154000','175000') AND mwskz IS NOT NULL AND (belnr, gjahr) IN (SELECT belnr, "
+                     "gjahr FROM acc_doc WHERE budat BETWEEN ? AND ? AND COALESCE(tcode,'')<>'FB41')",
+                     (belnr, budat, d1, d2))
+        conn.execute("UPDATE acc_doc_item SET augbl=?, augdt=? WHERE belnr=? AND gjahr=? AND hkont IN "
+                     "('154000','175000')", (belnr, budat, belnr, gj))
+        conn.execute("INSERT OR REPLACE INTO vat_run (d1,d2,belnr,gjahr,payable,usnam,ts) VALUES "
+                     "(?,?,?,?,?,?,?)", (d1, d2, belnr, gj, rep["payable"], user, now_ts()))
+    return belnr
 
 
 # ---------------------------------------------------------------- FF67

@@ -211,6 +211,19 @@ register("ZLMS", { title: "e-Learning - On-line Academy (Manuals)", async render
     { label: "Process Maps", ghost: true, onClick: () => go("ZPROCESS_ALL") }]);
 } });
 
+// ------------------------------------------------------------------ ZQA_CHECK
+register("ZQA_CHECK", { title: "Data Consistency Check", async render(app) {
+  const body = h("div"); app.append(panel(null, h("p", null, "Checks rules that must always hold: every FI document balances, stock in bins = valuated stock, stock accounts = material values, sub-ledgers = reconciliation accounts, invoiced ≤ received, reservations = goods issues, returned ≤ billed, FI = CO-PA, clearing data, number ranges.")), body);
+  const exec = async () => {
+    const r = await run(() => api("/api/qa/check")); if (!r) return; body.innerHTML = "";
+    msg(r.count ? "E" : "S", r.message);
+    body.append(r.count ? App.alv({ rows: r.violations, columns: [{ key: "rule", label: "Rule" }, { key: "object", label: "Object" },
+      { key: "expected", label: "Expected" }, { key: "actual", label: "Actual" }, { key: "hint", label: "Hint" }] })
+      : panel(null, h("p", null, tick("P"), " No violations - the data is consistent.")));
+  };
+  toolbar([{ label: "Execute", key: "F8", primary: true, onClick: exec }]); exec();
+} });
+
 // ------------------------------------------------------------------ ZQA_TEST
 register("ZQA_TEST", { title: "Process Test Center - End-to-End Tests", async render(app) {
   await catalog(true);

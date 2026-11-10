@@ -168,9 +168,13 @@ def sd_delivery(req, q, v):
     return out(delivery.detail(db(), v))
 
 
-@route("POST", "/api/sd/delivery/(?P<v>[0-9]+)/(?P<act>pick|gi|reverse)")
+@route("POST", "/api/sd/delivery/(?P<v>[0-9]+)/(?P<act>pick|gi|reverse|delete|change)")
 def sd_delivery_act(req, q, v, act):
     c = db()
+    if act == "delete":
+        return delivery.delete(c, v, req.user)
+    if act == "change":
+        return delivery.change(c, v, req.body.get("items") or {}, req.user)
     if act == "pick":
         delivery.pick(c, v, req.body.get("items"))
         return {"message": "Delivery %s picked" % v}

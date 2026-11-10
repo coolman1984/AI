@@ -58,6 +58,9 @@ PROCESSES = [
              ("O2C-13", "Partial payment and dunning", "F-28 F150", "Residual item stays open and is dunned", ["test_fi.Receivables.test_partial_payment_residual_is_dunned"]),
              ("O2C-14", "Sales cockpit and books", "ZSD_COCKPIT", "KPIs filled; books balanced", ["test_sd.Reports.test_cockpit_and_books"]),
              ("O2C-15", "End-to-end: order -> GI -> invoice -> e-invoice -> payment", "VA01 VL01N VF01 F-28", "Stock -2, flow C-J-M, item cleared, FI = CO-PA", ["test_e2e.E2E_O2C.test_order_to_cash_cycle"]),
+             ("O2C-16", "Return and credit memo limits", "VA01", "Return above billed minus returned refused; credit above remaining value refused", ["test_controls.SalesLimits.test_return_and_credit_limits"]),
+             ("O2C-17", "Delivery change and delete; rejection only without delivery", "VL02N VA02", "Rejection refused with delivery; delivery reduced and deleted", ["test_controls.SalesLimits.test_reject_with_delivery_refused_then_delete_delivery"]),
+             ("O2C-18", "Partial billing adds up exactly", "VL01N VF01", "Sum of partial invoices = order item to the cent", ["test_controls.SalesLimits.test_partial_billing_adds_up_exactly"]),
          ]),
     # ------------------------------------------------------------------ P2P
     dict(id="P2P", folder="4", module="PUR", map="ZPUR_PROCESS", version="2.1",
@@ -100,6 +103,12 @@ PROCESSES = [
              ("P2P-14", "Direct invoice FB60 with tax and due date", "FB60", "Tax line and net due date correct", ["test_fi.Payables.test_fb60_tax_and_due_date", "test_fi.Payables.test_expense_without_cost_center_rejected"]),
              ("P2P-15", "Books balanced after procurement", "F.01", "Balance sheet balanced", ["test_pur.Postings.test_books_still_balanced"]),
              ("P2P-16", "End-to-end: PO -> release -> GR -> MIRO -> payment", "ME21N MIGO MIRO F-53", "Stock +20, over-invoice blocked, vendor item cleared", ["test_e2e.E2E_P2P.test_procure_to_pay_cycle"]),
+             ("P2P-17", "Cancel invoice (MR8M) with stock and after consumption", "MIRO MR8M", "Valuation and PO history restored; consumed part to price differences", ["test_controls.InvoiceCancel.test_mr8m_moving_price_with_stock_restores_everything", "test_controls.InvoiceCancel.test_mr8m_after_stock_consumed_goes_to_price_difference"]),
+             ("P2P-18", "Paid invoice: reset clearing (FBRA) then cancel", "F-53 FBRA MR8M", "Payment reversed, invoice open again, then cancelled", ["test_controls.InvoiceCancel.test_paid_invoice_needs_fbra_then_cancels"]),
+             ("P2P-19", "Goods receipt cannot be reversed after invoice", "MBST MIGO", "Reversal refused until the invoice is cancelled", ["test_controls.Duplicates.test_goods_receipt_reversal_blocked_after_invoice"]),
+             ("P2P-20", "Duplicate vendor invoice and mandatory reference", "MIRO", "Same vendor reference/date/amount refused", ["test_controls.Duplicates.test_same_vendor_reference_rejected"]),
+             ("P2P-21", "Foreign currency PO, receipt, invoice, payment", "ME21N MIGO MIRO F-53", "PO in USD, GR at rate, invoice in USD, books balanced", ["test_controls.ForeignCurrency.test_usd_po_receipt_invoice_payment"]),
+             ("P2P-22", "Price variance blocks payment until MRBR", "MIRO MRBR F110", "Invoice blocked, payment refused, released by a second person", ["test_controls.Tolerance.test_price_variance_blocks_payment_until_mrbr"]),
          ]),
     # ------------------------------------------------------------------ Plan to produce
     dict(id="PTP", folder="5", module="PP", map="ZPP_PROCESS", version="2.1",
@@ -141,6 +150,8 @@ PROCESSES = [
              ("PTP-13", "Cost estimate includes external + subcontracting", "CK11N", "Cost components 60 present", ["test_pp.MasterData.test_cost_estimate_contains_external_and_subcontracting", "test_co.ProductCosting.test_cost_estimate_structure"]),
              ("PTP-14", "Books balanced and FI = CO", "F.01 ZCO_RECON", "Balanced and reconciled", ["test_pp.Books.test_balanced_and_reconciled"]),
              ("PTP-15", "End-to-end: order -> release -> pick -> confirm -> GR -> TECO -> settle", "CO01 CO27 CO11N MIGO CO88", "Stock +2, TECO, books balanced, FI = CO-PA", ["test_e2e.E2E_PlanToProduce.test_production_order_cycle"]),
+             ("PTP-16", "Picking reversal reopens the reservation", "CO27 MBST", "Withdrawn quantity back to zero; components in the picking list again", ["test_controls.Reservations.test_picking_reversal_reopens_reservation"]),
+             ("PTP-17", "Order across the year end", "CO01 MIGO KKS2 CO88", "December costs included; order balance zero after January settlement", ["test_controls.CrossYear.test_order_released_in_december_closed_in_january"]),
          ]),
     # ------------------------------------------------------------------ Inventory
     dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",
@@ -212,6 +223,11 @@ PROCESSES = [
              ("R2R-08", "VAT settlement", "FB41", "Input and output VAT cleared to payable", ["test_fi.Closing.test_vat_settled"]),
              ("R2R-09", "Assets: depreciation, start month, scrapping", "AFAB ABAVN", "Depreciation to cost center; loss = book value", ["test_fi.Assets.test_depreciation_to_cost_center", "test_fi.Assets.test_new_asset_depreciation_starts_next_month", "test_fi.Assets.test_scrapping_loss_equals_book_value"]),
              ("R2R-10", "End-to-end: journal entry, controls, statements", "FB50 F.01", "Accrual posted; unbalanced and reconciliation postings rejected", ["test_e2e.E2E_R2R.test_record_to_report"]),
+             ("R2R-11", "Seed and books valid on any date", "F.01", "12 awkward dates: balanced, FI = CO-PA, trial balance zero, nothing dated in the future", ["test_calendar.Calendar.test_seed_and_books_on_awkward_dates", "test_calendar.Platform.test_no_direct_date_calls", "test_calendar.Platform.test_savepoint_rolls_back_inner_block_only", "test_calendar.Platform.test_seed_is_atomic"]),
+             ("R2R-12", "Balance carry-forward and trial balance", "F.16 S_ALR_87012277", "Carry-forward per year; trial balance sums to zero", ["test_controls.PeriodEnd.test_carry_forward_and_trial_balance"]),
+             ("R2R-13", "VAT settlement once; payment run status kept", "FB41 F110", "Second settlement finds nothing; executed run cannot be re-proposed", ["test_controls.PeriodEnd.test_vat_settlement_once_and_payment_run_status"]),
+             ("R2R-14", "Reverse depreciation of the last period", "AFAB ZAFAB_REV", "Reversed, re-posted with the same amount", ["test_controls.Depreciation.test_reverse_last_period_then_repost"]),
+             ("R2R-15", "Data consistency check", "ZQA_CHECK", "No violation of the 12 data rules", ["test_controls.Consistency.test_demo_data_is_consistent"]),
          ]),
     # ------------------------------------------------------------------ CO
     dict(id="CTL", folder="7", module="CO", map="ZCO_PROCESS", version="2.1",

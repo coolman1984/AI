@@ -15,7 +15,7 @@ VA05 / V.15     order list / backorders          VKM1  blocked SD documents
 import datetime
 
 from mm.db import next_number, rows, transaction
-from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv
+from mm.util import MMError, now_ts, parse_date, parse_price, parse_qty, rdiv
 
 from . import pricing
 from .config import (DOC_TYPES, ITEM_CATS, COPY_CONTROL, ORDER_REASONS, CREDIT, VBTYP,
@@ -196,7 +196,11 @@ def create(conn, data, user):
                     flow(conn, it["vgbel"], it["vgpos"], vbeln, it["posnr"], ref["vbtyp"], t["vbtyp"],
                          it["kwmeng"], it["netwr"])
             if auart in ("OR", "RO", "ZSP") and ref["vbtyp"] == "B":
-                conn.execute("UPDATE sd_vbak SET gbstk='C' WHERE vbeln=?", (ref["vbeln"],))
+                full = all(referenced(conn, ref["vbeln"], q["posnr"], ("OR", "RO", "ZSP"))[0] >= q["kwmeng"]
+                           for q in conn.execute("SELECT posnr, kwmeng FROM sd_vbap WHERE vbeln=? AND "
+                                                 "COALESCE(abgru,'')=''", (ref["vbeln"],)).fetchall())
+                conn.execute("UPDATE sd_vbak SET gbstk=? WHERE vbeln=?", ("C" if full else "B",
+                                                                        ref["vbeln"]))
         inc = incompletion(conn, vbeln)
         if inc:
             msgs.append("Document is incomplete: " + ", ".join(inc))
@@ -219,10 +223,14 @@ def _reference(conn, auart, vgbel, audat):
             raise MMError("Quotation %s was valid until %s" % (vgbel, src["bnddt"]), "V1", "013")
         if src["auart"] == "QT" and src["gbstk"] == "C":
             raise MMError("Quotation %s is already completely referenced" % vgbel, "V1", "017")
-        items = [dict(matnr=p["matnr"], qty="%.3f" % (p["kwmeng"] / 1000.0), vgbel=vgbel, vgpos=p["posnr"],
-                      price="%.2f" % (p["netpr"] / 100.0) if src["auart"] == "QT" else None)
-                 for p in conn.execute("SELECT * FROM sd_vbap WHERE vbeln=? AND COALESCE(abgru,'')=''",
-                                       (vgbel,))]
+        items = []
+        for p in conn.execute("SELECT * FROM sd_vbap WHERE vbeln=? AND COALESCE(abgru,'')=''", (vgbel,)):
+            open_q = p["kwmeng"] - (referenced(conn, vgbel, p["posnr"], ("OR", "RO", "ZSP"))[0]
+                                    if src["auart"] == "QT" else 0)
+            if open_q > 0:
+                items.append(dict(matnr=p["matnr"], qty="%.3f" % (open_q / 1000.0), vgbel=vgbel,
+                                  vgpos=p["posnr"], price="%.2f" % (p["netpr"] / 100.0)
+                                  if src["auart"] == "QT" else None))
         return dict(vbeln=vgbel, vbtyp=src["vbtyp"], kunnr=src["kunnr"], items=items)
     b = conn.execute("SELECT * FROM billing WHERE vbeln=?", (vgbel,)).fetchone()
     if not b:
@@ -261,14 +269,15 @@ def _add_item(conn, vbeln, posnr, it, c, area, auart, t, audat, vdatu, ref):
         raise MMError("Material %s is excluded for customer %s (VB01 exclusion)" % (matnr, c["kunnr"]),
                       "V1", "022")
     qty = parse_qty(it.get("qty"))
+    if ref and ref["vbtyp"] == "M" and it.get("vgbel") and it.get("vgpos"):
+        _check_reference_limit(conn, auart, it["vgbel"], int(it["vgpos"]), qty, it.get("price"), posnr)
     pstyv = t["pstyv"]
     ic = ITEM_CATS[pstyv]
     price = None
     if it.get("price") not in (None, ""):
-        price = int(round(float(it["price"]) * 100))
+        price = parse_price(it["price"])
     pr = pricing.price_item(conn, c, area, matnr, qty, audat, werks, it.get("disc"), price,
                             free=not ic["pricing"], inco1=area["inco1"], vbtyp=t["vbtyp"])
-    sign = -1 if auart in ("RE", "CR") else 1
     lgort = it.get("lgort") or _sloc(conn, matnr, werks)
     kd = conn.execute("SELECT kdmat FROM sd_custmat WHERE kunnr=? AND matnr=?", (c["kunnr"], matnr)).fetchone()
     conn.execute("INSERT INTO sd_vbap (vbeln,posnr,matnr,arktx,pstyv,kwmeng,vrkme,werks,lgort,netwr,netpr,"
@@ -277,7 +286,6 @@ def _add_item(conn, vbeln, posnr, it, c, area, auart, t, audat, vdatu, ref):
                  (vbeln, posnr, matnr, m["maktx"], pstyv, qty, m["meins"], werks, lgort, pr["net"],
                   pr["netpr"], pr["tax"], pr["cost"], pr["gross"], pr["disc"], pr["freight"],
                   it.get("vgbel"), it.get("vgpos"), kd["kdmat"] if kd else None, it.get("equnr")))
-    _ = sign
     pricing.store(conn, vbeln, posnr, pr["conds"])
     if pr["net"] and pr["net"] < pr["cost"]:
         msgs.append("Item %d: net price below cost (margin %.2f)" % (posnr, (pr["net"] - pr["cost"]) / 100.0))
@@ -310,6 +318,38 @@ def _add_item(conn, vbeln, posnr, it, c, area, auart, t, audat, vdatu, ref):
         conn.execute("INSERT INTO sd_vbep VALUES (?,?,?,?,?,?,?,?)",
                      (vbeln, posnr, 1, vdatu, qty, 0, vdatu, "CN"))
     return msgs
+
+
+def referenced(conn, vgbel, vgpos, auarts):
+    """Quantity and net value of non-rejected items of open documents of the given
+    types that reference item vgpos of document vgbel."""
+    r = conn.execute("SELECT COALESCE(SUM(p.kwmeng),0), COALESCE(SUM(p.netwr),0) FROM sd_vbap p JOIN "
+                     "sd_vbak k USING (vbeln) WHERE p.vgbel=? AND p.vgpos=? AND COALESCE(p.abgru,'')='' "
+                     "AND k.auart IN (%s)" % ",".join("?" * len(auarts)),
+                     [vgbel, vgpos] + list(auarts)).fetchone()
+    return r[0], r[1]
+
+
+def _check_reference_limit(conn, auart, vgbel, vgpos, qty, price, posnr):
+    """Returns / credit memos may not exceed what was billed (minus what was already
+    returned or credited with reference to the same billing item)."""
+    bi = conn.execute("SELECT * FROM billing_item WHERE vbeln=? AND posnr=?", (vgbel, vgpos)).fetchone()
+    if not bi:
+        raise MMError("Item %d: billing item %s/%s does not exist" % (posnr, vgbel, vgpos), "V1", "024")
+    ret_q, ret_v = referenced(conn, vgbel, vgpos, ("RE",))
+    cr_q, cr_v = referenced(conn, vgbel, vgpos, ("CR",))
+    if auart == "RE" and ret_q + qty > bi["fkimg"]:
+        raise MMError("Item %d: quantity %.3f exceeds the billed quantity %.3f minus already returned "
+                      "%.3f" % (posnr, qty / 1000.0, bi["fkimg"] / 1000.0, ret_q / 1000.0), "V1", "019")
+    if auart == "CR":
+        value = rdiv(parse_price(price) * qty, 1000) if price not in (None, "") else \
+            rdiv(bi["net"] * qty, bi["fkimg"]) if bi["fkimg"] else 0
+        net_item = bi["net"]
+        returned_value = rdiv(net_item * ret_q, bi["fkimg"]) if bi["fkimg"] else 0
+        if cr_v + value > net_item - returned_value:
+            raise MMError("Item %d: credit %.2f exceeds the billed value %.2f minus returned %.2f and "
+                          "already credited %.2f" % (posnr, value / 100.0, net_item / 100.0,
+                                                     returned_value / 100.0, cr_v / 100.0), "V1", "023")
 
 
 def _sloc(conn, matnr, werks):
@@ -367,9 +407,11 @@ def change(conn, vbeln, data, user):
             if it.get("abgru"):
                 if it["abgru"] not in REJECTION_REASONS:
                     raise MMError("Reason for rejection %s does not exist" % it["abgru"], "V1", "304")
-                if delivered_qty(conn, vbeln, p["posnr"]):
-                    raise MMError("Item %d is already delivered - cannot be rejected" % p["posnr"],
-                                  "V1", "305")
+                dl = conn.execute("SELECT vbeln FROM sd_lips WHERE vgbel=? AND vgpos=? LIMIT 1",
+                                  (vbeln, p["posnr"])).fetchone()
+                if dl:
+                    raise MMError("Item %d has delivery %s - delete or reduce the delivery first "
+                                  "(VL02N)" % (p["posnr"], dl["vbeln"]), "V1", "306")
                 conn.execute("UPDATE sd_vbap SET abgru=? WHERE vbeln=? AND posnr=?",
                              (it["abgru"], vbeln, p["posnr"]))
                 conn.execute("UPDATE sd_vbep SET bmeng=0 WHERE vbeln=? AND posnr=?", (vbeln, p["posnr"]))
@@ -385,6 +427,8 @@ def change(conn, vbeln, data, user):
 def reschedule(conn, vbeln, today=None):
     """V_V2: new availability check for open schedule lines."""
     k = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
+    if not k:
+        raise MMError("Sales document %s does not exist" % vbeln, "V1", "302")
     today = today or k["audat"]
     for p in conn.execute("SELECT * FROM sd_vbap WHERE vbeln=? AND pstyv IN ('TAN','TANN') AND "
                           "COALESCE(abgru,'')=''", (vbeln,)).fetchall():
@@ -415,13 +459,18 @@ def release_credit(conn, vbeln, user):
     """VKM1 / VKM3: release a credit-blocked document (not by its creator)."""
     with transaction(conn):
         k = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
-        if not k or k["cmgst"] != "B":
-            raise MMError("Document %s is not blocked for credit" % vbeln, "V1", "070")
+        if not k:
+            raise MMError("Document %s does not exist" % vbeln, "V1", "302")
+        if k["cmgst"] != "B":
+            from .credit import open_value
+            ok, _ = credit_check(conn, k["kunnr"], open_value(conn, vbeln), now_ts()[:10], vbeln)
+            if ok or k["cmgst"] not in ("A", "D"):
+                raise MMError("Document %s is not blocked for credit" % vbeln, "V1", "070")
         if k["ernam"] == user:
             raise MMError("Credit release must be done by the credit manager, not by %s" % user,
                           "V1", "071")
-        conn.execute("UPDATE sd_vbak SET cmgst='D', credit_note=? WHERE vbeln=?",
-                     ("Released by %s on %s" % (user, now_ts()[:10]), vbeln))
+        conn.execute("UPDATE sd_vbak SET cmgst='D', cmfre=?, credit_note=? WHERE vbeln=?",
+                     (now_ts()[:10], "Released by %s on %s" % (user, now_ts()[:10]), vbeln))
         from md.changes import log as cdlog
         cdlog(conn, "VERKBELEG", vbeln, "VKM1", user, [("VBUK", vbeln, "cmgst", "B", "D")])
 

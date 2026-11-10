@@ -94,10 +94,22 @@ def create(conn, ref, user, fkdat=None):
             raise MMError("Payer %s has billing block %s (XD05)" % (c["kunnr"], c["faksd"]), "VF", "039")
         items = []
         for p, q, cogs, lpos in src:
-            f = q / p["kwmeng"] if p["kwmeng"] else 0
+            # exact partial billing: proportional with commercial rounding, and the last
+            # part takes the rest so that all partial invoices add up to the order item
+            done = conn.execute("SELECT COALESCE(SUM(i.fkimg),0) q, COALESCE(SUM(i.gross),0) g, "
+                                "COALESCE(SUM(i.disc),0) d, COALESCE(SUM(i.freight),0) f FROM "
+                                "billing_item i JOIN billing b USING (vbeln) WHERE i.aubel=? AND "
+                                "i.aupos=? AND b.cancelled=0 AND b.fkart NOT IN ('S1')",
+                                (p["vbeln"], p["posnr"])).fetchone() if p["kwmeng"] else None
+            if not p["kwmeng"]:
+                g = d = fr = 0
+            elif done["q"] + q >= p["kwmeng"]:
+                g, d, fr = p["kzwi1"] - done["g"], p["kzwi2"] - done["d"], p["freight"] - done["f"]
+            else:
+                g, d, fr = (rdiv(p["kzwi1"] * q, p["kwmeng"]), rdiv(p["kzwi2"] * q, p["kwmeng"]),
+                            rdiv(p["freight"] * q, p["kwmeng"]))
             items.append(dict(matnr=p["matnr"], werks=p["werks"], lgort=p["lgort"], qty=q, arktx=p["arktx"],
-                              gross=round(p["kzwi1"] * f), disc=round(p["kzwi2"] * f),
-                              freight=round(p["freight"] * f), cogs=cogs, pstyv=p["pstyv"],
+                              gross=g, disc=d, freight=fr, cogs=cogs, pstyv=p["pstyv"],
                               aubel=p["vbeln"], aupos=p["posnr"], vgbel=ref, vgpos=lpos or p["posnr"],
                               mwskz="A1" if p["mwsbp"] else "A0"))
         r = post(conn, fkart, k, c, items, fkdat, user, ref)

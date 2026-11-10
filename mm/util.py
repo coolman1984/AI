@@ -146,3 +146,67 @@ def parse_date(text, default_today=True):
 
 def now_ts():
     return now().replace(microsecond=0).isoformat(sep=" ")
+
+
+# ---------------------------------------------------------------- input parsing
+# Every value that comes from a screen goes through one of these; a bad or
+# missing entry is a business message (HTTP 422), never an internal error.
+def parse_int(text, what="number", lo=None, hi=None, default=None):
+    if text is None or str(text).strip() == "":
+        if default is not None:
+            return default
+        raise MMError("Enter %s" % what, "00", "055")
+    try:
+        v = int(str(text).strip())
+    except ValueError:
+        raise MMError("Entry '%s' is not a valid %s" % (text, what), "00", "088")
+    if (lo is not None and v < lo) or (hi is not None and v > hi):
+        raise MMError("%s %s is not allowed (%s - %s)" % (what.capitalize(), v, lo, hi), "00", "089")
+    return v
+
+
+def parse_year(text, default=None):
+    return parse_int(text, "fiscal year", 1900, 2999, default)
+
+
+def parse_period(text, default=None):
+    return parse_int(text, "period", 1, 16, default)
+
+
+def parse_key(text, what):
+    v = str(text or "").strip().upper()
+    if not v:
+        raise MMError("Enter %s" % what, "00", "055")
+    return v
+
+
+def require(body, *names):
+    """Values of required fields of a request body (raises 'Enter ...')."""
+    out = []
+    for n in names:
+        v = (body or {}).get(n)
+        if v is None or str(v).strip() == "":
+            raise MMError("Enter %s" % n, "00", "055")
+        out.append(v)
+    return out if len(out) != 1 else out[0]
+
+
+def parse_price(text, allow_zero=True):
+    """Price in currency units -> cents (exact)."""
+    return parse_amount(text, allow_zero=allow_zero)
+
+
+def parse_pct(text):
+    """Percentage -> basis points (1/100 %), exact."""
+    if text is None or str(text).strip() == "":
+        return 0
+    d = _to_decimal(text, "percentage")
+    return int((d * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+def parse_rate(text):
+    """Exchange rate -> x 100000, exact."""
+    d = _to_decimal(text, "exchange rate")
+    if d <= 0:
+        raise MMError("Exchange rate must be positive", "SG", "100")
+    return int((d * 100000).quantize(Decimal("1"), rounding=ROUND_HALF_UP))

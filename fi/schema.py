@@ -11,10 +11,13 @@ FI_COLUMN_ADDS = {
                      ("zbd1p", "INTEGER"), ("netdt", "TEXT"), ("augbl", "TEXT"),
                      ("augdt", "TEXT"), ("zuonr", "TEXT"), ("sgtxt", "TEXT"),
                      ("ebeln", "TEXT"), ("ebelp", "INTEGER"), ("manst", "INTEGER"),
-                     ("madat", "TEXT"), ("rebzg", "TEXT")],
+                     ("madat", "TEXT"), ("rebzg", "TEXT"),
+                     ("zlspr", "TEXT"),          # payment block (R = invoice verification)
+                     ("umskz", "TEXT")],         # special G/L indicator (A down payment)
     "vendor": [("ktokk", "TEXT"), ("akont", "TEXT"), ("zterm", "TEXT"),
                ("waers", "TEXT"), ("stcd1", "TEXT"), ("bankn", "TEXT"),
-               ("land", "TEXT"), ("sperr", "INTEGER")],
+               ("land", "TEXT"), ("sperr", "INTEGER"),
+               ("reprf", "INTEGER NOT NULL DEFAULT 1")],     # check double invoices
     "customer": [("akont", "TEXT"), ("zterm", "TEXT"), ("klimk", "INTEGER"),
                  ("stcd1", "TEXT"), ("land", "TEXT")],
     "po_item": [("remng", "INTEGER NOT NULL DEFAULT 0"),
@@ -29,6 +32,19 @@ CREATE TABLE IF NOT EXISTS gl_account (     -- SKA1/SKB1 (FS00)
     blocked INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS posting_period ( -- OB52 (variant 1000, account type +)
     id INTEGER PRIMARY KEY, y1 INTEGER, p1 INTEGER, y2 INTEGER, p2 INTEGER);
+CREATE TABLE IF NOT EXISTS inv_item (         -- RSEG: logistics invoice items (MIRO)
+    belnr TEXT, gjahr INTEGER, ebeln TEXT, ebelp INTEGER, menge INTEGER,
+    net INTEGER, grir INTEGER, freight INTEGER, to_stock INTEGER, to_prd INTEGER,
+    stock_before INTEGER, wrbtr INTEGER, credit INTEGER NOT NULL DEFAULT 0,
+    cancelled INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (belnr, gjahr, ebeln, ebelp));
+CREATE INDEX IF NOT EXISTS ix_inv_item_po ON inv_item (ebeln, ebelp);
+CREATE TABLE IF NOT EXISTS vat_run (          -- FB41 settlements (closing cockpit)
+    d1 TEXT, d2 TEXT, belnr TEXT, gjahr INTEGER, payable INTEGER, usnam TEXT, ts TEXT,
+    PRIMARY KEY (d1, d2));
+CREATE TABLE IF NOT EXISTS fx_run (           -- FAGL_FCV update runs
+    key_date TEXT PRIMARY KEY, belnr TEXT, gjahr INTEGER, reversal TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS grir_run (         -- F.13 clearing runs
+    augbl TEXT PRIMARY KEY, budat TEXT, items INTEGER, usnam TEXT, ts TEXT);
 CREATE TABLE IF NOT EXISTS fi_carry_forward ( -- F.16 balance carry-forward runs
     gjahr INTEGER PRIMARY KEY, amount INTEGER, hkont TEXT, run_at TEXT, usnam TEXT);
 CREATE TABLE IF NOT EXISTS exch_rate (      -- TCURR (OB08), type M

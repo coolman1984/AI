@@ -3,7 +3,7 @@
 Every create / change of a master record writes one header plus one item per
 changed field, like SAP: object class MATERIAL, DEBI (customer), KRED (vendor).
 """
-from mm.db import rows
+from mm.db import atomic, rows
 from mm.util import now_ts
 
 OBJECT_CLASSES = {"MATERIAL": "Material", "DEBI": "Customer", "KRED": "Vendor"}
@@ -34,6 +34,7 @@ def _fmt(v):
     return str(v)
 
 
+@atomic
 def log(conn, objectclas, objectid, tcode, user, items, ind="U"):
     """items: [(tabname, tabkey, fname, old, new)] - unchanged values are skipped.
     Returns the change number or None."""

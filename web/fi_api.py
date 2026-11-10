@@ -6,7 +6,8 @@ from fi.config import (ASSET_CLASSES, ASSET_TRANS, BUKRS, BUTXT, CURRENCIES, DEP
                        DOC_TYPES, DUNNING, FSV_NODES, HOUSE_BANKS, KTOPL, NUMBER_RANGES,
                        PAYMENT_TERMS, POSTING_KEYS, TAX_CODES)
 from mm.db import rows
-from mm.util import MMError, amt_out, qty_out
+from mm.util import (MMError, amt_out, parse_int, parse_key, parse_period, parse_year,
+                     qty_out)
 
 from .server import db, route
 from mm import util as mmclock  # noqa: E402
@@ -16,7 +17,7 @@ def _yp(q):
     s = db().execute("SELECT value FROM settings WHERE key='co_sample'").fetchone()
     t = mmclock.today()
     dy, dp = (int(s["value"][:4]), int(s["value"][5:7])) if s else (t.year, t.month)
-    return int(q.get("gjahr") or dy), int(q.get("perio") or dp)
+    return parse_year(q.get("gjahr"), dy), parse_period(q.get("perio"), dp)
 
 
 def _cents(d, keys):
@@ -67,6 +68,9 @@ def fi_meta(req, q):
                                 "exch_rate ORDER BY waers, gdatu DESC")),
         "period": dict(c.execute("SELECT * FROM posting_period WHERE id=1").fetchone()
                        or {}),
+        "today_open": __import__("fi.document", fromlist=["x"]).period_open(c, mmclock.today().isoformat()),
+        "carry_forward_missing": reports.retained_earnings(c, y)[1],
+        "blocked_invoices": len(ap.blocked_invoices(c)),
     }
 
 
@@ -240,14 +244,111 @@ def fi_miro_po(req, q, ebeln):
 @route("POST", "/api/fi/miro")
 def fi_miro(req, q):
     b = req.body
+    credit = bool(b.get("credit"))
+    subsequent = bool(b.get("subsequent"))
     if b.get("simulate"):
-        s = ap.miro_simulate(db(), b.get("header") or {}, b.get("items") or [], req.user)
+        s = ap.miro_simulate(db(), b.get("header") or {}, b.get("items") or [], req.user,
+                             credit=credit, subsequent=subsequent)
         for l in s["lines"]:
             l["amount"] = amt_out(l["amount"])
-        return {"gross": amt_out(s["gross"]), "lines": s["lines"],
-                "message": "Simulation: gross amount %.2f - balance OK" % (s["gross"] / 100.0)}
-    belnr = ap.miro(db(), b.get("header") or {}, b.get("items") or [], req.user)
-    return {"belnr": belnr, "message": "Document no. %s created" % belnr}
+            l["wrbtr"] = amt_out(l.get("wrbtr") or 0)
+        msg = "Simulation: gross amount %.2f %s - balance OK" % (s["gross"], s["waers"])
+        if s.get("blocked"):
+            msg += " - will be BLOCKED for payment: " + "; ".join(s["blocked"])
+        if s.get("warning"):
+            msg += " - " + s["warning"]
+        s["message"] = msg
+        return s
+    belnr = ap.miro(db(), b.get("header") or {}, b.get("items") or [], req.user,
+                    credit=credit, subsequent=subsequent)
+    msg = "Document no. %s created" % belnr
+    if belnr.blocked:
+        msg += " - blocked for payment (%s), release with MRBR" % "; ".join(belnr.blocked)
+    if belnr.warning:
+        msg += " - " + belnr.warning
+    return {"belnr": str(belnr), "blocked": belnr.blocked, "type": "W" if belnr.blocked else "S",
+            "message": msg}
+
+
+@route("POST", "/api/fi/mr8m")
+def fi_mr8m(req, q):
+    b = req.body
+    return ap.cancel_invoice(db(), parse_key(b.get("belnr"), "invoice document"),
+                             parse_year(b.get("gjahr")), b.get("budat"), req.user,
+                             b.get("reason") or "01")
+
+
+@route("GET", "/api/fi/mrbr")
+def fi_mrbr_list(req, q):
+    out = ap.blocked_invoices(db())
+    for r in out:
+        r["wrbtr"] = amt_out(r["wrbtr"])
+        r["dmbtr"] = amt_out(r["dmbtr"])
+    return out
+
+
+@route("POST", "/api/fi/mrbr")
+def fi_mrbr(req, q):
+    b = req.body
+    return ap.release_blocked(db(), parse_key(b.get("belnr"), "invoice document"),
+                              parse_year(b.get("gjahr")), req.user)
+
+
+@route("POST", "/api/fi/fbra")
+def fi_fbra(req, q):
+    b = req.body
+    return gl.reset_clearing(db(), parse_key(b.get("augbl"), "clearing document"),
+                             parse_year(b.get("gjahr")), req.user, bool(b.get("reverse")),
+                             b.get("budat") or None)
+
+
+@route("GET", "/api/fi/fbra")
+def fi_fbra_items(req, q):
+    out = rows(db().execute("SELECT i.belnr, i.gjahr, i.buzei, i.koart, i.lifnr, i.kunnr, i.hkont, "
+                            "i.shkzg, i.dmbtr, i.sgtxt, h.budat, h.tcode FROM acc_doc_item i JOIN acc_doc h "
+                            "USING (belnr, gjahr) WHERE i.augbl=? ORDER BY i.belnr, i.buzei",
+                            (parse_key(q.get("augbl"), "clearing document"),)))
+    for r in out:
+        r["amount"] = amt_out(r["dmbtr"] if r["shkzg"] == "S" else -r["dmbtr"])
+    return out
+
+
+@route("GET", "/api/fi/f16")
+def fi_f16_status(req, q):
+    from fi.reports import retained_earnings
+    y = parse_year(q.get("gjahr"), mmclock.today().year)
+    amount, missing = retained_earnings(db(), y)
+    done = rows(db().execute("SELECT * FROM fi_carry_forward ORDER BY gjahr"))
+    for r in done:
+        r["amount"] = amt_out(-r["amount"])
+    return {"gjahr": y, "carried": amt_out(-amount), "missing": missing, "runs": done}
+
+
+@route("POST", "/api/fi/f16")
+def fi_f16(req, q):
+    b = req.body
+    return gl.carry_forward(db(), parse_year(b.get("gjahr")), req.user, bool(b.get("test")))
+
+
+@route("POST", "/api/fi/afab-reverse")
+def fi_afab_reverse(req, q):
+    b = req.body
+    return aa.reverse_depreciation(db(), parse_year(b.get("gjahr")), parse_period(b.get("perio")),
+                                   req.user)
+
+
+@route("POST", "/api/fi/f110/delete")
+def fi_f110_delete(req, q):
+    b = req.body
+    return ap.delete_proposal(db(), b.get("laufd"), parse_key(b.get("laufi"), "run identification"))
+
+
+@route("POST", "/api/fi/f110/exclude")
+def fi_f110_exclude(req, q):
+    b = req.body
+    return ap.exclude_from_proposal(db(), b.get("laufd"), parse_key(b.get("laufi"), "run identification"),
+                                    parse_key(b.get("belnr"), "document"), parse_year(b.get("gjahr")),
+                                    parse_int(b.get("buzei"), "line item"), b.get("exclude", True) is not False)
 
 
 @route("GET", "/api/fi/openitems")
@@ -281,6 +382,8 @@ def fi_f110(req, q):
         _cents(p, ("amount", "discount"))
         for i in p["items"]:
             _cents(i, ("amount", "discount"))
+    for x in r.get("exceptions") or []:
+        _cents(x, ("amount",))
     r["total"] = amt_out(r["total"])
     r["message"] = ("Payment run executed: %d payment document(s)" % len(r["docs"])
                     if r["executed"] else "Proposal created: %d vendor(s)" % len(r["payments"]))
@@ -507,7 +610,8 @@ def fi_closing(req, q):
         "f110": cnt("tcode='F110'"), "afab": cnt("tcode='AFAB'"),
         "assets": cnt("tcode IN ('F-90','ABZON','ABAVN','F-92')"),
         "ff67": cnt("tcode='FF67'"), "fbs1": cnt("tcode='FBS1'"),
-        "fcv": cnt("tcode='FAGL_FCV'"), "f13": cnt("tcode='F.13'"),
+        "fcv": cnt("tcode='FAGL_FCV'"),
+        "f13": c.execute("SELECT COUNT(*) FROM grir_run WHERE budat BETWEEN ? AND ?", (d1, d2)).fetchone()[0],
         "fb41": cnt("tcode='FB41'"),
         "f150": c.execute("SELECT COUNT(*) FROM dunning_run WHERE ausdt BETWEEN ? AND ?",
                           (d1, d2)).fetchone()[0],
@@ -515,4 +619,7 @@ def fi_closing(req, q):
         "result": st["result"], "co_recon": reconcile(c, y, p, p)["ok"],
         "period": dict(c.execute("SELECT * FROM posting_period WHERE id=1").fetchone()
                        or {}),
+        "today_open": __import__("fi.document", fromlist=["x"]).period_open(c, mmclock.today().isoformat()),
+        "carry_forward_missing": reports.retained_earnings(c, y)[1],
+        "blocked_invoices": len(ap.blocked_invoices(c)),
     }

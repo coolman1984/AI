@@ -13,16 +13,23 @@ ME9F   PO output (print form)
 import datetime
 
 from mm.db import next_number, rows, transaction
-from mm.util import MMError, now_ts, parse_amount, parse_date, parse_qty, value_of
+from mm.util import MMError, now_ts, parse_amount, parse_date, parse_pct, parse_qty, value_of
+from fi.config import LOCAL_CURRENCY
 
 from .config import PO_RELEASE, PURCH_GROUPS
 from .sourcing import net_price
 
 
 def _value(conn, ebeln):
-    r = conn.execute("SELECT COALESCE(SUM(menge*netpr/(1000.0*peinh) + frb),0) FROM po_item "
-                     "WHERE ebeln=? AND loekz=0", (ebeln,)).fetchone()[0]
-    return int(round(r))
+    """PO value in local currency (release strategy), exact integer arithmetic."""
+    h = conn.execute("SELECT waers, bedat FROM po_header WHERE ebeln=?", (ebeln,)).fetchone()
+    total = sum(value_of(r["menge"], r["netpr"], r["peinh"]) + (r["frb"] or 0) for r in conn.execute(
+        "SELECT menge, netpr, peinh, frb FROM po_item WHERE ebeln=? AND loekz=0", (ebeln,)))
+    waers = (h["waers"] if h else None) or LOCAL_CURRENCY
+    if waers != LOCAL_CURRENCY:
+        from fi.document import rate, to_local
+        total = to_local(total, rate(conn, waers, h["bedat"]))
+    return total
 
 
 def _strategy(total):
@@ -48,7 +55,8 @@ def create_po(conn, data, user):
         conn.execute("INSERT INTO po_header (ebeln,lifnr,bedat,ernam,erdat,bsart,ekorg,ekgrp,"
                      "zterm,waers,angnr) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                      (ebeln, lifnr, bedat, user, now_ts(), data.get("bsart") or "NB", "1000",
-                      ekgrp, data.get("zterm") or v["zterm"], "EGP", data.get("angnr")))
+                      ekgrp, data.get("zterm") or v["zterm"],
+                      (data.get("waers") or v["waers"] or LOCAL_CURRENCY).upper(), data.get("angnr")))
         for n, it in enumerate(items, start=1):
             ebelp = n * 10
             matnr = (it.get("matnr") or "").upper() or None
@@ -87,7 +95,7 @@ def create_po(conn, data, user):
             sakto = it.get("sakto") or ("400000" if knttp else None)
             menge = parse_qty(it.get("menge"))
             peinh = int(it.get("peinh") or 1)
-            rabatt = int(round(float(it.get("rabatt") or 0) * 100))
+            rabatt = parse_pct(it.get("rabatt"))
             frb = parse_amount(it.get("frb") or "0", allow_zero=True)
             konnr, ktpnr, infnr = it.get("konnr") or None, it.get("ktpnr"), None
             if konnr:

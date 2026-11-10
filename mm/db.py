@@ -142,6 +142,8 @@ def connect(path=None):
     for k, v in CHART.items():                      # FS00 initial chart
         conn.execute("INSERT OR IGNORE INTO gl_account (hkont,txt,typ,fsv,recon,oi,tax)"
                      " VALUES (?,?,?,?,?,?,?)", (k, v[0], v[1], v[2], v[3], v[4], v[5]))
+    from .migrations import migrate
+    migrate(conn)
     return conn
 
 
@@ -200,6 +202,17 @@ class transaction:
         finally:
             WRITE_LOCK.release()
         return False
+
+
+def atomic(fn):
+    """Decorator: the function always runs inside a transaction (joins the caller's)."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(conn, *args, **kw):
+        with transaction(conn):
+            return fn(conn, *args, **kw)
+    return wrapper
 
 
 def rows(cur):

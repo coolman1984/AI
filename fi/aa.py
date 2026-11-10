@@ -257,3 +257,25 @@ def history_sheet(conn, gjahr, upto=None):
                   "dep_year", "dep_retired", "dep_end", "nbv_start", "nbv_end"):
             r[k] += e[k]
     return [rows[k] for k in sorted(rows)]
+
+
+def reverse_depreciation(conn, gjahr, perio, user):
+    """Reverse the depreciation run of the last posted period (then AFAB can post again)."""
+    gjahr, perio = int(gjahr), int(perio)
+    with transaction(conn):
+        last = conn.execute("SELECT MAX(gjahr*12+perio) FROM asset_item WHERE bwasl='AFA' AND "
+                            "belnr IN (SELECT belnr FROM acc_doc WHERE tcode='AFAB' AND stblg IS NULL)"
+                            ).fetchone()[0]
+        if last is None or last != gjahr * 12 + perio:
+            raise MMError("Only the depreciation of the last posted period can be reversed", "AA", "020")
+        docs = [r[0] for r in conn.execute(
+            "SELECT DISTINCT a.belnr FROM asset_item a JOIN acc_doc h ON h.belnr=a.belnr AND "
+            "h.gjahr=a.gjahr WHERE a.bwasl='AFA' AND a.gjahr=? AND a.perio=? AND h.tcode='AFAB' AND "
+            "h.stblg IS NULL", (gjahr, perio))]
+        from .gl import reverse
+        out = []
+        for b in docs:
+            h = conn.execute("SELECT budat FROM acc_doc WHERE belnr=? AND gjahr=?", (b, gjahr)).fetchone()
+            out.append(reverse(conn, b, gjahr, h["budat"], "01", user, _from_source=True))
+    return {"reversed": docs, "documents": out,
+            "message": "Depreciation %02d/%s reversed (%s)" % (perio, gjahr, ", ".join(out))}

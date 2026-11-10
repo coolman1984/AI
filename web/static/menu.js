@@ -66,7 +66,7 @@ const MENU = [
     ["Materials Management", [
       ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5K", "ZMM_COCKPIT"]],
       ["Purchasing", ["ME21N", "ME23N", "ME2M"]],
-      ["Logistics Invoice Verification", ["MIRO"]],
+      ["Logistics Invoice Verification", ["MIRO", "MR8M", "MRBR"]],
       ["Warehouse Management (bins)", ["LX02", "LX03", "LS01"]],
       ["Material Master", ["MM01", "MM02", "MM03"]],
       ["Valuation", ["MR21", "CKM3"]],
@@ -87,6 +87,7 @@ const MENU = [
     ["Accounts Payable", [
       ["Master Records", ["XK01", "XK03"]],
       ["Document Entry", ["FB60", "FB65", "MIRO", "F-53"]],
+      ["Invoice Verification", ["MIRO", "MR8M", "MRBR"]],
       ["Account", ["FK10N", "FBL1N"]],
       ["Periodic Processing", ["F110"]],
       ["Information System", ["S_ALR_87012078"]],
@@ -99,7 +100,7 @@ const MENU = [
     ["General Accounting", [
       ["Master Records", ["FS00", "OB08"]],
       ["Document Entry", ["F-02", "FB50", "FBS1"]],
-      ["Document", ["FB03", "FB08", "F.81"]],
+      ["Document", ["FB03", "FB08", "FBRA", "F.81"]],
       ["Account", ["FS10N", "FBL3N", "F.13"]],
       ["Information System", ["S_ALR_87012277", "F.01"]],
     ]],
@@ -113,13 +114,14 @@ const MENU = [
       ["Closing Cockpit", ["ZFI_PROCESS"]],
       ["Open and Close Periods", ["OB52"]],
       ["Valuate", ["FAGL_FCV", "AFAB"]],
-      ["Reclassify / Clear", ["F.13", "F.81"]],
+      ["Reclassify / Clear", ["F.13", "F.81", "FBRA"]],
+      ["Year End", ["F.16"]],
       ["Report", ["FB41", "F.01", "S_ALR_87012277"]],
     ]],
     ["Fixed Asset Management", [
       ["Asset", ["AS01", "AS03", "AW01N"]],
       ["Posting", ["F-90", "ABZON", "ABAVN", "F-92"]],
-      ["Periodic Processing", ["AFAB"]],
+      ["Periodic Processing", ["AFAB", "ZAFAB_REV"]],
       ["Information System", ["AR01", "S_ALR_87011990"]],
       ["Customizing", ["OAOA"]],
     ]],
@@ -157,7 +159,7 @@ MENU.push(
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],
     ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV"]],
-    ["e-Learning & Quality", ["ZLMS", "ZQA_TEST"]],
+    ["e-Learning & Quality", ["ZLMS", "ZQA_TEST", "ZQA_CHECK"]],
   ]]);
 // N-ERP order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",

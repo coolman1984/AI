@@ -12,7 +12,7 @@ same period first reverses the previous run (like SAP).
 """
 import json
 
-from mm.db import transaction
+from mm.db import atomic, transaction
 from mm.util import MMError, now_ts, rdiv
 
 from .config import VV_KEYS
@@ -157,6 +157,7 @@ def run_cycle(conn, cycle, gjahr, perio, wrttp="04", test=False, user=""):
             "docs": [d for d in docs if d]}
 
 
+@atomic
 def _copa_post(conn, vrgar, plikz, gjahr, perio, chars, values, kostl=None,
                aufnr=None, refdoc=None, user="", qty=0, budat=None):
     from mm.db import next_number
@@ -206,8 +207,8 @@ def _prod_orders(conn, gjahr, perio, aufnr=None):
     sql = ("SELECT * FROM orders WHERE auart IN ('PP01','ZP03','ZREF','ZP07') AND "
            "stat NOT IN ('CRTD','CLSD') "
            "AND aufnr IN (SELECT DISTINCT substr(objnr,3) FROM co_item WHERE "
-           "wrttp='04' AND gjahr=? AND perio<=? AND objnr LIKE 'OR%')")
-    args = [gjahr, perio]
+           "wrttp='04' AND (gjahr*12+perio)<=? AND objnr LIKE 'OR%')")
+    args = [int(gjahr) * 12 + int(perio)]     # cumulative across fiscal years
     if aufnr:
         sql += " AND aufnr=?"
         args.append(aufnr)
@@ -259,9 +260,9 @@ def overhead(conn, gjahr, perio, aufnr=None, test=False, user=""):
 # ====================================================================== KKS2
 def _order_actuals(conn, aufnr, gjahr, perio):
     return conn.execute("SELECT kstar, matnr, lstar, SUM(wtg) AS w, SUM(qty) AS q FROM "
-                        "co_item WHERE objnr=? AND wrttp='04' AND gjahr=? AND perio<=? "
+                        "co_item WHERE objnr=? AND wrttp='04' AND (gjahr*12+perio)<=? "
                         "AND vrgng<>'KOAO' GROUP BY kstar, matnr, lstar",
-                        (orn(aufnr), gjahr, perio)).fetchall()
+                        (orn(aufnr), int(gjahr) * 12 + int(perio))).fetchall()
 
 
 def variances(conn, gjahr, perio, aufnr=None, user=""):
@@ -360,8 +361,8 @@ def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
             args.append(aufnr)
         for o in conn.execute(sql + " ORDER BY o.aufnr", args).fetchall():
             bal = conn.execute("SELECT COALESCE(SUM(wtg),0) FROM co_item WHERE objnr=? "
-                               "AND wrttp='04' AND gjahr=? AND perio<=?",
-                               (orn(o["aufnr"]), gjahr, perio)).fetchone()[0]
+                               "AND wrttp='04' AND (gjahr*12+perio)<=?",
+                               (orn(o["aufnr"]), gjahr * 12 + perio)).fetchone()[0]
             if bal == 0:
                 continue
             if o["auart"] in ("PP01", "ZP03", "ZREF") and o["stat"] not in ("DLV", "TECO"):
@@ -424,17 +425,22 @@ def _settle_to_material(conn, o, bal, gjahr, perio, user):
                      (o["matnr"], o["werks"])).fetchone()
     from co.core import closing_date
     budat = closing_date(gjahr, perio)
-    to_stock = bal if v and v["lbkum"] > 0 else 0
+    # standard price: stock value stays lbkum x stprs, everything to price differences
+    to_stock = bal if v and v["vprsv"] == "V" and v["lbkum"] > 0 else 0
     lines = []
     if to_stock:
         lines.append(dict(hkont=gl_for("BSX", m["bklas"]), ktosl="BSX", amount=to_stock,
                           matnr=o["matnr"], werks=o["werks"], menge=0,
                           sgtxt="Settlement order %s to stock" % o["aufnr"]))
         salk3 = v["salk3"] + to_stock
-        conn.execute("UPDATE valuation SET salk3=?, verpr=CASE WHEN vprsv='V' THEN ? ELSE "
-                     "verpr END WHERE matnr=? AND bwkey=?",
-                     (salk3, rdiv(salk3 * v["peinh"] * 1000, v["lbkum"]), o["matnr"],
-                      o["werks"]))
+        new_p = rdiv(salk3 * v["peinh"] * 1000, v["lbkum"])
+        conn.execute("UPDATE valuation SET salk3=?, verpr=? WHERE matnr=? AND bwkey=?",
+                     (salk3, new_p, o["matnr"], o["werks"]))
+        from mm.util import now_ts
+        conn.execute("INSERT INTO price_history (matnr,bwkey,ts,budat,ref,reason,old_price,new_price,"
+                     "peinh,lbkum,salk3) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                     (o["matnr"], o["werks"], now_ts(), budat, "KO88 %s" % o["aufnr"],
+                      "Order settlement", v["verpr"], new_p, v["peinh"], v["lbkum"], salk3))
     if bal - to_stock:
         lines.append(dict(hkont=gl_for("PRD", m["bklas"]), ktosl="PRD",
                           amount=bal - to_stock, matnr=o["matnr"], werks=o["werks"],

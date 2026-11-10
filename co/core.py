@@ -6,7 +6,7 @@ Values are integer cents, debit positive. wkf = fixed portion of the value.
 """
 import datetime
 
-from mm.db import next_number
+from mm.db import atomic, next_number
 from mm.util import MMError, now_ts, rdiv
 
 
@@ -75,6 +75,7 @@ def split(total, weights):
     return parts
 
 
+@atomic
 def post_co_doc(conn, vrgng, wrttp, gjahr, perio, items, text="", user="",
                 budat=None, refbn=None, run_id=None, balanced=True):
     """items: dict(objnr, kstar, wtg, wkf=0, qty=0, meinh, lstar, parob,
@@ -101,6 +102,7 @@ def post_co_doc(conn, vrgng, wrttp, gjahr, perio, items, text="", user="",
     return belnr
 
 
+@atomic
 def reverse_co_doc(conn, belnr, user="", text=""):
     """Post the exact opposite of a CO document (like KB24N / KB14N)."""
     h = conn.execute("SELECT * FROM co_doc WHERE belnr=?", (belnr,)).fetchone()

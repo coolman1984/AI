@@ -72,6 +72,9 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
             raise MMError("Document %s is itself a reversal document; "
                           "post the original movement again instead" % mblnr,
                           "M7", "066")
+        for l in lines:                 # a receipt that was invoiced cannot be reversed
+            if l["ebeln"] and l["bwart"] in ("101", "123") and l["shkzg"] == "S":
+                _check_not_invoiced(conn, l["ebeln"], l["ebelp"], l["menge"])
         doc = _Doc(conn, budat, budat, {"bktxt": reason or "Reversal of %s"
                                         % mblnr, "xblnr": mblnr}, user, "MBST")
         doc.blart = "WA"
@@ -85,7 +88,7 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
                         ebeln=l["ebeln"], ebelp=l["ebelp"], lifnr=l["lifnr"],
                         kostl=l["kostl"], aufnr=l["aufnr"], sgtxt=l["sgtxt"],
                         xauto=l["xauto"], smbln=mblnr, sjahr=mjahr,
-                        smblp=l["zeile"], lgpla="")
+                        smblp=l["zeile"], lgpla="", rsnum=l["rsnum"], rspos=l["rspos"])
             pieces = _pieces(conn, mblnr, mjahr, l["zeile"])
             aa = l["ebeln"] and conn.execute(
                 "SELECT knttp FROM po_item WHERE ebeln=? AND ebelp=?",
@@ -106,6 +109,11 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
                                only_bin=bins[0] if len(bins) == 1 and bins[0]
                                else None,
                                ext=l["dmbtr"] if valuated else None)
+            if l["bwart"] in ("261", "262", "201", "202") and (l["aufnr"] or l["rsnum"]):
+                # the reservation is open again (or withdrawn again for a 262 reversal)
+                from pp.order import withdrawn
+                withdrawn(conn, dict(l), {"rsnum": l["rsnum"], "rspos": l["rspos"]}
+                          if l["rsnum"] and l["rspos"] else {}, mt["reverse"], l["menge"])
             if l["ebeln"]:
                 # undo PO history: a reversed receipt lowers the received qty
                 d = -l["menge"] if l["shkzg"] == "S" else l["menge"]
@@ -204,7 +212,9 @@ def _post_item(doc, raw):
                 werks=(raw.get("werks") or "").strip().upper(),
                 lgort=(raw.get("lgort") or "").strip().upper(),
                 insmk=(raw.get("insmk") or "U").upper(),
-                kostl=None, aufnr=None, ebeln=None, ebelp=None, lifnr=None)
+                kostl=None, aufnr=None, ebeln=None, ebelp=None, lifnr=None,
+                rsnum=str(raw["rsnum"]) if raw.get("rsnum") else None,
+                rspos=int(raw["rspos"]) if raw.get("rspos") else None)
     if line["insmk"] not in STOCK_TYPES:
         raise MMError("Stock type %s is not allowed" % line["insmk"])
     if not mt.get("st_choice"):
@@ -256,12 +266,19 @@ def _post_item(doc, raw):
                     matnr=po["matnr"] or "", werks=po["werks"])
         line["lgort"] = line["lgort"] or po["lgort"] or ""
         ext = value_of(qty, po["netpr"], po["peinh"])
+        freight = rdiv(po["frb"] * qty, po["menge"]) if po["frb"] else 0
+        waers = hdr["waers"] if "waers" in hdr.keys() and hdr["waers"] else None
+        from fi.config import LOCAL_CURRENCY
+        if waers and waers != LOCAL_CURRENCY:      # PO in foreign currency: value at GR date rate
+            from fi.document import rate, to_local
+            kursf = rate(conn, waers, doc.budat)
+            line.update(waers=waers, kursf=kursf, wrbtr=ext + freight)
+            ext, freight = to_local(ext, kursf), to_local(freight, kursf)
         sc = "pstyp" in po.keys() and po["pstyp"] == "L"
         if sc and bwart != "101":
             raise MMError("Subcontracting item %s/%s: reverse the receipt with MBST "
                           "(component consumption is reversed too)" % (ebeln, ebelp),
                           "M7", "301")
-        freight = rdiv(po["frb"] * qty, po["menge"]) if po["frb"] else 0
         if bwart in ("101", "123"):
             open_qty = po["menge"] - po["wemng"]
             from md.checks import overdelivery_tolerance
@@ -273,6 +290,8 @@ def _post_item(doc, raw):
             if qty > po["wemng"]:
                 raise MMError("Quantity exceeds the received quantity %s"
                               % _q(po["wemng"]), "M7", "023")
+            if bwart == "102":
+                _check_not_invoiced(conn, ebeln, ebelp, qty)
     elif ref == "KOSTL":
         kostl = (raw.get("kostl") or "").strip().upper()
         if not conn.execute("SELECT 1 FROM cost_center WHERE kostl=?",
@@ -641,14 +660,16 @@ class _Doc:
         self.conn.execute(
             "INSERT INTO mat_doc_item (mblnr,mjahr,zeile,bwart,xauto,matnr,werks,"
             "lgort,lgpla,insmk,shkzg,menge,meins,dmbtr,salk,ebeln,ebelp,lifnr,"
-            "kostl,aufnr,sgtxt,smbln,sjahr,smblp) VALUES "
-            "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "kostl,aufnr,sgtxt,smbln,sjahr,smblp,rsnum,rspos,waers,kursf,wrbtr) VALUES "
+            "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (self.mblnr, self.mjahr, self.zeile, line["bwart"],
              line.get("xauto", 0), line["matnr"], line["werks"], line["lgort"],
              lgpla, line["insmk"], shkzg, qty, meins, value, salk,
              line.get("ebeln"), line.get("ebelp"), line.get("lifnr"),
              line.get("kostl"), line.get("aufnr"), line.get("sgtxt"),
-             line.get("smbln"), line.get("sjahr"), line.get("smblp")))
+             line.get("smbln"), line.get("sjahr"), line.get("smblp"),
+             line.get("rsnum"), line.get("rspos"), line.get("waers"), line.get("kursf"),
+             line.get("wrbtr")))
         return self.zeile
 
     def finish(self):
@@ -703,6 +724,15 @@ def _pieces(conn, mblnr, mjahr, zeile):
     return [(r["lgpla"], r["wdatu"], r["qty"]) for r in conn.execute(
         "SELECT lgpla, wdatu, qty FROM mat_doc_piece WHERE mblnr=? AND mjahr=? "
         "AND zeile=? ORDER BY rowid", (mblnr, mjahr, zeile))]
+
+
+def _check_not_invoiced(conn, ebeln, ebelp, qty):
+    """A goods receipt may not be reversed below the invoiced quantity (BUG-007)."""
+    p = conn.execute("SELECT wemng, remng FROM po_item WHERE ebeln=? AND ebelp=?",
+                     (ebeln, ebelp)).fetchone()
+    if p and p["wemng"] - qty < p["remng"]:
+        raise MMError("Goods receipt cannot be reversed: %s already invoiced - cancel the "
+                      "invoice first (MR8M) or post a credit memo" % _q(p["remng"]), "M7", "033")
 
 
 def _update_po_received(conn, ebeln, ebelp, delta):

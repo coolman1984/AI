@@ -326,6 +326,15 @@ function vlDisplay(tcode, title, change) {
       const bt = [];
       if (d.wbstk !== "C") {
         if (d.kostk !== "C") bt.push({ label: "Pick", ghost: true, onClick: async () => { const r = await run(() => api(`/api/sd/delivery/${d.vbeln}/pick`, {})); if (r) { msg("S", r.message); load(); } } });
+        if (change) {
+          bt.push({ label: "Change quantities", ghost: true, onClick: async () => {
+            const f = await App.ask("New delivery quantities (0 = remove item)", d.items.map(i => ({ name: String(i.posnr), label: `Item ${i.posnr} ${i.matnr}`, value: i.lfimg })));
+            if (!f) return;
+            const r = await run(() => api(`/api/sd/delivery/${d.vbeln}/change`, { items: f })); if (r) { msg("S", r.message); load(); } } });
+          bt.push({ label: "Delete delivery", ghost: true, onClick: async () => {
+            if (!await App.confirmBox("Delete delivery", `Delete delivery ${d.vbeln}? Only possible before goods issue.`, "Delete")) return;
+            const r = await run(() => api(`/api/sd/delivery/${d.vbeln}/delete`, {})); if (r) { msg("S", r.message); body.innerHTML = ""; toolbar([]); } } });
+        }
         bt.unshift({ label: d.lfart === "LR" ? "Post goods receipt" : "Post goods issue", key: "F8", primary: true, onClick: async () => { const r = await run(() => api(`/api/sd/delivery/${d.vbeln}/gi`, { budat: today() })); if (r) { msg("S", r.message); load(); } } });
       } else {
         if (d.fkstk !== "C") bt.push({ label: "Billing (VF01)", primary: true, onClick: () => go("VF01", { id: d.vbeln }) });
