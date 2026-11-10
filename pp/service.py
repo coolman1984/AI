@@ -17,6 +17,7 @@ from mm.db import next_number, rows, transaction
 from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv
 
 from .config import SERVICE_Z, WIP_ACCOUNT, WIP_CHANGE
+from mm import util as mmclock  # noqa: E402
 
 
 def _months_back(today, n):
@@ -55,7 +56,7 @@ def history(conn, matnr, werks, months):
 
 def forecast(conn, matnr, werks="1000", model="G", periods_hist=6, periods_fc=6, alpha=0.3,
              beta=0.2, service=95, today=None, user="", apply=False):
-    today = today or datetime.date.today().isoformat()
+    today = today or mmclock.today().isoformat()
     matnr = matnr.upper()
     if model not in ("D", "G", "T"):
         raise MMError("Forecast model %s not allowed (D, G, T)" % model, "MP", "001")
@@ -204,7 +205,8 @@ def wip(conn, gjahr, perio, user="", test=False):
     The change against the previous period is posted to FI (Dr WIP, Cr change
     in WIP); delivered orders get their WIP cancelled."""
     gjahr, perio = int(gjahr), int(perio)
-    budat = "%04d-%02d-%02d" % (gjahr, perio, calendar.monthrange(gjahr, perio)[1])
+    from co.core import closing_date
+    budat = closing_date(gjahr, perio)
     out = []
     with transaction(conn):
         for o in conn.execute("SELECT * FROM orders WHERE auart IN ('PP01','ZP03','ZREF','ZP07') AND "

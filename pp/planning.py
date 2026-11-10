@@ -21,6 +21,7 @@ from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv
 
 from .config import EXCEPTIONS, PIR_VERSION, SOP_VERSION, SUBCON_SLOC
 from .master import add_workdays, explode, low_level_codes, select_version
+from mm import util as mmclock  # noqa: E402
 
 
 def _month_start(m):
@@ -212,7 +213,7 @@ def _elements(conn, matnr, werks, today):
 
 def stock_requirements(conn, matnr, werks="1000", today=None):
     """MD04: elements with running available quantity + last MRP messages."""
-    today = today or datetime.date.today().isoformat()
+    today = today or mmclock.today().isoformat()
     m = conn.execute("SELECT m.matnr, m.maktx, m.meins, m.mtart, p.* FROM material m JOIN "
                      "material_plant p ON p.matnr=m.matnr WHERE m.matnr=? AND p.werks=?",
                      (matnr.upper(), werks)).fetchone()
@@ -256,7 +257,7 @@ def mrp_run(conn, user, matnr=None, werks="1000", today=None, single_level=False
     """MD01 (total, matnr None) / MD02 (multi-level single item) / MD03 (single level).
     Regenerative: unfirmed planned orders and MRP requisitions are deleted and
     planned again from the requirements."""
-    today = today or datetime.date.today().isoformat()
+    today = today or mmclock.today().isoformat()
     with transaction(conn):
         cur = conn.execute("INSERT INTO pp_mrp_run (ts,usnam,scope) VALUES (?,?,?)",
                            (now_ts(), user, matnr or "PLANT %s" % werks))

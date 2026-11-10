@@ -15,6 +15,7 @@ from mm.db import rows
 from .config import MATERIAL_TYPE_ATTR, VIEWS, MATERIAL_STATUS, CUST_GROUPS, VEND_GROUPS
 from . import changes as cd
 from .partner import _open_balance
+from mm import util as mmclock  # noqa: E402
 
 
 def _issue(out, sev, obj, key, name, text, tcode, value=0):
@@ -134,7 +135,7 @@ def duplicates(conn):
 
 def dead_stock(conn, days=90, key_date=None):
     kd = key_date or conn.execute("SELECT MAX(budat) FROM mat_doc").fetchone()[0] or \
-        datetime.date.today().isoformat()
+        mmclock.today().isoformat()
     lim = (datetime.date.fromisoformat(kd) - datetime.timedelta(days=days)).isoformat()
     out = []
     for r in conn.execute(

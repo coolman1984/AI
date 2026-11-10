@@ -18,6 +18,7 @@ from mm.util import now_ts, parse_date, qty_out
 
 from .pr import create_pr
 from .sourcing import determine_source
+from mm import util as mmclock  # noqa: E402
 
 
 def _available(conn, matnr, werks):
@@ -80,7 +81,7 @@ def stock_requirements(conn, matnr, werks="1000"):
         from mm.util import MMError
         raise MMError("Material %s not planned in plant %s" % (matnr, werks), "61", "001")
     stock, _, _ = _available(conn, matnr, werks)
-    lines = [dict(date=datetime.date.today().isoformat(), element="STOCK",
+    lines = [dict(date=mmclock.today().isoformat(), element="STOCK",
                   text="Plant stock (unrestricted + quality)", receipt=stock, req=0)]
     for r in conn.execute("SELECT i.*, h.lifnr FROM po_item i JOIN po_header h ON "
                           "h.ebeln=i.ebeln WHERE i.matnr=? AND i.werks=? AND i.elikz=0 AND "

@@ -6,6 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from co.seed import sample_period_start  # noqa: E402
 from fi.document import signed  # noqa: E402
 from mm import seed  # noqa: E402
@@ -16,7 +18,7 @@ from pur import analytics, po, pr, sourcing  # noqa: E402
 
 _DB = {}
 P = sample_period_start()
-TODAY = datetime.date.today().isoformat()
+TODAY = fixture.T.isoformat()
 
 
 def demo():

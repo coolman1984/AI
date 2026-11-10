@@ -23,6 +23,7 @@ from mm.util import MMError, now_ts, parse_date, rdiv
 from .config import (BILLING_TYPES, DOC_TYPES, REVENUE_ACCOUNTS, DEDUCTION_ACCOUNT, FREIGHT_ACCOUNT,
                      SERVICE_ACCOUNT, ITEM_CATS)
 from .order import flow, _status
+from mm import util as mmclock  # noqa: E402
 
 COMPANY_TAX_ID = "204-114-007"
 COMPANY_NAME = "MM Core Egypt S.A.E."
@@ -345,4 +346,4 @@ def vf05(conn, d1="", d2="", kunnr="", fkart=""):
 
 
 def _today():
-    return datetime.date.today().isoformat()
+    return mmclock.today().isoformat()

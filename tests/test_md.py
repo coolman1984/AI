@@ -6,6 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from co.seed import sample_period_start  # noqa: E402
 from md import changes, checks, material as mat, partner as bp, reports  # noqa: E402
 from mm import seed  # noqa: E402
@@ -16,7 +18,7 @@ from pur import po  # noqa: E402
 
 _DB = {}
 P = sample_period_start()
-TODAY = datetime.date.today().isoformat()
+TODAY = fixture.T.isoformat()
 
 
 def demo():
@@ -188,7 +190,7 @@ class Partners(unittest.TestCase):
     def test_sensitive_change_dual_control(self):
         from fi.ap import payment_run
         c = demo()
-        nxt = (datetime.date.today() + datetime.timedelta(days=400)).isoformat()
+        nxt = (fixture.T + datetime.timedelta(days=400)).isoformat()
         r = payment_run(c, TODAY, "MDT1", nxt, "T")
         self.assertIn("100006", [e["lifnr"] for e in r["exceptions"]])
         self.assertNotIn("100006", [p["lifnr"] for p in r["payments"]])

@@ -18,6 +18,7 @@ import datetime
 
 from mm.db import next_number, rows, transaction
 from mm.util import MMError, now_ts, parse_amount, parse_date, parse_qty, rdiv, value_of
+from mm import util as mmclock  # noqa: E402
 
 
 def net_price(brutto, rabatt):
@@ -240,7 +241,7 @@ def award(conn, anfnr, user, bedat=None):
 def determine_source(conn, matnr, werks, qty, date=None):
     """Returns dict(lifnr, how, infnr, konnr, ktpnr, brutto, rabatt, frb, peinh,
     aplfz) or None."""
-    date = date or datetime.date.today().isoformat()
+    date = date or mmclock.today().isoformat()
     sl = conn.execute("SELECT * FROM source_list WHERE matnr=? AND werks=? AND vdatu<=? AND "
                       "bdatu>=? AND notkz=0 ORDER BY flifn DESC, zeord",
                       (matnr, werks, date, date)).fetchall()

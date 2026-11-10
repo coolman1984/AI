@@ -27,12 +27,13 @@ import datetime
 
 from mm.db import transaction
 from mm.posting import post_goods_movement, propose_bin
+from mm import util as mmclock  # noqa: E402
 
 USER = "PLANNER"
 
 
 def _month(offset=0):
-    t = datetime.date.today().replace(day=1)
+    t = mmclock.today().replace(day=1)
     y, m = t.year, t.month + offset
     while m > 12:
         y, m = y + 1, m - 12
@@ -138,7 +139,7 @@ def sample(conn, vendors):
     from pur import po as purpo, pr as purpr
     from . import order, planning, service, subcon
     y, m = _month()
-    d = lambda day: datetime.date(y, m, min(day, calendar.monthrange(y, m)[1])).isoformat()
+    d = lambda day: mmclock.day_in_month(y, m, day, cap=mmclock.today()).isoformat()
     months = planning._months("%04d-%02d" % (y, m), 3)
     # 1 SOP -> demand management
     planning.sop_plan(conn, "PG-CAB", [dict(month=months[0], sales="200"),

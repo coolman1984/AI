@@ -7,6 +7,7 @@ from mm.util import MMError, amt_out, qty_out
 from pp import config as C, master, order, planning, reports, service, subcon
 
 from .server import db, route
+from mm import util as mmclock  # noqa: E402
 
 QTY = {"gamng", "wemng", "igmng", "iasmg", "mgvrg", "lmnga", "xmnga", "bdmng", "enmng", "open",
        "stock", "gsmng", "plnmg", "consumed", "menge", "required", "at_vendor", "to_provide",
@@ -39,7 +40,7 @@ def out(o):
 
 def _month():
     s = db().execute("SELECT value FROM settings WHERE key='pp_sample'").fetchone()
-    t = datetime.date.today()
+    t = mmclock.today()
     y, m = (int(s["value"][:4]), int(s["value"][5:7])) if s else (t.year, t.month)
     return y, m
 
@@ -298,7 +299,7 @@ def pp_atp(req, q):
     from mm.util import parse_qty
     return out(order.availability(db(), (q.get("matnr") or "").upper(), "1000",
                                   parse_qty(q.get("qty") or "1"),
-                                  q.get("date") or datetime.date.today().isoformat()))
+                                  q.get("date") or mmclock.today().isoformat()))
 
 
 @route("GET", "/api/pp/missing")

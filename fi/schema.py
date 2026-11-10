@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS gl_account (     -- SKA1/SKB1 (FS00)
     blocked INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS posting_period ( -- OB52 (variant 1000, account type +)
     id INTEGER PRIMARY KEY, y1 INTEGER, p1 INTEGER, y2 INTEGER, p2 INTEGER);
+CREATE TABLE IF NOT EXISTS fi_carry_forward ( -- F.16 balance carry-forward runs
+    gjahr INTEGER PRIMARY KEY, amount INTEGER, hkont TEXT, run_at TEXT, usnam TEXT);
 CREATE TABLE IF NOT EXISTS exch_rate (      -- TCURR (OB08), type M
     waers TEXT, gdatu TEXT, ukurs INTEGER, PRIMARY KEY (waers, gdatu));
 CREATE TABLE IF NOT EXISTS asset (          -- ANLA / ANLZ / ANLB

@@ -5,6 +5,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from mm import master, posting, reports  # noqa: E402
 from mm.db import connect  # noqa: E402
 from mm.util import MMError  # noqa: E402

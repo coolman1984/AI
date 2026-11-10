@@ -422,7 +422,8 @@ def _settle_to_material(conn, o, bal, gjahr, perio, user):
     m = conn.execute("SELECT bklas FROM material WHERE matnr=?", (o["matnr"],)).fetchone()
     v = conn.execute("SELECT * FROM valuation WHERE matnr=? AND bwkey=?",
                      (o["matnr"], o["werks"])).fetchone()
-    budat = "%04d-%02d-%02d" % (gjahr, perio, calendar.monthrange(gjahr, perio)[1])
+    from co.core import closing_date
+    budat = closing_date(gjahr, perio)
     to_stock = bal if v and v["lbkum"] > 0 else 0
     lines = []
     if to_stock:

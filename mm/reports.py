@@ -5,6 +5,7 @@ import datetime
 from .config import (GL_ACCOUNTS, MATERIAL_TYPES, MOVEMENT_TYPES, STOCK_TYPES)
 from .db import rows
 from .util import CURRENCY, MMError, amt_out, qty_out, rdiv
+from mm import util as mmclock  # noqa: E402
 
 
 def _share(qty, lbkum, salk3):
@@ -219,7 +220,7 @@ def quant_list(conn, werks="", lgort="", matnr="", lgpla=""):
         if val:
             sql += " AND %s = ?" % col
             args.append(val)
-    today = datetime.date.today()
+    today = mmclock.today()
     out = []
     for r in conn.execute(sql + " ORDER BY q.matnr, q.werks, q.lgort, q.wdatu, "
                                 "q.id", args):
@@ -310,7 +311,7 @@ def consistency_check(conn):
 
 # ------------------------------------------------------------------ cockpit
 def dashboard(conn, days=30):
-    today = datetime.date.today()
+    today = mmclock.today()
     since = (today - datetime.timedelta(days=days - 1)).isoformat()
     vals = {(r["matnr"], r["bwkey"]): r for r in
             conn.execute("SELECT * FROM valuation")}

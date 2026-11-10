@@ -17,6 +17,7 @@ from mm.db import next_number, rows, transaction
 from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv, value_of
 
 from .config import SERVICE_RATE, WARRANTY_MONTHS
+from mm import util as mmclock  # noqa: E402
 
 
 # ====================================================================== equipment
@@ -50,7 +51,7 @@ def equipment(conn, kunnr=None, equnr=None):
         sql += " AND e.equnr=?"
         args.append(equnr)
     out = rows(conn.execute(sql + " ORDER BY e.equnr", args))
-    today = datetime.date.today().isoformat()
+    today = mmclock.today().isoformat()
     for e in out:
         e["warranty"] = e["gwlen"] >= today
         e["notifications"] = conn.execute("SELECT COUNT(*) FROM sd_qmel WHERE equnr=?", (e["equnr"],)).fetchone()[0]

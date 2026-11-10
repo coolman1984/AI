@@ -26,6 +26,18 @@ def obj_text(objnr):
     return objnr
 
 
+def closing_date(gjahr, perio):
+    """Posting date for period-end documents: the last day of the period, but
+    never after today (closing the current month early posts on today)."""
+    import calendar
+    from mm import util
+    last = datetime.date(int(gjahr), int(perio), calendar.monthrange(int(gjahr), int(perio))[1])
+    t = util.today()
+    if last > t and (t.year, t.month) == (last.year, last.month):
+        last = t
+    return last.isoformat()
+
+
 def period_of(budat):
     d = datetime.date.fromisoformat(budat)
     return d.year, d.month

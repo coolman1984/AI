@@ -8,10 +8,11 @@ from mm.db import rows
 
 from .master import capacity
 from .order import coois
+from mm import util as mmclock  # noqa: E402
 
 
 def cockpit(conn, d1, d2):
-    today = datetime.date.today().isoformat()
+    today = mmclock.today().isoformat()
     orders = coois(conn)
     per = [o for o in orders if d1 <= (o["gstrp"] or o["erdat"] or "") <= d2]
     deliv = [o for o in orders if o["auart"] == "PP01" and o["stat"] in ("DLV", "TECO", "CLSD")]
@@ -42,7 +43,7 @@ def cockpit(conn, d1, d2):
     exc = rows(conn.execute("SELECT ausk, COUNT(*) n FROM pp_mrp_msg WHERE run=? GROUP BY ausk",
                             (last_run["id"],))) if last_run else []
     missing = [o for o in orders if "MSPT" in o["status"] and o["stat"] == "REL"]
-    cap = capacity(conn, today, (datetime.date.today() + datetime.timedelta(days=27)).isoformat())
+    cap = capacity(conn, today, (mmclock.today() + datetime.timedelta(days=27)).isoformat())
     plaf = conn.execute("SELECT COUNT(*), COALESCE(SUM(CASE WHEN psttr<? THEN 1 ELSE 0 END),0) "
                         "FROM pp_plaf WHERE conv=''", (today,)).fetchone()
     sop = rows(conn.execute("SELECT p.month, SUM(p.production) plan FROM pp_sop_plan p GROUP BY "

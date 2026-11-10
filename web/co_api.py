@@ -13,6 +13,7 @@ from mm.db import rows, transaction
 from mm.util import MMError, amt_out, qty_out
 
 from .server import db, route
+from mm import util as mmclock  # noqa: E402
 
 
 def _yp(q):
@@ -20,7 +21,7 @@ def _yp(q):
     if s:
         dy, dp = int(s["value"][:4]), int(s["value"][5:7])
     else:
-        t = datetime.date.today()
+        t = mmclock.today()
         dy, dp = t.year, t.month
     return int(q.get("gjahr") or dy), int(q.get("perio") or dp)
 
@@ -246,7 +247,7 @@ def co_kspi(req, q):
 def co_ck11n(req, q):
     b = req.body
     eid = costing.cost_estimate(db(), b.get("matnr", ""), b.get("werks") or "1000",
-                                b.get("kadky") or datetime.date.today().isoformat(),
+                                b.get("kadky") or mmclock.today().isoformat(),
                                 b.get("losgr") or "100", req.user)
     return {"id": eid, "message": "Cost estimate %s saved (status KA - costed)" % eid}
 

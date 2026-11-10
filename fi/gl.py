@@ -37,6 +37,31 @@ def save_gl_account(conn, hkont, txt, typ, fsv, recon="", oi=0, tax="", blocked=
         PNL_ACCOUNTS.add(hkont)
 
 
+# ---------------------------------------------------------------- F.16
+def carry_forward(conn, gjahr, user, test=False):
+    """F.16 / FAGLGVTR: carry the P&L result of gjahr forward to retained earnings.
+    The balance itself is always derived from the postings (reports stay correct even
+    for late postings into a closed year); the run confirms the year and is repeatable."""
+    from mm import util
+    from .reports import RETAINED_EARNINGS, _accounts, _sums
+    gjahr = int(gjahr)
+    if gjahr >= util.today().year:
+        raise MMError("Fiscal year %s is not yet over" % gjahr, "F5", "210")
+    accs = _accounts(conn)
+    sums = _sums(conn, "%04d-01-01" % gjahr, "%04d-12-31" % gjahr)
+    rows = [dict(hkont=k, txt=accs[k]["txt"], balance=(dc[0] - dc[1]) / 100.0)
+            for k, dc in sorted(sums.items()) if accs.get(k, {}).get("typ") == "PL" and dc[0] != dc[1]]
+    amount = sum(int(round(r["balance"] * 100)) for r in rows)
+    if not test:
+        with transaction(conn):
+            conn.execute("INSERT OR REPLACE INTO fi_carry_forward (gjahr,amount,hkont,run_at,usnam) "
+                         "VALUES (?,?,?,?,?)", (gjahr, amount, RETAINED_EARNINGS, now_ts(), user))
+    return {"gjahr": gjahr, "to_year": gjahr + 1, "account": RETAINED_EARNINGS, "test": test,
+            "result": -amount / 100.0, "accounts": rows,
+            "message": "Balance carried forward from %s to %s: result %.2f to account %s"
+                       % (gjahr, gjahr + 1, -amount / 100.0, RETAINED_EARNINGS)}
+
+
 # ---------------------------------------------------------------- OB52 / OB08
 def set_periods(conn, y1, p1, y2, p2):
     if (int(y1), int(p1)) > (int(y2), int(p2)):

@@ -9,11 +9,12 @@ from mm.db import rows
 from mm.util import MMError, amt_out, qty_out
 
 from .server import db, route
+from mm import util as mmclock  # noqa: E402
 
 
 def _yp(q):
     s = db().execute("SELECT value FROM settings WHERE key='co_sample'").fetchone()
-    t = datetime.date.today()
+    t = mmclock.today()
     dy, dp = (int(s["value"][:4]), int(s["value"][5:7])) if s else (t.year, t.month)
     return int(q.get("gjahr") or dy), int(q.get("perio") or dp)
 
@@ -214,7 +215,7 @@ def fi_fb60(req, q):
     belnr = ap.vendor_invoice(db(), b.get("header") or {}, b.get("lines") or [], req.user,
                               bool(b.get("credit_memo")))
     return {"belnr": belnr, "gjahr": int(((b.get("header") or {}).get("budat") or
-                                          datetime.date.today().isoformat())[:4]),
+                                          mmclock.today().isoformat())[:4]),
             "message": "Document %s was posted in company code 1000" % belnr}
 
 
@@ -328,7 +329,7 @@ def fi_fb70(req, q):
     belnr = ar.customer_invoice(db(), b.get("header") or {}, b.get("lines") or [],
                                 req.user, bool(b.get("credit_memo")))
     return {"belnr": belnr, "gjahr": int(((b.get("header") or {}).get("budat") or
-                                          datetime.date.today().isoformat())[:4]),
+                                          mmclock.today().isoformat())[:4]),
             "message": "Document %s was posted in company code 1000" % belnr}
 
 

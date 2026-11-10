@@ -6,6 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from co import period_end, reports  # noqa: E402
 from co.fi import post_gl_document  # noqa: E402
 from co.seed import sample_period_start  # noqa: E402
@@ -130,7 +132,7 @@ class ClosingResults(unittest.TestCase):
 class Checks(unittest.TestCase):
     def test_expense_without_cost_center_rejected(self):
         with self.assertRaises(MMError) as e:
-            post_gl_document(demo(), {"budat": __import__("datetime").date.today()
+            post_gl_document(demo(), {"budat": fixture.T
                                       .isoformat()}, [
                 dict(hkont="476000", debit="100"), dict(hkont="113100", credit="100")], "T")
         self.assertEqual(e.exception.msg_no, "235")

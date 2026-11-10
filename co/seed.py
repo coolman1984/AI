@@ -29,19 +29,20 @@ from mm.posting import post_goods_movement
 
 from . import actual, copa, costing, master as com, period_end, planning
 from .fi import post_gl_document
+from mm import util as mmclock  # noqa: E402
 
 USER = "DEMO"
 
 
 def sample_period_start(today=None):
-    t = today or datetime.date.today()
+    t = today or mmclock.today()
     first = t.replace(day=1)
     return (first - datetime.timedelta(days=1)).replace(day=1)
 
 
 def _periods_from(start):
     """(year, period) from the sample month up to the current month's year end."""
-    today = datetime.date.today()
+    today = mmclock.today()
     out, y, p = [], start.year, start.month
     while (y < today.year) or (y == today.year and p <= 12):
         out.append((y, p))
@@ -221,7 +222,7 @@ def plan_and_sample(conn):
     failed = []
     start = sample_period_start()
     y, p = start.year, start.month
-    d = lambda day: datetime.date(y, p, day).isoformat()   # noqa: E731
+    d = lambda day: mmclock.day_in_month(y, p, day).isoformat()   # noqa: E731
     eom = (start.replace(day=28) + datetime.timedelta(days=4)).replace(day=1) - \
         datetime.timedelta(days=1)
     _logistics(conn)

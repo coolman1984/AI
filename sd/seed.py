@@ -25,12 +25,13 @@ import datetime
 
 from mm.db import transaction
 from mm.posting import post_goods_movement
+from mm import util as mmclock  # noqa: E402
 
 USER = "SALES01"
 
 
 def _ym():
-    t = datetime.date.today()
+    t = mmclock.today()
     return t.year, t.month
 
 
@@ -71,7 +72,7 @@ def sample(conn):
     from fi.ap import pay
     from . import billing as bl, delivery as dl, order as so, service as sv
     y, m = _ym()
-    d = lambda day: datetime.date(y, m, min(day, calendar.monthrange(y, m)[1])).isoformat()
+    d = lambda day: mmclock.day_in_month(y, m, day, cap=mmclock.today()).isoformat()
     # 1 pre-sales
     sv.save_activity(conn, dict(kunnr="C1004", ktaar="0002", datum=d(2), subject="Visit Hurghada hotel project",
                                 result="Needs 12 pantry units for the new wing"), USER)
