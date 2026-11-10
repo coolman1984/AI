@@ -78,5 +78,29 @@ class Reports(unittest.TestCase):
         self.assertEqual(catalog.views(c, "U1"), [])
 
 
+class Dashboards(unittest.TestCase):
+    def test_status_dashboards_currency_and_scaling(self):
+        from bi import dashboards as D, engine
+        c = demo()
+        for did in D.DASHBOARDS:
+            d = D.run(c, did, {"year": 2026, "period": 11})
+            self.assertEqual(len(d["widgets"]), 3, did)
+            for w in d["widgets"]:
+                self.assertEqual(len(w["categories"]), len(w["bars"][0]["values"]), did)
+            self.assertTrue(d["table"]["rows"], did)
+        pl = D.run(c, "PL_STATUS", {"year": 2026, "period": 11})
+        ns = pl["table"]["rows"][0]["values"]
+        ref = engine.run(c, dict(provider="COPA", structure="PL", year=2026, period=11,
+                                 columns=[dict(version="ACT", time="P")]))
+        self.assertAlmostEqual(ns[1], [r for r in ref["rows"] if r["node"] == "NS"][0]["values"][0], 2)
+        usd = D.run(c, "PL_STATUS", {"year": 2026, "period": 11, "currency": "USD", "scale": "1000"})
+        self.assertTrue(usd["note"].startswith("Currency: USD"))
+        self.assertLess(usd["table"]["rows"][0]["values"][1], ns[1] / 1000)
+        with self.assertRaises(MMError):
+            D.run(c, "PL_STATUS", {"scale": "7"})
+        with self.assertRaises(MMError):
+            D.run(c, "NOPE", {})
+
+
 if __name__ == "__main__":
     unittest.main()

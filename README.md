@@ -51,6 +51,10 @@ reports per group, and an analysis workspace with tabs:
 - click a characteristic to filter, drill down or spread it over the columns; sort by a
   column; share %; exceptions (negatives red); Excel; *Save view* (My views, per user);
 - Executive KPI cockpit with plan achievement and the monthly trend chart.
+- Dashboards (ZBI_DASH): **PL Status** (P/L current month, accumulated and 3 years:
+  net sales bars with net profit % line; table Plan / Actual / Ach(%) for the month,
+  year to date and last year), **Sales Status**, **Inventory Status**, **Cost Center Status** -
+  with display currency (EGP, USD, EUR at the period-end rate) and amount scaling.
 All reports read the live MM Core data (CO-PA, billing, orders, cost centers, stock,
 open items, purchasing, production, G/L) - no extract, always current.
 

@@ -52,10 +52,11 @@ def bi_view_save(req, q):
     return {"id": n, "message": "View '%s' saved under 'My views'" % (b.get("title") or "").strip()}
 
 
-@route("GET", "/api/bi/dashboard/(?P<did>[A-Z]+)")
+@route("GET", "/api/bi/dashboard/(?P<did>[A-Z_]+)")
 def bi_dashboard(req, q, did):
     if did != "EXEC":
-        raise MMError("Dashboard %s does not exist" % did, "BI", "008")
+        from bi import dashboards
+        return dashboards.run(db(), did, q)
     c = db()
     t = mmclock.today()
     y, p = t.year, t.month
