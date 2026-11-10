@@ -20,7 +20,7 @@ PP_COLUMN_ADDS = {
                        ("disgr", "TEXT DEFAULT ''")],
     "po_item": [("pstyp", "TEXT DEFAULT ''"), ("vornr", "TEXT")],
     "confirmation": [("xmnga", "INTEGER DEFAULT 0"), ("aueru", "INTEGER DEFAULT 0"),
-                     ("mblnr", "TEXT"), ("ersda", "TEXT")],
+                     ("mblnr", "TEXT"), ("ersda", "TEXT"), ("grund", "TEXT")],
 }
 
 PP_SCHEMA = """

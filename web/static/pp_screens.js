@@ -353,13 +353,14 @@ function mrpScreen(tcode, title, scope) {
   register(tcode, { title, async render(app, params) {
     await meta();
     const m = matIn(params.id || ""), d = inp({ type: "date", value: today(), w: "m" }), body = out();
-    app.append(panel("Control parameters", grid(scope !== "total" ? field("Material", m, { req: true }) : field("Plant", inp({ value: "1000 Cairo Plant", readonly: true, w: "l" })),
+    const pl = sel([["1000", "1000 Cairo Plant"], ["1100", "1100 Alexandria Plant"], ["ALL", "All plants"]], "1000", { w: "l" });
+    app.append(panel("Control parameters", grid(scope !== "total" ? field("Material", m, { req: true }) : field("Plant", pl),
       field("Planning date", d), field("Processing key", inp({ value: "NEUPL (regenerative)", readonly: true, w: "l" })),
       field("Create purchase req.", inp({ value: "1 Purchase requisitions", readonly: true, w: "l" })))),
-      panel(null, h("p.muted", null, scope === "total" ? "All materials of plant 1000: reorder point (VB) first, then MRP (PD) and forecast-based (VV) by low-level code - finished products before components." :
+      panel(null, h("p.muted", null, scope === "total" ? "All materials of the plant: reorder point (VB) first, then MRP (PD) and forecast-based (VV) by low-level code - finished products before components. Customer orders and deliveries are requirements (strategy 40: they consume the planned independent requirements)." :
         scope === "multi" ? "Material plus all BOM levels below it." : "Only this material - dependent requirements are created but components are not planned.")), body);
     execBar(async () => {
-      const r = await run(() => api("/api/pp/mrp", { matnr: scope === "total" ? "" : up(m), single: scope === "single", today: d.value })); if (!r) return;
+      const r = await run(() => api("/api/pp/mrp", { matnr: scope === "total" ? "" : up(m), werks: scope === "total" ? pl.value : "1000", single: scope === "single", today: d.value })); if (!r) return;
       body.innerHTML = "";
       body.append(h("div.kpis", null, kpi("Materials planned", String(r.materials)), kpi("Planned orders", String(r.planned_orders), "", "MD16"),
         kpi("Purchase requisitions", String(r.requisitions), "", "ME5A"), kpi("Exception messages", String(r.exceptions), "", "MD06", r.exceptions ? "crit" : "pos"),
@@ -605,13 +606,14 @@ register("CO11N", { title: "Enter Time Ticket for Production Order", async rende
     const op = sel(ops.map(x => [x.vornr, `${x.vornr} ${x.arbpl} ${x.ltxa1} (${x.steus})`]), ops[0].vornr, { w: "xl" });
     const y = inp({ type: "number", w: "s", value: Math.max(0, ops[0].mgvrg - ops[0].lmnga - ops[0].xmnga) }), x = inp({ type: "number", w: "s", value: 0 }), act = inp({ type: "number", w: "s", ph: "proposed" }),
       d = inp({ type: "date", value: today(), w: "m" }), fin = sel([["", "Automatic"], ["1", "Final confirmation"], ["0", "Partial confirmation"]], "");
+    const gr = sel([["", "-"], ["01", "01 Material defect"], ["02", "02 Machine fault"], ["03", "03 Operator error"], ["04", "04 Setup / first piece"], ["05", "05 Handling damage"]], "", { w: "l" });
     const info = h("p.muted");
     const upd = () => { const p = ops.find(z => z.vornr === op.value); info.textContent = `Operation qty ${fmtQty(p.mgvrg)} · confirmed ${fmtQty(p.lmnga)} · planned ${fmtQty(p.vgw)} h + setup ${fmtQty(p.vgw_setup)} h · ${p.steus === "PP03" ? "automatic goods receipt" : "no goods receipt"}`; };
     op.addEventListener("change", upd); upd();
-    body.append(panel(`${o.aufnr} ${o.matnr} ${o.maktx}`, grid(field("Operation", op), field("Yield", y), field("Scrap", x), field("Activity (h)", act, { hint: "empty = standard" }),
-      field("Posting date", d), field("Confirmation type", fin)), info, h("p.muted", null, "Components with the backflush indicator assigned to this operation are issued automatically (261).")));
+    body.append(panel(`${o.aufnr} ${o.matnr} ${o.maktx}`, grid(field("Operation", op), field("Yield", y), field("Scrap", x), field("Scrap reason", gr), field("Activity (h)", act, { hint: "empty = standard" }),
+      field("Posting date", d), field("Confirmation type", fin)), info, h("p.muted", null, "Components with the backflush indicator assigned to this operation are issued automatically (261); the final confirmation issues the rest. An operation cannot confirm more than the previous operation produced.")));
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-      const r = await run(() => api("/api/pp/confirm", { aufnr: o.aufnr, vornr: op.value, yield: y.value, scrap: x.value, act: act.value, budat: d.value, final: fin.value === "" ? null : fin.value === "1" }));
+      const r = await run(() => api("/api/pp/confirm", { aufnr: o.aufnr, vornr: op.value, yield: y.value, scrap: x.value, grund: gr.value, act: act.value, budat: d.value, final: fin.value === "" ? null : fin.value === "1" }));
       if (r) { msgLink("S", r.message, "Order", "CO03", { id: o.aufnr }); load(); } } }]);
   };
   toolbar([{ label: "Continue", key: "Enter", primary: true, onClick: load }]);

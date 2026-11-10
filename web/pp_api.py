@@ -183,8 +183,19 @@ def pp_pir_save(req, q):
 @route("POST", "/api/pp/mrp")
 def pp_mrp(req, q):
     b = req.body
-    r = planning.mrp_run(db(), req.user, (b.get("matnr") or "").upper() or None,
-                         single_level=bool(b.get("single")), today=b.get("today") or None)
+    werks = (b.get("werks") or "1000").upper()
+    plants = [r["werks"] for r in db().execute("SELECT werks FROM plant ORDER BY werks")] \
+        if werks in ("*", "ALL") else [werks]
+    r = None
+    for w in plants:                     # MD01 for all plants: one run per plant
+        x = planning.mrp_run(db(), req.user, (b.get("matnr") or "").upper() or None, werks=w,
+                             single_level=bool(b.get("single")), today=b.get("today") or None)
+        if r is None:
+            r = x
+        else:
+            for k in ("materials", "planned_orders", "requisitions", "exceptions"):
+                r[k] += x[k]
+            r["reorder_point"] = list(r["reorder_point"]) + list(x["reorder_point"])
     r["reorder_point"] = len(r["reorder_point"])
     return dict(r, message="MRP run %s: %d materials, %d planned orders, %d requisitions, %d "
                 "exception messages" % (r["run"], r["materials"], r["planned_orders"],
@@ -320,7 +331,8 @@ def pp_confirm(req, q):
     b = req.body
     r = order.confirm(db(), b.get("aufnr"), b.get("vornr"), b.get("yield") or "0",
                       b.get("scrap") or "0", b.get("act") or None, b.get("budat"),
-                      None if b.get("final") in (None, "") else bool(b.get("final")), req.user)
+                      None if b.get("final") in (None, "") else bool(b.get("final")), req.user,
+                      grund=b.get("grund") or None)
     m = "Confirmation %s saved: activity %.3f h" % (r["rueck"], r["activity"] / 1000.0)
     if r["backflush"]:
         m += ", %d component(s) backflushed" % r["backflush"]

@@ -190,7 +190,7 @@ def sample(conn, vendors):
     order.post_picking(conn, [dict(rsnum=r["rsnum"], rspos=r["rspos"])
                               for r in order.picking_list(conn) if r["aufnr"] == a_fg], d(5), USER)
     q_fg = conn.execute("SELECT gamng FROM orders WHERE aufnr=?", (a_fg,)).fetchone()[0]
-    order.confirm(conn, a_fg, "0010", "%.3f" % ((q_fg - 2000) / 1000.0), "2", budat=d(6), user=USER)
+    order.confirm(conn, a_fg, "0010", "%.3f" % ((q_fg - 2000) / 1000.0), "2", budat=d(6), user=USER, grund="04")
     order.confirm(conn, a_fg, "0020", "%.3f" % ((q_fg - 2000) / 1000.0), budat=d(7), final=True,
                   user=USER)
     order.teco(conn, a_fg, USER)

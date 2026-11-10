@@ -92,6 +92,9 @@ def sd_order_act(req, q, v, act):
     c = db()
     if act == "change":
         order.change(c, v, req.body, req.user)
+        k = c.execute("SELECT cmgst FROM sd_vbak WHERE vbeln=?", (v,)).fetchone()
+        if k and k["cmgst"] == "B":
+            return {"type": "W", "message": "Document %s has been saved - blocked for credit (VKM1)" % v}
         return {"message": "Document %s has been saved" % v}
     if act == "release":
         order.release_credit(c, v, req.user)

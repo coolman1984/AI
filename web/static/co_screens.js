@@ -951,11 +951,31 @@ register("S_ALR_87013611", { title: "Cost Centers: Actual/Plan/Variance", async 
         { key: "ktext", label: "Name" }, { key: "katyp", label: "Cat.", type: "int" },
         { key: "actual", label: "Actual", type: "amt", sum: true, signed: true }, { key: "plan", label: "Plan", type: "amt", sum: true, signed: true },
         { key: "variance", label: "Variance", type: "amt", sum: true, cls: r => r.variance > 0 ? "neg" : r.variance < 0 ? "pos" : "" },
-        { key: "var_pct", label: "Var %", render: r => h("span", null, pctTxt(r.var_pct)) }] }));
+        { key: "var_pct", label: "Var %", render: r => h("span", null, pctTxt(r.var_pct)) },
+        { key: "commitment", label: "Commitment", type: "amt", sum: true }, { key: "available", label: "Available (plan - actual - commitment)", type: "amt", sum: true }] }));
   };
-  execBar(exec, [{ label: "Target/actual", ghost: true, onClick: () => go("S_ALR_87013625", { kostl: up(k) || "4100" }) }]);
+  execBar(exec, [{ label: "Target/actual", ghost: true, onClick: () => go("S_ALR_87013625", { kostl: up(k) || "4100" }) },
+    { label: "Commitments (KSB2)", ghost: true, onClick: () => go("KSB2", { kostl: up(k) }) }]);
   exec();
 }});
+
+function commitScreen(code, isOrder) {
+  register(code, { title: isOrder ? "Orders: Commitment Line Items" : "Cost Centers: Commitment Line Items", async render(app, params) {
+    await meta();
+    const k = isOrder ? inp({ value: params.aufnr || "", w: "m" }) : ccIn(params.kostl || ""), o = out();
+    app.append(panel("Selection", grid(field(isOrder ? "Order" : "Cost center (empty = all)", k))),
+      h("div.note", null, "Open purchase requisitions and purchase orders with account assignment: money committed but not yet posted as cost. Reduced by goods receipts / invoices; gone when the item is completed or deleted."), o);
+    const exec = async () => {
+      const rows = await run(() => api(`/api/co/rep/commitments?${isOrder ? "aufnr" : "kostl"}=${enc(up(k))}`)); if (!rows) return;
+      o.innerHTML = ""; o.append(alv({ rows, columns: [{ key: "objnr", label: "Object" }, { key: "kstar", label: "Cost element" }, { key: "refbt", label: "Doc." },
+        { key: "refbn", label: "Number", link: r => go(r.refbt === "PO" ? "ME23N" : "ME53N", { id: r.refbn }) }, { key: "refbz", label: "Item" }, { key: "text", label: "Text" },
+        { key: "date", label: "Delivery", type: "date" }, { key: "qty", label: "Open qty", type: "qty" }, { key: "amount", label: "Commitment", type: "amt", sum: true }] }));
+    };
+    execBar(exec); exec();
+  }});
+}
+commitScreen("KSB2", false);
+commitScreen("KOB2", true);
 
 register("S_ALR_87013625", { title: "Cost Centers: Actual/Target/Variance", async render(app, params) {
   await meta();

@@ -570,3 +570,19 @@ def co_rep_fipnl(req, q):
 def co_cockpit(req, q):
     y, p = _yp(q)
     return reports.cockpit(db(), y, p)
+
+
+@route("GET", "/api/co/rep/commitments")
+def co_rep_commit(req, q):
+    """KSB2 / KOB2: commitment line items for a cost center or an order."""
+    from co.core import ks, orn
+    obj = None
+    if q.get("kostl"):
+        obj = ks(q["kostl"].upper())
+    elif q.get("aufnr"):
+        obj = orn(q["aufnr"])
+    out = reports.commitments(db(), obj)
+    for r in out:
+        r["amount"] = amt_out(r["amount"])
+        r["qty"] = r["qty"] / 1000.0
+    return out

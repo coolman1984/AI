@@ -137,9 +137,9 @@ const MENU = [
       ["Planning", ["KP06", "KP26", "KP46", "KSPI"]],
       ["Actual Postings", ["KB11N", "KB21N", "KB31N", "KSB5"]],
       ["Period-End Closing", ["KSV5", "KSU5", "KSU3"]],
-      ["Information System", ["S_ALR_87013611", "S_ALR_87013625", "KSB1", "KSBP", "KSBT"]],
+      ["Information System", ["S_ALR_87013611", "S_ALR_87013625", "KSB1", "KSB2", "KSBP", "KSBT"]],
     ]],
-    ["Internal Orders", ["KO01", "KO03", "KOK5", "KOB1", "KO88"]],
+    ["Internal Orders", ["KO01", "KO03", "KOB2", "KOK5", "KOB1", "KO88"]],
     ["Product Cost Controlling", [
       ["Product Cost Planning", ["CS03", "KZS2", "CK11N", "CK13N", "CK24"]],
       ["Cost Object Controlling", ["CO01", "CO11N", "KGI2", "KKS2", "KO88", "KKBC_ORD"]],

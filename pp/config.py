@@ -14,17 +14,22 @@ PROD_ORDER_TYPES = ("PP01", "ZP03", "ZREF", "ZP07")     # production orders (set
 GR_ORDER_TYPES = ("PP01", "ZP03", "ZREF")                 # orders with a material (goods receipt)
 
 ORDER_TYPES = {
+    # sequence: E = an operation may not confirm more than its predecessor's yield
+    # over_conf / over_gr: tolerances in basis points (10 % = 1000)
     "PP01": dict(text="Standard production order", settle="PA", material=True,
-                 variance=True, release_missing="W"),
+                 variance=True, release_missing="W", sequence="E", over_conf=1000, over_gr=1000),
     "ZP03": dict(text="Rework order", settle="KS", material=True, variance=False,
-                 release_missing="W"),
+                 release_missing="W", sequence="E", over_conf=1000, over_gr=1000),
     "ZREF": dict(text="Refurbishment order", settle="MA", material=True, variance=False,
-                 release_missing="E"),
+                 release_missing="E", sequence="E", over_conf=1000, over_gr=1000),
     "ZP07": dict(text="Production order without material (CO07)", settle="KS",
-                 material=False, variance=False, release_missing="W"),
+                 material=False, variance=False, release_missing="W", sequence="E",
+                 over_conf=1000, over_gr=1000),
     "SM01": dict(text="Service order (customer service)", settle="PA", material=False,
-                 variance=False, release_missing="W"),
+                 variance=False, release_missing="W", sequence="W", over_conf=1000, over_gr=1000),
 }
+SCRAP_REASONS = {"01": "Material defect", "02": "Machine fault", "03": "Operator error",
+                 "04": "Setup / first piece", "05": "Handling damage"}
 PROD_TYPES = tuple(ORDER_TYPES)
 
 CONTROL_KEYS = {
@@ -71,6 +76,7 @@ EXCEPTIONS = {
     "26": "Excess stock",
     "50": "No BOM selected",
     "52": "No routing / no production version",
+    "56": "Requirement date in the past (customer order)",
     "96": "Stock below safety stock",
     "98": "Missing part in production order",
 }

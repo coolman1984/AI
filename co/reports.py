@@ -66,21 +66,58 @@ def cc_plan_actual(conn, gjahr, pfrom, pto, kostl="", khinr=""):
     data = {}
     for r in conn.execute(q, [gjahr, pfrom, pto] + objs):
         d = data.setdefault(r["kstar"], dict(kstar=r["kstar"], ktext=r["ktext"],
-                                             katyp=r["katyp"], actual=0, plan=0))
+                                             katyp=r["katyp"], actual=0, plan=0, commitment=0))
         d["actual" if r["wrttp"] == "04" else "plan"] += r["w"]
+    texts = {r["kstar"]: r for r in conn.execute("SELECT kstar, ktext, katyp FROM cost_element")}
+    for c in commitments(conn, objs, gjahr, pfrom, pto):
+        t = texts.get(c["kstar"]) or {"ktext": c["kstar"], "katyp": 1}
+        d = data.setdefault(c["kstar"], dict(kstar=c["kstar"], ktext=t["ktext"], katyp=t["katyp"],
+                                             actual=0, plan=0, commitment=0))
+        d["commitment"] += c["amount"]
     out = []
     for d in sorted(data.values(), key=lambda x: (x["katyp"] not in (1,), x["kstar"])):
         d["section"] = "Primary costs" if d["katyp"] == 1 else \
             "Secondary costs / credits"
         d["variance"] = d["actual"] - d["plan"]
         d["var_pct"] = _pct(d["variance"], d["plan"])
-        for k in ("actual", "plan", "variance"):
+        d["assigned"] = d["actual"] + d["commitment"]           # actual + committed
+        d["available"] = d["plan"] - d["assigned"]
+        for k in ("actual", "plan", "variance", "commitment", "assigned", "available"):
             d[k] = _a(d[k])
         d["katyp_text"] = CE_CATEGORIES.get(d["katyp"], "")
         out.append(d)
     names = {r["kostl"]: r for r in conn.execute("SELECT * FROM cost_center")}
     return {"rows": out, "cost_centers": [dict(kostl=k, name=names[k]["name"],
                                                kosar=names[k]["kosar"]) for k in ccs]}
+
+
+# ------------------------------------------------------------ commitments (KSB2 / KOB2)
+def commitments(conn, objnr=None, gjahr=None, pfrom=1, pto=12):
+    """Open purchase requisitions and purchase orders with account assignment K / F:
+    money already committed to a cost center / order but not yet posted as cost.
+    Derived from the documents (always consistent): a PO item is reduced by its goods
+    receipts (or invoices, whichever is higher), completed / deleted items are gone."""
+    from mm.util import value_of
+    out = []
+    for r in conn.execute("SELECT * FROM po_item WHERE knttp IN ('K','F') AND COALESCE(loekz,0)=0 AND "
+                          "elikz=0 AND menge > MAX(wemng, remng)"):
+        open_q = r["menge"] - max(r["wemng"], r["remng"])
+        obj = ks(r["kostl"]) if r["knttp"] == "K" else orn(r["aufnr"])
+        out.append(dict(objnr=obj, kstar=r["sakto"] or "400000", refbt="PO", refbn=r["ebeln"],
+                        refbz=r["ebelp"], date=r["eindt"], text=r["txz01"], qty=open_q,
+                        amount=value_of(open_q, r["netpr"], r["peinh"])))
+    for r in conn.execute("SELECT * FROM pr_item WHERE knttp IN ('K','F') AND ebeln IS NULL AND "
+                          "statu IN ('N','B')"):
+        obj = ks(r["kostl"]) if r["knttp"] == "K" else orn(r["aufnr"])
+        out.append(dict(objnr=obj, kstar=r["sakto"] or "400000", refbt="PR", refbn=r["banfn"],
+                        refbz=r["bnfpo"], date=r["lfdat"], text=r["txz01"], qty=r["menge"],
+                        amount=value_of(r["menge"], r["preis"], r["peinh"] or 1)))
+    if objnr:
+        out = [o for o in out if o["objnr"] in (objnr if isinstance(objnr, (list, tuple, set)) else [objnr])]
+    if gjahr:
+        lo, hi = "%04d-%02d-01" % (gjahr, pfrom), "%04d-%02d-31" % (gjahr, pto)
+        out = [o for o in out if not o["date"] or lo <= o["date"] <= hi]
+    return out
 
 
 # ------------------------------------------------------------ S_ALR_87013625

@@ -544,7 +544,7 @@ const CG = [{ k: "name", l: "Name", req: 1, w: "xl" }, { k: "name2", l: "Name 2"
   { k: "telf1", l: "Telephone" }, { k: "email", l: "E-mail", w: "l" }, { k: "stcd1", l: "Tax number 1", hint: "EG: 999-999-999" }, { k: "stceg", l: "VAT reg. no.", w: "l" },
   { k: "bankn", l: "Bank account", w: "l" }, { k: "bankl", l: "Bank key" }];
 const CC = [{ k: "akont", l: "Reconciliation acct", t: "sel", o: () => Object.fromEntries(MD.recon.filter(a => a.recon === "D").map(a => [a.hkont, a.txt])), e: 1 },
-  { k: "zterm", l: "Terms of payment", t: "sel", o: () => MD.terms, e: 1 }, { k: "klimk", l: "Credit limit (EGP)", t: "num" }, { k: "mahna", l: "Dunning procedure", t: "sel", o: () => MD.dunning },
+  { k: "zterm", l: "Terms of payment", t: "sel", o: () => MD.terms, e: 1 }, { k: "klimk", l: "Credit limit (EGP)", t: "num" }, { k: "waers", l: "Invoice currency", t: "sel", o: () => [["", "EGP (local)"], ["USD", "USD"], ["EUR", "EUR"]] }, { k: "mahna", l: "Dunning procedure", t: "sel", o: () => MD.dunning },
   { k: "zwels", l: "Payment methods", up: 1, d: "T" }, { k: "xzver", l: "Record pmnt history", t: "chk" }, { k: "busab", l: "Accounting clerk" }];
 const CS = [{ k: "bzirk", l: "Sales district", t: "sel", o: () => MD.districts, e: 1 }, { k: "kdgrp", l: "Customer group", t: "sel", o: () => MD.custgroups, e: 1 },
   { k: "konda", l: "Price group", t: "sel", o: () => MD.pricegroups, e: 1 }, { k: "kalks", l: "Cust. pric. procedure", t: "sel", o: () => MD.pricing, req: 1 },

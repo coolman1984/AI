@@ -15,7 +15,7 @@ VA05 / V.15     order list / backorders          VKM1  blocked SD documents
 import datetime
 
 from mm.db import next_number, rows, transaction
-from mm.util import MMError, now_ts, parse_date, parse_price, parse_qty, rdiv
+from mm.util import MMError, now_ts, parse_date, parse_int, parse_price, parse_qty, rdiv
 
 from . import pricing
 from .config import (DOC_TYPES, ITEM_CATS, COPY_CONTROL, ORDER_REASONS, CREDIT, VBTYP,
@@ -398,7 +398,7 @@ def change(conn, vbeln, data, user):
         log = []
         for f in ("bstnk", "faksk", "lifsk", "augru", "vdatu", "prob"):
             if f in data and str(data[f]) != str(k[f] or ""):
-                v = data[f]
+                v = parse_date(data[f]) if f == "vdatu" else data[f]
                 if f == "faksk" and k["faksk"] == "08" and v == "" and k["ernam"] == user:
                     raise MMError("Billing block 08 must be removed by a second person (approval)",
                                   "V1", "060")
@@ -406,7 +406,7 @@ def change(conn, vbeln, data, user):
                 log.append(("VBAK", vbeln, f, k[f], v))
         for it in data.get("items") or []:
             p = conn.execute("SELECT * FROM sd_vbap WHERE vbeln=? AND posnr=?",
-                             (vbeln, int(it["posnr"]))).fetchone()
+                             (vbeln, parse_int(it.get("posnr"), "item"))).fetchone()
             if not p:
                 raise MMError("Item %s does not exist" % it["posnr"], "V1", "303")
             if it.get("abgru"):
@@ -421,12 +421,77 @@ def change(conn, vbeln, data, user):
                              (it["abgru"], vbeln, p["posnr"]))
                 conn.execute("UPDATE sd_vbep SET bmeng=0 WHERE vbeln=? AND posnr=?", (vbeln, p["posnr"]))
                 log.append(("VBAP", "%s/%s" % (vbeln, p["posnr"]), "abgru", "", it["abgru"]))
+                continue
+            if it.get("delete"):
+                if conn.execute("SELECT 1 FROM sd_lips WHERE vgbel=? AND vgpos=?", (vbeln, p["posnr"])).fetchone() \
+                        or billed_qty(conn, vbeln, p["posnr"]):
+                    raise MMError("Item %d has follow-on documents - reject it instead" % p["posnr"],
+                                  "V1", "307")
+                for t in ("sd_vbep", "sd_vbap"):
+                    conn.execute("DELETE FROM %s WHERE vbeln=? AND posnr=?" % t, (vbeln, p["posnr"]))
+                conn.execute("DELETE FROM sd_konv WHERE knumv=? AND kposn=?", (vbeln, p["posnr"]))
+                log.append(("VBAP", "%s/%s" % (vbeln, p["posnr"]), "deleted", "", "X"))
+                continue
+            if any(it.get(f) not in (None, "") for f in ("qty", "price", "disc")):
+                log += _change_item(conn, k, p, it, user)
+        for n, it in enumerate(data.get("new_items") or [], start=1):     # add items
+            nxt = (conn.execute("SELECT COALESCE(MAX(posnr),0) FROM sd_vbap WHERE vbeln=?",
+                                (vbeln,)).fetchone()[0] // 10 + 1) * 10
+            c = conn.execute("SELECT * FROM customer WHERE kunnr=?", (k["kunnr"],)).fetchone()
+            area = area_of(conn, k["kunnr"], k["vtweg"])
+            _add_item(conn, vbeln, nxt, it, c, area, k["auart"], DOC_TYPES[k["auart"]], k["audat"],
+                      k["vdatu"], None)
+            log.append(("VBAP", "%s/%s" % (vbeln, nxt), "created", "", it.get("matnr")))
+        old_value = k["netwr"] + k["mwsbk"]
         _totals(conn, vbeln)
-        if data.get("reschedule"):
+        k2 = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
+        if "vdatu" in data or data.get("new_items") or any(i.get("qty") for i in data.get("items") or []):
             reschedule(conn, vbeln)
+        elif data.get("reschedule"):
+            reschedule(conn, vbeln)
+        # higher value -> new credit check (SAP: credit check at order change)
+        if DOC_TYPES[k["auart"]]["credit"] and k2["netwr"] + k2["mwsbk"] > old_value:
+            ok, why = credit_check(conn, k["kunnr"], k2["netwr"] + k2["mwsbk"], now_ts()[:10], vbeln)
+            if not ok:
+                conn.execute("UPDATE sd_vbak SET cmgst='B', credit_note=? WHERE vbeln=?", (why, vbeln))
+                log.append(("VBUK", vbeln, "cmgst", k["cmgst"], "B"))
         from md.changes import log as cdlog
         cdlog(conn, "VERKBELEG", vbeln, "VA02", user, log)
         _status(conn, vbeln)
+
+
+def _change_item(conn, k, p, it, user):
+    """VA02 item: quantity, manual price or discount -> new pricing, PIR consumption
+    follows automatically (it is derived from the order quantity)."""
+    log = []
+    qty = parse_qty(it["qty"]) if it.get("qty") not in (None, "") else p["kwmeng"]
+    done = conn.execute("SELECT COALESCE(SUM(lfimg),0) FROM sd_lips WHERE vgbel=? AND vgpos=?",
+                        (k["vbeln"], p["posnr"])).fetchone()[0]
+    if qty < done:
+        raise MMError("Item %d: quantity cannot be below the delivered quantity %.3f"
+                      % (p["posnr"], done / 1000.0), "V1", "308")
+    if billed_qty(conn, k["vbeln"], p["posnr"]) and it.get("price") not in (None, ""):
+        raise MMError("Item %d is already billed - price changes need a credit / debit memo"
+                      % p["posnr"], "V1", "309")
+    c = conn.execute("SELECT * FROM customer WHERE kunnr=?", (k["kunnr"],)).fetchone()
+    area = area_of(conn, k["kunnr"], k["vtweg"])
+    t = DOC_TYPES[k["auart"]]
+    ic = ITEM_CATS[p["pstyv"]]
+    price = parse_price(it["price"]) if it.get("price") not in (None, "") else None
+    pr = pricing.price_item(conn, c, area, p["matnr"], qty, k["audat"], p["werks"],
+                            it.get("disc") if it.get("disc") not in (None, "") else None, price,
+                            free=not ic["pricing"], inco1=area["inco1"], vbtyp=t["vbtyp"])
+    conn.execute("UPDATE sd_vbap SET kwmeng=?, netwr=?, netpr=?, mwsbp=?, wavwr=?, kzwi1=?, kzwi2=?, "
+                 "freight=? WHERE vbeln=? AND posnr=?",
+                 (qty, pr["net"], pr["netpr"], pr["tax"], pr["cost"], pr["gross"], pr["disc"],
+                  pr["freight"], k["vbeln"], p["posnr"]))
+    pricing.store(conn, k["vbeln"], p["posnr"], pr["conds"])
+    key = "%s/%s" % (k["vbeln"], p["posnr"])
+    if qty != p["kwmeng"]:
+        log.append(("VBAP", key, "kwmeng", p["kwmeng"], qty))
+    if pr["netpr"] != p["netpr"]:
+        log.append(("VBAP", key, "netpr", p["netpr"], pr["netpr"]))
+    return log
 
 
 def reschedule(conn, vbeln, today=None):

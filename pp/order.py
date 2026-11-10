@@ -18,7 +18,7 @@ import datetime
 from mm.db import rows, transaction
 from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv, qty_out
 
-from .config import ORDER_TYPES, CONTROL_KEYS, EXT_COST_ELEMENT, SUBCON_SLOC, STATUS
+from .config import ORDER_TYPES, CONTROL_KEYS, EXT_COST_ELEMENT, SCRAP_REASONS, SUBCON_SLOC, STATUS
 from .master import add_workdays, op_duration_days, select_version
 from mm import util as mmclock  # noqa: E402
 from mm.util import parse_int, parse_key  # noqa: E402
@@ -382,6 +382,9 @@ def post_picking(conn, items, budat, user):
             raise MMError("Reservation %s/%s does not exist" % (it["rsnum"], it["rspos"]),
                           "M7", "101")
         q = parse_qty(it.get("qty") or _q(r["bdmng"] - r["enmng"]))
+        if q > r["bdmng"] - r["enmng"]:
+            raise MMError("Reservation %s/%s: quantity %s exceeds the open quantity %s"
+                          % (r["rsnum"], r["rspos"], _q(q), _q(r["bdmng"] - r["enmng"])), "M7", "102")
         line = {"bwart": "261", "matnr": r["matnr"], "werks": r["werks"], "lgort": r["lgort"],
                 "qty": _q(q), "aufnr": r["aufnr"], "rsnum": r["rsnum"], "rspos": r["rspos"],
                 "lgpla": it.get("lgpla") or ""}
@@ -395,7 +398,7 @@ def post_picking(conn, items, budat, user):
 
 # ====================================================================== CO11N
 def confirm(conn, aufnr, vornr, yield_qty, scrap="0", act=None, budat=None, final=None,
-            user="", lgpla=None):
+            user="", lgpla=None, grund=None):
     budat = parse_date(budat)
     with transaction(conn):
         o = _order(conn, aufnr)
@@ -413,9 +416,30 @@ def confirm(conn, aufnr, vornr, yield_qty, scrap="0", act=None, budat=None, fina
             raise MMError("Operation %s is already finally confirmed" % op["vornr"], "RU", "103")
         y = parse_qty(yield_qty or "0", allow_zero=True)
         x = parse_qty(scrap or "0", allow_zero=True)
-        if op["lmnga"] + op["xmnga"] + y + x > op["mgvrg"] * 11 // 10:
-            raise MMError("Confirmed quantity exceeds the operation quantity %s by more than 10 %%"
-                          % _q(op["mgvrg"]), "RU", "005")
+        ot = ORDER_TYPES.get(o["auart"], {})
+        tol = ot.get("over_conf", 1000)
+        if op["lmnga"] + op["xmnga"] + y + x > op["mgvrg"] + op["mgvrg"] * tol // 10000:
+            raise MMError("Confirmed quantity exceeds the operation quantity %s by more than %s %%"
+                          % (_q(op["mgvrg"]), tol / 100), "RU", "005")
+        if x and not grund:
+            raise MMError("Enter a reason for the scrap quantity (%s)" % ", ".join(
+                "%s %s" % kv for kv in SCRAP_REASONS.items()), "RU", "007")
+        if grund and grund not in SCRAP_REASONS:
+            raise MMError("Scrap reason %s does not exist" % grund, "RU", "008")
+        # operation sequence: not more than the predecessor has produced (SAP: sequence check)
+        prev = conn.execute("SELECT * FROM pp_oper WHERE aufnr=? AND vornr<? ORDER BY vornr DESC LIMIT 1",
+                            (aufnr, op["vornr"])).fetchone()
+        if prev and ot.get("sequence") == "E":
+            if CONTROL_KEYS[prev["steus"]]["external"]:
+                done_prev = conn.execute("SELECT COALESCE(SUM(wemng),0) FROM po_item WHERE banfn=?",
+                                         (prev["banfn"],)).fetchone()[0] if prev["banfn"] else 0
+            else:
+                done_prev = prev["lmnga"]
+            limit = done_prev + done_prev * tol // 10000
+            if op["lmnga"] + op["xmnga"] + y + x > limit:
+                raise MMError("Operation %s: quantity %s exceeds the yield %s of the previous operation %s"
+                              % (op["vornr"], _q(op["lmnga"] + op["xmnga"] + y + x), _q(done_prev),
+                                 prev["vornr"]), "RU", "006")
         setup = op["vgw_setup"] if not op["ism"] else 0
         a = parse_qty(act) if act not in (None, "") else \
             setup + rdiv(op["vgw"] * (y + x), op["mgvrg"])
@@ -437,7 +461,7 @@ def confirm(conn, aufnr, vornr, yield_qty, scrap="0", act=None, budat=None, fina
                               "AND ?=?))", (aufnr, op["vornr"], op["vornr"], first)).fetchall():
             q = min(rdiv(r["bdmng"] * (y + x), o["gamng"]), r["bdmng"] - r["enmng"])
             if fin and op["vornr"] == last:
-                q = max(q, 0)
+                q = r["bdmng"] - r["enmng"]          # final confirmation: the rest is consumed
             if q > 0:
                 items.append({"bwart": "261", "matnr": r["matnr"], "werks": r["werks"],
                               "lgort": r["lgort"], "qty": _q(q), "aufnr": aufnr,
@@ -464,9 +488,9 @@ def confirm(conn, aufnr, vornr, yield_qty, scrap="0", act=None, budat=None, fina
             conn.execute("UPDATE orders SET igmng=igmng+? WHERE aufnr=?", (y, aufnr))
         conn.execute("UPDATE orders SET iasmg=iasmg+? WHERE aufnr=?", (x, aufnr))
         cur = conn.execute("INSERT INTO confirmation (aufnr,vornr,arbpl,lmnga,ism,budat,codoc,"
-                           "usnam,xmnga,aueru,mblnr,ersda) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                           "usnam,xmnga,aueru,mblnr,ersda,grund) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                            (aufnr, op["vornr"], op["arbpl"], y, a, budat, codoc, user, x,
-                            1 if fin else 0, mblnr, now_ts()))
+                            1 if fin else 0, mblnr, now_ts(), grund))
         _conf_status(conn, aufnr)
     return {"rueck": cur.lastrowid, "codoc": codoc, "mblnr": mblnr, "activity": a,
             "backflush": len([i for i in items if i["bwart"] == "261"]),
