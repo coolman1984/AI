@@ -139,6 +139,8 @@ def main():
     ap.add_argument("--restore", metavar="FILE", help="restore a backup (stops a running server)")
     ap.add_argument("--dev", action="store_true",
                     help="developer mode: no logon, the X-User header names the user (tests, tools)")
+    ap.add_argument("--login", action="store_true",
+                    help="force user logon (otherwise: on when data/login_on.flag exists)")
     a = ap.parse_args()
     db_path = os.environ.get("MM_DB") or DEFAULT_DB
     if a.host not in ("127.0.0.1", "localhost", "::1") and not os.environ.get("MM_ALLOW_REMOTE"):
@@ -192,11 +194,16 @@ def main():
         show_startup_error(a.host, a.port, e)
         return
 
+    # Logon is switched off for now (no password); tools/"Login ON.bat" switches it on
+    login_on = a.login or os.path.exists(os.path.join(os.path.dirname(os.path.abspath(db_path)),
+                                                      "login_on.flag"))
+    print("User logon:", "ON (user and password)" if login_on and not a.dev else
+          "OFF - no password (tools/Login ON.bat switches it on)")
     auto_stop = not (a.keep_running or a.no_browser)
     httpd, port = None, a.port
     for port in range(a.port, a.port + 20):
         try:
-            httpd = serve(a.host, port, auto_stop=auto_stop, auth=not a.dev)
+            httpd = serve(a.host, port, auto_stop=auto_stop, auth=login_on and not a.dev)
             break
         except OSError:
             continue
