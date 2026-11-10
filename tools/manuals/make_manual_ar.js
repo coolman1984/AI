@@ -24,9 +24,9 @@ const THEME = {
 const HX = THEME.colors;
 const ORDER = ["MDM", "P2P", "INV", "PTP", "O2C", "SVC", "R2R", "CTL"];
 const ICON = { O2C: "FaHandshake", P2P: "FaShoppingCart", PTP: "FaIndustry", INV: "FaBoxes", R2R: "FaBalanceScale",
-  CTL: "FaChartPie", MDM: "FaDatabase", SVC: "FaTools" };
+  CTL: "FaChartPie", MDM: "FaDatabase", SVC: "FaTools", AMS: "FaUserLock" };
 const MOD_ICON = { MD: "FaDatabase", PUR: "FaShoppingCart", MM: "FaBoxes", PP: "FaIndustry", SD: "FaHandshake",
-  CS: "FaTools", FI: "FaBalanceScale", CO: "FaChartPie" };
+  CS: "FaTools", FI: "FaBalanceScale", CO: "FaChartPie", CA: "FaUserLock" };
 const R = { rtlMode: true, align: "right" };             // right-to-left text
 const W = 13.333, M = 0.5;
 
@@ -335,7 +335,7 @@ function closing() {
 
 (async () => {
   await intro();
-  for (const id of ORDER) await processSection(D.processes.find(p => p.id === id));
+  for (const id of [...ORDER, "AMS"]) await processSection(D.processes.find(p => p.id === id));
   closing();
   fs.mkdirSync(OUT, { recursive: true });
   const file = path.join(OUT, "MM_Core_Process_Guide_AR.pptx");

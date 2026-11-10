@@ -23,7 +23,8 @@ MD_COLUMN_ADDS = {
         ("lgpro", "TEXT DEFAULT ''"), ("prctr", "TEXT DEFAULT ''"),
         ("ncost", "INTEGER DEFAULT 0"), ("losgr", "INTEGER DEFAULT 0"),
         ("awsls", "TEXT DEFAULT ''"), ("qmatv", "INTEGER DEFAULT 0"),
-        ("ssqss", "TEXT DEFAULT ''"), ("vpsta", "TEXT DEFAULT ''")],
+        ("ssqss", "TEXT DEFAULT ''"), ("vpsta", "TEXT DEFAULT ''"),
+        ("abcin", "TEXT DEFAULT ''")],
     "valuation": [  # MBEW
         ("zplp1", "INTEGER DEFAULT 0"), ("zpld1", "TEXT"),
         ("bwprh", "INTEGER DEFAULT 0"), ("bwph1", "INTEGER DEFAULT 0"),

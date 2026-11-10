@@ -82,7 +82,7 @@ PROCESSES = [
          ],
          controls=[
              ("No PO without released requisition", "Release strategy by value; approver is not the requester", "P2P-03"),
-             ("Three quotations above the limit", "Price comparison ME49 documents why a vendor won", "P2P-05"),
+             ("Three quotations above the limit", "New source from 250,000 EGP: 3 quotations (ME49) or a reason + release R1", "P2P-23"),
              ("Three-way match PO / GR / invoice", "Pay only what was ordered and received; tolerance checked", "P2P-10"),
              ("Blocked vendor cannot be ordered from", "Master data block stops the process at the first step", "P2P-07"),
              ("GR/IR cleared at month end", "Open receipts are visible, accruals are correct", "P2P-12"),
@@ -111,6 +111,8 @@ PROCESSES = [
              ("P2P-20", "Duplicate vendor invoice and mandatory reference", "MIRO", "Same vendor reference/date/amount refused", ["test_controls.Duplicates.test_same_vendor_reference_rejected"]),
              ("P2P-21", "Foreign currency PO, receipt, invoice, payment", "ME21N MIGO MIRO F-53", "PO in USD, GR at rate, invoice in USD, books balanced", ["test_controls.ForeignCurrency.test_usd_po_receipt_invoice_payment"]),
              ("P2P-22", "Price variance blocks payment until MRBR", "MIRO MRBR F110", "Invoice blocked, payment refused, released by a second person", ["test_controls.Tolerance.test_price_variance_blocks_payment_until_mrbr"]),
+             ("P2P-23", "Three quotations or a reason for a new source", "ME21N ME49 ME29N", "PO refused without quotations; with a reason it needs release R1", ["test_golive.Quotations.test_new_source_above_limit_needs_three_quotations_or_reason"]),
+             ("P2P-24", "Print forms and output log", "ZPRINT ME23N", "Every form prints; output logged, PO marked printed", ["test_golive.Forms.test_every_form_renders_and_output_is_logged"]),
          ]),
     # ------------------------------------------------------------------ Plan to produce
     dict(id="PTP", folder="5", module="PP", map="ZPP_PROCESS", version="2.1",
@@ -167,8 +169,8 @@ PROCESSES = [
              (2, 1, 1, "d", "Quality OK? 321", "MIGO", [3]),
              (3, 0, 2, "t", "FIFO put-away", "LX02", [4]),
              (4, 0, 3, "t", "Issue / transfer 201-311", "MIGO", [5]),
-             (5, 2, 4, "t", "Physical count", "MB52", [6]),
-             (6, 2, 5, "d", "Difference? 701/702", "MIGO", [7]),
+             (5, 2, 4, "t", "Physical count", "MI01", [6]),
+             (6, 2, 5, "d", "Difference? MI07 701/702", "MI07", [7]),
              (7, 3, 6, "t", "Price change / revaluation", "MR21", [8]),
              (8, 3, 7, "e", "Stock = G/L", "MB5K", []),
          ],
@@ -178,6 +180,7 @@ PROCESSES = [
              ("No negative stock", "Posting is rejected and nothing is posted", "INV-04"),
              ("Quality stock blocked until release", "Only released goods go to production or customers", "INV-06"),
              ("Reversal instead of correction", "Audit trail keeps the original document", "INV-08"),
+             ("Count with posting block", "No movement while counting; differences posted with reference", "INV-11"),
          ],
          kpis=["Inventory accuracy", "Stock days", "Dead stock value", "Blocked stock", "Bin utilisation"],
          cases=[
@@ -191,6 +194,9 @@ PROCESSES = [
              ("INV-08", "Reversal of receipts and issues", "MBST", "Stock, value, bins and dates restored", ["test_engine.Reversal.test_cancel_gr_after_price_moved_posts_difference", "test_engine.Reversal.test_cancel_gr_restores_stock_value_and_po", "test_engine.Reversal.test_cancel_issue_puts_stock_back_in_same_bins_and_dates"]),
              ("INV-09", "Standard price: difference and revaluation", "MR21", "Difference to PRD; price change revalues stock", ["test_engine.StandardPrice.test_gr_difference_goes_to_price_difference_account", "test_engine.StandardPrice.test_price_change_revalues_stock"]),
              ("INV-10", "MM consistency stock = G/L", "MB5K", "No differences", ["test_co.Checks.test_mm_consistency_still_ok"]),
+             ("INV-11", "Physical inventory with posting block and recount", "MI01 MI04 MI11 MI20 MI07", "Movements blocked during the count; differences posted 701/702", ["test_golive.PhysicalInventory.test_freeze_count_recount_and_post_differences"]),
+             ("INV-12", "Count without difference", "MI04 MI07", "Document closed, nothing posted", ["test_golive.PhysicalInventory.test_zero_difference_closes_without_posting"]),
+             ("INV-13", "MM periods and stock on a posting date", "MMPV MMRV MB5B", "Only open periods; MB5B = valuation", ["test_golive.Periods.test_mm_period_and_stock_on_posting_date"]),
          ]),
     # ------------------------------------------------------------------ R2R
     dict(id="R2R", folder="7", module="FI", map="ZFI_PROCESS", version="2.1",
@@ -233,6 +239,11 @@ PROCESSES = [
              ("R2R-14", "Reverse depreciation of the last period", "AFAB ZAFAB_REV", "Reversed, re-posted with the same amount", ["test_controls.Depreciation.test_reverse_last_period_then_repost"]),
              ("R2R-15", "Data consistency check", "ZQA_CHECK", "No violation of the 12 data rules", ["test_controls.Consistency.test_demo_data_is_consistent"]),
              ("R2R-16", "Robust input and clean layers", "all", "Every screen function answers wrong input with a message; no database writes outside the engines", ["test_api_fuzz.Fuzz.test_all_routes", "test_api_fuzz.Layers.test_no_sql_writes_in_api_handlers"]),
+             ("R2R-17", "Withholding tax on vendor invoices", "FB60 ZWHT ZWHT_RPT", "3 % WHT on services; exemption respected; report form 41", ["test_golive.WithholdingTax.test_service_invoice_withholds_3_percent_and_exemption"]),
+             ("R2R-18", "Manual clearing with tolerance and residual item", "F-44 F-32 F-03", "Small difference written off; large one only as residual", ["test_golive.Clearing.test_manual_clearing_tolerance_residual_and_refusal"]),
+             ("R2R-19", "Down payment request, payment and clearing", "F-47 F-48 F-54", "Special G/L A kept apart; cleared against the invoice", ["test_golive.Clearing.test_down_payment_request_payment_and_clearing"]),
+             ("R2R-20", "Posting periods per account type and period 13", "OB52 F-02", "Vendor interval enforced; special period only in December", ["test_golive.Periods.test_account_type_interval_and_special_period"]),
+             ("R2R-21", "Data takeover for go-live", "ZIMPORT", "Simulation saves nothing; bad lines reported; takeover account balances", ["test_golive.Import.test_simulate_then_post_with_line_errors"]),
          ]),
     # ------------------------------------------------------------------ CO
     dict(id="CTL", folder="7", module="CO", map="ZCO_PROCESS", version="2.1",

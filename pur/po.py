@@ -21,11 +21,13 @@ from .sourcing import net_price
 from mm.util import parse_int  # noqa: E402
 
 
-def _value(conn, ebeln):
-    """PO value in local currency (release strategy), exact integer arithmetic."""
+def _value(conn, ebeln, only=None):
+    """PO value in local currency (release strategy), exact integer arithmetic.
+    only: item numbers to include (default all)."""
     h = conn.execute("SELECT waers, bedat FROM po_header WHERE ebeln=?", (ebeln,)).fetchone()
     total = sum(value_of(r["menge"], r["netpr"], r["peinh"]) + (r["frb"] or 0) for r in conn.execute(
-        "SELECT menge, netpr, peinh, frb FROM po_item WHERE ebeln=? AND loekz=0", (ebeln,)))
+        "SELECT ebelp, menge, netpr, peinh, frb FROM po_item WHERE ebeln=? AND loekz=0", (ebeln,))
+        if only is None or r["ebelp"] in only)
     waers = (h["waers"] if h else None) or LOCAL_CURRENCY
     if waers != LOCAL_CURRENCY:
         from fi.document import rate, to_local
@@ -52,6 +54,12 @@ def create_po(conn, data, user):
             raise MMError("Vendor %s does not exist" % lifnr, "06", "301")
         from md import checks as mdc
         mdc.vendor_for_purchasing(conn, v)
+        # items without an agreed source (contract or earlier info record with this
+        # vendor) fall under the three-quotations rule
+        unsourced = [n * 10 for n, it in enumerate(items, start=1)
+                     if not it.get("konnr") and not (it.get("matnr") and conn.execute(
+                         "SELECT 1 FROM info_record WHERE lifnr=? AND matnr=?",
+                         (lifnr, (it.get("matnr") or "").upper())).fetchone())]
         ebeln = str(next_number(conn, "PO"))
         conn.execute("INSERT INTO po_header (ebeln,lifnr,bedat,ernam,erdat,bsart,ekorg,ekgrp,"
                      "zterm,waers,angnr) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -165,10 +173,37 @@ def create_po(conn, data, user):
                                  "matnr=? AND werks=?", (ebeln, ebelp, lifnr, matnr, werks))
                 conn.execute("UPDATE quota SET qubmg=qubmg+? WHERE matnr=? AND werks=? AND "
                              "lifnr=?", (menge, matnr, werks, lifnr))
-        codes = _strategy(_value(conn, ebeln))
-        conn.execute("UPDATE po_header SET frgst=?, frgke=?, frgzu='' WHERE ebeln=?",
-                     (",".join(codes), "B" if codes else "", ebeln))
+        total = _value(conn, ebeln)
+        codes = _strategy(total)
+        extra = _quotation_rule(conn, data, _value(conn, ebeln, unsourced) if unsourced else 0)
+        if extra and extra not in codes:
+            codes = [extra] + codes
+        conn.execute("UPDATE po_header SET frgst=?, frgke=?, frgzu='', rfq_reason=? WHERE ebeln=?",
+                     (",".join(codes), "B" if codes else "", (data.get("rfq_reason") or "")[:80], ebeln))
     return ebeln
+
+
+def _quotation_rule(conn, data, total):
+    """DOC-001: from QUOTATION_LIMIT a PO needs an award from an RFQ collective number
+    with at least QUOTATION_MIN quotations (ME49), or a reason - then release R1."""
+    from .config import QUOTATION_LIMIT, QUOTATION_MIN
+    if total < QUOTATION_LIMIT:
+        return None
+    ang = data.get("angnr")
+    if ang:
+        r = conn.execute("SELECT submi FROM rfq WHERE anfnr=?", (str(ang),)).fetchone()
+        n = conn.execute("SELECT COUNT(DISTINCT lifnr) FROM rfq WHERE submi=? AND COALESCE(netpr,0)>0",
+                         (r["submi"],)).fetchone()[0] if r and r["submi"] else 0
+        if n >= QUOTATION_MIN:
+            return None
+        if not (data.get("rfq_reason") or "").strip():
+            raise MMError("RFQ %s has only %d quotation(s) - %d are needed from %.2f EGP, or enter a reason"
+                          % (ang, n, QUOTATION_MIN, QUOTATION_LIMIT / 100.0), "ME", "395")
+    elif not (data.get("rfq_reason") or "").strip():
+        raise MMError("Purchase orders from %.2f EGP need %d quotations (RFQ, ME49) - refer to the "
+                      "awarded quotation or enter a reason for the single source"
+                      % (QUOTATION_LIMIT / 100.0, QUOTATION_MIN), "ME", "394")
+    return "R1"           # reason given: the purchasing manager must approve
 
 
 def release_po(conn, ebeln, code, user):

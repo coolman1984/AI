@@ -208,7 +208,8 @@ def sample(conn, y, p):
                   lic_no="IMP-%d-0451" % y, lic_valid=lic_valid, duty="10")), USER)
     # 3 ---------------------------------------------------------- PO, GR to QI, release
     from pur import po
-    ebeln = po.create_po(conn, {"lifnr": cn, "bedat": d(3), "ekgrp": "002", "items": [
+    ebeln = po.create_po(conn, {"lifnr": cn, "bedat": d(3), "ekgrp": "002",
+                                "rfq_reason": "Sole licensed importer of the item", "items": [
         {"matnr": "TR-5001", "menge": "600", "netpr": "45", "werks": "1000", "lgort": "0004",
          "eindt": d(20)}]}, USER)
     po.release_all(conn, ebeln, USER)

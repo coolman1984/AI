@@ -5,7 +5,7 @@ PUR_COLUMN_ADDS = {
                   ("ekgrp", "TEXT DEFAULT '001'"), ("frgke", "TEXT DEFAULT ''"),
                   ("frgzu", "TEXT DEFAULT ''"), ("frgst", "TEXT DEFAULT ''"),
                   ("angnr", "TEXT"), ("zterm", "TEXT"), ("waers", "TEXT DEFAULT 'EGP'"),
-                  ("printed", "INTEGER DEFAULT 0")],
+                  ("printed", "INTEGER DEFAULT 0"), ("rfq_reason", "TEXT DEFAULT ''")],
     "po_item": [("eindt", "TEXT"), ("knttp", "TEXT DEFAULT ''"), ("kostl", "TEXT"),
                 ("aufnr", "TEXT"), ("sakto", "TEXT"), ("txz01", "TEXT"),
                 ("matkl", "TEXT"), ("meins", "TEXT"), ("banfn", "TEXT"),

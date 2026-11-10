@@ -36,6 +36,11 @@ PR_RELEASE = [
     # (code, description, release from total value)
     ("R1", "Head of department", 2500000),
 ]
+# DOC-001 "three quotations": a PO from this value (cents) needs an award from an RFQ
+# with at least QUOTATION_MIN quotations - or a reason, then the purchasing manager
+# (R1) must release it even below the release limit
+QUOTATION_LIMIT = 25000000          # 250,000.00 EGP
+QUOTATION_MIN = 3
 PO_RELEASE = [
     ("R1", "Purchasing manager", 10000000),
     ("R2", "Finance director", 50000000),

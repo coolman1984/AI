@@ -159,6 +159,19 @@ def migrate_schema(conn):
     conn.executescript(FI_SCHEMA)
     from sec.schema import SEC_SCHEMA
     conn.executescript(SEC_SCHEMA)
+    from .inventory import INV_SCHEMA
+    conn.executescript(INV_SCHEMA)
+    from .periods import MMPER_SCHEMA
+    conn.executescript(MMPER_SCHEMA)
+    from .forms import OUT_SCHEMA
+    conn.executescript(OUT_SCHEMA)
+    from fi.wht import WHT_SCHEMA, install as wht_install
+    conn.executescript(WHT_SCHEMA)
+    wht_install(conn)
+    from fi.clearing import DP_SCHEMA
+    conn.executescript(DP_SCHEMA)
+    from fi.document import PERIOD_SCHEMA
+    conn.executescript(PERIOD_SCHEMA)
     ranges = list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()) + \
         [("FI_" + k, v) for k, v in FI_RANGES.items()] + \
         list(PUR_NUMBER_RANGES.items()) + list(SD_NUMBER_RANGES.items())

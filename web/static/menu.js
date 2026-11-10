@@ -64,7 +64,9 @@ const MENU = [
   ]],
   ["Logistics Execution", [
     ["Materials Management", [
-      ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5K", "ZMM_COCKPIT"]],
+      ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5B", "MB5K", "ZMM_COCKPIT"]],
+      ["Physical Inventory", ["MI01", "MI03", "MI04", "MI11", "MI20", "MI07", "MICN"]],
+      ["Period", ["MMPV", "MMRV"]],
       ["Purchasing", ["ME21N", "ME23N", "ME2M"]],
       ["Logistics Invoice Verification", ["MIRO", "MR8M", "MRBR"]],
       ["Purchasing Info & Reports", ["ME12", "ME13", "ME03", "ME1L", "ME52N", "ME61", "ME6H"]],
@@ -81,7 +83,8 @@ const MENU = [
     ["Accounts Receivable", [
       ["Master Records", ["XD01", "XD03", "FD32"]],
       ["Document Entry", ["FB70", "FB75", "F-28"]],
-      ["Account", ["FD10N", "FBL5N"]],
+      ["Account", ["FD10N", "FBL5N", "F-32"]],
+      ["Down Payment", ["F-37", "F-29", "F-39"]],
       ["Periodic Processing", ["F150"]],
       ["Information System", ["S_ALR_87012168", "FD32"]],
     ]],
@@ -89,7 +92,9 @@ const MENU = [
       ["Master Records", ["XK01", "XK03"]],
       ["Document Entry", ["FB60", "FB65", "MIRO", "F-53"]],
       ["Invoice Verification", ["MIRO", "MR8M", "MRBR"]],
-      ["Account", ["FK10N", "FBL1N"]],
+      ["Account", ["FK10N", "FBL1N", "F-44"]],
+      ["Down Payment", ["F-47", "F-48", "F-54"]],
+      ["Withholding Tax", ["ZWHT", "ZWHT_RPT"]],
       ["Periodic Processing", ["F110"]],
       ["Information System", ["S_ALR_87012078"]],
     ]],
@@ -102,7 +107,7 @@ const MENU = [
       ["Master Records", ["FS00", "OB08"]],
       ["Document Entry", ["F-02", "FB50", "FBS1"]],
       ["Document", ["FB03", "FB08", "FBRA", "F.81"]],
-      ["Account", ["FS10N", "FBL3N", "F.13"]],
+      ["Account", ["FS10N", "FBL3N", "F.13", "F-03"]],
       ["Information System", ["S_ALR_87012277", "F.01", "FAGLB03", "S_ALR_87012284", "S_ALR_87012182", "S_ALR_87012089"]],
     ]],
     ["!Investment Management", []],
@@ -159,7 +164,7 @@ MENU.push(
     ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],
-    ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV"]],
+    ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV", "ZPRINT"]],
     ["e-Learning & Quality", ["ZLMS", "ZQA_TEST", "ZQA_CHECK"]],
     ["More transactions", ["OKEON", "CS12", "MC82", "KKAO", "VKM3", "IW53"]],
   ]],
@@ -167,6 +172,7 @@ MENU.push(
     ["AMS - ID & Authorization", ["ZAMS", "ZINBOX", "SU53"]],
     ["User Maintenance", ["SU01", "PFCG", "SUIM"]],
     ["Monitoring", ["SM04", "SM20"]],
+    ["Data Transfer (go-live)", ["ZIMPORT"]],
   ]]);
 // N-ERP order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
