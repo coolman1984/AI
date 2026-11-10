@@ -13,6 +13,7 @@ import datetime
 from mm.util import amt_out, qty_out, rdiv, value_of
 
 from .config import PURCH_GROUPS, VENDOR_EVAL
+from mm import util as mmclock  # noqa: E402
 
 
 def _a(c):
@@ -38,7 +39,7 @@ def po_lines(conn, lifnr="", matnr="", ekgrp="", knttp=None, open_only=False, d1
     if d2:
         sql += " AND h.bedat<=?"
         args.append(d2)
-    today = datetime.date.today().isoformat()
+    today = mmclock.today().isoformat()
     out = []
     for r in conn.execute(sql + " ORDER BY h.ebeln DESC, i.ebelp", args):
         d = dict(r)
@@ -134,7 +135,7 @@ def vendor_evaluation(conn, d1=None, d2=None):
 
 
 def cockpit(conn, d1, d2):
-    today = datetime.date.today().isoformat()
+    today = mmclock.today().isoformat()
     lines = conn.execute("SELECT h.lifnr, h.bedat, h.ekgrp, h.frgke, i.* FROM po_header h "
                          "JOIN po_item i ON i.ebeln=h.ebeln WHERE i.loekz=0").fetchall()
     names = {v["lifnr"]: v["name"] for v in conn.execute("SELECT lifnr, name FROM vendor")}

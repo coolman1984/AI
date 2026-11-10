@@ -6,6 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from co.seed import sample_period_start  # noqa: E402
 from fi import aa, ap, ar, gl, reports  # noqa: E402
 from fi.document import signed  # noqa: E402
@@ -16,7 +18,7 @@ from mm.util import MMError  # noqa: E402
 _DB = {}
 P = sample_period_start()
 Y, M = P.year, P.month
-TODAY = datetime.date.today().isoformat()
+TODAY = fixture.T.isoformat()
 
 
 def demo():
@@ -77,7 +79,7 @@ class Payables(unittest.TestCase):
         self.assertEqual(l["160000"], -114000)
         r = c.execute("SELECT netdt FROM acc_doc_item WHERE belnr=? AND koart='K'",
                       (b,)).fetchone()
-        due = (datetime.date.today() + datetime.timedelta(days=30)).isoformat()
+        due = (fixture.T + datetime.timedelta(days=30)).isoformat()
         self.assertEqual(r["netdt"], due)                 # NT30
         co = c.execute("SELECT COUNT(*) FROM co_item WHERE vrgng='COIN' AND objnr="
                        "'KS8100' AND sgtxt IS NOT NULL AND belnr IN (SELECT belnr FROM "

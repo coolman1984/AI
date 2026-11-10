@@ -4,12 +4,52 @@ All quantities are stored as integers in 1/1000 of the base unit ("milli").
 All values are stored as integers in 1/100 of the currency ("cents").
 This keeps every calculation exact, like SAP packed decimals.
 """
+import calendar
 import datetime
+import threading
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 QTY_SCALE = 1000
 CUR_SCALE = 100
 CURRENCY = "EGP"
+
+
+# ---------------------------------------------------------------- business clock
+# Every "today" in the system comes from here. Tests, the seed and the QA runner
+# set a fixed business date (per thread), so results never depend on the day the
+# code runs; normal operation uses the computer's date.
+_CLOCK = threading.local()
+
+
+def set_clock(day=None):
+    """Fix the business date of the current thread (date, ISO text or None = real date).
+    Returns the previous value so callers can restore it."""
+    old = getattr(_CLOCK, "day", None)
+    if isinstance(day, str):
+        day = datetime.date.fromisoformat(day)
+    _CLOCK.day = day
+    return old
+
+
+def today():
+    d = getattr(_CLOCK, "day", None)
+    return d if d is not None else datetime.date.today()
+
+
+def now():
+    d = getattr(_CLOCK, "day", None)
+    real = datetime.datetime.now()
+    if d is None:
+        return real
+    return datetime.datetime.combine(d, real.time())
+
+
+def day_in_month(y, m, day, cap=None):
+    """date(y, m, day) clamped to the month's last day (and to cap, if given)."""
+    d = datetime.date(y, m, min(day, calendar.monthrange(y, m)[1]))
+    if cap is not None and d > cap:
+        d = max(cap, datetime.date(y, m, 1)) if (cap.year, cap.month) == (y, m) else d
+    return d
 
 
 class MMError(Exception):
@@ -93,7 +133,7 @@ def price_of(value_c, qty_m, peinh):
 def parse_date(text, default_today=True):
     if text is None or str(text).strip() == "":
         if default_today:
-            return datetime.date.today().isoformat()
+            return today().isoformat()
         raise MMError("Enter a date", "00", "055")
     s = str(text).strip()
     for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
@@ -105,4 +145,68 @@ def parse_date(text, default_today=True):
 
 
 def now_ts():
-    return datetime.datetime.now().replace(microsecond=0).isoformat(sep=" ")
+    return now().replace(microsecond=0).isoformat(sep=" ")
+
+
+# ---------------------------------------------------------------- input parsing
+# Every value that comes from a screen goes through one of these; a bad or
+# missing entry is a business message (HTTP 422), never an internal error.
+def parse_int(text, what="number", lo=None, hi=None, default=None):
+    if text is None or str(text).strip() == "":
+        if default is not None:
+            return default
+        raise MMError("Enter %s" % what, "00", "055")
+    try:
+        v = int(str(text).strip())
+    except ValueError:
+        raise MMError("Entry '%s' is not a valid %s" % (text, what), "00", "088")
+    if (lo is not None and v < lo) or (hi is not None and v > hi):
+        raise MMError("%s %s is not allowed (%s - %s)" % (what.capitalize(), v, lo, hi), "00", "089")
+    return v
+
+
+def parse_year(text, default=None):
+    return parse_int(text, "fiscal year", 1900, 2999, default)
+
+
+def parse_period(text, default=None):
+    return parse_int(text, "period", 1, 16, default)
+
+
+def parse_key(text, what):
+    v = str(text or "").strip().upper()
+    if not v:
+        raise MMError("Enter %s" % what, "00", "055")
+    return v
+
+
+def require(body, *names):
+    """Values of required fields of a request body (raises 'Enter ...')."""
+    out = []
+    for n in names:
+        v = (body or {}).get(n)
+        if v is None or str(v).strip() == "":
+            raise MMError("Enter %s" % n, "00", "055")
+        out.append(v)
+    return out if len(out) != 1 else out[0]
+
+
+def parse_price(text, allow_zero=True):
+    """Price in currency units -> cents (exact)."""
+    return parse_amount(text, allow_zero=allow_zero)
+
+
+def parse_pct(text):
+    """Percentage -> basis points (1/100 %), exact."""
+    if text is None or str(text).strip() == "":
+        return 0
+    d = _to_decimal(text, "percentage")
+    return int((d * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+def parse_rate(text):
+    """Exchange rate -> x 100000, exact."""
+    d = _to_decimal(text, "exchange rate")
+    if d <= 0:
+        raise MMError("Exchange rate must be positive", "SG", "100")
+    return int((d * 100000).quantize(Decimal("1"), rounding=ROUND_HALF_UP))

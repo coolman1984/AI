@@ -8,6 +8,7 @@ from mm.util import MMError, amt_out, qty_out, parse_qty
 from sd import billing, config as C, delivery, order, pricing, reports, service
 
 from .server import db, route
+from mm import util as mmclock  # noqa: E402
 
 AMT = {"netwr", "mwsbk", "netpr", "mwsbp", "wavwr", "kzwi1", "kzwi2", "freight", "kwert", "value", "gross",
        "disc", "net", "cogs", "revenue", "deductions", "cost", "margin", "returns", "credits", "order_value",
@@ -41,7 +42,7 @@ def _conds(cs):
 
 
 def _month():
-    t = datetime.date.today()
+    t = mmclock.today()
     return "%04d-%02d-01" % (t.year, t.month), t.isoformat()
 
 
@@ -119,7 +120,7 @@ def sd_price(req, q):
     if not cust:
         raise MMError("Customer %s does not exist" % k, "V1", "002")
     r = pricing.price_item(c, cust, order.area_of(c, k), (q.get("matnr") or "").upper(),
-                           parse_qty(q.get("qty") or "1"), q.get("date") or datetime.date.today().isoformat(),
+                           parse_qty(q.get("qty") or "1"), q.get("date") or mmclock.today().isoformat(),
                            manual_disc=q.get("disc") or None, inco1=(order.area_of(c, k) or {}).get("inco1"))
     for cc in r["conds"]:
         cc["text"] = C.COND_TYPES.get(cc["kschl"], {}).get("text", "")
@@ -152,7 +153,7 @@ def sd_condition_del(req, q):
 # ====================================================================== shipping
 @route("GET", "/api/sd/duelist")
 def sd_due(req, q):
-    return out(delivery.due_list(db(), q.get("until") or datetime.date.today().isoformat()))
+    return out(delivery.due_list(db(), q.get("until") or mmclock.today().isoformat()))
 
 
 @route("POST", "/api/sd/delivery")
@@ -167,9 +168,13 @@ def sd_delivery(req, q, v):
     return out(delivery.detail(db(), v))
 
 
-@route("POST", "/api/sd/delivery/(?P<v>[0-9]+)/(?P<act>pick|gi|reverse)")
+@route("POST", "/api/sd/delivery/(?P<v>[0-9]+)/(?P<act>pick|gi|reverse|delete|change)")
 def sd_delivery_act(req, q, v, act):
     c = db()
+    if act == "delete":
+        return delivery.delete(c, v, req.user)
+    if act == "change":
+        return delivery.change(c, v, req.body.get("items") or {}, req.user)
     if act == "pick":
         delivery.pick(c, v, req.body.get("items"))
         return {"message": "Delivery %s picked" % v}

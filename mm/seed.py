@@ -4,11 +4,12 @@ import datetime
 import random
 
 from . import master, posting
+from mm import util as mmclock  # noqa: E402
 
 USER = "DEMO"
 
 
-ANCHOR = [datetime.date.today()]
+ANCHOR = [mmclock.today()]
 
 
 def _d(days_ago):
@@ -17,11 +18,25 @@ def _d(days_ago):
     return (ANCHOR[0] - datetime.timedelta(days=days_ago)).isoformat()
 
 
-def seed(conn):
+def seed(conn, business_date=None):
     """Full demo: CO master data, ~4 months of MM history, then the CO plan
-    and one complete CO sample month (see co/seed.py)."""
+    and one complete CO sample month (see co/seed.py).
+    All or nothing: the whole demo is one transaction, so a failure leaves an
+    empty database (seeded again on the next start), never a half-filled one.
+    business_date fixes "today" for the demo (tests use a fixed date)."""
     if conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0]:
         return None
+    from .db import transaction
+    old = mmclock.set_clock(business_date) if business_date else None
+    try:
+        with transaction(conn):
+            return _seed(conn)
+    finally:
+        if business_date:
+            mmclock.set_clock(old)
+
+
+def _seed(conn):
     from co import seed as co_seed
     sample_start = co_seed.sample_period_start()
     ANCHOR[0] = sample_start - datetime.timedelta(days=1)
@@ -110,6 +125,15 @@ def seed_mm(conn, before=None):
                                        for w in plants]}, USER)
 
     def post(days_ago, items, text=""):
+        # the random demo history skips a consumption that the stock cannot cover
+        # (instead of posting it and recording a failure)
+        for i in items:
+            if i.get("bwart") == "201":
+                have = conn.execute("SELECT COALESCE(SUM(qty),0) FROM quant WHERE matnr=? AND "
+                                    "werks=? AND lgort=? AND insmk='U'",
+                                    (i["matnr"], i["werks"], i["lgort"])).fetchone()[0]
+                if int(i["qty"]) * 1000 > have:
+                    return None
         try:
             return posting.post_goods_movement(
                 conn, {"budat": _d(days_ago), "bktxt": text}, items, USER)

@@ -6,6 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from mm import seed  # noqa: E402
 from mm.db import connect  # noqa: E402
 from mm.posting import post_goods_movement  # noqa: E402
@@ -13,7 +15,7 @@ from mm.util import MMError  # noqa: E402
 from pp import master, order, planning, service, subcon  # noqa: E402
 
 _DB = {}
-T = datetime.date.today()
+T = fixture.T
 TODAY = T.isoformat()
 
 

@@ -34,6 +34,40 @@ from mm.db import DEFAULT_DB, connect  # noqa: E402
 from web.server import serve  # noqa: E402
 
 
+def setup_log():
+    from mm.log import setup
+    return setup()
+
+
+def show_startup_error(host, port, err):
+    """Serve one page that explains the problem (the server runs without a console)."""
+    import html
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    page = ("<!doctype html><meta charset='utf-8'><title>MM Core</title><body style='font-family:"
+            "Arial;margin:40px'><h2>MM Core could not start</h2><p>%s</p><p>Details are in "
+            "<code>data/mm_core.log</code>. Restore a backup with <code>run.py --restore</code> or "
+            "load fresh demo data with <code>tools\\Reset - fresh demo data.bat</code>.</p>"
+            % html.escape(str(err))).encode("utf-8")
+
+    class H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(500)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(page)))
+            self.end_headers()
+            self.wfile.write(page)
+
+        def log_message(self, *a):
+            pass
+    try:
+        srv = HTTPServer((host, port), H)
+    except OSError:
+        return
+    threading.Timer(0.5, lambda: webbrowser.open("http://localhost:%d" % port)).start()
+    threading.Timer(120, srv.shutdown).start()     # do not stay forever
+    srv.serve_forever()
+
+
 def already_running(port):
     """True if MM Core already answers on this port."""
     try:
@@ -84,10 +118,19 @@ def main():
     if a.reset and os.path.exists(db_path):
         os.remove(db_path)
         print("Database deleted:", db_path)
-    conn = connect(db_path)
-    if not a.empty and seed.seed(conn) is not None:
-        print("Demo data loaded.")
-    conn.close()
+    log = setup_log()
+    try:
+        conn = connect(db_path)
+        if not a.empty and seed.seed(conn) is not None:
+            print("Demo data loaded.")
+        conn.close()
+    except Exception as e:      # the server would start on a broken database: show why
+        log.exception("start-up failed")
+        print("MM Core could not start:", e)
+        if a.no_browser:
+            sys.exit(1)
+        show_startup_error(a.host, a.port, e)
+        return
 
     auto_stop = not (a.keep_running or a.no_browser)
     httpd, port = None, a.port

@@ -26,6 +26,8 @@ from mm.posting import post_goods_movement
 
 from . import mrp, po, pr, sourcing
 
+from mm import util as mmclock  # noqa: E402
+
 USER = "DEMO"
 
 
@@ -56,7 +58,7 @@ def master(conn):
 
 
 def sample(conn, y, p):
-    d = lambda day: datetime.date(y, p, day).isoformat()   # noqa: E731
+    d = lambda day: mmclock.day_in_month(y, p, day).isoformat()   # noqa: E731
     start = datetime.date(y, 1, 1).isoformat()
     konnr = sourcing.create_contract(conn, {
         "lifnr": "100002", "bsart": "MK", "kdatb": start, "kdate": "%s-12-31" % y,

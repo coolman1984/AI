@@ -12,7 +12,7 @@ is written here, so all checks are the same everywhere (like SAP):
 """
 import datetime
 
-from mm.db import next_number
+from mm.db import atomic, next_number
 from mm.util import MMError, rdiv
 
 from .config import (CHART, DOC_TYPES, LOCAL_CURRENCY, NUMBER_RANGES,
@@ -86,6 +86,7 @@ def _account(conn, hkont):
 
 
 # ------------------------------------------------------------------ writer
+@atomic
 def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
           waers=None, kursf=None, tcode=None):
     """lines: dict(hkont, amount [local, debit +], wrbtr [doc currency],
@@ -175,8 +176,8 @@ def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
             "INSERT INTO acc_doc_item (belnr,gjahr,buzei,hkont,shkzg,dmbtr,ktosl,matnr,"
             "werks,menge,zeile,kostl,aufnr,paobj,koart,bschl,lifnr,kunnr,anln1,anbwa,"
             "mwskz,txbase,wrbtr,zfbdt,zterm,zbd1t,zbd1p,netdt,zuonr,sgtxt,ebeln,ebelp,"
-            "rebzg) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
-            "?,?,?)",
+            "rebzg,zlspr,umskz) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
+            "?,?,?,?,?)",
             (belnr, gjahr, i, l["hkont"], shkzg, abs(l["amount"]), l.get("ktosl") or "",
              l.get("matnr"), l.get("werks"), l.get("menge"), l.get("zeile"),
              l.get("kostl"), l.get("aufnr"), l.get("paobj"), l["koart"],
@@ -188,12 +189,13 @@ def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
                                                             or 0) if l.get("ebeln")
                                                 else ""),
              (l.get("sgtxt") or "")[:50], l.get("ebeln"), l.get("ebelp"),
-             l.get("rebzg")))
+             l.get("rebzg"), l.get("zlspr") or None, l.get("umskz") or None))
     integration.post_from_fi(conn, belnr, gjahr, budat, user, awkey, bktxt, lines)
     return belnr
 
 
 # ------------------------------------------------------------------ clearing
+@atomic
 def clear(conn, items, augbl, augdt):
     """Mark open items as cleared by clearing document augbl."""
     for belnr, gjahr, buzei in items:

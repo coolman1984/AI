@@ -15,6 +15,7 @@ from mm.db import rows
 from mm.util import rdiv
 
 from .order import exposure, delivered_qty, billed_qty
+from mm import util as mmclock  # noqa: E402
 
 
 def _sales(conn, d1, d2, by):
@@ -99,7 +100,7 @@ def service_level(conn, d1, d2):
 
 def credit_overview(conn):
     out = []
-    today = datetime.date.today().isoformat()
+    today = mmclock.today().isoformat()
     for c in conn.execute("SELECT * FROM customer WHERE COALESCE(ktokd,'0001') IN ('0001','0003') ORDER BY kunnr"):
         e = exposure(conn, c["kunnr"])
         od = conn.execute("SELECT MIN(netdt), COALESCE(SUM(CASE WHEN netdt<? THEN dmbtr ELSE 0 END),0) FROM "
@@ -125,7 +126,7 @@ def credit_overview(conn):
 def pipeline(conn):
     out = rows(conn.execute("SELECT k.*, c.name FROM sd_vbak k JOIN customer c USING (kunnr) WHERE k.auart IN "
                             "('IN','QT') ORDER BY k.vbeln DESC"))
-    today = datetime.date.today().isoformat()
+    today = mmclock.today().isoformat()
     for k in out:
         k["followed"] = conn.execute("SELECT GROUP_CONCAT(vbeln) FROM sd_vbfa WHERE vbelv=?",
                                      (k["vbeln"],)).fetchone()[0]

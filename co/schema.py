@@ -145,6 +145,9 @@ CREATE TABLE IF NOT EXISTS cycle_run (
 MM_COLUMN_ADDS = {
     "acc_doc_item": [("kostl", "TEXT"), ("aufnr", "TEXT"), ("paobj", "TEXT")],
     "cost_center": [("kosar", "TEXT"), ("khinr", "TEXT"), ("verak", "TEXT")],
+    # reservation of a goods issue (so a reversal reopens it) and FC values of a receipt
+    "mat_doc_item": [("rsnum", "TEXT"), ("rspos", "INTEGER"), ("waers", "TEXT"),
+                     ("kursf", "INTEGER"), ("wrbtr", "INTEGER")],
 }
 
 CO_NUMBER_RANGES = {

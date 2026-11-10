@@ -142,10 +142,17 @@ def connect(path=None):
     for k, v in CHART.items():                      # FS00 initial chart
         conn.execute("INSERT OR IGNORE INTO gl_account (hkont,txt,typ,fsv,recon,oi,tax)"
                      " VALUES (?,?,?,?,?,?,?)", (k, v[0], v[1], v[2], v[3], v[4], v[5]))
+    from .migrations import migrate
+    migrate(conn)
     return conn
 
 
 def next_number(conn, obj):
+    with transaction(conn):
+        return _next_number(conn, obj)
+
+
+def _next_number(conn, obj):
     conn.execute("UPDATE number_range SET current = current + 1 WHERE object = ?",
                  (obj,))
     return conn.execute("SELECT current FROM number_range WHERE object = ?",
@@ -158,7 +165,9 @@ _DEPTH = {}
 class transaction:
     """with transaction(conn): ... -> commit, or rollback on any error.
     Nested use (e.g. billing posts a goods issue inside its own transaction)
-    joins the outer transaction: everything is saved or nothing."""
+    joins the outer transaction through a SAVEPOINT: if the inner block fails,
+    only its own writes are undone, even when the caller catches the error and
+    continues; everything is committed (or rolled back) by the outermost block."""
 
     def __init__(self, conn):
         self.conn = conn
@@ -166,24 +175,44 @@ class transaction:
     def __enter__(self):
         WRITE_LOCK.acquire()
         k = id(self.conn)
-        if _DEPTH.get(k, 0) == 0:
-            self.conn.execute("BEGIN IMMEDIATE")
-        _DEPTH[k] = _DEPTH.get(k, 0) + 1
+        try:
+            depth = _DEPTH.get(k, 0)
+            if depth == 0:
+                self.conn.execute("BEGIN IMMEDIATE")
+            else:
+                self.conn.execute("SAVEPOINT sp%d" % depth)
+            _DEPTH[k] = depth + 1
+        except BaseException:
+            WRITE_LOCK.release()
+            raise
         return self.conn
 
     def __exit__(self, exc_type, exc, tb):
         k = id(self.conn)
         try:
             _DEPTH[k] -= 1
-            if _DEPTH[k] == 0:
+            depth = _DEPTH[k]
+            if depth == 0:
                 del _DEPTH[k]
-                if exc_type is None:
-                    self.conn.execute("COMMIT")
-                else:
-                    self.conn.execute("ROLLBACK")
+                self.conn.execute("COMMIT" if exc_type is None else "ROLLBACK")
+            else:
+                if exc_type is not None:
+                    self.conn.execute("ROLLBACK TO sp%d" % depth)
+                self.conn.execute("RELEASE sp%d" % depth)
         finally:
             WRITE_LOCK.release()
         return False
+
+
+def atomic(fn):
+    """Decorator: the function always runs inside a transaction (joins the caller's)."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(conn, *args, **kw):
+        with transaction(conn):
+            return fn(conn, *args, **kw)
+    return wrapper
 
 
 def rows(cur):

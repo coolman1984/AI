@@ -14,10 +14,12 @@ import time
 import unittest
 
 from . import catalog
+from mm import util as mmclock  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTS = os.path.join(ROOT, "tests")
 LAST = os.path.join(ROOT, "exports", "qa_last_run.json")
+BUSINESS_DATE = datetime.date(2026, 11, 9)     # same as tests/fixture.py
 
 
 class _Collect(unittest.TestResult):
@@ -51,11 +53,16 @@ def run(user="QA"):
     if TESTS not in sys.path:
         sys.path.insert(0, TESTS)
     t0 = time.time()
-    for name in [m for m in sys.modules if m.startswith("test_")]:
+    for name in [m for m in sys.modules if m.startswith("test_") or m == "fixture"]:
         del sys.modules[name]           # fresh test modules = fresh sample system every run
-    suite = unittest.defaultTestLoader.discover(TESTS, top_level_dir=TESTS)
-    res = _Collect()
-    suite.run(res)
+    # the tests run on a fixed business date in this thread only; restore afterwards
+    old = mmclock.set_clock(BUSINESS_DATE)
+    try:
+        suite = unittest.defaultTestLoader.discover(TESTS, top_level_dir=TESTS)
+        res = _Collect()
+        suite.run(res)
+    finally:
+        mmclock.set_clock(old)
     tests = res.res
     procs, total, passed = [], 0, 0
     mapped = set()
@@ -77,10 +84,10 @@ def run(user="QA"):
         procs.append(dict(id=p["id"], name=p["name"], module=p["module"], cases=cases, passed=ok,
                           total=len(cases)))
     unmapped = sorted(set(tests) - mapped)
-    out = dict(run_at=datetime.datetime.now().isoformat(timespec="seconds"), user=user,
+    out = dict(run_at=mmclock.now().isoformat(timespec="seconds"), user=user,
                seconds=round(time.time() - t0, 1), unit_tests=len(tests),
                unit_passed=sum(v["status"] == "P" for v in tests.values()),
-               cases=total, passed=passed, failed=total - passed, processes=procs, unmapped=unmapped)
+               cases=total, passed=passed, business_date=BUSINESS_DATE.isoformat(), failed=total - passed, processes=procs, unmapped=unmapped)
     os.makedirs(os.path.dirname(LAST), exist_ok=True)
     with open(LAST, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=1)

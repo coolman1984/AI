@@ -6,13 +6,15 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import fixture  # noqa: E402,F401  (fixed business date)
+
 from mm import seed  # noqa: E402
 from mm.db import connect  # noqa: E402
 from mm.util import MMError  # noqa: E402
 from sd import billing, delivery, order, pricing, reports, service  # noqa: E402
 
 _DB = {}
-T = datetime.date.today()
+T = fixture.T
 TODAY = T.isoformat()
 D1 = T.replace(day=1).isoformat()
 
@@ -71,7 +73,11 @@ class Orders(unittest.TestCase):
     def test_quotation_to_order_flow(self):
         c = demo()
         qt = first(c, "QT", "C1004")
-        self.assertEqual(qt["gbstk"], "C")
+        self.assertEqual(qt["gbstk"], "B")            # 10 of 12 ordered: partly referenced
+        r = order.create(c, dict(auart="OR", vgbel=qt["vbeln"], audat=TODAY), "T")
+        self.assertEqual(c.execute("SELECT kwmeng FROM sd_vbap WHERE vbeln=?", (r["vbeln"],)).fetchone()[0],
+                         2000)                        # only the open 2 are proposed
+        self.assertEqual(first(c, "QT", "C1004")["gbstk"], "C")
         err(self, lambda: order.create(c, dict(auart="OR", vgbel=qt["vbeln"], audat=TODAY), "T"), "017")
         flow = [f["vbtyp"] for f in order.docflow(c, first(c, "OR", "C1004")["vbeln"])]
         for t in ("A", "B", "C", "J", "M", "H", "O"):

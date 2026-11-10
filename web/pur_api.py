@@ -12,11 +12,12 @@ from pur.config import (ACCT_ASSIGN, CONDITIONS, CONTRACT_TYPES, EKORG, EKORG_TE
                         PURCH_GROUPS, VENDOR_EVAL)
 
 from .server import db, route
+from mm import util as mmclock  # noqa: E402
 
 
 def _period():
     s = db().execute("SELECT value FROM settings WHERE key='co_sample'").fetchone()
-    t = datetime.date.today()
+    t = mmclock.today()
     y, p = (int(s["value"][:4]), int(s["value"][5:7])) if s else (t.year, t.month)
     return "%04d-%02d-01" % (y, p), "%04d-%02d-%02d" % (y, p, calendar.monthrange(y, p)[1])
 

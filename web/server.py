@@ -19,6 +19,7 @@ from mm.config import (GL_ACCOUNTS, MATERIAL_TYPES, MOVEMENT_TYPES, STOCK_TYPES,
 from mm.db import connect, rows
 from mm.util import CURRENCY, MMError, amt_out, qty_out
 from office import com_bridge
+from mm import util as mmclock  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC = os.path.join(ROOT, "web", "static")
@@ -48,7 +49,7 @@ def route(method, pattern):
 def api_meta(req, q):
     c = db()
     return {
-        "user": req.user, "currency": CURRENCY, "today": datetime.date.today()
+        "user": req.user, "currency": CURRENCY, "today": mmclock.today()
         .isoformat(),
         "plants": rows(c.execute("SELECT * FROM plant ORDER BY werks")),
         "slocs": rows(c.execute("SELECT * FROM sloc ORDER BY werks, lgort")),
@@ -301,7 +302,7 @@ def api_excel_export(req, q):
     os.makedirs(EXPORTS, exist_ok=True)
     name = re.sub(r"[^A-Za-z0-9_-]+", "_", b.get("title") or "export")
     path = os.path.join(EXPORTS, "%s_%s.xlsx" % (
-        name, datetime.datetime.now().strftime("%Y%m%d_%H%M%S")))
+        name, mmclock.now().strftime("%Y%m%d_%H%M%S")))
     com_bridge.excel_write(path, [{"name": (b.get("title") or "Data")[:31],
                                    "header": b.get("header") or [],
                                    "rows": b.get("rows") or []}], visible=True)
@@ -382,10 +383,14 @@ class Handler(BaseHTTPRequestHandler):
                 except com_bridge.ComError as e:
                     return self._json(422, {"type": "E", "class": "COM",
                                             "number": "001", "text": str(e)})
-                except Exception as e:  # noqa
+                except Exception:  # noqa - details go to the log, not to the browser
+                    import secrets
+                    from mm.log import LOG
+                    ref = "%s-%s" % (time.strftime("%Y%m%d%H%M%S"), secrets.token_hex(3))
+                    LOG.exception("internal error %s on %s %s", ref, method, u.path)
                     traceback.print_exc()
-                    return self._json(500, {"type": "E", "text": "Internal error: "
-                                            "%s" % e})
+                    return self._json(500, {"type": "E", "ref": ref, "text": "Internal error - "
+                                            "reference %s (details in data/mm_core.log)" % ref})
         self._json(404, {"type": "E", "text": "Unknown function %s" % u.path})
 
     def _json(self, code, obj):

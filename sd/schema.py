@@ -3,6 +3,7 @@ activities, equipment, notifications, e-invoices. Billing uses the existing
 VBRK/VBRP tables (billing / billing_item) with additional fields."""
 
 SD_COLUMN_ADDS = {
+    "sd_vbak": [("cmfre", "TEXT")],          # date of the last credit release (VKM1)
     "billing": [("fkart", "TEXT DEFAULT 'F2'"), ("vbtyp", "TEXT DEFAULT 'M'"), ("vgbel", "TEXT"),
                 ("kunrg", "TEXT"), ("zterm", "TEXT"), ("mwsbk", "INTEGER DEFAULT 0"),
                 ("waerk", "TEXT DEFAULT 'EGP'"), ("rfbsk", "TEXT DEFAULT 'C'"), ("sfakn", "TEXT"),

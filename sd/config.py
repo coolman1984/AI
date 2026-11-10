@@ -119,7 +119,7 @@ FREIGHT_ACCOUNT = "805000"     # ERF freight revenue
 SERVICE_ACCOUNT = "810000"
 
 # ---------------------------------------------------------------- credit
-CREDIT = dict(area="1000", oldest_days=30, horizon_days=30,
+CREDIT = dict(area="1000", oldest_days=30, horizon_days=30, release_days=7,
               text="Dynamic check: open items + open orders + open deliveries + open billing; "
                    "block if exposure > limit or an item is overdue more than 30 days")
 RISK_CATEGORIES = {"001": "Low risk", "002": "Medium risk", "003": "High risk"}

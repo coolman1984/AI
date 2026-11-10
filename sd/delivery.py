@@ -42,6 +42,8 @@ def due_list(conn, until):
 def create(conn, vbeln, user, lfdat=None, items=None):
     """VL01N for all due items of one order (or given {posnr: qty})."""
     lfdat = parse_date(lfdat)
+    if items is not None:
+        items = {str(k): v for k, v in items.items()}
     with transaction(conn):
         k = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
         if not k:
@@ -137,6 +139,8 @@ def post_gi(conn, vbeln, user, budat=None):
             pick(conn, vbeln)
         lips = conn.execute("SELECT * FROM sd_lips WHERE vbeln=? ORDER BY posnr", (vbeln,)).fetchall()
         k = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (h["vgbel"],)).fetchone()
+        if h["lfart"] != "LR":
+            _check_before_goods_issue(conn, k, lips, budat)
         lines = []
         for l in lips:
             q = l["pikmg"] or l["lfimg"]
@@ -197,6 +201,65 @@ def _equipment(conn, k, vbeln, lips, budat):
             conn.execute("INSERT INTO sd_equi (equnr,matnr,sernr,kunnr,inbdt,gwlen,vbeln,lieferung,eqktx) VALUES "
                          "(?,?,?,?,?,?,?,?,?)", (eq, l["matnr"], "SN%s" % eq[-6:], k["kunwe"], budat, end,
                                                  k["vbeln"], vbeln, l["arktx"]))
+
+
+def _check_before_goods_issue(conn, k, lips, budat):
+    """Goods issue re-checks the order: no rejected items, no delivery block, credit."""
+    if k["lifsk"]:
+        raise MMError("Order %s has delivery block %s" % (k["vbeln"], k["lifsk"]), "VL", "461")
+    for l in lips:
+        p = conn.execute("SELECT abgru FROM sd_vbap WHERE vbeln=? AND posnr=?", (l["vgbel"], l["vgpos"])
+                         ).fetchone()
+        if p and p["abgru"]:
+            raise MMError("Order item %s/%s is rejected - delete it from the delivery"
+                          % (l["vgbel"], l["vgpos"]), "VL", "467")
+    from .credit import check_step
+    check_step(conn, k, "goods_issue", budat)
+
+
+def delete(conn, vbeln, user):
+    """VL02N delete: only while the goods issue is not posted."""
+    with transaction(conn):
+        h = _head(conn, vbeln)
+        if h["wbstk"] == "C":
+            raise MMError("Goods issue of delivery %s is posted - reverse it first (VL09)" % vbeln,
+                          "VL", "605")
+        conn.execute("DELETE FROM sd_lips WHERE vbeln=?", (vbeln,))
+        conn.execute("DELETE FROM sd_vbfa WHERE vbeln=? OR vbelv=?", (vbeln, vbeln))
+        conn.execute("DELETE FROM sd_likp WHERE vbeln=?", (vbeln,))
+        from md.changes import log
+        log(conn, "LIEFERUNG", vbeln, "VL02N", user, [("LIKP", vbeln, "deleted", "", "X")], ind="D")
+        _status(conn, h["vgbel"])
+    return {"message": "Delivery %s deleted" % vbeln}
+
+
+def change(conn, vbeln, items, user):
+    """VL02N: reduce delivery quantities before goods issue ({posnr: qty}, 0 = delete line)."""
+    with transaction(conn):
+        h = _head(conn, vbeln)
+        if h["wbstk"] == "C":
+            raise MMError("Goods issue of delivery %s is posted - no changes" % vbeln, "VL", "606")
+        log = []
+        for posnr, q in {str(k): v for k, v in (items or {}).items()}.items():
+            l = conn.execute("SELECT * FROM sd_lips WHERE vbeln=? AND posnr=?", (vbeln, int(posnr))).fetchone()
+            if not l:
+                raise MMError("Delivery item %s does not exist" % posnr, "VL", "607")
+            qty = parse_qty(q, allow_zero=True)
+            if qty > l["lfimg"]:
+                raise MMError("Item %s: a delivery quantity can only be reduced here" % posnr, "VL", "608")
+            if qty == 0:
+                conn.execute("DELETE FROM sd_lips WHERE vbeln=? AND posnr=?", (vbeln, int(posnr)))
+                conn.execute("DELETE FROM sd_vbfa WHERE vbeln=? AND posnn=?", (vbeln, int(posnr)))
+            else:
+                conn.execute("UPDATE sd_lips SET lfimg=?, pikmg=MIN(COALESCE(pikmg,0),?) WHERE vbeln=? "
+                             "AND posnr=?", (qty, qty, vbeln, int(posnr)))
+            log.append(("LIPS", "%s/%s" % (vbeln, posnr), "lfimg", l["lfimg"], qty))
+        if not conn.execute("SELECT 1 FROM sd_lips WHERE vbeln=?", (vbeln,)).fetchone():
+            conn.execute("DELETE FROM sd_likp WHERE vbeln=?", (vbeln,))
+        from md.changes import log as cdlog
+        cdlog(conn, "LIEFERUNG", vbeln, "VL02N", user, log)
+        _status(conn, h["vgbel"])
+    return {"message": "Delivery %s changed" % vbeln}
 
 
 def reverse_gi(conn, vbeln, user, budat=None):

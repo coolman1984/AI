@@ -34,6 +34,8 @@ from mm.posting import post_goods_movement
 from . import material as mat, partner as bp
 from .partner import make_iban
 
+from mm import util as mmclock  # noqa: E402
+
 USER = "MDADMIN"
 CHECKER = "FINMGR"
 
@@ -176,7 +178,7 @@ def master(conn):
 
 
 def sample(conn, y, p):
-    d = lambda day: datetime.date(y, p, day).isoformat()
+    d = lambda day: mmclock.day_in_month(y, p, day).isoformat()
     lic_valid = datetime.date(y + 1, 12, 31).isoformat()
     # 1 ---------------------------------------------------------- XK01 foreign vendor
     cn = bp.create_vendor(conn, dict(

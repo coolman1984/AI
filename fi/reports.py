@@ -20,6 +20,7 @@ from .ap import discount_date, open_items
 from .config import (ASSET_CLASSES, CHART, FSV_NODES, LOCAL_CURRENCY, PAYMENT_TERMS,
                      TAX_CODES)
 from .document import signed, signed_fc
+from mm import util as mmclock  # noqa: E402
 
 
 def _a(c):
@@ -73,7 +74,7 @@ def account_balance(conn, hkont, gjahr):
 
 # ---------------------------------------------------------------- FBLxN
 def line_items(conn, koart, key="", status="open", key_date=None, d1=None, d2=None):
-    key_date = key_date or datetime.date.today().isoformat()
+    key_date = key_date or mmclock.today().isoformat()
     sql = ("SELECT i.*, h.blart, h.budat, h.bldat, h.xblnr, h.waers, h.bktxt, h.tcode, "
            "h.stblg FROM acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND "
            "h.gjahr=i.gjahr WHERE 1=1")
@@ -122,12 +123,43 @@ def line_items(conn, koart, key="", status="open", key_date=None, d1=None, d2=No
     return out
 
 
+# ---------------------------------------------------------------- carry-forward
+RETAINED_EARNINGS = "081000"
+
+
+def pl_before(conn, gjahr):
+    """Sum (debit +) of all P&L postings before 1 January of gjahr = the result
+    of all previous years, carried forward to retained earnings."""
+    accs = _accounts(conn)
+    pl = [k for k, a in accs.items() if a["typ"] == "PL"]
+    if not pl:
+        return 0
+    return conn.execute("SELECT COALESCE(SUM(CASE WHEN i.shkzg='S' THEN i.dmbtr ELSE -i.dmbtr END),0) "
+                        "FROM acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND h.gjahr=i.gjahr "
+                        "WHERE h.budat<? AND i.hkont IN (%s)" % ",".join("?" * len(pl)),
+                        ["%04d-01-01" % gjahr] + pl).fetchone()[0]
+
+
+def retained_earnings(conn, gjahr):
+    """Balance carry-forward into gjahr. Always computed from the postings (so a late
+    posting into a closed year is carried automatically, like SAP); the F.16 table
+    only records which years were confirmed. Returns (amount, years_not_confirmed)."""
+    amount = pl_before(conn, gjahr)
+    first = conn.execute("SELECT MIN(budat) FROM acc_doc").fetchone()[0]
+    missing = []
+    if first:
+        done = {r[0] for r in conn.execute("SELECT gjahr FROM fi_carry_forward")}
+        missing = [y for y in range(int(first[:4]), gjahr) if y not in done]
+    return amount, missing
+
+
 # ---------------------------------------------------------------- trial balance
 def trial_balance(conn, gjahr, pfrom, pto):
     accs = _accounts(conn)
     d1, d2 = "%04d-%02d-01" % (gjahr, pfrom), eop(gjahr, pto)
     before = "%04d-%02d-01" % (gjahr, pfrom)
     per = _sums(conn, d1, d2)
+    carry, _ = retained_earnings(conn, gjahr)
     out = []
     for k in sorted(accs):
         a = accs[k]
@@ -142,6 +174,8 @@ def trial_balance(conn, gjahr, pfrom, pto):
                               "h.belnr=i.belnr AND h.gjahr=i.gjahr WHERE i.hkont=? AND "
                               "h.budat>=? AND h.budat<?", (k, "%04d-01-01" % gjahr,
                                                             before)).fetchone()[0]
+        if k == RETAINED_EARNINGS:
+            ob += carry                     # balance carry-forward of previous years
         dr, cr = per.get(k, (0, 0))
         if not (ob or dr or cr):
             continue
@@ -161,7 +195,12 @@ def _bs_values(conn, upto, gjahr):
                           "i.hkont", (upto,)):
         vals[r["hkont"]] = r["b"] or 0
     bs = {k: v for k, v in vals.items() if accs.get(k, {}).get("typ") == "BS"}
-    result = -sum(v for k, v in vals.items() if accs.get(k, {}).get("typ") == "PL")
+    # result of the year of the key date only; earlier years are in retained earnings
+    y = int(upto[:4])
+    carry = pl_before(conn, y)
+    if carry:
+        bs[RETAINED_EARNINGS] = bs.get(RETAINED_EARNINGS, 0) + carry
+    result = -(sum(v for k, v in vals.items() if accs.get(k, {}).get("typ") == "PL") - carry)
     return bs, result
 
 

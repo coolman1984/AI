@@ -25,6 +25,7 @@ from mm import master as mmm
 
 from . import aa, ap, ar, gl
 from .ap import open_items
+from mm import util as mmclock  # noqa: E402
 
 USER = "DEMO"
 
@@ -37,7 +38,7 @@ def _months_between(d1, d2):
 def history(conn, start, anchor):
     """start = first day of the MM history month, anchor = last day before
     the sample month."""
-    gl.set_periods(conn, start.year, start.month, datetime.date.today().year, 12)
+    gl.set_periods(conn, start.year, start.month, mmclock.today().year, 12)
     # ---------------------------------------------------------------- OB08
     rates = [(start, "47.80"), (datetime.date(anchor.year, anchor.month, 1) -
                                 datetime.timedelta(days=40), "48.10"),
@@ -174,7 +175,7 @@ def history(conn, start, anchor):
 
 # ====================================================================== sample month
 def sample_before_closing(conn, y, p, internal_order, paint_po):
-    d = lambda day: datetime.date(y, p, day).isoformat()   # noqa: E731
+    d = lambda day: mmclock.day_in_month(y, p, day).isoformat()   # noqa: E731
     import calendar
     eom = d(calendar.monthrange(y, p)[1])
     gl.set_rate(conn, "USD", d(1), "48.50")
@@ -252,5 +253,5 @@ def sample_after_closing(conn, y, p):
                       eom.isoformat(), USER)
     ar.dunning_run(conn, eom.isoformat(), USER, execute=True)
     gl.reverse_accruals(conn, nxt.isoformat(), nxt.isoformat(), USER)
-    today = datetime.date.today()
+    today = mmclock.today()
     gl.set_periods(conn, y, p, today.year, today.month)

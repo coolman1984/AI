@@ -20,6 +20,7 @@ from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv, qty_out
 
 from .config import ORDER_TYPES, CONTROL_KEYS, EXT_COST_ELEMENT, SUBCON_SLOC, STATUS
 from .master import add_workdays, op_duration_days, select_version
+from mm import util as mmclock  # noqa: E402
 
 STAT_ORDER = ["CRTD", "REL", "PCNF", "CNF", "PDLV", "DLV", "TECO", "CLSD", "MSPT", "MACM",
               "GMPS", "EXTP", "PRC", "SETC"]
@@ -62,7 +63,7 @@ def create(conn, data, user):
     gstrp = parse_date(data["gstrp"]) if data.get("gstrp") else None
     gltrp = parse_date(data["gltrp"]) if data.get("gltrp") else None
     if not gstrp and not gltrp:
-        gstrp = add_workdays(datetime.date.today().isoformat(), 0)
+        gstrp = add_workdays(mmclock.today().isoformat(), 0)
     with transaction(conn):
         verid = None
         if auart == "PP01":
@@ -503,9 +504,6 @@ def cancel_confirmation(conn, rueck, user, budat=None):
             mj = conn.execute("SELECT mjahr FROM mat_doc WHERE mblnr=?", (c["mblnr"],)).fetchone()
             cancel_document(conn, c["mblnr"], mj["mjahr"], budat, user,
                             "Cancel confirmation %s" % rueck)
-            for l in conn.execute("SELECT * FROM mat_doc_item WHERE mblnr=? AND bwart='261'",
-                                  (c["mblnr"],)).fetchall():
-                withdrawn(conn, dict(l), {}, "262", l["menge"])
         conn.execute("UPDATE pp_oper SET ism=ism-?, lmnga=lmnga-?, xmnga=xmnga-?, status=CASE "
                      "WHEN lmnga-?+xmnga-?>0 THEN 'PCNF' ELSE 'REL' END WHERE aufnr=? AND vornr=?",
                      (c["ism"], c["lmnga"], c["xmnga"], c["lmnga"], c["xmnga"], c["aufnr"],
@@ -622,7 +620,7 @@ def coois(conn, auart="", stat="", matnr="", d1="", d2=""):
                                    "wrttp='04' AND kstar<>'895000'", ("OR" + r["aufnr"],)).fetchone()[0]
         r["progress"] = round(100.0 * (r["igmng"] or 0) / r["gamng"], 1) if r["gamng"] else 0
         r["late"] = 1 if (r["gltrp"] and r["stat"] in ("CRTD", "REL") and
-                          r["gltrp"] < datetime.date.today().isoformat()) else 0
+                          r["gltrp"] < mmclock.today().isoformat()) else 0
         r["type_text"] = ORDER_TYPES.get(r["auart"], {}).get("text", "")
     return out
 

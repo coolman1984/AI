@@ -7,6 +7,7 @@ import threading
 from qa import catalog, runner
 
 from .server import STATIC, db, route
+from mm import util as mmclock  # noqa: E402
 
 _LOCK = threading.Lock()
 MANUALS = os.path.join(STATIC, "manuals")
@@ -61,7 +62,7 @@ def api_lms(req, q):
 def api_lms_step(req, q, step):
     c, user = db(), req.user
     d = _lms_get(c, user)
-    now = datetime.datetime.now().isoformat(timespec="seconds")
+    now = mmclock.now().isoformat(timespec="seconds")
     order = {"request": ("NONE", "REQUESTED"), "register": ("REQUESTED", "REGISTERED"),
              "connect": ("REGISTERED", "CONNECTED")}
     if step == "reset":
@@ -81,3 +82,11 @@ def api_lms_step(req, q, step):
                  "connect": "Connected to the LMS - manuals are open for you",
                  "reset": "LMS registration reset"}[step]
     return d
+
+
+@route("GET", "/api/qa/check")
+def api_check(req, q):
+    from qa.invariants import check
+    out = check(db(), mmclock.today().isoformat())
+    return {"violations": out, "count": len(out),
+            "message": "Data consistency: %s" % ("no violations" if not out else "%d violation(s)" % len(out))}
