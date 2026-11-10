@@ -165,6 +165,8 @@ def migrate_schema(conn):
     conn.executescript(MMPER_SCHEMA)
     from .forms import OUT_SCHEMA
     conn.executescript(OUT_SCHEMA)
+    from bi.catalog import VIEW_SCHEMA
+    conn.executescript(VIEW_SCHEMA)
     from fi.wht import WHT_SCHEMA, install as wht_install
     conn.executescript(WHT_SCHEMA)
     wht_install(conn)

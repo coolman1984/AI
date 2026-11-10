@@ -278,6 +278,7 @@ PROCESSES = [
              ("CTL-06", "Test run posts nothing; rerun reverses first", "KSU5", "No documents in test; rerun reverses", ["test_co.ClosingResults.test_test_run_posts_nothing", "test_co.ClosingResults.test_cycle_rerun_reverses_first"]),
              ("CTL-07", "FI result = CO-PA operating result", "ZCO_RECON", "Reconciled", ["test_co.ClosingResults.test_fi_result_reconciles_with_copa_operating_result", "test_e2e.E2E_Control.test_period_close_reconciles"]),
              ("CTL-08", "Commitments from account-assigned purchase orders", "ME21N KSB2", "Open PO value committed on the cost center until the goods receipt", ["test_flows.Commitments.test_account_assigned_po_is_committed_until_receipt"]),
+             ("CTL-09", "BI reports on live data (PL Detail, KPI cockpit)", "ZBI", "Every report runs; P/L lines add up; filters, drill-down and saved views work", ["test_bi.Reports.test_every_report_runs", "test_bi.Reports.test_pl_structure_adds_up_and_matches_copa", "test_bi.Reports.test_filter_drilldown_spread_and_total", "test_bi.Reports.test_saved_views_per_user"]),
          ]),
     # ------------------------------------------------------------------ MD
     dict(id="MDM", folder="8", module="MD", map="ZMD_PROCESS", version="2.1",

@@ -39,6 +39,21 @@ user with a one-time password in `data/first_login.txt`.
   change) and the critical object (release, payment run, periods, reversals, user admin).
 - `python run.py --dev` starts without logon (developer mode for tests and tools).
 
+## BI (Business Intelligence) - ZBI
+
+Report portal like a BI launchpad: category bar (Risk Management, Executive Summary,
+Controlling, Finance, Marketing, Sales, Logistics, Purchase, Production), a menu of 50+
+reports per group, and an analysis workspace with tabs:
+- **Data** panel (info provider, characteristics, key figures, P/L structure), **Layout**
+  (columns, rows, background filters, year / period variables), grid with (%) columns;
+- PL Detail: Plan / Actual / Previous year and accumulated, each with % of net sales,
+  expandable cost of goods sold and operating expense;
+- click a characteristic to filter, drill down or spread it over the columns; sort by a
+  column; share %; exceptions (negatives red); Excel; *Save view* (My views, per user);
+- Executive KPI cockpit with plan achievement and the monthly trend chart.
+All reports read the live MM Core data (CO-PA, billing, orders, cost centers, stock,
+open items, purchasing, production, G/L) - no extract, always current.
+
 ## Go-live functions
 
 | T-code | What it does |
