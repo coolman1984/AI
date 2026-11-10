@@ -486,3 +486,30 @@ table.qa-docs td.c, table.grid td.c { text-align: center; }
 .lms-node.done .lms-num { background: #22b04b; }
 .lms-node.dia.done { background: transparent; border: 0; }
 .lms-node.end { font-size: 12px; padding: 0 6px; }
+
+/* ---------------------------------------------------------------- AMS / logon */
+.logon { min-width: 340px; }
+.logon-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; color: var(--muted, #556); }
+.logon-brand .shell-logo { color: #0a6ed1; font-size: 20px; }
+.logon-err { color: #bb0000; background: #ffebeb; border: 1px solid #f3b6b6; padding: 6px 8px; border-radius: 3px; margin: 8px 0; }
+.ams-hero { display: flex; align-items: center; gap: 18px; padding: 16px 20px; margin-bottom: 12px;
+  background: linear-gradient(90deg, #0b1f4b, #1a3d8f); color: #fff; border-radius: 6px; flex-wrap: wrap; }
+.ams-hero-ico { position: relative; font-size: 34px; width: 56px; }
+.ams-hero-ico b { position: absolute; left: 24px; top: 14px; font-size: 24px; }
+.ams-hero-t { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+.ams-hero-s { opacity: .85; }
+.ams-hero-btns { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.ams-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+.ams-info { border-collapse: collapse; width: 100%; }
+.ams-info th { text-align: left; font-weight: 600; padding: 5px 10px 5px 0; width: 38%; color: var(--muted, #556); }
+.ams-info td { padding: 5px 0; border-bottom: 1px solid var(--border, #e5e5e5); }
+.ams-recent { list-style: none; padding: 0; margin: 0; }
+.ams-recent li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border, #e5e5e5); }
+.ams-recent .code { color: var(--muted, #889); font-size: 12px; }
+.ams-sub { font-size: 14px; margin: 14px 0 6px; }
+.ams-roles td, .ams-roles th { padding: 3px 6px; }
+.ams-pw { font: 600 20px monospace; background: #f3f6fb; padding: 8px 12px; border-radius: 4px; user-select: all; }
+.su01 { max-height: 70vh; overflow: auto; }
+.inbox-count { color: #bb0000; font-weight: 600; }
+td.neg, span.neg { color: #bb0000; }
+td.pos { color: #107e3e; }

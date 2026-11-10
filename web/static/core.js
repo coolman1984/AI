@@ -4,7 +4,7 @@
 
 const App = (() => {
   const S = { meta: null, screens: {}, current: null, materials: [],
-              binLists: {}, user: "OWNER" };
+              binLists: {}, user: "OWNER", auth: false, me: null, demo: false };
   try { S.user = localStorage.getItem("mm_user") || "OWNER"; } catch (e) {}
 
   // ------------------------------------------------------------------ DOM
@@ -54,10 +54,12 @@ const App = (() => {
   const today = () => (S.meta && S.meta.today) || new Date().toISOString().slice(0, 10);
 
   // ------------------------------------------------------------------ API
-  async function api(path, body) {
+  async function api(path, body, retried) {
     // a display screen opened without its key: ask for the key instead of calling the server
     if (/\/(\?|$)|\/\//.test(path.replace(/^\/api/, ""))) throw { type: "E", text: "Enter the key fields first", class: "00", number: "055" };
-    const opt = { headers: { "X-User": S.user } };
+    const opt = { headers: S.auth ? {} : { "X-User": S.user }, credentials: "same-origin" };
+    const tc = S.current && S.current.tcode;
+    if (tc && tc !== "HOME") opt.headers["X-Tcode"] = tc;
     if (body !== undefined) {
       opt.method = "POST";
       opt.headers["Content-Type"] = "application/json";
@@ -71,8 +73,102 @@ const App = (() => {
       const err = { type: "E", text: "No connection to the MM Core server. Is run.py still running?" };
       throw err;
     }
+    if (res.status === 401 && data && data.logon && !retried && !path.startsWith("/api/sec/login")) {
+      await logon();                       // session expired: log on again, then repeat the call
+      return api(path, body, true);
+    }
+    if (res.status === 403 && data && data.must_change && !retried) {
+      await changePassword(true);
+      return api(path, body, true);
+    }
     if (!res.ok) throw data;
     return data;
+  }
+
+  // ------------------------------------------------------------------ logon / authorization
+  const ALWAYS_DEV = ["HOME"];
+  function allowed(code) {
+    if (!S.auth || !S.me) return true;
+    code = String(code || "").toUpperCase();
+    if (code === "HOME" || (S.me.always || ALWAYS_DEV).includes(code)) return true;
+    if ((S.me.allowed || []).includes(code)) return true;
+    return (S.me.patterns || []).some(p => p === "*" || p === code ||
+      (p.includes("*") && new RegExp("^" + p.replace(/[.+?^${}()|[\]\\/]/g, "\\$&").replace(/\*/g, ".*") + "$").test(code)));
+  }
+  let logonBusy = null;
+  function logon() {
+    if (!logonBusy) logonBusy = logonLoop().finally(() => { logonBusy = null; });
+    return logonBusy;
+  }
+  async function logonLoop() {
+    let note = "";
+    for (;;) {
+      const u = h("input.f", { autocomplete: "username", value: S.lastUser || "", spellcheck: "false" });
+      const p = h("input.f", { type: "password", autocomplete: "current-password" });
+      const body = h("div.logon", null,
+        h("div.logon-brand", null, h("span.shell-logo", null, "MM", h("i", null, "·"), "CORE"), h("span", null, "AMS - ID & Authorization")),
+        h("div.form-grid", { style: { gridTemplateColumns: "1fr" } },
+          h("div.field", null, h("label.req", null, "User"), h("div.val", null, u)),
+          h("div.field", null, h("label.req", null, "Password"), h("div.val", null, p))),
+        note ? h("div.logon-err", null, note) : null,
+        S.demo ? h("div.note", null, "Demo system: ADMIN / admin, SALES1 / sales1, BUYER1 / buyer1, AP1 / ap1 ... (password = user name in small letters)") : null);
+      const r = await dialog("Log on to MM Core", body, [
+        { label: "Unlock / Change password", value: () => ({ unlock: u.value }) },
+        { label: "Log on", primary: true, value: () => ({ bname: u.value, password: p.value }) }]);
+      if (!r) continue;
+      if (r.unlock !== undefined) { await unlockRequest(r.unlock); continue; }
+      S.lastUser = (r.bname || "").trim().toUpperCase();
+      try {
+        const res = await api("/api/sec/login", { bname: r.bname, password: r.password }, true);
+        await loadMe();
+        if (res.must_change) await changePassword(true);
+        msg("S", `Welcome ${S.me.name || S.user}`);
+        return;
+      } catch (e) { note = (e && e.text) || String(e); }
+    }
+  }
+  async function unlockRequest(user) {
+    const r = await ask("Self-service: unlock / password reset", Object.assign([
+      { name: "bname", label: "User", value: user || "" },
+      { name: "reason", label: "Reason" }], { note: "The request goes to the administrator's approval inbox (ZINBOX). A locked user is unlocked; otherwise the password is reset and the administrator gives you the new initial password." }));
+    if (!r || !r.bname.trim()) return;
+    try { const x = await api("/api/sec/unlock-request", r, true); await dialog("Request sent", h("p", null, x.message), [{ label: "OK", primary: true }]); }
+    catch (e) { err(e); }
+  }
+  async function changePassword(forced) {
+    for (;;) {
+      const o = h("input.f", { type: "password", autocomplete: "current-password" });
+      const n = h("input.f", { type: "password", autocomplete: "new-password" });
+      const n2 = h("input.f", { type: "password", autocomplete: "new-password" });
+      const body = h("div.form-grid", { style: { gridTemplateColumns: "1fr" } },
+        forced ? h("div.note", null, "Your password is an initial password. Choose your own password now (at least 8 characters, letters and digits).") : null,
+        h("div.field", null, h("label.req", null, "Current password"), h("div.val", null, o)),
+        h("div.field", null, h("label.req", null, "New password"), h("div.val", null, n)),
+        h("div.field", null, h("label.req", null, "Repeat new password"), h("div.val", null, n2)));
+      const btns = [{ label: "Change", primary: true, value: () => ({ old: o.value, new: n.value, repeat: n2.value }) }];
+      if (!forced) btns.unshift({ label: "Cancel", value: () => null });
+      const r = await dialog("Change password", body, btns);
+      if (!r) { if (forced) continue; return false; }
+      try { const x = await api("/api/sec/password", r, true); msg("S", x.message); await loadMe(); return true; }
+      catch (e) { err(e); if (!forced) await dialog("Password not changed", h("p", null, e.text || String(e)), [{ label: "OK", primary: true }]); }
+    }
+  }
+  async function loadMe() {
+    S.me = await api("/api/sec/me", undefined, true);
+    S.user = S.me.bname;
+    $("#status-user").textContent = S.user;
+    $("#user-btn").textContent = S.user.slice(0, 2);
+    $("#user-btn").title = `${S.user} - ${S.me.name || ""}`;
+    if (App.menuRedraw) App.menuRedraw();
+    if (S.meta) datalist("tcode-list", Object.values(S.screens).filter(s => s.tcode !== "HOME" && allowed(s.tcode))
+      .map(s => [s.tcode, `${s.tcode} - ${s.title}`]));
+  }
+  async function logoff() {
+    try { await api("/api/sec/logout", {}, true); } catch (e) {}
+    S.me = null;
+    $("#app").innerHTML = "";
+    await logon();
+    go("HOME"); render();
   }
 
   // ------------------------------------------------------------------ status bar
@@ -389,6 +485,11 @@ const App = (() => {
       S.keepMsg = true;
       return go("HOME");
     }
+    if (!allowed(code || "HOME")) {
+      msg("E", `No authorization for transaction ${code}`, "00", "077");
+      S.keepMsg = true;
+      return go("HOME");
+    }
     S.current = def;
     if (S.keepMsg) S.keepMsg = false; else msg("", "");
     const home = !code || code === "HOME";
@@ -406,6 +507,7 @@ const App = (() => {
     if (t === "" || t === "HOME" || t === "/N") return go("HOME");
     const [code, arg] = t.split(/\s+/);
     if (!S.screens[code]) return msg("E", `Transaction ${code} does not exist`, "00", "343");
+    if (!allowed(code)) return msg("E", `No authorization for transaction ${code}`, "00", "077");
     msg("", "");
     go(code, arg ? { id: arg } : undefined);
   }
@@ -415,6 +517,16 @@ const App = (() => {
     $("#status-user").textContent = S.user;
     $("#user-btn").textContent = S.user.slice(0, 2);
     $("#user-btn").addEventListener("click", async () => {
+      if (S.auth) {
+        const r = await dialog(`${S.user} - ${(S.me && S.me.name) || ""}`, h("p", null, "Roles: " +
+          ((S.me && S.me.roles || []).map(x => x.role).join(", ") || "-")), [
+          { label: "Log off", value: () => "off" }, { label: "Change password", value: () => "pw" },
+          { label: "AMS", primary: true, value: () => "ams" }]);
+        if (r === "off") return logoff();
+        if (r === "pw") return changePassword(false);
+        if (r === "ams") return go("ZAMS");
+        return;
+      }
       const r = await ask("User", [{ name: "u", label: "User name", value: S.user }]);
       if (r && r.u.trim()) {
         S.user = r.u.trim().toUpperCase().slice(0, 12);
@@ -438,6 +550,11 @@ const App = (() => {
       if (S.keys && S.keys[k]) S.keys[k]();
     });
     try {
+      const st = await api("/api/sec/status", undefined, true);
+      S.auth = !!st.auth; S.demo = !!st.demo;
+      if (S.auth) {
+        try { await loadMe(); } catch (e) { if (e && e.logon) await logon(); else throw e; }
+      }
       S.meta = await api("/api/meta");
       await loadMaterials();
     } catch (e) { err(e); return; }
@@ -445,7 +562,7 @@ const App = (() => {
     datalist("dl-kostl", S.meta.cost_centers.map(k => [k.kostl, `${k.kostl} ${k.name}`]));
     datalist("dl-lifnr", S.meta.vendors.map(v => [v.lifnr, `${v.lifnr} ${v.name}`]));
     datalist("dl-bwart", S.meta.movement_types.map(m => [m.bwart, `${m.bwart} ${m.text}`]));
-    datalist("tcode-list", Object.values(S.screens).filter(s => s.tcode !== "HOME")
+    datalist("tcode-list", Object.values(S.screens).filter(s => s.tcode !== "HOME" && allowed(s.tcode))
       .map(s => [s.tcode, `${s.tcode} - ${s.title}`]));
     window.addEventListener("hashchange", render);
     lifecycle();
@@ -485,5 +602,6 @@ const App = (() => {
   return { S, h, $, $$, api, msg, err, run, dialog, ask, confirmBox, field, inp, sel,
     val, up, datalist, slocList, binList, loadMaterials, matText, matUnit, slocName,
     isBinManaged, alv, exportRows, register, go, toolbar, render, start, refreshMeta,
+    allowed, logon, logoff, changePassword, unlockRequest, loadMe,
     fmtQty, fmtAmt, fmtInt, fmtDate, fmtShort, today, enc };
 })();

@@ -57,12 +57,15 @@ def run(user="QA"):
         del sys.modules[name]           # fresh test modules = fresh sample system every run
     # the tests run on a fixed business date in this thread only; restore afterwards
     old = mmclock.set_clock(BUSINESS_DATE)
+    from sec import users as sec_users
+    iters = sec_users.ITER          # tests/fixture.py lowers the password hash rounds
     try:
         suite = unittest.defaultTestLoader.discover(TESTS, top_level_dir=TESTS)
         res = _Collect()
         suite.run(res)
     finally:
         mmclock.set_clock(old)
+        sec_users.ITER = iters
     tests = res.res
     procs, total, passed = [], 0, 0
     mapped = set()

@@ -157,6 +157,8 @@ def migrate_schema(conn):
                 if col not in have:
                     conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
     conn.executescript(FI_SCHEMA)
+    from sec.schema import SEC_SCHEMA
+    conn.executescript(SEC_SCHEMA)
     ranges = list(NUMBER_RANGES.items()) + list(CO_NUMBER_RANGES.items()) + \
         [("FI_" + k, v) for k, v in FI_RANGES.items()] + \
         list(PUR_NUMBER_RANGES.items()) + list(SD_NUMBER_RANGES.items())

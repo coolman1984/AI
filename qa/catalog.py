@@ -331,6 +331,36 @@ PROCESSES = [
              ("SVC-03", "Reservation partial issue", "MB21 MIGO", "Open quantity remains reserved", ["test_pp.ServiceParts.test_reservation_partial_issue"]),
              ("SVC-04", "Forecast and safety stock for spare parts", "MP30 MP38", "Forecast and safety stock computed", ["test_pp.ServiceParts.test_forecast_and_safety_stock"]),
          ]),
+    # ------------------------------------------------------------------ AMS (Basis)
+    dict(id="AMS", folder="A", module="CA", map="ZAMS", version="1.0",
+         name="ID & Authorization (AMS)",
+         purpose="Every person logs on with an own user and can only start and change what the job needs - every critical step is traceable.",
+         lanes=["Employee", "AMS self-service", "Administrator", "Audit"],
+         steps=[
+             (1, 0, 0, "s", "Log on", "ZAMS", [2]),
+             (2, 1, 1, "d", "Access missing?", "SU53", [3]),
+             (3, 1, 2, "t", "Access request", "ZAMS", [4]),
+             (4, 2, 3, "t", "Approve in inbox", "ZINBOX", [5]),
+             (5, 2, 4, "t", "User & roles", "SU01", [6]),
+             (6, 2, 5, "t", "Role menu & authorizations", "PFCG", [7]),
+             (7, 3, 6, "t", "Who can do what", "SUIM", [8]),
+             (8, 3, 7, "e", "Audit log review", "SM20", []),
+         ],
+         controls=[
+             ("Own user and password for every person", "Initial password must be changed; 5 wrong passwords lock the user", "AMS-01"),
+             ("Long-term unused users are locked", "No logon after 90 days -> locked until the administrator unlocks", "AMS-02"),
+             ("Need-to-know authorizations", "Transaction, area (display / change) and critical objects checked on the server", "AMS-04"),
+             ("Two-person rule for access", "Nobody approves own access request or own document", "AMS-05"),
+             ("Audit trail", "Logons, refusals, releases, reversals and user changes in SM20", "AMS-04"),
+         ],
+         kpis=["Users locked", "Open access requests", "Refused checks / week", "Users with full access"],
+         cases=[
+             ("AMS-01", "Logon, wrong passwords lock the user", "ZAMS SU01", "Session after logon; 5 wrong passwords lock", ["test_security.Logon.test_demo_users_logon_and_failed_logons_lock", "test_security.Logon.test_new_user_initial_password_must_change"]),
+             ("AMS-02", "Long-term unused user and self-service unlock", "ZAMS ZINBOX", "Locked after 90 days; unlocked only after approval by another user", ["test_security.Logon.test_long_term_unused_self_service_unlock"]),
+             ("AMS-03", "Role maintenance", "PFCG", "Roles with transactions and authorizations; assigned roles cannot be deleted", ["test_security.Authorisation.test_pfcg_role_maintenance"]),
+             ("AMS-04", "Transaction, area and object checks", "SU53 SUIM", "Sales clerk cannot post in FI, release credit or start FI transactions", ["test_security.Authorisation.test_tcode_area_and_objects_per_role", "test_security.Http.test_session_and_refusals", "test_security.Http.test_object_route_is_audited"]),
+             ("AMS-05", "Access request through the approval inbox", "ZAMS ZINBOX SUIM", "Request approved by the administrator; own request refused", ["test_security.Authorisation.test_access_request_inbox_and_suim"]),
+         ]),
 ]
 
 

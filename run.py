@@ -109,6 +109,24 @@ def stop_running(port):
         time.sleep(0.25)
 
 
+def _first_users(conn, db_path):
+    """A database without users (older version or --empty): demo users when it holds
+    the demo data, otherwise ADMIN with a one-time password in data/first_login.txt."""
+    from sec import users
+    demo = bool(conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0]) and \
+        bool(conn.execute("SELECT COUNT(*) FROM customer WHERE kunnr='C1001'").fetchone()[0])
+    pw = users.bootstrap(conn, demo)
+    note = os.path.join(os.path.dirname(os.path.abspath(db_path)), "first_login.txt")
+    if pw:
+        with open(note, "w", encoding="utf-8") as f:
+            f.write("MM Core - first logon\n\nUser: ADMIN\nOne-time password: %s\n\n"
+                    "You must choose a new password at the first logon. Delete this file "
+                    "afterwards.\n" % pw)
+        print("First logon: user ADMIN, one-time password in", note)
+    elif demo and conn.execute("SELECT COUNT(*) FROM usr").fetchone()[0]:
+        print("Demo users: ADMIN / admin, SALES1 / sales1, BUYER1 / buyer1 ... (password = user name)")
+
+
 def main():
     ap = argparse.ArgumentParser(description="MM Core - inventory management")
     ap.add_argument("--port", type=int, default=8080)
@@ -119,6 +137,8 @@ def main():
     ap.add_argument("--keep-running", action="store_true")
     ap.add_argument("--backup", action="store_true", help="copy the database to data/backup and exit")
     ap.add_argument("--restore", metavar="FILE", help="restore a backup (stops a running server)")
+    ap.add_argument("--dev", action="store_true",
+                    help="developer mode: no logon, the X-User header names the user (tests, tools)")
     a = ap.parse_args()
     db_path = os.environ.get("MM_DB") or DEFAULT_DB
     if a.host not in ("127.0.0.1", "localhost", "::1") and not os.environ.get("MM_ALLOW_REMOTE"):
@@ -162,6 +182,7 @@ def main():
                                "(run.py --restore data/backup/...)" % db_path)
         if not a.empty and seed.seed(conn) is not None:
             print("Demo data loaded.")
+        _first_users(conn, db_path)
         conn.close()
     except Exception as e:      # the server would start on a broken database: show why
         log.exception("start-up failed")
@@ -175,7 +196,7 @@ def main():
     httpd, port = None, a.port
     for port in range(a.port, a.port + 20):
         try:
-            httpd = serve(a.host, port, auto_stop=auto_stop)
+            httpd = serve(a.host, port, auto_stop=auto_stop, auth=not a.dev)
             break
         except OSError:
             continue

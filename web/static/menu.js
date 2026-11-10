@@ -162,10 +162,15 @@ MENU.push(
     ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV"]],
     ["e-Learning & Quality", ["ZLMS", "ZQA_TEST", "ZQA_CHECK"]],
     ["More transactions", ["OKEON", "CS12", "MC82", "KKAO", "VKM3", "IW53"]],
+  ]],
+  ["Administration", [
+    ["AMS - ID & Authorization", ["ZAMS", "ZINBOX", "SU53"]],
+    ["User Maintenance", ["SU01", "PFCG", "SUIM"]],
+    ["Monitoring", ["SM04", "SM20"]],
   ]]);
 // N-ERP order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
-  "Marketing", "Master Data", "Common"];
+  "Marketing", "Master Data", "Common", "Administration"];
 MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));
 
 // Process view: end-to-end flows across modules
@@ -211,6 +216,7 @@ function leaf(code, path) {
 
 function node(item, depth, filter, out) {
   if (typeof item === "string") {
+    if (App.allowed && !App.allowed(item)) return;      // no authorization: hidden
     if (!filter || item.toLowerCase().includes(filter) || title(item).toLowerCase().includes(filter))
       out.push(leaf(item, depth));
     return;
@@ -222,6 +228,7 @@ function node(item, depth, filter, out) {
   const sub = [];
   kids.forEach(k => node(k, depth + 1, filter, sub));
   if (filter && !sub.length && !text.toLowerCase().includes(filter)) return;
+  if (!filter && !sub.length && !na) return;           // nothing authorised inside
   const isOpen = filter ? true : open.has(text) || open.has(key);
   const n = h("div.sm-node" + (depth === 0 ? ".root" : "") + (isOpen ? ".open" : "") + (na ? ".na" : ""), { style: { paddingLeft: (8 + depth * 16) + "px" },
     title: na ? "Not in scope of this version" : text },
@@ -238,7 +245,7 @@ function draw() {
   const out = [];
   if (tab === "fav") {
     if (!favs.length) out.push(h("div.sm-node.na", null, "Click ★ on a transaction to add it here"));
-    favs.forEach(c => out.push(leaf(c, 0)));
+    favs.filter(c => !App.allowed || App.allowed(c)).forEach(c => out.push(leaf(c, 0)));
   } else if (tab === "process") {
     PROCESS.forEach(m => node(m, 0, f, out));
   } else MENU.forEach(m => node(m, 0, f, out));
@@ -293,4 +300,5 @@ function init() {
 }
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 App.MENU = MENU;
+App.menuRedraw = () => { if ($("#sm-tree")) draw(); };
 })();
