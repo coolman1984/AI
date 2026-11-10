@@ -8,6 +8,7 @@ F.13        automatic GR/IR clearing    FB41  VAT settlement (tax payable)
 FF67        manual bank statement (incoming payments + bank charges)
 """
 import datetime
+import json
 
 from mm.db import next_number, transaction
 from mm.util import MMError, now_ts, parse_amount, parse_date, parse_key, parse_rate
@@ -379,8 +380,10 @@ def bank_statement(conn, hbkid, azdat, aznum, opening, closing, lines, user):
     amount (+ in / - out), kunnr, ref (document / reference), text}]"""
     azdat = parse_date(azdat)
     op, cl = parse_amount(opening, allow_zero=True), parse_amount(closing, allow_zero=True)
-    total = sum((1 if float(str(l["amount"]).replace(",", "")) >= 0 else -1) *
-                parse_amount(str(l["amount"]).lstrip("-")) for l in lines)
+    def _signed(x):
+        t = str(x).strip()
+        return -parse_amount(t[1:]) if t.startswith("-") else parse_amount(t)
+    total = sum(_signed(l["amount"]) for l in lines)
     if op + total != cl:
         raise MMError("Opening balance %.2f + statement lines %.2f <> closing balance "
                       "%.2f" % (op / 100.0, total / 100.0, cl / 100.0), "FV", "010")
@@ -413,6 +416,6 @@ def bank_statement(conn, hbkid, azdat, aznum, opening, closing, lines, user):
                 raise MMError("Unknown statement line type %s" % l["type"], "FV", "030")
         conn.execute("INSERT INTO bank_statement (hbkid,azdat,aznum,ssbtr,esbtr,lines,docs,"
                      "usnam,ts) VALUES (?,?,?,?,?,?,?,?,?)",
-                     (hbkid, azdat, aznum, op, cl, str(lines), ",".join(docs), user, now_ts()))
+                     (hbkid, azdat, aznum, op, cl, json.dumps(lines), ",".join(docs), user, now_ts()))
     return {"docs": docs, "message": "Bank statement %s posted: %d documents"
             % (aznum, len(docs))}

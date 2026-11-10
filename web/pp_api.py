@@ -8,6 +8,7 @@ from pp import config as C, master, order, planning, reports, service, subcon
 
 from .server import db, route
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_int, parse_num  # noqa: E402
 
 QTY = {"gamng", "wemng", "igmng", "iasmg", "mgvrg", "lmnga", "xmnga", "bdmng", "enmng", "open",
        "stock", "gsmng", "plnmg", "consumed", "menge", "required", "at_vendor", "to_provide",
@@ -157,7 +158,7 @@ def pp_sop_post(req, q, act):
         planning.save_group(c, b.get("prgrp") or "", b.get("ktext") or "", b.get("members") or [], req.user)
         return {"message": "Product group saved"}
     if act == "plan":
-        r = planning.sop_plan(c, b.get("prgrp") or "", b.get("months") or [], int(b.get("days") or 10),
+        r = planning.sop_plan(c, b.get("prgrp") or "", b.get("months") or [], parse_int(b.get("days"), "days", default=10),
                               req.user)
         return out({"plan": r, "message": "Rough-cut plan saved"})
     r = planning.transfer_to_demand(c, b.get("prgrp") or "", req.user)
@@ -391,8 +392,8 @@ def pp_forecast(req, q):
                     x[k] = qty_out(x[k])
         return {"results": r, "message": "Mass forecast for %d materials" % len(r)}
     r = service.forecast(db(), b.get("matnr") or "", "1000", b.get("model") or "G",
-                         int(b.get("hist") or 6), int(b.get("periods") or 6), float(b.get("alpha") or 0.3),
-                         float(b.get("beta") or 0.2), int(b.get("service") or 95), user=req.user,
+                         parse_int(b.get("hist"), "hist", default=6), parse_int(b.get("periods"), "periods", default=6), parse_num(b.get("alpha"), "alpha", default=0.3),
+                         parse_num(b.get("beta"), "beta", default=0.2), parse_int(b.get("service"), "service", default=95), user=req.user,
                          apply=bool(b.get("apply")))
     r["history"] = [dict(month=m, value=qty_out(v)) for m, v in r["history"]]
     r["forecast"] = [dict(month=m, value=qty_out(v)) for m, v in r["forecast"]]

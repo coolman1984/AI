@@ -16,6 +16,7 @@ from mm.util import MMError, now_ts, parse_amount, parse_date, rdiv
 from .ap import _tax_lines, tax_amount
 from .config import ASSET_CLASSES, LOCAL_CURRENCY, TAX_CODES
 from .document import rate, to_local, write
+from mm.util import parse_year, parse_period  # noqa: E402
 
 
 def create_asset(conn, anlkl, txt, kostl, ndjar=None, invnr="", user=""):
@@ -136,8 +137,8 @@ def planned_dep(conn, a, gjahr, perio):
 
 def depreciation_run(conn, gjahr, perio, user, test=True):
     """AFAB: posts planned minus already posted depreciation for the period."""
-    gjahr, perio = int(gjahr), int(perio)
-    budat = ("%04d-%02d-28" % (gjahr, perio))
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
+
     import calendar
     budat = "%04d-%02d-%02d" % (gjahr, perio, calendar.monthrange(gjahr, perio)[1])
     out, lines = [], []
@@ -261,7 +262,7 @@ def history_sheet(conn, gjahr, upto=None):
 
 def reverse_depreciation(conn, gjahr, perio, user):
     """Reverse the depreciation run of the last posted period (then AFAB can post again)."""
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     with transaction(conn):
         last = conn.execute("SELECT MAX(gjahr*12+perio) FROM asset_item WHERE bwasl='AFA' AND "
                             "belnr IN (SELECT belnr FROM acc_doc WHERE tcode='AFAB' AND stblg IS NULL)"

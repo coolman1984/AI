@@ -21,16 +21,14 @@ def credit_exposure(conn, kunnr):
     return sum(signed(r) for r in open_items(conn, "D", kunnr))
 
 
-def check_credit(conn, kunnr, add_amount):
-    c = conn.execute("SELECT * FROM customer WHERE kunnr=?", (kunnr,)).fetchone()
-    if not c or not c["klimk"]:
-        return
-    exp = credit_exposure(conn, kunnr)
-    if exp + add_amount > c["klimk"]:
-        raise MMError("Credit limit of customer %s exceeded: limit %.2f, open items "
-                      "%.2f, this document %.2f - document blocked (FD32)"
-                      % (kunnr, c["klimk"] / 100.0, exp / 100.0, add_amount / 100.0),
-                      "VF", "035")
+def check_credit(conn, kunnr, add_amount, with_overdue=True):
+    """One credit rule for FI and SD (sd.order.credit_check): open items + open orders +
+    oldest overdue item."""
+    from mm import util
+    from sd.order import credit_check
+    ok, why = credit_check(conn, kunnr, add_amount, util.today().isoformat(), with_overdue=with_overdue)
+    if not ok:
+        raise MMError("Customer %s: %s - document blocked (FD32)" % (kunnr, why), "VF", "035")
 
 
 def customer_invoice(conn, header, lines, user, credit_memo=False):

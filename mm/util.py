@@ -210,3 +210,12 @@ def parse_rate(text):
     if d <= 0:
         raise MMError("Exchange rate must be positive", "SG", "100")
     return int((d * 100000).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+def parse_num(text, what="number", default=None):
+    """Free decimal parameter (e.g. a smoothing factor), not money."""
+    if text is None or str(text).strip() == "":
+        if default is not None:
+            return default
+        raise MMError("Enter %s" % what, "00", "055")
+    return float(_to_decimal(text, what))

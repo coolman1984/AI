@@ -44,13 +44,13 @@ def api_run(req, q):
 
 # ------------------------------------------------------------------ LMS ID (request -> register -> connect)
 def _lms_get(c, user):
-    row = c.execute("SELECT value FROM settings WHERE key=?", ("lms_" + user,)).fetchone()
-    return json.loads(row[0]) if row else {"user": user, "status": "NONE"}
+    from qa import lms
+    return lms.get(c, user)
 
 
 def _lms_set(c, user, d):
-    c.execute("INSERT OR REPLACE INTO settings VALUES (?, ?)", ("lms_" + user, json.dumps(d)))
-    c.commit()
+    from qa import lms
+    lms.put(c, user, d)
 
 
 @route("GET", "/api/qa/lms")

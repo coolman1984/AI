@@ -151,6 +151,7 @@ MM_COLUMN_ADDS = {
 }
 
 CO_NUMBER_RANGES = {
+    "PLAF": 10000,                       # planned orders (MRP)
     "CODOC": 300000000,
     "COPA": 100000000,
     "BILL": 90000000,

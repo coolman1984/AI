@@ -9,6 +9,10 @@ OPPQ   MRP: planning horizon, creation indicators, lot sizes, strategies 10 / 40
 MP80   forecast models: constant (moving average), exponential smoothing, trend
 """
 
+# one place for the lists of production order types used by MM, CO and PP
+PROD_ORDER_TYPES = ("PP01", "ZP03", "ZREF", "ZP07")     # production orders (settlement, WIP)
+GR_ORDER_TYPES = ("PP01", "ZP03", "ZREF")                 # orders with a material (goods receipt)
+
 ORDER_TYPES = {
     "PP01": dict(text="Standard production order", settle="PA", material=True,
                  variance=True, release_missing="W"),

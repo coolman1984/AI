@@ -5,7 +5,7 @@ import json
 
 from mm import reports as mmrep
 from mm.db import rows, transaction
-from mm.util import MMError, amt_out, parse_qty, qty_out
+from mm.util import MMError, amt_out, parse_key, parse_qty, qty_out
 from pur import analytics, mrp, po, pr, sourcing
 from pur.config import (ACCT_ASSIGN, CONDITIONS, CONTRACT_TYPES, EKORG, EKORG_TEXT,
                         LOT_SIZES, MRP_TYPES, PO_RELEASE, PO_TYPES, PR_RELEASE, PR_STATUS,
@@ -13,6 +13,8 @@ from pur.config import (ACCT_ASSIGN, CONDITIONS, CONTRACT_TYPES, EKORG, EKORG_TE
 
 from .server import db, route
 from mm import util as mmclock  # noqa: E402
+from mm.util import require  # noqa: E402
+from mm.util import parse_int  # noqa: E402
 
 
 def _period():
@@ -205,9 +207,10 @@ def pur_info(req, q):
 @route("POST", "/api/pur/info")
 def pur_info_save(req, q):
     b = req.body
+    require(b, "lifnr", "matnr", "brutto")
     n = sourcing.save_info_record(db(), b["lifnr"], b["matnr"], b["brutto"],
-                                  int(b.get("peinh") or 1), b.get("rabatt") or 0,
-                                  b.get("frb") or "0", int(b.get("aplfz") or 7),
+                                  parse_int(b.get("peinh"), "peinh", default=1), b.get("rabatt") or 0,
+                                  b.get("frb") or "0", parse_int(b.get("aplfz"), "aplfz", default=7),
                                   b.get("norbm") or "0", b.get("idnlf") or "")
     return {"infnr": n, "message": "Info record %s saved" % n}
 
@@ -226,14 +229,14 @@ def pur_sl(req, q):
 @route("POST", "/api/pur/sourcelist")
 def pur_sl_save(req, q):
     b = req.body
-    sourcing.save_source_list(db(), b["matnr"], b.get("werks") or "1000", b.get("entries") or [])
+    sourcing.save_source_list(db(), require(b, "matnr"), b.get("werks") or "1000", b.get("entries") or [])
     return {"message": "Source list for %s saved" % b["matnr"]}
 
 
 @route("POST", "/api/pur/quota")
 def pur_quota_save(req, q):
     b = req.body
-    sourcing.save_quota(db(), b["matnr"], b.get("werks") or "1000", b.get("entries") or [])
+    sourcing.save_quota(db(), require(b, "matnr"), b.get("werks") or "1000", b.get("entries") or [])
     return {"message": "Quota arrangement for %s saved" % b["matnr"]}
 
 
@@ -282,7 +285,8 @@ def pur_rfqs(req, q):
 @route("POST", "/api/pur/quotation")
 def pur_quot(req, q):
     b = req.body
-    sourcing.enter_quotation(db(), b["anfnr"], b["netpr"], b.get("aplfz") or 7, b.get("quodt"))
+    anfnr, netpr = require(b, "anfnr", "netpr")
+    sourcing.enter_quotation(db(), anfnr, netpr, b.get("aplfz") or 7, b.get("quodt"))
     return {"message": "Quotation for RFQ %s saved" % b["anfnr"]}
 
 
@@ -298,7 +302,7 @@ def pur_compare(req, q):
 
 @route("POST", "/api/pur/award")
 def pur_award(req, q):
-    e = sourcing.award(db(), req.body["anfnr"], req.user, req.body.get("bedat"))
+    e = sourcing.award(db(), require(req.body, "anfnr"), req.user, req.body.get("bedat"))
     return {"ebeln": e, "message": "Quotation accepted - purchase order %s created" % e}
 
 
@@ -331,16 +335,9 @@ def pur_md04(req, q):
 
 @route("POST", "/api/pur/mrpdata")
 def pur_mrpdata(req, q):
+    from md import material
     b = req.body
-    with transaction(db()):
-        db().execute("UPDATE material_plant SET dismm=?, minbe=?, eisbe=?, mabst=?, disls=?, "
-                     "bstfe=?, plifz=?, ekgrp=? WHERE matnr=? AND werks=?",
-                     (b.get("dismm") or "VB", parse_qty(b.get("minbe") or "0", allow_zero=True),
-                      parse_qty(b.get("eisbe") or "0", allow_zero=True),
-                      parse_qty(b.get("mabst") or "0", allow_zero=True), b.get("disls") or "HB",
-                      parse_qty(b.get("bstfe") or "0", allow_zero=True),
-                      int(b.get("plifz") or 7), b.get("ekgrp") or "001",
-                      (b.get("matnr") or "").upper(), b.get("werks") or "1000"))
+    material.change_mrp_view(db(), parse_key(b.get("matnr"), "material"), b.get("werks") or "1000", b, req.user)
     return {"message": "MRP data of %s saved" % b.get("matnr")}
 
 

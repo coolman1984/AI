@@ -18,6 +18,7 @@ from mm.db import rows, transaction
 from mm.util import MMError, now_ts, parse_amount, parse_date, parse_qty
 
 from .config import CONTROL_KEYS, WORKDAYS
+from mm.util import parse_date  # noqa: E402
 
 
 # ------------------------------------------------------------------ calendar
@@ -315,8 +316,8 @@ def capacity(conn, d1, d2, arbpl=None):
     (remaining standard hours spread over their scheduled dates) vs available."""
     wcs = {w["arbpl"]: w for w in work_centers(conn)}
     out = {}
-    start = datetime.date.fromisoformat(d1)
-    end = datetime.date.fromisoformat(d2)
+    start = datetime.date.fromisoformat(parse_date(d1))
+    end = datetime.date.fromisoformat(parse_date(d2))
     d = start
     while d <= end:
         wk = (d - datetime.timedelta(days=d.weekday())).isoformat()

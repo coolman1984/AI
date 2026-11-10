@@ -87,7 +87,8 @@ def fi_fs00(req, q):
 @route("POST", "/api/fi/ob52")
 def fi_ob52(req, q):
     b = req.body
-    gl.set_periods(db(), b["y1"], b["p1"], b["y2"], b["p2"])
+    gl.set_periods(db(), parse_year(b.get("y1")), parse_period(b.get("p1")), parse_year(b.get("y2")),
+                   parse_period(b.get("p2")))
     return {"message": "Posting periods %s/%s - %s/%s are open" % (b["p1"], b["y1"],
                                                                    b["p2"], b["y2"])}
 
@@ -111,7 +112,7 @@ def fi_f02(req, q):
 @route("POST", "/api/fi/fb08")
 def fi_fb08(req, q):
     b = req.body
-    new = gl.reverse(db(), b.get("belnr"), int(b.get("gjahr")), b.get("budat"),
+    new = gl.reverse(db(), parse_key(b.get("belnr"), "document"), parse_year(b.get("gjahr")), b.get("budat"),
                      b.get("reason") or "01", req.user)
     return {"belnr": new, "message": "Document %s was posted (reversal of %s)"
             % (new, b.get("belnr"))}
@@ -204,13 +205,21 @@ def fi_xk01(req, q):
 
 @route("POST", "/api/fi/xk02")
 def fi_xk02(req, q):
+    """FK02 from the FI screens: same engine (change documents, dual control) as XK02."""
+    from md import partner
     b = req.body
-    c = db()
+    lifnr = parse_key(b.get("lifnr"), "vendor")
     if b.get("zterm") and b["zterm"] not in PAYMENT_TERMS:
-        raise MMError("Payment terms %s are not defined" % b["zterm"])
-    c.execute("UPDATE vendor SET zterm=COALESCE(?,zterm), sperr=COALESCE(?,sperr) WHERE "
-              "lifnr=?", (b.get("zterm") or None, b.get("sperr"), b.get("lifnr")))
-    return {"message": "Changes have been made to vendor %s" % b.get("lifnr")}
+        raise MMError("Payment terms %s are not defined" % b["zterm"], "F2", "060")
+    r = {}
+    if b.get("zterm"):
+        r = partner.change_vendor(db(), lifnr, {"zterm": b["zterm"]}, req.user, "FK02")
+    if b.get("sperr") is not None:
+        partner.block_vendor(db(), lifnr, req.user, sperr=b.get("sperr"))
+    msg = "Changes have been made to vendor %s" % lifnr
+    if r.get("sensitive"):
+        msg += " - sensitive fields %s must be confirmed by a second person (FK08)" % ", ".join(r["sensitive"])
+    return {"message": msg}
 
 
 @route("POST", "/api/fi/fb60")
@@ -415,15 +424,18 @@ def fi_xd01(req, q):
 
 @route("POST", "/api/fi/xd02")
 def fi_xd02(req, q):
-    from mm.util import parse_amount
+    """FD02 from the FI screens: same engine (change documents, dual control) as XD02."""
+    from md import partner
     b = req.body
-    c = db()
+    kunnr = parse_key(b.get("kunnr"), "customer")
     if b.get("zterm") and b["zterm"] not in PAYMENT_TERMS:
-        raise MMError("Payment terms %s are not defined" % b["zterm"])
-    c.execute("UPDATE customer SET zterm=COALESCE(?,zterm), klimk=COALESCE(?,klimk) WHERE "
-              "kunnr=?", (b.get("zterm") or None, parse_amount(b["klimk"], allow_zero=True)
-                          if b.get("klimk") not in (None, "") else None, b.get("kunnr")))
-    return {"message": "Changes have been made to customer %s" % b.get("kunnr")}
+        raise MMError("Payment terms %s are not defined" % b["zterm"], "F2", "060")
+    data = {k: b[k] for k in ("zterm", "klimk") if b.get(k) not in (None, "")}
+    r = partner.change_customer(db(), kunnr, data, req.user, "FD02") if data else {}
+    msg = "Changes have been made to customer %s" % kunnr
+    if r.get("sensitive"):
+        msg += " - sensitive fields %s must be confirmed by a second person (FD08)" % ", ".join(r["sensitive"])
+    return {"message": msg}
 
 
 @route("POST", "/api/fi/fb70")
@@ -507,7 +519,7 @@ def fi_retire(req, q):
 @route("GET", "/api/fi/aw01n")
 def fi_aw01n(req, q):
     y, _ = _yp(q)
-    e = aa.explorer(db(), q.get("anln1"), int(q.get("gjahr") or y))
+    e = aa.explorer(db(), q.get("anln1"), parse_int(q.get("gjahr"), "gjahr", default=y))
     _cents(e, ("apc_start", "acquisitions", "retirements", "apc_end", "dep_start",
                "dep_year", "dep_retired", "dep_end", "planned_year", "nbv_start", "nbv_end"))
     for i in e["items"]:
@@ -525,7 +537,7 @@ def fi_ar01(req, q):
 @route("GET", "/api/fi/assethistory")
 def fi_hist(req, q):
     y, _ = _yp(q)
-    out = aa.history_sheet(db(), int(q.get("gjahr") or y))
+    out = aa.history_sheet(db(), parse_int(q.get("gjahr"), "gjahr", default=y))
     for r in out:
         _cents(r, [k for k in r if k not in ("anlkl", "txt", "count")])
     return out
@@ -535,7 +547,7 @@ def fi_hist(req, q):
 @route("GET", "/api/fi/fs10n")
 def fi_fs10n(req, q):
     y, _ = _yp(q)
-    return reports.account_balance(db(), q.get("hkont") or "113100", int(q.get("gjahr") or y))
+    return reports.account_balance(db(), q.get("hkont") or "113100", parse_int(q.get("gjahr"), "gjahr", default=y))
 
 
 @route("GET", "/api/fi/fbl")
@@ -554,13 +566,13 @@ def fi_fbl(req, q):
 @route("GET", "/api/fi/tb")
 def fi_tb(req, q):
     y, p = _yp(q)
-    return reports.trial_balance(db(), y, int(q.get("pfrom") or 1), int(q.get("pto") or p))
+    return reports.trial_balance(db(), y, parse_int(q.get("pfrom"), "pfrom", default=1), parse_int(q.get("pto"), "pto", default=p))
 
 
 @route("GET", "/api/fi/fs")
 def fi_fs(req, q):
     y, p = _yp(q)
-    return reports.statements(db(), y, int(q.get("pfrom") or p), int(q.get("pto") or p))
+    return reports.statements(db(), y, parse_int(q.get("pfrom"), "pfrom", default=p), parse_int(q.get("pto"), "pto", default=p))
 
 
 @route("GET", "/api/fi/partners")
@@ -579,7 +591,7 @@ def fi_aging(req, q):
 def fi_cash(req, q):
     y, p = _yp(q)
     return reports.cash_position(db(), q.get("key_date") or reports.eop(y, p),
-                                 int(q.get("weeks") or 8))
+                                 parse_int(q.get("weeks"), "weeks", default=8))
 
 
 @route("GET", "/api/fi/cockpit")

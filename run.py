@@ -10,6 +10,8 @@ Options:
   --port N         port (default 8080)
   --no-browser     do not open the browser
   --keep-running   do not stop when the browser tabs are closed
+  --backup         copy the database to data/backup (also done daily and before --reset)
+  --restore FILE   restore a backup copy
 """
 import argparse
 import json
@@ -30,8 +32,21 @@ if sys.stdout is None or sys.stderr is None:
     sys.stdout = sys.stderr = _log
 
 from mm import seed  # noqa: E402
-from mm.db import DEFAULT_DB, connect  # noqa: E402
+from mm.db import DEFAULT_DB, backup, connect, integrity_ok, restore  # noqa: E402
 from web.server import serve  # noqa: E402
+
+
+def _daily_backup(db_path):
+    """One automatic backup per day at the first start (the last 14 are kept)."""
+    import glob
+    import time
+    d = os.path.join(os.path.dirname(db_path), "backup")
+    today = time.strftime("%Y%m%d")
+    if not glob.glob(os.path.join(d, "mm_%s_*.db" % today)):
+        try:
+            backup(db_path)
+        except Exception:       # a failed backup must not stop the start
+            pass
 
 
 def setup_log():
@@ -102,7 +117,23 @@ def main():
     ap.add_argument("--empty", action="store_true")
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--keep-running", action="store_true")
+    ap.add_argument("--backup", action="store_true", help="copy the database to data/backup and exit")
+    ap.add_argument("--restore", metavar="FILE", help="restore a backup (stops a running server)")
     a = ap.parse_args()
+    db_path = os.environ.get("MM_DB") or DEFAULT_DB
+    if a.host not in ("127.0.0.1", "localhost", "::1") and not os.environ.get("MM_ALLOW_REMOTE"):
+        print("Remote access is refused: MM Core has no network-grade login yet. "
+              "Use the default host 127.0.0.1 (or set MM_ALLOW_REMOTE=1 at your own risk).")
+        sys.exit(2)
+    if a.backup:
+        print("Backup written:", backup(db_path))
+        return
+    if a.restore:
+        if already_running(a.port):
+            stop_running(a.port)
+        backup(db_path)                      # keep the current state, just in case
+        print("Database restored from", a.restore, "->", restore(a.restore, db_path))
+        return
 
     # Second click while it is already running: just open the browser again.
     if not a.reset and already_running(a.port):
@@ -114,13 +145,21 @@ def main():
     if a.reset and already_running(a.port):
         stop_running(a.port)
 
-    db_path = os.environ.get("MM_DB") or DEFAULT_DB
     if a.reset and os.path.exists(db_path):
+        print("Backup before reset:", backup(db_path))
         os.remove(db_path)
+        for ext in ("-wal", "-shm"):
+            if os.path.exists(db_path + ext):
+                os.remove(db_path + ext)
         print("Database deleted:", db_path)
+    elif os.path.exists(db_path):
+        _daily_backup(db_path)
     log = setup_log()
     try:
         conn = connect(db_path)
+        if not integrity_ok(conn):
+            raise RuntimeError("The database file %s is damaged - restore a backup "
+                               "(run.py --restore data/backup/...)" % db_path)
         if not a.empty and seed.seed(conn) is not None:
             print("Demo data loaded.")
         conn.close()

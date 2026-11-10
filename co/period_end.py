@@ -17,6 +17,7 @@ from mm.util import MMError, now_ts, rdiv
 
 from .config import VV_KEYS
 from .core import ks, orn, post_co_doc, reverse_co_doc, split
+from mm.util import parse_year, parse_period  # noqa: E402
 
 
 # ====================================================================== cycles
@@ -56,7 +57,7 @@ def _copa_segments(conn, field, plikz, gjahr, perio):
 
 
 def run_cycle(conn, cycle, gjahr, perio, wrttp="04", test=False, user=""):
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     with transaction(conn):
         c = conn.execute("SELECT * FROM cycle WHERE cycle=?", (cycle,)).fetchone()
         if not c:
@@ -204,7 +205,8 @@ def reverse_run(conn, run_id, user=""):
 
 # ====================================================================== KGI2
 def _prod_orders(conn, gjahr, perio, aufnr=None):
-    sql = ("SELECT * FROM orders WHERE auart IN ('PP01','ZP03','ZREF','ZP07') AND "
+    from pp.config import PROD_ORDER_TYPES
+    sql = ("SELECT * FROM orders WHERE auart IN (%s) AND " % ",".join("'%s'" % t for t in PROD_ORDER_TYPES) +
            "stat NOT IN ('CRTD','CLSD') "
            "AND aufnr IN (SELECT DISTINCT substr(objnr,3) FROM co_item WHERE "
            "wrttp='04' AND (gjahr*12+perio)<=? AND objnr LIKE 'OR%')")
@@ -217,7 +219,7 @@ def _prod_orders(conn, gjahr, perio, aufnr=None):
 
 def overhead(conn, gjahr, perio, aufnr=None, test=False, user=""):
     """KGI2: apply the costing sheet to the actual costs of the period."""
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     out = []
     with transaction(conn):
         sheet = conn.execute("SELECT * FROM costing_sheet ORDER BY zeile").fetchall()
@@ -267,7 +269,7 @@ def _order_actuals(conn, aufnr, gjahr, perio):
 
 def variances(conn, gjahr, perio, aufnr=None, user=""):
     """KKS2 for delivered / technically completed production orders."""
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     summary = []
     with transaction(conn):
         orders = [o for o in _prod_orders(conn, gjahr, perio, aufnr)
@@ -350,7 +352,7 @@ def variances(conn, gjahr, perio, aufnr=None, user=""):
 # ====================================================================== KO88
 def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
     """KO88 / CO88: settle the cumulative order balance per settlement rule."""
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     out = []
     with transaction(conn):
         sql = ("SELECT o.*, c.kosar FROM orders o LEFT JOIN cost_center c ON "
@@ -365,7 +367,8 @@ def settle(conn, gjahr, perio, aufnr=None, test=False, user=""):
                                (orn(o["aufnr"]), gjahr * 12 + perio)).fetchone()[0]
             if bal == 0:
                 continue
-            if o["auart"] in ("PP01", "ZP03", "ZREF") and o["stat"] not in ("DLV", "TECO"):
+            from pp.config import GR_ORDER_TYPES
+            if o["auart"] in GR_ORDER_TYPES and o["stat"] not in ("DLV", "TECO"):
                 out.append(dict(aufnr=o["aufnr"], amount=bal, receiver="-",
                                 note="Not delivered: balance is work in process, not "
                                      "settled"))

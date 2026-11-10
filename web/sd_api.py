@@ -9,6 +9,7 @@ from sd import billing, config as C, delivery, order, pricing, reports, service
 
 from .server import db, route
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_int  # noqa: E402
 
 AMT = {"netwr", "mwsbk", "netpr", "mwsbp", "wavwr", "kzwi1", "kzwi2", "freight", "kwert", "value", "gross",
        "disc", "net", "cogs", "revenue", "deductions", "cost", "margin", "returns", "credits", "order_value",
@@ -146,8 +147,7 @@ def sd_condition_save(req, q):
 
 @route("POST", "/api/sd/condition/delete")
 def sd_condition_del(req, q):
-    db().execute("UPDATE sd_cond SET loevm=1 WHERE knumh=?", (int(req.body.get("knumh")),))
-    return {"message": "Condition record marked for deletion"}
+    return pricing.delete_condition(db(), parse_int(req.body.get("knumh"), "condition record"), req.user)
 
 
 # ====================================================================== shipping

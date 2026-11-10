@@ -67,6 +67,7 @@ const MENU = [
       ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5K", "ZMM_COCKPIT"]],
       ["Purchasing", ["ME21N", "ME23N", "ME2M"]],
       ["Logistics Invoice Verification", ["MIRO", "MR8M", "MRBR"]],
+      ["Purchasing Info & Reports", ["ME12", "ME13", "ME03", "ME1L", "ME52N", "ME61", "ME6H"]],
       ["Warehouse Management (bins)", ["LX02", "LX03", "LS01"]],
       ["Material Master", ["MM01", "MM02", "MM03"]],
       ["Valuation", ["MR21", "CKM3"]],
@@ -102,7 +103,7 @@ const MENU = [
       ["Document Entry", ["F-02", "FB50", "FBS1"]],
       ["Document", ["FB03", "FB08", "FBRA", "F.81"]],
       ["Account", ["FS10N", "FBL3N", "F.13"]],
-      ["Information System", ["S_ALR_87012277", "F.01"]],
+      ["Information System", ["S_ALR_87012277", "F.01", "FAGLB03", "S_ALR_87012284", "S_ALR_87012182", "S_ALR_87012089"]],
     ]],
     ["!Investment Management", []],
     ["General Components", [
@@ -160,6 +161,7 @@ MENU.push(
     ["Change Documents", ["MM04", "XD04", "XK04"]],
     ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV"]],
     ["e-Learning & Quality", ["ZLMS", "ZQA_TEST", "ZQA_CHECK"]],
+    ["More transactions", ["OKEON", "CS12", "MC82", "KKAO", "VKM3", "IW53"]],
   ]]);
 // N-ERP order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",

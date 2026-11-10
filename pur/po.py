@@ -18,6 +18,7 @@ from fi.config import LOCAL_CURRENCY
 
 from .config import PO_RELEASE, PURCH_GROUPS
 from .sourcing import net_price
+from mm.util import parse_int  # noqa: E402
 
 
 def _value(conn, ebeln):
@@ -152,7 +153,11 @@ def create_po(conn, data, user):
                     raise MMError("Requisition %s/%s is not released or already ordered"
                                   % (it["banfn"], it["bnfpo"]), "06", "330")
             if matnr:
-                if data.get("info_update", True) and not konnr:
+                has_ir = conn.execute("SELECT 1 FROM info_record WHERE lifnr=? AND matnr=? AND "
+                                      "werks=?", (lifnr, matnr, werks)).fetchone()
+                # the info record price is master data (ME12): a PO only creates it the first
+                # time or updates it when the PO comes from an awarded quotation
+                if data.get("info_update", True) and not konnr and (not has_ir or data.get("angnr")):
                     from .sourcing import save_info_record
                     save_info_record(conn, lifnr, matnr, brutto, peinh, rabatt, frb,
                                      lead, werks=werks)
@@ -202,7 +207,7 @@ def change_po(conn, ebeln, ebelp, user, menge=None, eindt=None, elikz=None, loek
     """ME22N"""
     with transaction(conn):
         it = conn.execute("SELECT * FROM po_item WHERE ebeln=? AND ebelp=?",
-                          (ebeln, int(ebelp))).fetchone()
+                          (ebeln, parse_int(ebelp, "PO item"))).fetchone()
         if not it:
             raise MMError("PO item %s/%s does not exist" % (ebeln, ebelp), "06", "019")
         h = conn.execute("SELECT * FROM po_header WHERE ebeln=?", (ebeln,)).fetchone()

@@ -17,6 +17,7 @@ from mm.db import transaction
 from mm.util import MMError, parse_amount, parse_qty, rdiv
 
 from .core import ks, post_co_doc, split
+from mm.util import parse_year  # noqa: E402
 
 
 def _periods(pfrom, pto):
@@ -35,7 +36,7 @@ def plan_costs(conn, gjahr, pfrom, pto, kostl, kstar, fix, var, lstar="",
                distribute=True, user=""):
     """KP06. fix/var = totals for the range (distribute=True, key 2 'equal')
     or values per period (distribute=False)."""
-    gjahr = int(gjahr)
+    gjahr = parse_year(gjahr)
     pers = _periods(pfrom, pto)
     fix_c = parse_amount(fix or "0", allow_zero=True)
     var_c = parse_amount(var or "0", allow_zero=True)
@@ -71,7 +72,7 @@ def plan_costs(conn, gjahr, pfrom, pto, kostl, kstar, fix, var, lstar="",
 def plan_activity(conn, gjahr, pfrom, pto, kostl, lstar, qty, capacity=None,
                   price_fix=None, price_var=None):
     """KP26: planned activity per period (quantity is per period)."""
-    gjahr = int(gjahr)
+    gjahr = parse_year(gjahr)
     q = parse_qty(qty)
     cap = parse_qty(capacity, allow_zero=True) if capacity not in (None, "") else q
     manual = price_fix not in (None, "") or price_var not in (None, "")

@@ -104,7 +104,11 @@ CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 """
 
 
-def connect(path=None):
+_MIGRATED = set()
+
+
+def open_db(path=None):
+    """Open the database (no schema work): WAL journal, sensible pragmas."""
     path = path or os.environ.get("MM_DB") or DEFAULT_DB
     if path != ":memory:":
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -112,6 +116,26 @@ def connect(path=None):
                            isolation_level=None)  # we manage transactions
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 30000")
+    if path != ":memory:":
+        conn.execute("PRAGMA journal_mode = WAL")      # readers never wait for a writer
+        conn.execute("PRAGMA synchronous = NORMAL")
+    return conn
+
+
+def connect(path=None):
+    """Open the database; the schema and data migrations run once per database file
+    and process (every time for in-memory databases)."""
+    path = path or os.environ.get("MM_DB") or DEFAULT_DB
+    conn = open_db(path)
+    if path == ":memory:" or os.path.abspath(path) not in _MIGRATED:
+        migrate_schema(conn)
+        if path != ":memory:":
+            _MIGRATED.add(os.path.abspath(path))
+    return conn
+
+
+def migrate_schema(conn):
     conn.executescript(SCHEMA)
     from co.schema import CO_SCHEMA, CO_NUMBER_RANGES, MM_COLUMN_ADDS
     from fi.schema import FI_SCHEMA, FI_COLUMN_ADDS
@@ -144,7 +168,59 @@ def connect(path=None):
                      " VALUES (?,?,?,?,?,?,?)", (k, v[0], v[1], v[2], v[3], v[4], v[5]))
     from .migrations import migrate
     migrate(conn)
+    # FS00 accounts created by the user are known to the MM texts / P&L classification
+    from .config import GL_ACCOUNTS, PNL_ACCOUNTS
+    for r in conn.execute("SELECT hkont, txt, typ FROM gl_account"):
+        GL_ACCOUNTS.setdefault(r["hkont"], r["txt"])
+        if r["typ"] == "PL":
+            PNL_ACCOUNTS.add(r["hkont"])
     return conn
+
+
+def backup(path=None, target_dir=None, keep=14):
+    """Copy the database with SQLite's online backup (safe while the server runs)."""
+    import glob
+    import time
+    path = path or os.environ.get("MM_DB") or DEFAULT_DB
+    if not os.path.exists(path):
+        return None
+    target_dir = target_dir or os.path.join(os.path.dirname(path), "backup")
+    os.makedirs(target_dir, exist_ok=True)
+    dst = os.path.join(target_dir, "mm_%s.db" % time.strftime("%Y%m%d_%H%M%S"))     # real time, not business date
+    src = sqlite3.connect(path)
+    out = sqlite3.connect(dst)
+    try:
+        src.backup(out)
+    finally:
+        out.close()
+        src.close()
+    files = sorted(glob.glob(os.path.join(target_dir, "mm_*.db")))
+    for old in files[:-keep]:
+        try:
+            os.remove(old)
+        except OSError:
+            pass
+    return dst
+
+
+def restore(backup_file, path=None):
+    path = path or os.environ.get("MM_DB") or DEFAULT_DB
+    src = sqlite3.connect(backup_file)
+    if src.execute("PRAGMA quick_check").fetchone()[0] != "ok":
+        src.close()
+        raise ValueError("Backup %s is damaged" % backup_file)
+    out = sqlite3.connect(path)
+    try:
+        src.backup(out)
+    finally:
+        out.close()
+        src.close()
+    _MIGRATED.discard(os.path.abspath(path))
+    return path
+
+
+def integrity_ok(conn):
+    return conn.execute("PRAGMA quick_check").fetchone()[0] == "ok"
 
 
 def next_number(conn, obj):

@@ -55,6 +55,8 @@ const App = (() => {
 
   // ------------------------------------------------------------------ API
   async function api(path, body) {
+    // a display screen opened without its key: ask for the key instead of calling the server
+    if (/\/(\?|$)|\/\//.test(path.replace(/^\/api/, ""))) throw { type: "E", text: "Enter the key fields first", class: "00", number: "055" };
     const opt = { headers: { "X-User": S.user } };
     if (body !== undefined) {
       opt.method = "POST";

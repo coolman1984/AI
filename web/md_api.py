@@ -4,6 +4,7 @@ from mm.db import rows
 from mm.util import MMError, amt_out, qty_out
 
 from .server import db, route
+from mm.util import parse_int  # noqa: E402
 
 AMT = {"verpr", "stprs", "salk3", "price", "zplp1", "bwprh", "bwph1", "kbetr", "klimk",
        "minbw", "open_balance", "balance", "sales_volume", "po_volume", "value", "netwr",
@@ -317,7 +318,7 @@ def md_cin(req, q):
 
 @route("GET", "/api/md/cockpit")
 def md_cockpit(req, q):
-    return out(reports.cockpit(db(), int(q.get("days") or 60)))
+    return out(reports.cockpit(db(), parse_int(q.get("days"), "days", default=60)))
 
 
 @route("GET", "/api/md/check")
