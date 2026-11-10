@@ -34,7 +34,7 @@ register("ZAMS", { title: "AMS - ID & Authorization", async render(app) {
   toolbar([{ label: "Access Request", primary: true, onClick: req },
     { label: "Unlock / Change Password", onClick: () => App.changePassword(false) },
     { label: "Approval inbox", onClick: () => go("ZINBOX") }]);
-  if (me.dev) app.append(panel(null, h("p", null, "Developer mode (run.py --dev): no logon, every user may do everything. Start MM Core normally to use users and authorizations.")));
+  if (me.dev) app.append(panel(null, h("p", null, "User logon is switched OFF for now: no password, everyone may do everything. To switch it on run tools\\Login ON.bat and start MM Core again.")));
   const head = h("div.ams-hero", null,
     h("div.ams-hero-ico", null, h("span", null, "👤"), h("b", null, "🔒")),
     h("div", null, h("div.ams-hero-t", null, "AMS"), h("div.ams-hero-s", null, "ID & Authorization")),

@@ -17,7 +17,9 @@ Double-click **`Start MM Core.bat`** in this folder.
 
 The first start loads demo data: 2 plants, 10 materials and about 4 months of movements.
 
-**Log on.** Every person has an own user (AMS - ID & Authorization).
+**Log on - switched OFF for now.** MM Core starts without user and password. To switch the
+logon on, run `tools/Login ON.bat` (back off: `tools/Login OFF.bat`) and start MM Core again
+(or `python run.py --login`). With the logon on, every person has an own user (AMS - ID & Authorization).
 Demo users: `ADMIN / admin` (everything), `SALES1 / sales1`, `CREDIT1`, `BUYER1`, `PURMGR1`,
 `WH1`, `QM1`, `PLAN1`, `SHOP1`, `AP1`, `AR1`, `GL1`, `CTRL1`, `MDM1`, `MDA1`, `AUDIT1`
 (password = user name in small letters). A database without demo data gets one `ADMIN`
