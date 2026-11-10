@@ -513,3 +513,4 @@ table.qa-docs td.c, table.grid td.c { text-align: center; }
 .inbox-count { color: #bb0000; font-weight: 600; }
 td.neg, span.neg { color: #bb0000; }
 td.pos { color: #107e3e; }
+.form-preview { width: 100%; height: 70vh; border: 1px solid var(--border, #ddd); background: #fff; margin-top: 10px; }

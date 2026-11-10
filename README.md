@@ -37,6 +37,23 @@ user with a one-time password in `data/first_login.txt`.
   change) and the critical object (release, payment run, periods, reversals, user admin).
 - `python run.py --dev` starts without logon (developer mode for tests and tools).
 
+## Go-live functions
+
+| T-code | What it does |
+|---|---|
+| MI01 / MI03 / MI04 / MI11 / MI20 / MI07 / MICN | Physical inventory: count document with posting block, blind count sheet, recount, difference list with value, posting 701 / 702, cycle-count proposal by ABC class |
+| MMPV / MMRV / MB5B | MM periods (only current + previous period open) and stock on any posting date |
+| ZWHT / ZWHT_RPT | Egyptian withholding tax (W1 1 %, W3 3 %, W5 5 % - confirm the rates with your tax adviser) per vendor with exemption certificate; report for form 41 |
+| F-44 / F-32 / F-03 | Manual clearing of vendor, customer and G/L open items (difference up to 5.00 to payment differences, or residual item) |
+| F-47 / F-37, F-48 / F-29, F-54 / F-39 | Down-payment request, down payment (special G/L A), clearing against the invoice |
+| OB52 | Posting periods per account type (+, A, D, K, M, S) and special periods 13-16 (F-02 "Special period") |
+| ZIMPORT | Data import for go-live (CSV): G/L accounts, cost centers, materials, vendors, customers, info records, open items, G/L balances, stock, assets - simulate first, every line through the normal checks, takeover account 399999 must end at zero |
+| ZPRINT | Print forms (PO, RFQ, delivery note, invoice / credit memo with e-invoice UUID, dunning letter, payment advice, count sheet, production order) with output log |
+
+A purchase order for a new source (no contract, no earlier info record with the vendor)
+from 250,000 EGP needs an RFQ with three quotations (ME49) or a written reason - then the
+purchasing manager must release it (R1).
+
 Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when installing).
 
 | In folder `tools/` | What it does |
@@ -249,8 +266,8 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
 ## Process tests, manuals and e-Learning
 
 - **ZQA_TEST - Process Test Center**: *Execute* runs every process end to end on a fresh
-  sample system (your data is not touched): 113 business test cases across 9 processes, made of
-  151 automated checks on the fixed business date 9 Nov 2026 (unit tests + cross-module end-to-end cycles in `tests/test_e2e.py`).
+  sample system (your data is not touched): 123 business test cases across 9 processes, made of
+  161 automated checks on the fixed business date 9 Nov 2026 (unit tests + cross-module end-to-end cycles in `tests/test_e2e.py`).
   Each case shows its T-codes, the expected and the actual result; click a line for the checks.
 - **ZLMS - e-Learning (On-line Academy)**: manuals repository by folder (Set) or module (DS),
   process manuals (PR, PowerPoint) and program manuals (PG, one per T-code), status from the

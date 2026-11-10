@@ -76,6 +76,7 @@ def vendor_invoice(conn, header, lines, user, credit_memo=False):
                             amount=sign * to_local(net, kursf), kostl=l.get("kostl"),
                             aufnr=l.get("aufnr"), mwskz=code or None,
                             sgtxt=l.get("sgtxt") or header.get("bktxt")))
+        net_fc = sum(l["wrbtr"] for l in acc) * sign
         acc += _tax_lines(base, kursf, sign)
         gross_fc = sum(l["wrbtr"] for l in acc) * sign
         if header.get("gross") not in (None, ""):
@@ -84,6 +85,8 @@ def vendor_invoice(conn, header, lines, user, credit_memo=False):
                 raise MMError("Balance %.2f: invoice amount %.2f but items + tax = %.2f"
                               % ((g - gross_fc) / 100.0, g / 100.0, gross_fc / 100.0),
                               "F5", "702")
+        from . import wht
+        acc += wht.lines(conn, lifnr, net_fc, budat, kursf, sign)     # withholding tax
         vend = dict(lifnr=lifnr, koart="K", zterm=header.get("zterm") or None,
                     zfbdt=bldat, sgtxt=header.get("bktxt"))
         acc = _balance_partner(acc, vend)
@@ -290,6 +293,7 @@ def miro(conn, header, items, user, check_only=False, credit=False, subsequent=F
             elif not check_only:
                 conn.execute("UPDATE po_item SET reewr=reewr+? WHERE ebeln=? AND ebelp=?",
                              (sign * net_lc, ebeln, ebelp))
+        net_fc = sum(l["wrbtr"] for l in acc) * sign
         acc += _tax_lines(base, kursf, sign)
         gross_fc = sum(l["wrbtr"] for l in acc) * sign
         gross = sum(l["amount"] for l in acc) * sign
@@ -299,6 +303,8 @@ def miro(conn, header, items, user, check_only=False, credit=False, subsequent=F
                 raise MMError("Balance %.2f - invoice amount %.2f, calculated %.2f (net + tax)"
                               % ((g - gross_fc) / 100.0, g / 100.0, gross_fc / 100.0), "M8", "534")
         warn = check_duplicate(conn, po["lifnr"], xblnr, bldat, gross_fc, waers)
+        from . import wht
+        acc += wht.lines(conn, po["lifnr"], net_fc, budat, kursf, sign)   # withholding tax
         vend = dict(lifnr=po["lifnr"], koart="K", zfbdt=bldat,
                     sgtxt="%s %s" % ("Credit memo" if credit else "Invoice", xblnr))
         if block:
@@ -455,10 +461,16 @@ def miro_simulate(conn, header, items, user, credit=False, subsequent=False):
 
 
 # ====================================================================== open items
-def open_items(conn, koart, partner=None, key_date=None, hkont=None):
+def open_items(conn, koart, partner=None, key_date=None, hkont=None, special=False):
+    """Open items; special G/L items (down payments, umskz) only with special=True
+    (all) or special='A' (one indicator) - they are not invoices to pay or dun."""
     sql = ("SELECT i.*, h.blart, h.bldat, h.budat, h.xblnr, h.waers, h.kursf, h.awkey "
            "FROM acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND h.gjahr=i.gjahr "
            "WHERE i.koart=? AND i.augbl IS NULL")
+    if special is False:
+        sql += " AND i.umskz IS NULL"
+    elif special is not True:
+        sql += " AND i.umskz='%s'" % ("A" if special == "A" else "F")
     args = [koart]
     if koart == "S":
         sql = sql.replace("i.koart=?", "i.hkont=?")

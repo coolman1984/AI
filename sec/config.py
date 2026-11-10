@@ -23,7 +23,7 @@ ACTIVITIES = {"02": "Change", "03": "Display", "*": "All"}
 API_AREAS = (("/api/sd/", "SD"), ("/api/fi/", "FI"), ("/api/co/", "CO"), ("/api/pur/", "PUR"),
              ("/api/pp/", "PP"), ("/api/md/", "MD"), ("/api/qa/", "CA"), ("/api/office/", "CA"),
              ("/api/excel/", "CA"), ("/api/pdf/", "CA"), ("/api/ppt/", "CA"), ("/api/outlook", "CA"),
-             ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"))
+             ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request")
@@ -45,6 +45,9 @@ OBJECTS = {
     "F_BKPF_REV": "Reversal of invoices, payments, depreciation, year-end (MR8M, FBRA, F.16)",
     "F_LFA1_BEK": "Confirm sensitive master data changes (FK08 / FD08)",
     "S_USER_GRP": "User and role administration (SU01 / PFCG / SM04)",
+    "M_ISEG_WDB": "Post physical inventory differences (MI07)",
+    "M_PERIOD": "Open and close MM periods (MMPV / MMRV)",
+    "S_DATA_IMP": "Data import for go-live (ZIMPORT, post)",
 }
 # (method, path regex, object, value taken from the request body or '*')
 ROUTE_OBJECTS = (
@@ -56,6 +59,9 @@ ROUTE_OBJECTS = (
     ("POST", r"/api/fi/(mr8m|fbra|f16|afab-reverse)", "F_BKPF_REV", None),
     ("POST", r"/api/md/sensitive/confirm", "F_LFA1_BEK", None),
     ("POST", r"/api/sec/admin/.*", "S_USER_GRP", None),
+    ("POST", r"/api/mi/post", "M_ISEG_WDB", None),
+    ("POST", r"/api/(mmpv|mmrv)", "M_PERIOD", None),
+    ("POST", r"/api/import/run", "S_DATA_IMP", None),
 )
 # successful calls written to the audit log (SM20) besides the object routes above
 AUDIT_ROUTES = (
@@ -79,8 +85,8 @@ DEMO_ROLES = {
     "BUYER": ("Buyer", ["@PUR", "@CA", "ME*", "MIGO"], D + [("S_AREA", "PUR", "02")]),
     "PURCH_MANAGER": ("Purchasing manager (release)", ["@PUR", "@CA", "ME*"],
                       D + [("S_AREA", "PUR", "02"), ("M_EINK_FRG", "*", "02")]),
-    "WAREHOUSE": ("Warehouse clerk", ["@MM", "@CA", "MIGO", "MB*", "LX*", "LT*", "VL*"],
-                  D + [("S_AREA", "MM", "02"), ("S_AREA", "SD", "02")]),
+    "WAREHOUSE": ("Warehouse clerk", ["@MM", "@CA", "MIGO", "MB*", "LX*", "LT*", "VL*", "MI*"],
+                  D + [("S_AREA", "MM", "02"), ("S_AREA", "SD", "02"), ("M_ISEG_WDB", "*", "02")]),
     "QUALITY": ("Quality inspector", ["@MM", "@CA", "MIGO", "QA*"], D + [("S_AREA", "MM", "02")]),
     "PLANNER": ("Production planner", ["@PP", "@CA", "MD*"], D + [("S_AREA", "PP", "02")]),
     "SHOPFLOOR": ("Shop floor (confirmations)", ["@PP", "@CA", "CO11N", "CO27", "MIGO"],
@@ -89,7 +95,7 @@ DEMO_ROLES = {
                  D + [("S_AREA", "FI", "02"), ("F_REGU_BUK", "*", "02")]),
     "AR_CLERK": ("Accounts receivable", ["@FI", "@CA", "F-28", "FBL5N"], D + [("S_AREA", "FI", "02")]),
     "GL_ACCOUNTANT": ("General ledger accountant", ["@FI", "@CA"],
-                      D + [("S_AREA", "FI", "02"), ("F_BKPF_BUP", "*", "02"),
+                      D + [("S_AREA", "FI", "02"), ("F_BKPF_BUP", "*", "02"), ("M_PERIOD", "*", "02"),
                            ("F_BKPF_REV", "*", "02"), ("M_RBKP_FRE", "*", "02")]),
     "CONTROLLER": ("Controller", ["@CO", "@CA", "K*"], D + [("S_AREA", "CO", "02")]),
     "MD_MAINTAINER": ("Master data maintainer", ["@MD", "@CA"], D + [("S_AREA", "MD", "02")]),

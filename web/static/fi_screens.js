@@ -192,13 +192,32 @@ simpleList("OAOA", "Asset Classes & Depreciation", () => FI.asset_classes.map(c 
 
 register("OB52", { title: "Open and Close Posting Periods", async render(app) {
   await meta(true);
-  const pr = FI.period;
-  const f = { y1: inp({ value: pr.y1, w: "s" }), p1: inp({ value: pr.p1, w: "s" }), y2: inp({ value: pr.y2, w: "s" }), p2: inp({ value: pr.p2, w: "s" }) };
-  app.append(panel("Variant 1000 · account type + (all)", grid(field("From period", h("span.split", null, f.p1, "/", f.y1)),
-    field("To period", h("span.split", null, f.p2, "/", f.y2))), h("div.note", null,
-    "Postings outside this interval are rejected with message F5 201 - in every module (MM, CO, FI).")));
-  toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-    const r = await run(() => api("/api/fi/ob52", { y1: val(f.y1), p1: val(f.p1), y2: val(f.y2), p2: val(f.p2) })); if (r) msg("S", r.message); } }]);
+  const body = h("div");
+  app.append(body);
+  const TXT = { "+": "All account types", A: "Assets", D: "Customers", K: "Vendors", M: "Materials", S: "G/L accounts" };
+  const load = async () => {
+    const rows = (await run(() => api("/api/fi/ob52"))) || [];
+    body.innerHTML = "";
+    const have = {}; rows.forEach(r => { have[r.koart] = r; });
+    const tb = h("tbody");
+    for (const k of ["+", "A", "D", "K", "M", "S"]) {
+      const r = have[k] || {};
+      const f = { y1: inp({ value: r.y1 || "", w: "s" }), p1: inp({ value: r.p1 || "", w: "s" }), y2: inp({ value: r.y2 || "", w: "s" }), p2: inp({ value: r.p2 || "", w: "s" }) };
+      tb.append(h("tr", null, h("td", null, h("b", null, k)), h("td", null, TXT[k]), h("td", null, f.p1, " / ", f.y1),
+        h("td", null, f.p2, " / ", f.y2), h("td", null,
+          h("button.btn.primary", { type: "button", on: { click: async () => {
+            const x = await run(() => api("/api/fi/ob52", { koart: k, y1: val(f.y1), p1: val(f.p1), y2: val(f.y2), p2: val(f.p2) }));
+            if (x) { msg("S", x.message); load(); } } } }, "Save"), " ",
+          k !== "+" && have[k] ? h("button.btn", { type: "button", on: { click: async () => {
+            const x = await run(() => api("/api/fi/ob52", { koart: k, delete: true })); if (x) { msg("S", x.message); load(); } } } }, "Delete") : null)));
+    }
+    body.append(panel("Variant 1000 - posting periods per account type",
+      h("table.grid", null, h("thead", null, h("tr", null, h("th", null, "Type"), h("th", null, "Text"), h("th", null, "From period / year"),
+        h("th", null, "To period / year"), h("th", null, ""))), tb),
+      h("div.note", null, "The + interval applies to every posting; an interval for an account type (e.g. K vendors) restricts that type further. " +
+        "Periods 13-16 are special periods for year-end adjustments (F-02 with posting date in December). Postings outside are rejected with F5 201 in every module.")));
+  };
+  load();
 }});
 
 register("OB08", { title: "Exchange Rates (type M)", async render(app) {
@@ -312,7 +331,7 @@ register("F-02", { title: "Enter G/L Account Posting (General Posting)", async r
   await meta();
   const f = { bldat: inp({ type: "date", value: today(), w: "m" }), budat: inp({ type: "date", value: today(), w: "m" }),
     blart: sel(FI.doc_types.filter(d => ["SA", "KR", "DR", "AB"].includes(d.blart)).map(d => [d.blart, `${d.blart} ${d.text}`]), "SA", { w: "l" }),
-    xblnr: inp({ w: "m" }), bktxt: inp({ w: "l" }) };
+    xblnr: inp({ w: "m" }), bktxt: inp({ w: "l" }), perio: inp({ w: "s", ph: "13-16" }) };
   const pks = FI.posting_keys.filter(k => ["40", "50", "01", "11", "15", "21", "31", "25"].includes(k.bschl)).map(k => [k.bschl, `${k.bschl} ${k.text} (${k.koart}/${k.shkzg})`]);
   const lines = [{ bschl: "40", account: "", amount: "" }, { bschl: "50", account: "", amount: "" }];
   const bal = h("span.badge");
@@ -323,11 +342,11 @@ register("F-02", { title: "Enter G/L Account Posting (General Posting)", async r
     { key: "aufnr", label: "Order", list: "dl-aufnr" }, { key: "sgtxt", label: "Text", w: "l" }], lines, calc);
   calc();
   app.append(panel("Header", grid(field("Document date", f.bldat), field("Posting date", f.budat, { req: true }), field("Type", f.blart),
-    field("Reference", f.xblnr), field("Doc. header text", f.bktxt))),
+    field("Reference", f.xblnr), field("Doc. header text", f.bktxt), field("Special period (Dec.)", f.perio))),
     h("div.panel", null, h("div.panel-head", null, "Items", h("span.spacer"), bal, h("button.btn.ghost", { type: "button", on: { click: () => { lines.push({ bschl: "40", account: "", amount: "" }); g.redraw(); } } }, "+ Line")), g),
     h("div.note", null, "Posting keys decide debit/credit and account type: 40/50 G/L, 31/21/25 vendor, 01/11/15 customer. SA documents allow G/L accounts only (OBA7)."));
   toolbar([{ label: "Post", key: "Ctrl+S", primary: true, onClick: async () => {
-    const r = await run(() => api("/api/fi/f02", { header: { bldat: f.bldat.value, budat: f.budat.value, blart: f.blart.value, xblnr: val(f.xblnr), bktxt: val(f.bktxt) },
+    const r = await run(() => api("/api/fi/f02", { header: { bldat: f.bldat.value, budat: f.budat.value, blart: f.blart.value, xblnr: val(f.xblnr), bktxt: val(f.bktxt), perio: val(f.perio) },
       lines: lines.filter(l => l.account) }));
     if (r) msgLink("S", r.message, "Display", "FB03", { id: r.belnr, year: f.budat.value.slice(0, 4) }); } }]);
 }});

@@ -87,10 +87,19 @@ def fi_fs00(req, q):
 @route("POST", "/api/fi/ob52")
 def fi_ob52(req, q):
     b = req.body
-    gl.set_periods(db(), parse_year(b.get("y1")), parse_period(b.get("p1")), parse_year(b.get("y2")),
-                   parse_period(b.get("p2")))
-    return {"message": "Posting periods %s/%s - %s/%s are open" % (b["p1"], b["y1"],
-                                                                   b["p2"], b["y2"])}
+    if b.get("delete"):
+        gl.set_periods(db(), 0, 1, 0, 1, b.get("koart"), delete=True)
+        return {"message": "Interval for account type %s deleted" % b.get("koart")}
+    p1 = parse_int(b.get("p1"), "period", 1, 16)
+    p2 = parse_int(b.get("p2"), "period", 1, 16)
+    gl.set_periods(db(), parse_year(b.get("y1")), p1, parse_year(b.get("y2")), p2, b.get("koart") or "+")
+    return {"message": "Posting periods %s/%s - %s/%s are open (account type %s)"
+            % (p1, b["y1"], p2, b["y2"], b.get("koart") or "+")}
+
+
+@route("GET", "/api/fi/ob52")
+def fi_ob52_list(req, q):
+    return gl.periods(db())
 
 
 @route("POST", "/api/fi/ob08")

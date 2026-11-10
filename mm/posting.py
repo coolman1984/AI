@@ -439,6 +439,8 @@ def _post_transfer(doc, mt, line, raw):
 # ======================================================================
 class _Doc:
     def __init__(self, conn, budat, bldat, header, user, tcode):
+        from .periods import check as mm_period_check     # MMPV
+        mm_period_check(conn, budat)
         self.conn = conn
         self.budat = budat
         self.mjahr = int(budat[:4])
@@ -658,6 +660,8 @@ class _Doc:
                 sgtxt=line.get("sgtxt")))
 
     def _insert_line(self, line, shkzg, qty, meins, value, salk, lgpla):
+        from .inventory import check_block           # MI01 freeze = posting block
+        check_block(self.conn, line["matnr"], line["werks"], line["lgort"], self.tcode)
         self.zeile += 1
         self.conn.execute(
             "INSERT INTO mat_doc_item (mblnr,mjahr,zeile,bwart,xauto,matnr,werks,"

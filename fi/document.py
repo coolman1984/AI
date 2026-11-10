@@ -38,12 +38,34 @@ def to_local(amount_fc, kursf):
     return rdiv(amount_fc * kursf, RATE_SCALE)
 
 
-def period_open(conn, budat):
-    p = conn.execute("SELECT * FROM posting_period WHERE id=1").fetchone()
-    if not p:
-        return True
-    y, m = int(budat[:4]), int(budat[5:7])
-    return (p["y1"], p["p1"]) <= (y, m) <= (p["y2"], p["p2"])
+PERIOD_SCHEMA = """
+CREATE TABLE IF NOT EXISTS posting_period_koart (  -- OB52 per account type (A D K M S)
+    koart TEXT PRIMARY KEY, y1 INTEGER, p1 INTEGER, y2 INTEGER, p2 INTEGER);
+"""
+KOART_TEXT = {"+": "All account types", "A": "Assets", "D": "Customers", "K": "Vendors",
+              "M": "Materials", "S": "G/L accounts"}
+
+
+def period_open(conn, budat, koart="+", perio=None):
+    """OB52: the '+' interval must be open and, if maintained, the interval of the
+    account type. perio 13-16 = special periods (posting date in December only)."""
+    y = int(budat[:4])
+    m = int(perio) if perio else int(budat[5:7])
+    keys = ["+"] if koart == "+" else ["+", koart]
+    for k in keys:
+        if k == "+":
+            p = conn.execute("SELECT * FROM posting_period WHERE id=1").fetchone()
+        else:
+            p = conn.execute("SELECT * FROM posting_period_koart WHERE koart=?", (k,)).fetchone()
+        if not p:
+            continue
+        if m > 12:      # special period: the interval must reach it explicitly in that year
+            if not ((p["y2"] == y and p["p2"] >= m and (p["y1"], p["p1"]) <= (y, m)) or
+                    (p["y1"] == y and 12 < p["p1"] <= m and (y, m) <= (p["y2"], p["p2"]))):
+                return False
+        elif not (p["y1"], p["p1"]) <= (y, m) <= (p["y2"], p["p2"]):
+            return False
+    return True
 
 
 def due_dates(zfbdt, zterm):
@@ -88,7 +110,7 @@ def _account(conn, hkont):
 # ------------------------------------------------------------------ writer
 @atomic
 def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
-          waers=None, kursf=None, tcode=None):
+          waers=None, kursf=None, tcode=None, perio=None):
     """lines: dict(hkont, amount [local, debit +], wrbtr [doc currency],
     koart, lifnr, kunnr, anln1, anbwa, mwskz, txbase, zfbdt, zterm, zuonr,
     sgtxt, ebeln, ebelp, matnr, werks, menge, zeile, ktosl, kostl, aufnr, paobj,
@@ -103,9 +125,14 @@ def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
     lines = [l for l in lines if l["amount"] or l.get("wrbtr")]
     if not lines:
         return None
-    if not period_open(conn, budat):
+    if perio:
+        from mm.util import parse_int
+        perio = parse_int(perio, "special period", 13, 16)
+        if budat[5:7] != "12":
+            raise MMError("Special periods 13-16 need a posting date in December", "F5", "202")
+    if not period_open(conn, budat, perio=perio):
         raise MMError("Posting period %s %s is not open (OB52)"
-                      % (budat[5:7], budat[:4]), "F5", "201")
+                      % (perio or budat[5:7], budat[:4]), "F5", "201")
     dt = DOC_TYPES.get(blart)
     if not dt:
         raise MMError("Document type %s is not defined (OBA7)" % blart, "F5", "100")
@@ -133,6 +160,9 @@ def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
             if not c:
                 raise MMError("Customer %s does not exist" % l["kunnr"], "F2", "102")
             l["hkont"] = c["akont"] or "140000"
+        if not period_open(conn, budat, koart, perio):
+            raise MMError("Posting period %s %s is not open for account type %s (OB52)"
+                          % (perio or budat[5:7], budat[:4], KOART_TEXT.get(koart, koart)), "F5", "201")
         acc = _account(conn, l["hkont"])
         if not acc:
             raise MMError("G/L account %s does not exist in company code 1000"
@@ -169,7 +199,7 @@ def write(conn, blart, budat, user, awkey, bktxt, lines, bldat=None, xblnr=None,
     conn.execute("INSERT INTO acc_doc (belnr,gjahr,blart,budat,usnam,awkey,bktxt,waers,"
                  "kursf,xblnr,bldat,monat,tcode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                  (belnr, gjahr, blart, budat, user, awkey, (bktxt or "")[:50], waers,
-                  kursf, (xblnr or "")[:16], bldat, int(budat[5:7]), tcode or ""))
+                  kursf, (xblnr or "")[:16], bldat, perio or int(budat[5:7]), tcode or ""))
     for i, l in enumerate(lines, start=1):
         shkzg = "S" if (l["amount"] > 0 or (l["amount"] == 0 and l["wrbtr"] > 0)) else "H"
         conn.execute(

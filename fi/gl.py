@@ -64,12 +64,35 @@ def carry_forward(conn, gjahr, user, test=False):
 
 
 # ---------------------------------------------------------------- OB52 / OB08
-def set_periods(conn, y1, p1, y2, p2):
-    if (int(y1), int(p1)) > (int(y2), int(p2)):
-        raise MMError("Period interval is not valid", "F5", "205")
+def set_periods(conn, y1, p1, y2, p2, koart="+", delete=False):
+    """OB52: '+' = all account types; A D K M S = an additional interval for one type."""
+    koart = (koart or "+").upper()
+    from .document import KOART_TEXT
+    if koart not in KOART_TEXT:
+        raise MMError("Account type %s is not valid (+ A D K M S)" % koart, "F5", "206")
     with transaction(conn):
-        conn.execute("INSERT OR REPLACE INTO posting_period VALUES (1,?,?,?,?)",
-                     (int(y1), int(p1), int(y2), int(p2)))
+        if delete and koart != "+":
+            conn.execute("DELETE FROM posting_period_koart WHERE koart=?", (koart,))
+            return
+        if (int(y1), int(p1)) > (int(y2), int(p2)):
+            raise MMError("Period interval is not valid", "F5", "205")
+        if koart == "+":
+            conn.execute("INSERT OR REPLACE INTO posting_period VALUES (1,?,?,?,?)",
+                         (int(y1), int(p1), int(y2), int(p2)))
+        else:
+            conn.execute("INSERT OR REPLACE INTO posting_period_koart VALUES (?,?,?,?,?)",
+                         (koart, int(y1), int(p1), int(y2), int(p2)))
+
+
+def periods(conn):
+    from .document import KOART_TEXT
+    out = []
+    p = conn.execute("SELECT * FROM posting_period WHERE id=1").fetchone()
+    if p:
+        out.append(dict(koart="+", text=KOART_TEXT["+"], y1=p["y1"], p1=p["p1"], y2=p["y2"], p2=p["p2"]))
+    for r in conn.execute("SELECT * FROM posting_period_koart ORDER BY koart"):
+        out.append(dict(r, text=KOART_TEXT.get(r["koart"], r["koart"])))
+    return out
 
 
 def set_rate(conn, waers, gdatu, ukurs):
@@ -106,7 +129,8 @@ def general_posting(conn, header, lines, user):
         acc.append(line)
     with transaction(conn):
         return write(conn, blart, budat, user, "F-02", header.get("bktxt") or "", acc,
-                     bldat=header.get("bldat"), xblnr=header.get("xblnr"), tcode="F-02")
+                     bldat=header.get("bldat"), xblnr=header.get("xblnr"), tcode="F-02",
+                     perio=header.get("perio") or None)
 
 
 # ---------------------------------------------------------------- FB08
