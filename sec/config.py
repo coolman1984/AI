@@ -23,7 +23,8 @@ ACTIVITIES = {"02": "Change", "03": "Display", "*": "All"}
 API_AREAS = (("/api/sd/", "SD"), ("/api/fi/", "FI"), ("/api/co/", "CO"), ("/api/pur/", "PUR"),
              ("/api/pp/", "PP"), ("/api/md/", "MD"), ("/api/qa/", "CA"), ("/api/office/", "CA"),
              ("/api/excel/", "CA"), ("/api/pdf/", "CA"), ("/api/ppt/", "CA"), ("/api/outlook", "CA"),
-             ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"))
+             ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
+             ("/api/bi/", "CA"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request")
@@ -31,7 +32,7 @@ PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/se
 OPEN_PATHS = ("/api/sec/me", "/api/sec/logout", "/api/sec/password", "/api/sec/request",
               "/api/sec/inbox", "/api/sec/su53", "/api/shutdown", "/api/meta", "/api/dashboard",
               "/api/materials", "/api/plant", "/api/sloc", "/api/vendor", "/api/kostl",
-              "/api/qa/lms")
+              "/api/qa/lms", "/api/bi/view")
 # transactions every user may start
 ALWAYS = ("HOME", "ZAMS", "ZINBOX", "SU53", "ZWORKPLACE", "ZLMS")
 

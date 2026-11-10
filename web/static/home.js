@@ -43,6 +43,7 @@ const PORTAL_ICON = {
   check: '<rect x="11" y="10" width="26" height="28" rx="2"/><path d="M17 20l3 3 6-6M17 30l3 3 6-6M29 21h4M29 31h4"/>',
   doc: '<path d="M14 10h14l7 7v21H14z"/><path d="M28 10v7h7M18 24h12M18 29h12"/>',
   lock: '<circle cx="17" cy="15" r="5"/><path d="M8 32c1-6 5-9 9-9 2 0 4 .6 5.5 1.8"/><circle cx="32" cy="29" r="9"/><rect x="28" y="28" width="8" height="6" rx="1"/><path d="M29.5 28v-2a2.5 2.5 0 0 1 5 0v2"/>',
+  bi: '<rect x="9" y="10" width="30" height="28" rx="2"/><path d="M14 16h10M14 21h10M14 26h10"/><circle cx="32" cy="19" r="4"/><path d="M32 15v4h4"/><path d="M14 33v-2M18 33v-4M22 33v-3M28 33h6M28 29h6"/>',
   inbox: '<path d="M10 26l5-14h18l5 14v10H10z"/><path d="M10 26h9l2 4h6l2-4h9"/>',
 };
 
@@ -64,6 +65,7 @@ const HERO = [
   ["ZPUR_COCKPIT", "Procurement HUB", "cart", "green"],
 ];
 const PORTAL = [
+  ["ZBI", "BI (Business Intelligence)", "Business Status View Around KPIs", "bi"],
   ["ZAMS", "AMS", "ID & Authorization", "lock"],
   ["ZINBOX", "Approval Inbox", "My work items", "inbox"],
   ["ZLMS", "e-Learning", "On-line Academy", "learn"],
