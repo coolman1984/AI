@@ -153,11 +153,18 @@ def post(conn, fkart, k, c, items, fkdat, user, ref, service_order=None):
         a["wrbtr"] = a["amount"]
     acc += _tax_lines(tax_base, 100000, -s)
     total = -sum(a["amount"] for a in acc)
-    acc.append(dict(kunnr=c["kunnr"], koart="D", amount=total, wrbtr=total, zfbdt=fkdat,
-                    zterm=k["zterm"], sgtxt="%s %s" % (bt["text"], vbeln)))
-    from fi.document import write
+    # invoice currency = customer currency (prices are kept in local currency and
+    # converted at the billing-date rate); the receivable is managed in that currency
+    from fi.config import LOCAL_CURRENCY
+    from fi.document import rate, write
+    waerk = (c["waers"] if "waers" in c.keys() and c["waers"] else LOCAL_CURRENCY)
+    kursf = rate(conn, waerk, fkdat)
+    for a in acc:
+        a["wrbtr"] = a["amount"] if waerk == LOCAL_CURRENCY else rdiv(a["amount"] * 100000, kursf)
+    acc.append(dict(kunnr=c["kunnr"], koart="D", amount=total, wrbtr=-sum(a["wrbtr"] for a in acc),
+                    zfbdt=fkdat, zterm=k["zterm"], sgtxt="%s %s" % (bt["text"], vbeln)))
     belnr = write(conn, "RV", fkdat, user, "VF%s" % vbeln, "%s %s" % (bt["text"], vbeln), acc,
-                  xblnr=vbeln, tcode="VF01")
+                  xblnr=vbeln, tcode="VF01", waers=waerk, kursf=kursf)
     # CO-PA
     from co.copa import _cost_values
     from co.period_end import _copa_post
@@ -178,9 +185,9 @@ def post(conn, fkart, k, c, items, fkdat, user, ref, service_order=None):
     mwsbk = abs(total) - netwr
     conn.execute("INSERT INTO billing (vbeln,fkdat,kunnr,netwr,usnam,belnr,copa,cancelled,fkart,vbtyp,vgbel,"
                  "kunrg,zterm,mwsbk,waerk,rfbsk,vkorg,vtweg,aubel) VALUES "
-                 "(?,?,?,?,?,?,?,0,?,?,?,?,?,?,'EGP','C','1000',?,?)",
+                 "(?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,'C','1000',?,?)",
                  (vbeln, fkdat, k["kunnr"], s * netwr, user, belnr, ",".join(copa), fkart, bt["vbtyp"],
-                  ref, c["kunnr"], k["zterm"], mwsbk, k["vtweg"], k["vbeln"]))
+                  ref, c["kunnr"], k["zterm"], mwsbk, waerk, k["vtweg"], k["vbeln"]))
     for it in items:
         conn.execute("INSERT INTO billing_item (vbeln,posnr,matnr,werks,lgort,fkimg,price,disc_pct,gross,disc,"
                      "net,cogs,vgbel,vgpos,aubel,aupos,pstyv,mwsbp,freight,arktx) VALUES "

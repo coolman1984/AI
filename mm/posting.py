@@ -237,9 +237,11 @@ def _post_item(doc, raw):
         o = integration.check_order(conn, aufnr, for_gr=True)
         line.update(aufnr=aufnr, matnr=o["matnr"], werks=o["werks"])
         line["lgort"] = line["lgort"] or (o["lgort"] or "")
-        if bwart == "101" and o["wemng"] + qty > o["gamng"] * 11 // 10:
+        from pp.config import ORDER_TYPES
+        tol = ORDER_TYPES.get(o["auart"], {}).get("over_gr", 1000)
+        if bwart == "101" and o["wemng"] + qty > o["gamng"] + o["gamng"] * tol // 10000:
             raise MMError("Order %s: delivered quantity would exceed the order "
-                          "quantity by more than 10 %%" % aufnr, "M7", "028")
+                          "quantity by more than %s %%" % (aufnr, tol / 100), "M7", "028")
         if bwart == "102" and qty > o["wemng"]:
             raise MMError("Quantity exceeds the delivered quantity of order %s"
                           % aufnr, "M7", "029")

@@ -4,7 +4,8 @@ MC84        product group with proportional factors
 MC81/MC82   rough-cut plan: sales -> production with a target days' supply
 MC75        transfer to demand management (disaggregation by factors)
 MD61/62/63  planned independent requirements (PIR); strategy 40 PIRs are
-            consumed by sales (billing), strategy 10 PIRs by the goods issue
+            consumed by sales orders at entry (the order is the requirement),
+            strategy 10 PIRs by the goods issue
 MD01/02/03  MRP: low-level codes, net requirements, lot sizes, safety stock,
             lead-time offsetting, BOM explosion (dependent requirements),
             planned orders (in-house / subcontracting) and purchase
@@ -147,16 +148,47 @@ def pirs(conn, matnr=None, werks="1000"):
 
 
 def consumption(conn, matnr, werks, month, bedae):
-    """Strategy 40 (VSF): sales quantity of the month; strategy 10 (LSF):
-    goods issues for delivery (601) of the month."""
+    """Strategy 40 (VSF): sales orders consume the PIR of the month of their
+    availability date when they are entered (the order is then the requirement);
+    strategy 10 (LSF): goods issues for delivery (601) of the month."""
     if bedae == "VSF":
-        return conn.execute("SELECT COALESCE(SUM(i.fkimg),0) FROM billing_item i JOIN billing b "
-                            "USING (vbeln) WHERE i.matnr=? AND i.werks=? AND b.cancelled=0 AND COALESCE(b.fkart,'F2')='F2' AND "
-                            "substr(b.fkdat,1,7)=?", (matnr, werks, month)).fetchone()[0]
+        return conn.execute(
+            "SELECT COALESCE(SUM(p.kwmeng),0) FROM sd_vbap p JOIN sd_vbak k USING (vbeln) WHERE "
+            "k.vbtyp='C' AND p.matnr=? AND p.werks=? AND COALESCE(p.abgru,'')='' AND p.pstyv='TAN' "
+            "AND substr((SELECT MIN(e.mbdat) FROM sd_vbep e WHERE e.vbeln=p.vbeln AND e.posnr=p.posnr),"
+            "1,7)=?", (matnr, werks, month)).fetchone()[0]
     return conn.execute("SELECT COALESCE(SUM(CASE WHEN i.shkzg='H' THEN i.menge ELSE -i.menge END),0) "
                         "FROM mat_doc_item i JOIN mat_doc h ON h.mblnr=i.mblnr AND h.mjahr=i.mjahr "
                         "WHERE i.matnr=? AND i.werks=? AND i.bwart IN ('601','602') AND "
                         "substr(h.budat,1,7)=?", (matnr, werks, month)).fetchone()[0]
+
+
+def sales_elements(conn, matnr, werks, today):
+    """Customer requirements: open sales order items (VC) and open deliveries (VJ).
+    Strategy 10 materials (make-to-stock without consumption) plan on PIRs only."""
+    st = conn.execute("SELECT strgr FROM material_plant WHERE matnr=? AND werks=?",
+                      (matnr, werks)).fetchone()
+    if st and st["strgr"] == "10":
+        return []
+    el = []
+    for r in conn.execute(
+            "SELECT p.vbeln, p.posnr, p.kwmeng, k.kunnr, k.cmgst, (SELECT MIN(e.mbdat) FROM sd_vbep e "
+            "WHERE e.vbeln=p.vbeln AND e.posnr=p.posnr) mbdat, (SELECT COALESCE(SUM(l.lfimg),0) FROM "
+            "sd_lips l WHERE l.vgbel=p.vbeln AND l.vgpos=p.posnr) dl FROM sd_vbap p JOIN sd_vbak k "
+            "USING (vbeln) WHERE k.vbtyp='C' AND p.matnr=? AND p.werks=? AND COALESCE(p.abgru,'')='' "
+            "AND p.pstyv IN ('TAN','TANN')", (matnr, werks)):
+        q = r["kwmeng"] - r["dl"]
+        if q > 0:
+            el.append(dict(dat=r["mbdat"] or today, typ="VC",
+                           txt="Customer order %s/%s (%s)%s" % (r["vbeln"], r["posnr"], r["kunnr"],
+                                                               " credit block" if r["cmgst"] == "B" else ""),
+                           qty=-q, ref=r["vbeln"]))
+    for r in conn.execute(
+            "SELECT l.vbeln, l.posnr, l.lfimg, h.wadat FROM sd_lips l JOIN sd_likp h USING (vbeln) "
+            "WHERE l.matnr=? AND l.werks=? AND h.wbstk<>'C' AND h.lfart='LF'", (matnr, werks)):
+        el.append(dict(dat=r["wadat"] or today, typ="VJ", txt="Delivery %s/%s" % (r["vbeln"], r["posnr"]),
+                       qty=-r["lfimg"], ref=r["vbeln"]))
+    return el
 
 
 # ====================================================================== MRP
@@ -182,6 +214,7 @@ def _elements(conn, matnr, werks, today):
                        txt=("Order reservation %s (%s)" % (r["aufnr"], r["head"])) if r["aufnr"]
                        else "Reservation %s" % r["rsnum"], qty=-(r["bdmng"] - r["enmng"]),
                        ref=r["aufnr"] or r["rsnum"]))
+    el += sales_elements(conn, matnr, werks, today)
     for r in conn.execute("SELECT * FROM pp_forecast WHERE matnr=? AND werks=? AND kind='F' AND "
                           "month>=?", (matnr, werks, today[:7])):
         el.append(dict(dat=max(_month_start(r["month"]), today), typ="FC",
@@ -303,6 +336,9 @@ def mrp_run(conn, user, matnr=None, werks="1000", today=None, single_level=False
             reqs = [e for e in el if e["qty"] < 0]
             fixed = [e for e in el if e["qty"] > 0]
             # reschedule messages for fixed receipts
+            for r_ in reqs:
+                if r_["typ"] in ("VC", "VJ") and r_["dat"] < today:
+                    msgs.append((r_["dat"], "56", "%s: requirement date in the past" % r_["txt"]))
             for f in fixed:
                 if f["dat"] < today and f["typ"] != "PLORD":
                     msgs.append((f["dat"], "07", "%s: finish date in the past" % f["txt"]))

@@ -196,7 +196,17 @@ function vaDisplay(tcode, title, change) {
         bt.unshift({ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
           const r = await run(() => api(`/api/sd/order/${d.vbeln}/change`, { bstnk: val(bst), lifsk: lif.value, faksk: fak.value, items: rej.filter(x => x.s.value).map(x => ({ posnr: x.posnr, abgru: x.s.value })) }));
           if (r) { msg("S", r.message); load(); } } },
-          { label: "Reschedule (V_V2)", ghost: true, onClick: async () => { const r = await run(() => api(`/api/sd/order/${d.vbeln}/reschedule`, { today: today() })); if (r) { msg("S", r.message); load(); } } });
+          { label: "Reschedule (V_V2)", ghost: true, onClick: async () => { const r = await run(() => api(`/api/sd/order/${d.vbeln}/reschedule`, { today: today() })); if (r) { msg("S", r.message); load(); } } },
+          { label: "Change item", ghost: true, onClick: async () => {
+            const f = await App.ask("Change item (empty = unchanged): new pricing, ATP and credit check", [{ name: "posnr", label: "Item", value: d.items[0] ? String(d.items[0].posnr) : "" },
+              { name: "qty", label: "New quantity" }, { name: "price", label: "Manual price" }, { name: "disc", label: "Discount %" }, { name: "delete", label: "Delete item (X)" }]);
+            if (!f) return;
+            const it = { posnr: f.posnr, qty: f.qty, price: f.price, disc: f.disc, delete: (f.delete || "").toUpperCase() === "X" };
+            const r = await run(() => api(`/api/sd/order/${d.vbeln}/change`, { items: [it] })); if (r) { msg("S", r.message); load(); } } },
+          { label: "Add item", ghost: true, onClick: async () => {
+            const f = await App.ask("Add item", [{ name: "matnr", label: "Material" }, { name: "qty", label: "Quantity" }, { name: "price", label: "Manual price (optional)" }]);
+            if (!f || !f.matnr) return;
+            const r = await run(() => api(`/api/sd/order/${d.vbeln}/change`, { new_items: [{ matnr: f.matnr.toUpperCase(), qty: f.qty, price: f.price || null }] })); if (r) { msg("S", r.message); load(); } } });
       }
       toolbar(bt);
       if (!change) msg(d.cmgst === "B" ? "W" : "S", `${d.type_text} ${d.vbeln}${d.cmgst === "B" ? " is blocked for credit" : ""}`);

@@ -61,6 +61,8 @@ PROCESSES = [
              ("O2C-16", "Return and credit memo limits", "VA01", "Return above billed minus returned refused; credit above remaining value refused", ["test_controls.SalesLimits.test_return_and_credit_limits"]),
              ("O2C-17", "Delivery change and delete; rejection only without delivery", "VL02N VA02", "Rejection refused with delivery; delivery reduced and deleted", ["test_controls.SalesLimits.test_reject_with_delivery_refused_then_delete_delivery"]),
              ("O2C-18", "Partial billing adds up exactly", "VL01N VF01", "Sum of partial invoices = order item to the cent", ["test_controls.SalesLimits.test_partial_billing_adds_up_exactly"]),
+             ("O2C-19", "Sales order change (VA02): quantity, price, add and delete item", "VA02", "New pricing; delivered quantity and follow-on documents protected", ["test_flows.SalesOrderChange.test_va02_quantity_price_add_delete"]),
+             ("O2C-20", "Invoice in customer currency and payment", "VF01 F-28", "Receivable in USD at the billing-date rate; payment clears it", ["test_flows.CustomerCurrency.test_usd_customer_invoice_and_payment"]),
          ]),
     # ------------------------------------------------------------------ P2P
     dict(id="P2P", folder="4", module="PUR", map="ZPUR_PROCESS", version="2.1",
@@ -129,7 +131,7 @@ PROCESSES = [
          controls=[
              ("Production version mandatory", "One valid BOM + routing per lot size and date - no wrong recipe", "PTP-03"),
              ("Availability check before release", "Missing parts are seen before the line stops", "PTP-08"),
-             ("Confirm in sequence, scrap with reason", "Yield and scrap feed first-pass yield and costing", "PTP-07"),
+             ("Confirm in sequence, scrap with reason", "Yield and scrap feed first-pass yield and costing", "PTP-19"),
              ("Month-end order: WIP -> variance -> settle", "Order balance goes to zero; variances explained by category", "PTP-13"),
              ("MRP daily, exceptions worked", "Plan follows demand; no manual shadow lists", "PTP-04"),
          ],
@@ -152,6 +154,8 @@ PROCESSES = [
              ("PTP-15", "End-to-end: order -> release -> pick -> confirm -> GR -> TECO -> settle", "CO01 CO27 CO11N MIGO CO88", "Stock +2, TECO, books balanced, FI = CO-PA", ["test_e2e.E2E_PlanToProduce.test_production_order_cycle"]),
              ("PTP-16", "Picking reversal reopens the reservation", "CO27 MBST", "Withdrawn quantity back to zero; components in the picking list again", ["test_controls.Reservations.test_picking_reversal_reopens_reservation"]),
              ("PTP-17", "Order across the year end", "CO01 MIGO KKS2 CO88", "December costs included; order balance zero after January settlement", ["test_controls.CrossYear.test_order_released_in_december_closed_in_january"]),
+             ("PTP-18", "Customer backorder planned by MRP; PIR consumed (strategy 40)", "VA01 MD04 MD01", "Customer order is an MRP requirement; planned order covers the shortage; PIR reduced by the order", ["test_flows.SalesInMrp.test_backorder_creates_planned_order_and_consumes_pir"]),
+             ("PTP-19", "Operation sequence and scrap reason", "CO11N", "No operation above its predecessor's yield; scrap needs a reason", ["test_flows.ShopFloor.test_operation_sequence_and_scrap_reason", "test_flows.ShopFloor.test_picking_cannot_exceed_reservation"]),
          ]),
     # ------------------------------------------------------------------ Inventory
     dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",
@@ -228,6 +232,7 @@ PROCESSES = [
              ("R2R-13", "VAT settlement once; payment run status kept", "FB41 F110", "Second settlement finds nothing; executed run cannot be re-proposed", ["test_controls.PeriodEnd.test_vat_settlement_once_and_payment_run_status"]),
              ("R2R-14", "Reverse depreciation of the last period", "AFAB ZAFAB_REV", "Reversed, re-posted with the same amount", ["test_controls.Depreciation.test_reverse_last_period_then_repost"]),
              ("R2R-15", "Data consistency check", "ZQA_CHECK", "No violation of the 12 data rules", ["test_controls.Consistency.test_demo_data_is_consistent"]),
+             ("R2R-16", "Robust input and clean layers", "all", "Every screen function answers wrong input with a message; no database writes outside the engines", ["test_api_fuzz.Fuzz.test_all_routes", "test_api_fuzz.Layers.test_no_sql_writes_in_api_handlers"]),
          ]),
     # ------------------------------------------------------------------ CO
     dict(id="CTL", folder="7", module="CO", map="ZCO_PROCESS", version="2.1",
@@ -261,6 +266,7 @@ PROCESSES = [
              ("CTL-05", "Variance categories and quantity variance", "KKS2", "Categories add up to settled amount", ["test_co.ClosingResults.test_variance_categories_add_up_to_settled_amount", "test_co.ClosingResults.test_quantity_variance_steel"]),
              ("CTL-06", "Test run posts nothing; rerun reverses first", "KSU5", "No documents in test; rerun reverses", ["test_co.ClosingResults.test_test_run_posts_nothing", "test_co.ClosingResults.test_cycle_rerun_reverses_first"]),
              ("CTL-07", "FI result = CO-PA operating result", "ZCO_RECON", "Reconciled", ["test_co.ClosingResults.test_fi_result_reconciles_with_copa_operating_result", "test_e2e.E2E_Control.test_period_close_reconciles"]),
+             ("CTL-08", "Commitments from account-assigned purchase orders", "ME21N KSB2", "Open PO value committed on the cost center until the goods receipt", ["test_flows.Commitments.test_account_assigned_po_is_committed_until_receipt"]),
          ]),
     # ------------------------------------------------------------------ MD
     dict(id="MDM", folder="8", module="MD", map="ZMD_PROCESS", version="2.1",

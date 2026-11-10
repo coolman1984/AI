@@ -19,7 +19,8 @@ FI_COLUMN_ADDS = {
                ("land", "TEXT"), ("sperr", "INTEGER"),
                ("reprf", "INTEGER NOT NULL DEFAULT 1")],     # check double invoices
     "customer": [("akont", "TEXT"), ("zterm", "TEXT"), ("klimk", "INTEGER"),
-                 ("stcd1", "TEXT"), ("land", "TEXT")],
+                 ("stcd1", "TEXT"), ("land", "TEXT"),
+                 ("waers", "TEXT")],              # invoice currency (empty = local)
     "po_item": [("remng", "INTEGER NOT NULL DEFAULT 0"),
                 ("reewr", "INTEGER NOT NULL DEFAULT 0")],
 }

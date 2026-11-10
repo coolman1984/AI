@@ -22,7 +22,7 @@ from .material import check_gstin, check_pan
 
 CUST_GENERAL = ["name", "name2", "street", "pstlz", "city", "region", "land", "telf1",
                 "email", "stcd1", "stceg", "bankn", "bankl"]
-CUST_COMPANY = ["akont", "zterm", "klimk", "mahna", "zwels", "xzver", "busab"]
+CUST_COMPANY = ["akont", "zterm", "klimk", "mahna", "zwels", "xzver", "busab", "waers"]
 CUST_SALES = ["spart", "bzirk", "kdgrp", "konda", "kalks", "vsbed", "vwerk", "inco1",
               "inco2", "zterm", "ktgrd", "taxkd", "waers"]
 VEND_GENERAL = ["name", "name2", "street", "pstlz", "city", "land", "telf1", "email",
@@ -92,6 +92,11 @@ def _number(conn, table, key, given, rng):
 
 
 def _check_common(conn, vals, koart):
+    if vals.get("waers"):
+        from fi.config import CURRENCIES
+        vals["waers"] = str(vals["waers"]).upper()
+        if vals["waers"] not in CURRENCIES:
+            raise MMError("Currency %s is not defined" % vals["waers"], "F2", "070")
     from fi.config import PAYMENT_TERMS, CURRENCIES
     if vals.get("land") and vals["land"] not in COUNTRIES:
         raise MMError("Country %s does not exist" % vals["land"], "F2", "020")
