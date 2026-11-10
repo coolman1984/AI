@@ -62,6 +62,12 @@ CATALOG = [
         ]),
     ]),
     ("Executive Summary", [
+        ("Dashboards", [
+            ("DB_PL_STATUS", "PL Status", True, dict(dashboard="PL_STATUS")),
+            ("DB_SALES_STATUS", "Sales Status", True, dict(dashboard="SALES_STATUS")),
+            ("DB_INV_STATUS", "Inventory Status", True, dict(dashboard="INV_STATUS")),
+            ("DB_COST_STATUS", "Cost Center Status", True, dict(dashboard="COST_STATUS")),
+        ]),
         ("HQ", [
             ("EXE_KPI", "KPI cockpit", True, dict(dashboard="EXEC")),
             ("EXE_PL", "P&L summary", True, dict(provider="COPA", structure="PL", columns=PAC[:6])),
@@ -71,6 +77,7 @@ CATALOG = [
     ]),
     ("Controlling", [
         ("Individual PL", [
+            ("CO_PL_STATUS_DB", "PL Status (dashboard)", True, dict(dashboard="PL_STATUS")),
             ("CO_PL_DETAIL", "PL Detail", True, dict(provider="COPA", structure="PL", columns=PAC)),
             ("CO_PL_FORECAST", "PL Detail (Forecast)", True,
              dict(provider="COPA", structure="PL", columns=[dict(version="ACT", time="YTD", label="Actual YTD"),
@@ -85,7 +92,7 @@ CATALOG = [
                                                                     filters={"version": ["ACT"]})),
             ("CO_SALES_PROFIT", "Sales & Profit (Plan vs Actual)", False,
              dict(provider="COPA", structure="PL", columns=pv(None))),
-            ("CO_PL_STATUS", "PL Status (by month, plan and actual)", False,
+            ("CO_PL_STATUS", "PL Status table (by month, plan and actual)", False,
              dict(provider="COPA", structure="PL", columns=[dict(version="PLAN", label="Plan"), dict(version="ACT", label="Actual")],
                   colchar="month")),
         ]),
@@ -127,6 +134,7 @@ CATALOG = [
     ]),
     ("Sales", [
         ("Consolidated Sales", [
+            ("SD_SALES_DB", "Sales Status (dashboard)", True, dict(dashboard="SALES_STATUS")),
             ("SD_SALES", "Consolidated Sales", True, q("SALES", ["customer"], ["qty", "gross", "disc", "net", "cogs", "margin"])),
             ("SD_CHANNEL", "Sales by channel (monthly)", True, q("SALES", ["vtweg"], ["net"], colchar="month")),
             ("SD_PRODUCT", "Sales analysis by product", False, q("SALES", ["material"], ["qty", "net", "margin"])),
@@ -140,6 +148,7 @@ CATALOG = [
     ]),
     ("Logistics", [
         ("Inventory Status", [
+            ("LO_INV_DB", "Inventory Status (dashboard)", True, dict(dashboard="INV_STATUS")),
             ("LO_INV_PLANT", "Daily Inv. Status by plant", True, q("INV", ["werks", "lgort"], ["qty", "value"])),
             ("LO_INV_GROUP", "Daily Inv. Status by material group", True, q("INV", ["matkl"], share("value"))),
             ("LO_INV_MONTH", "Monthly Inv. Status (month end)", True, q("INVM", ["matkl"], ["value"], colchar="month")),

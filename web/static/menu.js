@@ -161,7 +161,7 @@ MENU.push(
     ["Customer Activities", ["VC01N", "VC05", "ZSD_PIPE"]],
   ]],
   ["Common", [
-    ["BI (Business Intelligence)", ["ZBI"]],
+    ["BI (Business Intelligence)", ["ZBI", "ZBI_DASH"]],
     ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],

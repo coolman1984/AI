@@ -95,7 +95,7 @@ def overhead(conn):
         out.append(dict(version="PLAN" if r["wrttp"] == "01" else "ACT", gjahr=r["gjahr"], perio=r["perio"],
                         month="%04d-%02d" % (r["gjahr"], r["perio"]), kostl=k, cost_center="%s %s" % (k, cc.get(k, "")),
                         kstar=r["kstar"], cost_element="%s %s" % (r["kstar"], ce.get(r["kstar"], "")),
-                        category="Primary" if (r["kstar"] or "").startswith(("4", "6", "7")) else "Secondary",
+                        category="Primary" if (r["kstar"] or "").startswith("4") else "Secondary",
                         amount=r["wtg"] or 0))
     return out
 

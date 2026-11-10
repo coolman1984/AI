@@ -205,6 +205,7 @@ function excel(tab, res) {
 
 // ------------------------------------------------------------------ executive cockpit
 async function dashboard(app, tab) {
+  if (tab.query.dashboard !== "EXEC") return statusBoard(app, tab);
   const d = await run(() => api("/api/bi/dashboard/" + tab.query.dashboard));
   app.innerHTML = "";
   toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: () => draw(app) }]);
@@ -240,6 +241,81 @@ function chart(d) {
   });
   return s;
 }
+
+// ------------------------------------------------------------------ status dashboards (charts + table)
+async function statusBoard(app, tab) {
+  const q = tab.query;
+  const qs = new URLSearchParams({ year: q.year || "", period: q.period || "", currency: q.currency || "EGP", scale: q.scale || "1" });
+  let d = null;
+  try { d = await api(`/api/bi/dashboard/${q.dashboard}?${qs}`); } catch (e) { App.err(e); }
+  app.innerHTML = "";
+  const year = h("input.f.w-s", { value: q.year || (d && d.year) || "" }), per = h("input.f.w-s", { value: q.period || (d && d.period) || "" });
+  const cur = h("select.f", null, [["EGP", "Egyptian pound"], ["USD", "US Dollar"], ["EUR", "Euro"]].map(([k, t]) => h("option", { value: k, selected: (q.currency || "EGP") === k }, t)));
+  const sc = h("select.f", null, [["1", "1"], ["1000", "1,000"], ["1000000", "1,000,000"]].map(([k, t]) => h("option", { value: k, selected: (q.scale || "1") === k }, t)));
+  const apply = () => { q.year = year.value; q.period = per.value; q.currency = cur.value; q.scale = sc.value; draw(app); };
+  toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: apply },
+    d && d.drill ? { label: "Detail report", onClick: () => openReport(app, d.drill) } : null,
+    { label: "Excel", onClick: () => d && boardExcel(tab, d) }, { label: "Print", onClick: () => window.print() }]);
+  const vars = h("div.bd-vars", null,
+    h("div.bd-var", null, h("span", null, "{ }"), h("div", null, h("small", null, "Fiscal year / period"), h("span", null, year, " / ", per))),
+    h("div.bd-var", null, h("span", null, "{ }"), h("div", null, h("small", null, "Display currency"), cur)),
+    h("div.bd-var", null, h("span", null, "{ }"), h("div", null, h("small", null, "Amount scaling"), sc)),
+    h("button.btn.primary", { type: "button", on: { click: apply } }, "Apply"));
+  if (!d) return shell(app, h("div.bi-content", null, vars));
+  const charts = h("div.bd-charts", null, d.widgets.map(w => h("div.bd-card", null, h("h3", null, w.title), combo(w))));
+  const t = d.table, groups = [];
+  t.columns.forEach(c => { const g = c.group || ""; const last = groups[groups.length - 1]; if (last && last.g === g) last.n++; else groups.push({ g, n: 1 }); });
+  const fmtv = (v, type, kind) => v === null || v === undefined ? "" : (type === "pct" || kind === "pct") ? NF1.format(v) + "%" : (Math.abs(v) < 1 && v !== 0 ? (v > 0 ? "+0" : "-0") : NF0.format(v));
+  const table = h("table.bd-table", null,
+    h("thead", null, h("tr", null, h("th", null, ""), t.columns.map((c, i) => h("th" + ((groups.findIndex((g, gi) => groups.slice(0, gi).reduce((a, x) => a + x.n, 0) === i) % 2) ? ".alt" : ""), null, c.label)))),
+    h("tbody", null, t.rows.map(r => h("tr" + (r.bold ? ".b" : ""), null, h("td.lbl", null, r.label),
+      r.values.map((v, i) => h("td" + (typeof v === "number" && v < 0 ? ".neg" : "") + (t.columns[i].type === "pct" ? ".ach" : ""), null, fmtv(v, t.columns[i].type, r.kind)))))));
+  shell(app, h("div.bi-content.bd", null, vars, h("div.bd-note", null, d.note), charts,
+    h("div.bd-tw", null, h("div.bd-tt", null, t.title), h("div.bi-scroll", null, table))));
+}
+function boardExcel(tab, d) {
+  const t = d.table;
+  App.exportRows({ title: tab.title, columns: [{ key: "l", label: "" }].concat(t.columns.map((c, i) => ({ key: "c" + i, label: c.label }))) },
+    t.rows.map(r => { const o = { l: r.label }; r.values.forEach((v, i) => { o["c" + i] = v; }); return o; }));
+}
+function combo(w) {
+  const W = 420, H = 230, L = 34, R = 44, T = 34, Bm = 34;
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (t, a, txt) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt !== undefined) e.textContent = txt; return e; };
+  const s = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "bd-svg" });
+  const bars = w.bars[0].values.map(v => v || 0), line = w.line.values;
+  const bmax = Math.max(1, ...bars), bmin = Math.min(0, ...bars);
+  const lv = line.filter(v => typeof v === "number"), lmax = Math.max(1, ...lv), lmin = Math.min(0, ...lv);
+  const n = w.categories.length || 1, step = (W - L - R) / n, bw = Math.min(60, step * 0.62);
+  const band = (H - T - Bm) * 0.55;          // the % line floats in the upper part, above the bars
+  const yb = v => T + 14 + (bmax - v) / (bmax - bmin) * (H - T - Bm - 14), yl = v => T + 10 + (lmax - v) / ((lmax - lmin) || 1) * band;
+  const cx = i => L + step * i + step / 2;
+  // legend
+  s.append(el("rect", { x: W / 2 - 110, y: 6, width: 12, height: 10, class: "b" }), el("text", { x: W / 2 - 94, y: 15, class: "lg" }, w.bars[0].name),
+    el("line", { x1: W / 2 + 6, x2: W / 2 + 24, y1: 11, y2: 11, class: "l" }), el("circle", { cx: W / 2 + 15, cy: 11, r: 3, class: "l" }),
+    el("text", { x: W / 2 + 28, y: 15, class: "lg" }, w.line.name));
+  s.append(el("line", { x1: L, x2: W - R, y1: yb(0), y2: yb(0), class: "ax" }));
+  [bmin, (bmax + bmin) / 2, bmax].forEach(v => s.append(el("text", { x: L - 4, y: yb(v) + 4, class: "tk", "text-anchor": "end" }, short(v))));
+  [lmin, lmax].forEach(v => s.append(el("text", { x: W - R + 6, y: yl(v) + 4, class: "tk" }, NF1.format(v) + "%")));
+  const cut = n > 6 ? 8 : n > 4 ? 11 : 18;
+  bars.forEach((v, i) => {
+    s.append(el("rect", { x: cx(i) - bw / 2, y: Math.min(yb(v), yb(0)), width: bw, height: Math.max(1, Math.abs(yb(v) - yb(0))), class: "b" + (v < 0 ? " neg" : "") }));
+    s.append(el("text", { x: cx(i), y: Math.min(yb(v), yb(0)) - 4, class: "dl", "text-anchor": "middle" }, short(v)));
+    s.append(el("text", { x: cx(i), y: H - 12, class: "ct", "text-anchor": "middle" }, String(w.categories[i]).slice(0, cut)));
+  });
+  const pts = line.map((v, i) => typeof v === "number" ? [cx(i), yl(v), v] : null).filter(Boolean);
+  if (pts.length > 1) s.append(el("polyline", { points: pts.map(p => p[0] + "," + p[1]).join(" "), class: "l" }));
+  pts.forEach(p => { s.append(el("circle", { cx: p[0], cy: p[1], r: 4, class: "l" })); s.append(el("text", { x: p[0] + 6, y: p[1] - 7, class: "pl", "text-anchor": "start" }, NF1.format(p[2]) + "%")); });
+  return s;
+}
+function short(v) {
+  const a = Math.abs(v);
+  return a >= 1e9 ? NF1.format(v / 1e9) + "B" : a >= 1e6 ? NF1.format(v / 1e6) + "M" : a >= 1e4 ? NF0.format(v / 1e3) + "K" : NF0.format(v);
+}
+
+register("ZBI_DASH", { title: "BI Dashboard - PL Status", async render(app, params) {
+  go("ZBI", { id: params.id || "DB_PL_STATUS" });
+} });
 
 register("ZBI", { title: "BI (Business Intelligence)", async render(app, params) {
   await run(() => catalog(true));

@@ -579,3 +579,25 @@ table.bi-grid th.tot, table.bi-grid td:last-child { }
 .bi-chart circle.act { fill: #0a5bc4; } .bi-chart circle.plan { fill: #9aa7b5; }
 .bi-chart rect.bar { fill: #7fc79a; } .bi-chart rect.bar.neg { fill: #e58a8a; } .bi-chart rect.act.lg { fill: #0a5bc4; } .bi-chart rect.plan.lg { fill: #9aa7b5; }
 @media (max-width: 900px) { .bi-work { grid-template-columns: 1fr; } .bi-left { display: none; } }
+
+/* ---------------------------------------------------------------- BI status dashboards */
+.bd-vars { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; background: #eef2f7; padding: 8px; border-bottom: 1px solid #d5dde7; }
+.bd-var { display: flex; gap: 8px; align-items: center; background: #fff; border: 1px solid #d5dde7; border-radius: 4px; padding: 4px 10px; }
+.bd-var > span { font-family: monospace; color: #3c4a5a; } .bd-var small { display: block; font-size: 11px; color: #5a6470; }
+.bd-var input { width: 64px; } .bd-var select { font-weight: 600; color: #0a5bc4; }
+.bd-note { text-align: right; color: #4b5b6c; font-size: 13px; margin: 10px 4px; }
+.bd-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 18px; }
+.bd-card h3 { font-size: 17px; margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid #9aa7b5; }
+.bd-svg { width: 100%; height: auto; }
+.bd-svg rect.b { fill: #5b9bf0; } .bd-svg rect.b.neg { fill: #e58a8a; }
+.bd-svg polyline.l, .bd-svg line.l { fill: none; stroke: #1846a3; stroke-width: 2; } .bd-svg circle.l { fill: #1846a3; }
+.bd-svg .ax { stroke: #6b7787; } .bd-svg text { font-size: 13px; fill: #1d2a3a; } .bd-svg .dl { font-weight: 700; font-size: 12.5px; }
+.bd-svg .pl { font-size: 12px; font-weight: 700; } .bd-svg .tk { fill: #5a6470; } .bd-svg .lg { font-size: 13px; }
+.bd-tw { margin-top: 18px; } .bd-tt { font-weight: 700; margin: 6px 0; }
+table.bd-table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+table.bd-table th { background: #f0f2f5; padding: 8px 12px; text-align: right; border-bottom: 3px solid #555; white-space: nowrap; }
+table.bd-table th.alt { background: #e3e6ea; border-bottom-color: #888; }
+table.bd-table td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #e5e8ec; white-space: nowrap; }
+table.bd-table td.lbl { text-align: left; background: #f7f8fa; } table.bd-table tr.b td.lbl { font-weight: 700; }
+table.bd-table td.neg { color: #bb0000; }
+@media print { .shell, .sidemenu, .titlebar, .bi-top, .bi-left, .bi-tabs, .bd-vars { display: none !important; } }
