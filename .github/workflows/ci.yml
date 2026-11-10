@@ -1,0 +1,70 @@
+# Quality gate of MM Core: runs on every push and pull request.
+# A red check = do not merge. See README "Quality gate".
+name: MM Core quality gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit and end-to-end tests
+        working-directory: tests
+        run: python -m unittest discover -v
+      - name: Process test catalog (QA runner)
+        run: python -m qa.runner
+      - name: Static check (pyflakes)
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          pip install pyflakes==3.2.0
+          python tools/qa/static_check.py
+
+  browser:
+    name: Browser sweep (all screens and BI reports)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Playwright and ESLint
+        run: |
+          npm install --no-save playwright@1.49.1 eslint@8.57.0
+          npx playwright install --with-deps chromium
+      - name: Lint the screens (undefined names, duplicates)
+        run: npx eslint --no-eslintrc -c tools/qa/eslintrc.json web/static/*.js
+      - name: Start MM Core (developer mode, fresh demo data)
+        run: |
+          MM_DB=$RUNNER_TEMP/sweep.db nohup python run.py --dev --no-browser --keep-running --port 8091 > $RUNNER_TEMP/server.log 2>&1 &
+          for i in $(seq 1 120); do curl -sf -H "Host: localhost:8091" http://localhost:8091/api/gui/info && break; sleep 1; done
+      - name: Sweep every screen
+        run: node tools/qa/sweep.js http://localhost:8091
+      - name: Server log
+        if: always()
+        run: tail -n 100 $RUNNER_TEMP/server.log || true
+
+  desktop:
+    name: Desktop client (MM Core Logon)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Tkinter and a virtual display
+        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+      - name: GUI smoke test
+        run: xvfb-run -a python3 tools/qa/gui_smoke.py

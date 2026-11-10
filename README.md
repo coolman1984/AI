@@ -322,3 +322,21 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
   processes, steps, controls and test cases is `qa/catalog.py`; decks are regenerated with
   `python -m qa.export qa.json` and `node tools/manuals/make_manuals.js qa.json web/static/manuals`
   (needs pptxgenjs, react, react-dom, react-icons, sharp).
+
+## Quality gate (keep MM Core bug free)
+
+Every push and pull request on GitHub runs `.github/workflows/ci.yml`:
+
+| Check | What it proves |
+|---|---|
+| Tests on Windows and Linux, Python 3.11 and 3.12 | all unit, end-to-end, security, BI, go-live and desktop-client logic tests |
+| QA runner | every business test case of the 9 processes passes |
+| Static check (pyflakes) | no undefined names or broken Python code |
+| ESLint | no undefined names or duplicates in the screens |
+| Browser sweep | every screen and every BI report opens and executes without error (`tools/qa/sweep.js`) |
+| Desktop smoke test | MM Core Logon / Easy Access start, log on, run transactions, favorites (`tools/qa/gui_smoke.py`) |
+
+A red check means: do not merge. Locally: double-click `tools/Run all checks.bat`
+(or `python tools/qa/check_all.py`). Rule for every bug fix: first a test that fails,
+then the fix, then all checks green.
+
