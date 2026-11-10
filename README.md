@@ -85,6 +85,23 @@ Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when instal
 Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running] [--dev]`.
 The server log (when started hidden) is in `data/server.log`.
 
+## Desktop client - MM Core Logon (like SAP Logon / SAP GUI)
+
+Double-click **`MM Core Logon.bat`** (needs Python from python.org with "tcl/tk" - ticked by default).
+
+- **MM Core Logon**: list of systems - `01. MM Core ERP (PRD)` (the database of the one-click
+  start), `02. MM Core Training (TRN)`, `03. MM Core Sandbox - empty (SBX)`; *New / Change /
+  Delete* entries (description, system ID, database file, port), *Start / Stop* a system,
+  *Variable Logon* to any running port. *Log On* starts the system if needed and shows the
+  logon screen (client, user, password, language).
+- **MM Core Easy Access**: menus Menu / Edit / Favorites / Extras / System / Help, the command
+  field (`MIGO`, `/oVA01`, `/nend`), *Favorites* with folders (insert, change, delete, move,
+  right-click menu) stored per system, the full menu tree with transaction texts (Extras: show
+  technical names), Find, System status.
+- Each transaction opens in **its own window** without address bar (Edge or Chrome in
+  application mode) - like an SAP session; several sessions at the same time.
+- On exit the client offers to stop the systems it started.
+
 ## Screen layout
 
 - **Home** (like the N-ERP portal): navy banner with round app icons (your ★ favorites from the menu come first,
