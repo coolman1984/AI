@@ -27,12 +27,13 @@ API_AREAS = (("/api/sd/", "SD"), ("/api/fi/", "FI"), ("/api/co/", "CO"), ("/api/
              ("/api/bi/", "CA"))
 
 # no logon needed
-PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request")
+PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request",
+          "/api/gui/info", "/api/sec/sso")
 # every logged-on user (own data, shell, master lists every screen needs)
 OPEN_PATHS = ("/api/sec/me", "/api/sec/logout", "/api/sec/password", "/api/sec/request",
               "/api/sec/inbox", "/api/sec/su53", "/api/shutdown", "/api/meta", "/api/dashboard",
               "/api/materials", "/api/plant", "/api/sloc", "/api/vendor", "/api/kostl",
-              "/api/qa/lms", "/api/bi/view")
+              "/api/qa/lms", "/api/bi/view", "/api/gui/menu")
 # transactions every user may start
 ALWAYS = ("HOME", "ZAMS", "ZINBOX", "SU53", "ZWORKPLACE", "ZLMS")
 

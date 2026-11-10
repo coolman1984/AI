@@ -601,3 +601,8 @@ table.bd-table td { padding: 8px 12px; text-align: right; border-bottom: 1px sol
 table.bd-table td.lbl { text-align: left; background: #f7f8fa; } table.bd-table tr.b td.lbl { font-weight: 700; }
 table.bd-table td.neg { color: #bb0000; }
 @media print { .shell, .sidemenu, .titlebar, .bi-top, .bi-left, .bi-tabs, .bd-vars { display: none !important; } }
+
+/* ---------------------------------------------------------------- session window of the desktop client */
+body.gui-session .sidemenu, body.gui-session .shell-workplace, body.gui-session .shell-power,
+body.gui-session #menu-btn { display: none !important; }
+body.gui-session .shell { min-height: 38px; }

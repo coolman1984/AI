@@ -549,6 +549,19 @@ const App = (() => {
       if (k === "F3") return history.back();
       if (S.keys && S.keys[k]) S.keys[k]();
     });
+    // session window of the desktop client (MM Core Logon / Easy Access): ?session=1&user=..&sso=..
+    const sp = new URLSearchParams(location.search);
+    if (sp.get("session") === "1") {
+      document.body.classList.add("gui-session");
+      S.session = true;
+      if (sp.get("user")) {
+        S.user = sp.get("user").toUpperCase().slice(0, 12);
+        try { localStorage.setItem("mm_user", S.user); } catch (e) {}
+        $("#status-user").textContent = S.user; $("#user-btn").textContent = S.user.slice(0, 2);
+      }
+      if (sp.get("sso")) { try { await api("/api/sec/sso", { token: sp.get("sso") }, true); } catch (e) {} }
+      history.replaceState(null, "", location.pathname + "?session=1" + location.hash);
+    }
     try {
       const st = await api("/api/sec/status", undefined, true);
       S.auth = !!st.auth; S.demo = !!st.demo;

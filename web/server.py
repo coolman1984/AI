@@ -637,3 +637,4 @@ from web import qa_api  # noqa: E402,F401
 from web import sec_api  # noqa: E402,F401
 from web import p6_api  # noqa: E402,F401
 from web import bi_api  # noqa: E402,F401
+from web import gui_api  # noqa: E402,F401
