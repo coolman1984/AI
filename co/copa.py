@@ -17,6 +17,7 @@ from .config import CCOMP_TO_VV
 from .core import period_of
 from .costing import component_split
 from .period_end import _copa_post
+from mm.util import parse_year, parse_period  # noqa: E402
 
 
 def _pct(text):
@@ -82,7 +83,7 @@ def create_billing(conn, data, user):
         from fi.ar import check_credit as _cc
         net_total = sum(p["net"] for p in prepared)
         _cc(conn, c["kunnr"], net_total + (0 if c["vtweg"] == "20" else
-                                           rdiv(net_total * 1400, 10000)))
+                                           rdiv(net_total * 1400, 10000)), with_overdue=False)
         # 1. goods issue for delivery (movement type 601) -> COGS
         gi = post_goods_movement(conn, {"budat": fkdat, "xblnr": vbeln,
                                         "bktxt": "Delivery %s" % c["name"][:14]},
@@ -145,7 +146,7 @@ def create_billing(conn, data, user):
 def plan_sales(conn, gjahr, perio, kunnr, matnr, qty, price, disc="0", werks="1000",
                user=""):
     """KE11: plan one customer / product / period and value it."""
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     q = parse_qty(qty, allow_zero=True)
     pr = parse_amount(price, allow_zero=True)
     bp = _pct(disc)

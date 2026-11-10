@@ -43,6 +43,8 @@ def create(conn, vbeln, user, lfdat=None, items=None):
     """VL01N for all due items of one order (or given {posnr: qty})."""
     lfdat = parse_date(lfdat)
     if items is not None:
+        if not isinstance(items, dict):
+            raise MMError("Delivery quantities must be given per item", "VL", "468")
         items = {str(k): v for k, v in items.items()}
     with transaction(conn):
         k = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()

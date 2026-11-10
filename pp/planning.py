@@ -304,7 +304,6 @@ def mrp_run(conn, user, matnr=None, werks="1000", today=None, single_level=False
             fixed = [e for e in el if e["qty"] > 0]
             # reschedule messages for fixed receipts
             for f in fixed:
-                need = next((r for r in reqs if r["dat"] < f["dat"]), None)
                 if f["dat"] < today and f["typ"] != "PLORD":
                     msgs.append((f["dat"], "07", "%s: finish date in the past" % f["txt"]))
             lead = (m["dzeit"] or 1) if m["beskz"] == "E" or m["sobsl"] == "30" else (m["plifz"] or 7)
@@ -325,11 +324,7 @@ def mrp_run(conn, user, matnr=None, werks="1000", today=None, single_level=False
                     msgs.append((start, "06", "Start date %s in the past for %.3f %s" % (
                         start, lot / 1000.0, m["meins"])))
                 if m["beskz"] == "E" or m["sobsl"] == "30":
-                    plnum = str(next_number(conn, "PLAF")) if conn.execute(
-                        "SELECT 1 FROM number_range WHERE object='PLAF'").fetchone() else None
-                    if not plnum:
-                        conn.execute("INSERT INTO number_range VALUES ('PLAF', 9999)")
-                        plnum = str(next_number(conn, "PLAF"))
+                    plnum = str(next_number(conn, "PLAF"))
                     conn.execute("INSERT INTO pp_plaf (plnum,matnr,werks,gsmng,psttr,pedtr,paart,"
                                  "beskz,sobsl,dispo,run,pir_month,ersda) VALUES "
                                  "(?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -414,8 +409,6 @@ def save_planned_order(conn, data, user):
         q = parse_qty(data.get("gsmng"))
         f = parse_date(data.get("pedtr"))
         s = parse_date(data["psttr"]) if data.get("psttr") else add_workdays(f, -(m["dzeit"] or 1))
-        if conn.execute("SELECT 1 FROM number_range WHERE object='PLAF'").fetchone() is None:
-            conn.execute("INSERT INTO number_range VALUES ('PLAF', 9999)")
         plnum = str(next_number(conn, "PLAF"))
         conn.execute("INSERT INTO pp_plaf (plnum,matnr,werks,gsmng,psttr,pedtr,paart,beskz,sobsl,"
                      "auffx,dispo,run,pir_month,ersda) VALUES (?,?,?,?,?,?,?,?,?,1,?,0,'',?)",
@@ -436,30 +429,31 @@ def delete_planned_order(conn, plnum):
 def convert(conn, plnum, user, release=False, lifnr=None, today=None):
     """CO40 (in-house -> production order) / MD14-like for subcontracting
     (-> subcontracting purchase order)."""
-    p = conn.execute("SELECT * FROM pp_plaf WHERE plnum=?", (plnum,)).fetchone()
-    if not p or p["conv"]:
-        raise MMError("Planned order %s does not exist or is already converted" % plnum, "61", "010")
-    if p["sobsl"] == "30":
-        from .subcon import create_po
-        from pur.sourcing import determine_source
-        if not lifnr:
-            src = determine_source(conn, p["matnr"], p["werks"], p["gsmng"], p["psttr"])
-            lifnr = src["lifnr"] if src else None
-        if not lifnr:
-            raise MMError("No subcontractor found for %s (info record / source list)" % p["matnr"],
-                          "06", "453")
-        e = create_po(conn, lifnr, p["matnr"], "%.3f" % (p["gsmng"] / 1000.0), p["pedtr"], user,
-                      werks=p["werks"], bedat=p["psttr"] if p["psttr"] > now_ts()[:10] else None,
-                      plnum=plnum)
-        return {"type": "PO", "number": e}
-    from .order import create
-    a = create(conn, {"auart": "PP01", "matnr": p["matnr"], "werks": p["werks"],
-                      "gamng": "%.3f" % (p["gsmng"] / 1000.0),
-                      # start in the past -> scheduling from today (OPU3)
-                      "gstrp": max(p["psttr"], add_workdays(today or now_ts()[:10], 0)),
-                      "plnum": plnum, "lgort": _gr_sloc(conn, p["matnr"], p["werks"]),
-                      "release": release}, user)
-    return {"type": "ORDER", "number": a}
+    with transaction(conn):
+        p = conn.execute("SELECT * FROM pp_plaf WHERE plnum=?", (plnum,)).fetchone()
+        if not p or p["conv"]:
+            raise MMError("Planned order %s does not exist or is already converted" % plnum, "61", "010")
+        if p["sobsl"] == "30":
+            from .subcon import create_po
+            from pur.sourcing import determine_source
+            if not lifnr:
+                src = determine_source(conn, p["matnr"], p["werks"], p["gsmng"], p["psttr"])
+                lifnr = src["lifnr"] if src else None
+            if not lifnr:
+                raise MMError("No subcontractor found for %s (info record / source list)" % p["matnr"],
+                              "06", "453")
+            e = create_po(conn, lifnr, p["matnr"], "%.3f" % (p["gsmng"] / 1000.0), p["pedtr"], user,
+                          werks=p["werks"], bedat=p["psttr"] if p["psttr"] > now_ts()[:10] else None,
+                          plnum=plnum)
+            return {"type": "PO", "number": e}
+        from .order import create
+        a = create(conn, {"auart": "PP01", "matnr": p["matnr"], "werks": p["werks"],
+                          "gamng": "%.3f" % (p["gsmng"] / 1000.0),
+                          # start in the past -> scheduling from today (OPU3)
+                          "gstrp": max(p["psttr"], add_workdays(today or now_ts()[:10], 0)),
+                          "plnum": plnum, "lgort": _gr_sloc(conn, p["matnr"], p["werks"]),
+                          "release": release}, user)
+        return {"type": "ORDER", "number": a}
 
 
 def _gr_sloc(conn, matnr, werks):

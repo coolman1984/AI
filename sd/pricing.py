@@ -231,3 +231,16 @@ def pricing_report(conn, kschl=None, valid_on=None):
         r["name"] = cust.get(r["kunnr"], "")
         r["text"] = COND_TYPES[r["kschl"]]["text"]
     return out
+
+
+def delete_condition(conn, knumh, user):
+    """VK12: mark a condition record for deletion (with change document)."""
+    from mm.db import transaction
+    from md.changes import log
+    with transaction(conn):
+        r = conn.execute("SELECT * FROM sd_cond WHERE knumh=?", (knumh,)).fetchone()
+        if not r:
+            raise MMError("Condition record %s does not exist" % knumh, "VK", "001")
+        conn.execute("UPDATE sd_cond SET loevm=1 WHERE knumh=?", (knumh,))
+        log(conn, "COND", str(knumh), "VK12", user, [("KONH", str(knumh), "loevm", "", "X")])
+    return {"message": "Condition record %s marked for deletion" % knumh}

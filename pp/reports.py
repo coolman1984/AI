@@ -9,9 +9,11 @@ from mm.db import rows
 from .master import capacity
 from .order import coois
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_date  # noqa: E402
 
 
 def cockpit(conn, d1, d2):
+    d1, d2 = parse_date(d1), parse_date(d2)
     today = mmclock.today().isoformat()
     orders = coois(conn)
     per = [o for o in orders if d1 <= (o["gstrp"] or o["erdat"] or "") <= d2]
@@ -30,7 +32,7 @@ def cockpit(conn, d1, d2):
                           "p.aufnr=c.aufnr AND p.vornr=c.vornr WHERE c.stokz=0 AND c.budat BETWEEN "
                           "? AND ?", (d1, d2)):
         std += c["vgw"] * (c["lmnga"] + c["xmnga"]) // c["mgvrg"] if c["mgvrg"] else 0
-    y0 = datetime.date.fromisoformat(d1)
+    y0 = datetime.date.fromisoformat(parse_date(d1))
     wip = conn.execute("SELECT COALESCE(SUM(w.wip),0) FROM pp_wip w WHERE (w.gjahr, w.perio) = "
                        "(SELECT gjahr, perio FROM pp_wip ORDER BY gjahr DESC, perio DESC LIMIT 1)"
                        ).fetchone()[0]

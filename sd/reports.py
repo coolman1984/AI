@@ -16,6 +16,7 @@ from mm.util import rdiv
 
 from .order import exposure, delivered_qty, billed_qty
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_date  # noqa: E402
 
 
 def _sales(conn, d1, d2, by):
@@ -137,6 +138,7 @@ def pipeline(conn):
 
 
 def cockpit(conn, d1, d2):
+    d1, d2 = parse_date(d1), parse_date(d2)
     sl = service_level(conn, d1, d2)
     sales = _sales(conn, d1, d2, "kunnr")
     net = sum(s["net"] for s in sales.values())

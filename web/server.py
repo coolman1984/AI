@@ -20,6 +20,8 @@ from mm.db import connect, rows
 from mm.util import CURRENCY, MMError, amt_out, qty_out
 from office import com_bridge
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_key, parse_year, require  # noqa: E402
+from mm.util import parse_int  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC = os.path.join(ROOT, "web", "static")
@@ -66,7 +68,7 @@ def api_meta(req, q):
 
 @route("GET", "/api/dashboard")
 def api_dashboard(req, q):
-    return reports.dashboard(db(), int(q.get("days", 30)))
+    return reports.dashboard(db(), parse_int(q.get("days"), "days", default=30))
 
 
 # ====================================================================== master
@@ -143,8 +145,8 @@ def api_bin(req, q):
 @route("POST", "/api/bin/block")
 def api_bin_block(req, q):
     b = req.body
-    master.set_bin_blocked(db(), b["werks"], b["lgort"], b["lgpla"],
-                           bool(b.get("blocked")))
+    werks, lgort, lgpla = require(b, "werks", "lgort", "lgpla")
+    master.set_bin_blocked(db(), werks, lgort, lgpla, bool(b.get("blocked")))
     return {"message": "Storage bin %s %s" % (b["lgpla"], "blocked" if
                                                b.get("blocked") else "unblocked")}
 
@@ -244,7 +246,8 @@ def api_migo(req, q):
 @route("POST", "/api/doc/cancel")
 def api_mbst(req, q):
     b = req.body
-    return posting.cancel_document(db(), b.get("mblnr"), int(b.get("mjahr")),
+    return posting.cancel_document(db(), parse_key(b.get("mblnr"), "material document"),
+                                   parse_year(b.get("mjahr")),
                                    b.get("budat"), req.user, b.get("reason") or "")
 
 
@@ -329,7 +332,7 @@ def api_ppt_read(req, q):
 
 @route("GET", "/api/office/inbox")
 def api_inbox(req, q):
-    return com_bridge.outlook_inbox(int(q.get("count", 10)))
+    return com_bridge.outlook_inbox(parse_int(q.get("count"), "count", default=10))
 
 
 @route("POST", "/api/office/outlook-draft")
@@ -343,6 +346,7 @@ def api_outlook(req, q):
 # ====================================================================== handler
 class Handler(BaseHTTPRequestHandler):
     server_version = "MMCore/1.0"
+    protocol_version = "HTTP/1.1"        # keep-alive: fewer threads and database opens
 
     def log_message(self, fmt, *args):  # quieter console
         if os.environ.get("MM_LOG"):
@@ -358,10 +362,32 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self._dispatch("POST")
 
+    def _origin_ok(self, method, path):
+        """Only this browser app may call the API: the Host must be this server
+        (DNS rebinding), POST bodies must be JSON (a foreign page cannot send JSON
+        without a pre-flight this server does not answer) and a sent Origin must match."""
+        port = self.server.server_address[1]
+        hosts = {"localhost:%d" % port, "127.0.0.1:%d" % port, "[::1]:%d" % port}
+        extra = os.environ.get("MM_HOSTS", "")
+        hosts |= {h.strip() for h in extra.split(",") if h.strip()}
+        if (self.headers.get("Host") or "") not in hosts:
+            return 403, "Unknown host"
+        if method == "POST":
+            if path not in ("/api/bye", "/api/ping") and \
+                    not (self.headers.get("Content-Type") or "").startswith("application/json"):
+                return 415, "JSON expected"
+            origin = self.headers.get("Origin")
+            if origin and origin.split("://", 1)[-1] not in hosts:
+                return 403, "Foreign origin"
+        return None
+
     def _dispatch(self, method):
         u = urlparse(self.path)
         if not u.path.startswith("/api/"):
             return self._static(u.path)
+        bad = self._origin_ok(method, u.path)
+        if bad:
+            return self._json(bad[0], {"type": "E", "text": "Request refused: %s" % bad[1]})
         q = {k: v[0] for k, v in parse_qs(u.query).items()}
         self.body = {}
         if method == "POST":
@@ -406,7 +432,7 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("", "/"):
             path = "/index.html"
         full = os.path.normpath(os.path.join(STATIC, path.lstrip("/")))
-        if not full.startswith(STATIC) or not os.path.isfile(full):
+        if os.path.commonpath([full, STATIC]) != STATIC or not os.path.isfile(full):
             full = os.path.join(STATIC, "index.html")
         with open(full, "rb") as f:
             data = f.read()

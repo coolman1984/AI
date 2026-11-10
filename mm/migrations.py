@@ -52,11 +52,35 @@ def _s4_vat_runs(conn):
                                          h["usnam"], h["budat"]))
 
 
+def _s5_indexes(conn):
+    for name, ddl in (
+            ("ix_bseg_hkont", "acc_doc_item (hkont)"),
+            ("ix_bseg_k", "acc_doc_item (koart, lifnr, augbl)"),
+            ("ix_bseg_d", "acc_doc_item (koart, kunnr, augbl)"),
+            ("ix_bseg_po", "acc_doc_item (ebeln, ebelp)"),
+            ("ix_bkpf_budat", "acc_doc (budat)"),
+            ("ix_bkpf_awkey", "acc_doc (awkey)"),
+            ("ix_mseg_po", "mat_doc_item (ebeln, ebelp)"),
+            ("ix_mseg_auf", "mat_doc_item (aufnr)"),
+            ("ix_mseg_rs", "mat_doc_item (rsnum, rspos)"),
+            ("ix_ekpo_mat", "po_item (matnr, werks)"),
+            ("ix_coep_obj", "co_item (objnr, gjahr, perio)"),
+            ("ix_copa_per", "copa_item (gjahr, perio)"),
+            ("ix_vbap_mat", "sd_vbap (matnr)"),
+            ("ix_vbap_ref", "sd_vbap (vgbel, vgpos)"),
+            ("ix_lips_ref", "sd_lips (vgbel, vgpos)"),
+            ("ix_vbrp_ref", "billing_item (aubel, aupos)"),
+            ("ix_resb_mat", "pp_resb (matnr, werks)"),
+            ("ix_eban_mat", "pr_item (matnr, werks)")):
+        conn.execute("CREATE INDEX IF NOT EXISTS %s ON %s" % (name, ddl))
+
+
 STEPS = [
     (1, "invoice items from MIRO documents", _s1_inv_item),
     (2, "reservation on goods issues to orders", _s2_rsnum),
     (3, "remove GR/IR clearing headers without items", _s3_grir_headers),
     (4, "VAT settlement runs", _s4_vat_runs),
+    (5, "indexes for line-item reports", _s5_indexes),
 ]
 
 

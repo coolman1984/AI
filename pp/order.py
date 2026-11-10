@@ -21,6 +21,7 @@ from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv, qty_out
 from .config import ORDER_TYPES, CONTROL_KEYS, EXT_COST_ELEMENT, SUBCON_SLOC, STATUS
 from .master import add_workdays, op_duration_days, select_version
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_int, parse_key  # noqa: E402
 
 STAT_ORDER = ["CRTD", "REL", "PCNF", "CNF", "PDLV", "DLV", "TECO", "CLSD", "MSPT", "MACM",
               "GMPS", "EXTP", "PRC", "SETC"]
@@ -375,7 +376,8 @@ def post_picking(conn, items, budat, user):
     for it in items:
         r = conn.execute("SELECT r.*, o.matnr AS header, o.auart FROM pp_resb r JOIN orders o ON "
                          "o.aufnr=r.aufnr WHERE r.rsnum=? AND r.rspos=?",
-                         (str(it["rsnum"]), int(it["rspos"]))).fetchone()
+                         (parse_key(it.get("rsnum"), "reservation"),
+                          parse_int(it.get("rspos"), "reservation item"))).fetchone()
         if not r:
             raise MMError("Reservation %s/%s does not exist" % (it["rsnum"], it["rspos"]),
                           "M7", "101")
@@ -491,7 +493,8 @@ def _conf_status(conn, aufnr):
 def cancel_confirmation(conn, rueck, user, budat=None):
     budat = parse_date(budat)
     with transaction(conn):
-        c = conn.execute("SELECT * FROM confirmation WHERE rueck=?", (int(rueck),)).fetchone()
+        rueck = parse_int(rueck, "confirmation")
+        c = conn.execute("SELECT * FROM confirmation WHERE rueck=?", (rueck,)).fetchone()
         if not c:
             raise MMError("Confirmation %s does not exist" % rueck, "RU", "010")
         if c["stokz"]:

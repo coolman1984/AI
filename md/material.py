@@ -761,3 +761,35 @@ def slocs(conn, matnr):
     return rows(conn.execute(
         "SELECT d.*, s.name FROM md_mard d JOIN sloc s ON s.werks=d.werks AND s.lgort=d.lgort "
         "WHERE d.matnr=? ORDER BY d.werks, d.lgort", (m["matnr"],)))
+
+
+def change_mrp_view(conn, matnr, werks, data, user):
+    """MM02 MRP view from the reorder-point screen: validated, with change documents."""
+    from mm.util import parse_int
+    allowed_dismm = ("VB", "PD", "VV", "ND")
+    vals = {}
+    if data.get("dismm"):
+        if data["dismm"] not in allowed_dismm:
+            raise MMError("MRP type %s is not defined" % data["dismm"], "M3", "120")
+        vals["dismm"] = data["dismm"]
+    for f in ("minbe", "eisbe", "mabst", "bstfe"):
+        if data.get(f) not in (None, ""):
+            vals[f] = parse_qty(data.get(f), allow_zero=True)
+    if data.get("disls"):
+        vals["disls"] = data["disls"]
+    if data.get("plifz") not in (None, ""):
+        vals["plifz"] = parse_int(data.get("plifz"), "planned delivery time", 0, 999)
+    if data.get("ekgrp"):
+        vals["ekgrp"] = data["ekgrp"]
+    with transaction(conn):
+        old = conn.execute("SELECT * FROM material_plant WHERE matnr=? AND werks=?", (matnr, werks)).fetchone()
+        if not old:
+            raise MMError("Material %s is not maintained in plant %s" % (matnr, werks), "M3", "305")
+        chg = [(f, old[f], v) for f, v in vals.items() if old[f] != v]
+        if chg:
+            conn.execute("UPDATE material_plant SET %s WHERE matnr=? AND werks=?" % ",".join(
+                "%s=?" % f for f, _, _ in chg), [v for _, _, v in chg] + [matnr, werks])
+            from .changes import log
+            log(conn, "MATERIAL", matnr, "MM02", user, [("MARC", "%s/%s" % (matnr, werks), f, o, n)
+                                                         for f, o, n in chg])
+    return {"changed": len(chg)}

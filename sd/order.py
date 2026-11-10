@@ -105,13 +105,15 @@ def exposure(conn, kunnr, exclude=None):
     return dict(open_items=open_items, open_orders=orders, total=open_items + orders)
 
 
-def credit_check(conn, kunnr, value, today, exclude=None):
+def credit_check(conn, kunnr, value, today, exclude=None, with_overdue=True):
     """Returns (ok, reason)."""
     c = conn.execute("SELECT klimk FROM customer WHERE kunnr=?", (kunnr,)).fetchone()
     e = exposure(conn, kunnr, exclude)
     if c and c["klimk"] and e["total"] + value > c["klimk"]:
         return False, "Credit limit exceeded: limit %.2f, exposure %.2f + document %.2f" % (
             c["klimk"] / 100.0, e["total"] / 100.0, value / 100.0)
+    if not with_overdue:
+        return True, ""
     lim = (datetime.date.fromisoformat(today) - datetime.timedelta(days=CREDIT["oldest_days"])).isoformat()
     od = conn.execute("SELECT MIN(i.netdt) FROM acc_doc_item i WHERE i.koart='D' AND i.kunnr=? AND "
                       "i.augbl IS NULL AND i.shkzg='S' AND i.netdt<?", (kunnr, lim)).fetchone()[0]
@@ -204,12 +206,15 @@ def create(conn, data, user):
         inc = incompletion(conn, vbeln)
         if inc:
             msgs.append("Document is incomplete: " + ", ".join(inc))
-    result = {"vbeln": vbeln, "messages": msgs, "incomplete": inc}
-    if auart == "RO" and not inc:
-        k = conn.execute("SELECT cmgst FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
-        if k["cmgst"] != "B":
-            from .delivery import create as create_delivery
-            result["delivery"] = create_delivery(conn, vbeln, user, audat)["vbeln"]
+        result = {"vbeln": vbeln, "messages": msgs, "incomplete": inc}
+        if auart == "RO" and not inc:           # rush order: delivery at once, same transaction
+            k = conn.execute("SELECT cmgst FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
+            if k["cmgst"] != "B":
+                from .delivery import create as create_delivery
+                try:
+                    result["delivery"] = create_delivery(conn, vbeln, user, audat)["vbeln"]
+                except MMError as e:
+                    msgs.append("Delivery could not be created: %s" % e.msg)
     return result
 
 

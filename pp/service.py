@@ -18,6 +18,7 @@ from mm.util import MMError, now_ts, parse_date, parse_qty, rdiv
 
 from .config import SERVICE_Z, WIP_ACCOUNT, WIP_CHANGE
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_year, parse_period  # noqa: E402
 
 
 def _months_back(today, n):
@@ -204,7 +205,7 @@ def wip(conn, gjahr, perio, user="", test=False):
     """WIP at actual costs: orders with costs that are not delivered / TECO.
     The change against the previous period is posted to FI (Dr WIP, Cr change
     in WIP); delivered orders get their WIP cancelled."""
-    gjahr, perio = int(gjahr), int(perio)
+    gjahr, perio = parse_year(gjahr), parse_period(perio)
     from co.core import closing_date
     budat = closing_date(gjahr, perio)
     out = []

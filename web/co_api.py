@@ -14,6 +14,7 @@ from mm.util import MMError, amt_out, qty_out
 
 from .server import db, route
 from mm import util as mmclock  # noqa: E402
+from mm.util import parse_int, parse_year, parse_period  # noqa: E402
 
 
 def _yp(q):
@@ -23,7 +24,7 @@ def _yp(q):
     else:
         t = mmclock.today()
         dy, dp = t.year, t.month
-    return int(q.get("gjahr") or dy), int(q.get("perio") or dp)
+    return parse_year(q.get("gjahr"), dy), parse_period(q.get("perio"), dp)
 
 
 # ====================================================================== meta
@@ -232,7 +233,7 @@ def co_kp06_input(req, q):
 @route("POST", "/api/co/kspi")
 def co_kspi(req, q):
     b = req.body
-    y, p = int(b.get("gjahr")), int(b.get("perio"))
+    y, p = parse_year(b.get("gjahr")), parse_period(b.get("perio"))
     res = planning.kspi(db(), y, p, req.user)
     for r in res:
         r["plan_qty"] = qty_out(r["plan_qty"])
@@ -255,7 +256,7 @@ def co_ck11n(req, q):
 @route("POST", "/api/co/ck24")
 def co_ck24(req, q):
     b = req.body
-    r = costing.mark_release(db(), int(b.get("id")), b.get("budat"), req.user)
+    r = costing.mark_release(db(), parse_int(b.get("id"), "cost estimate"), b.get("budat"), req.user)
     return {"message": "Cost estimate released - new standard price %.2f" %
             (r["new_price"] / 100.0)}
 
@@ -263,7 +264,7 @@ def co_ck24(req, q):
 @route("GET", "/api/co/estimate")
 def co_ck13n(req, q):
     if q.get("id"):
-        return costing.get_estimate(db(), int(q["id"]))
+        return costing.get_estimate(db(), parse_int(q["id"], "cost estimate"))
     return costing.get_estimate(db(), None, (q.get("matnr") or "").upper(),
                                 q.get("werks") or "1000")
 
@@ -365,7 +366,7 @@ def co_cycle_run(req, q):
 
 @route("POST", "/api/co/cycle/reverse")
 def co_cycle_rev(req, q):
-    period_end.reverse_run(db(), int(req.body.get("run_id")), req.user)
+    period_end.reverse_run(db(), parse_int(req.body.get("run_id"), "run"), req.user)
     return {"message": "Run %s reversed" % req.body.get("run_id")}
 
 
@@ -498,9 +499,9 @@ def co_ke11_get(req, q):
 # ====================================================================== reports
 @route("GET", "/api/co/rep/cc")
 def co_rep_cc(req, q):
-    y = int(q.get("gjahr") or _yp(q)[0])
-    return reports.cc_plan_actual(db(), y, int(q.get("pfrom") or _yp(q)[1]),
-                                  int(q.get("pto") or _yp(q)[1]),
+    y = parse_year(q.get("gjahr"), _yp(q)[0])
+    return reports.cc_plan_actual(db(), y, parse_period(q.get("pfrom"), _yp(q)[1]),
+                                  parse_period(q.get("pto"), _yp(q)[1]),
                                   (q.get("kostl") or "").upper(), q.get("khinr") or "")
 
 
@@ -514,7 +515,7 @@ def co_rep_target(req, q):
 def co_rep_items(req, q):
     y, p = _yp(q)
     return reports.line_items(db(), q.get("wrttp") or "04", y,
-                              int(q.get("pfrom") or p), int(q.get("pto") or p),
+                              parse_period(q.get("pfrom"), p), parse_period(q.get("pto"), p),
                               q.get("otype") or "KS", (q.get("obj") or "").upper(),
                               q.get("kstar") or "", q.get("vrgng") or "")
 
@@ -539,27 +540,27 @@ def co_rep_prices(req, q):
 def co_rep_ke30(req, q):
     y, p = _yp(q)
     filters = {k: q.get(k) for k in ("matnr", "kunnr", "region", "kdgrp", "vtweg", "matkl")}
-    return reports.ke30(db(), y, int(q.get("pfrom") or p), int(q.get("pto") or p),
+    return reports.ke30(db(), y, parse_period(q.get("pfrom"), p), parse_period(q.get("pto"), p),
                         q.get("drill") or "", filters)
 
 
 @route("GET", "/api/co/rep/ke24")
 def co_rep_ke24(req, q):
     y, p = _yp(q)
-    return reports.ke24(db(), y, int(q.get("pfrom") or p), int(q.get("pto") or p),
-                        int(q.get("plikz") or 0))
+    return reports.ke24(db(), y, parse_period(q.get("pfrom"), p), parse_period(q.get("pto"), p),
+                        parse_int(q.get("plikz"), "plikz", default=0))
 
 
 @route("GET", "/api/co/rep/recon")
 def co_rep_recon(req, q):
     y, p = _yp(q)
-    return reports.reconcile(db(), y, int(q.get("pfrom") or p), int(q.get("pto") or p))
+    return reports.reconcile(db(), y, parse_period(q.get("pfrom"), p), parse_period(q.get("pto"), p))
 
 
 @route("GET", "/api/co/rep/fipnl")
 def co_rep_fipnl(req, q):
     y, p = _yp(q)
-    out = fi_pnl(db(), y, int(q.get("pfrom") or p), int(q.get("pto") or p))
+    out = fi_pnl(db(), y, parse_period(q.get("pfrom"), p), parse_period(q.get("pto"), p))
     for r in out:
         r["balance"] = amt_out(r["balance"])
     return out

@@ -18,7 +18,8 @@ def check_order(conn, aufnr, for_gr=False):
         raise MMError("Order %s is not released (status CRTD)" % aufnr, "KO", "011")
     if o["stat"] == "CLSD":
         raise MMError("Order %s is closed - no postings allowed" % aufnr, "KO", "012")
-    if for_gr and o["auart"] not in ("PP01", "ZP03", "ZREF"):
+    from pp.config import GR_ORDER_TYPES
+    if for_gr and o["auart"] not in GR_ORDER_TYPES:
         raise MMError("Order %s is not a production order" % aufnr, "KO", "013")
     return o
 
