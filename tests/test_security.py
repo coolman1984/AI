@@ -194,6 +194,20 @@ class Http(unittest.TestCase):
         self.call("/api/sec/logout", {}, cookie=ck)
         self.assertEqual(self.call("/api/meta", cookie=ck)[0], 401)
 
+    def test_salaries_are_refused_without_hr_authorization(self):
+        import json as _j
+        from urllib.parse import quote
+        sl = self.logon("SALES1")
+        self.assertEqual(self.call("/api/hr/employees", cookie=sl)[0], 403)
+        self.assertEqual(self.call("/api/forms/payslip/2026-09-10005", cookie=sl)[0], 403)     # any spelling
+        q = quote(_j.dumps({"provider": "HR", "rows": ["orgunit"], "columns": [{"kf": "gross"}]}))
+        self.assertEqual(self.call("/api/bi/query?q=" + q, cookie=sl)[0], 403)
+        hr = self.logon("HR1")
+        st, d, _ = self.call("/api/hr/employees", cookie=hr)
+        self.assertEqual(st, 200)
+        self.assertTrue(d)
+        self.assertEqual(self.call("/api/bi/query?q=" + q, cookie=hr)[0], 200)
+
     def test_object_route_is_audited(self):
         ck = self.logon("CREDIT1")
         st, d, _ = self.call("/api/sd/order/999999/release", {}, cookie=ck)

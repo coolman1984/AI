@@ -49,8 +49,9 @@ def catalog():
 
 
 def area_of_path(path):
+    low = path.lower()                     # /api/forms/payslip/ must not bypass the HR area
     for prefix, area in API_AREAS:
-        if path.startswith(prefix):
+        if low.startswith(prefix.lower()):
             return area
     return "MM"
 
@@ -97,6 +98,8 @@ def object_allowed(prof, obj, value="*", actvt="02"):
             continue
         if a["object"] == "*" and obj == "S_USER_GRP" and a["actvt"] != "*":
             continue        # user administration only when named explicitly (or full admin)
+        if obj == "S_AREA" and value == "HR" and a["actvt"] != "*" and "HR" not in (a["value"],):
+            continue        # personnel data and salaries: only with an explicit HR authorization
         if a["value"] not in ("*", value) and not (value == "*" and a["value"]):
             continue
         if _act_ok(a["actvt"], actvt):

@@ -48,6 +48,8 @@ def _seed(conn):
     fi_seed.history(conn, hist_start.replace(day=1), ANCHOR[0])
     from md import seed as md_seed
     md_seed.master(conn)
+    from hr import seed as hr_seed                 # payroll costs reach the cost centers before CO closing
+    hr_seed.seed(conn)
     failed += co_seed.plan_and_sample(conn)
     from pp import seed as pp_seed
     pp_seed.sample(conn, pp_seed.master(conn))

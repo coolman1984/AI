@@ -183,6 +183,13 @@ function render(d) {
     h("div", { class: "kpis" }, kpi("This month", egp(S.month)), kpi("Order backlog", money(S.backlog)), kpi("Margin", pct(S.margin_pct), "pos")),
     areaChart(S.trend, months, C.green, { h: 120 }),
     h("div", { class: "lbl" }, `${S.customers} customers this year · ${S.open_orders} open orders · ${S.blocked} credit-blocked`)));
+  // HR
+  const H = d.hr;
+  g.append(card({ id: "hr" }, "HR", "☺", C.teal, "ZHR_COCKPIT",
+    h("div", { class: "kpis" }, kpi("Headcount", H.headcount), kpi("Payroll cost " + H.last_period, money(H.cost_last)),
+      kpi("On leave today", H.on_leave), kpi("Open leave requests", H.open_requests, H.open_requests ? "neg" : "")),
+    H.cost_trend.length ? areaChart(H.cost_trend, H.months.map(shortM), C.teal, { h: 110 }) : null,
+    h("div", { class: "lbl" }, H.by_group.map(x => `${x.name} ${x.value}`).join(" · ") + ` · hires ${H.hires} / leavers ${H.leavers} this year`)));
   // Controlling
   g.append(card({ id: "controlling" }, "Controlling", "◔", C.orange, "S_ALR_87013611",
     h("div", { class: "kpis" }, kpi("Cost YTD", money(Co.actual)), kpi("Plan YTD", money(Co.plan)), kpi("Used", pct(Co.ach), Co.ach > 100 ? "neg" : "pos")),

@@ -139,6 +139,19 @@ def overview(conn, user="", everything=True):
                        centers=[dict(name=r["labels"][0], plan=r["values"][0], actual=r["values"][1],
                                      ach=_pct(r["values"][1] or 0, r["values"][0])) for r in cc])
 
+    # ---------------------------------------------------------------- HR
+    from hr import reports as hr_reports
+    hc = hr_reports.cockpit(conn)
+    tr = hc["trend"][-6:]
+    hr = dict(headcount=hc["headcount"]["total"], on_leave=len(hc["on_leave"]), open_requests=hc["open_requests"],
+              hires=hc["hires_ytd"], leavers=hc["leavers_ytd"],
+              cost_last=_a((tr[-1]["gross"] + tr[-1]["si_er"]) if tr else 0),
+              last_period="%04d/%02d" % (tr[-1]["gjahr"], tr[-1]["perio"]) if tr else "-",
+              months=["%04d-%02d" % (t_["gjahr"], t_["perio"]) for t_ in tr],
+              cost_trend=[_a(t_["gross"] + t_["si_er"]) for t_ in tr],
+              by_group=[dict(name={"W": "Workers", "S": "Staff", "M": "Management"}.get(k, k), value=n)
+                        for k, n in hc["headcount"]["by_group"]])
+
     # ---------------------------------------------------------------- tasks
     from sec import inbox
     tasks = [dict(typ=r["typ"], text=r["text"], date=r["date"], tcode=r["tcode"], key=r["key"])
@@ -151,7 +164,7 @@ def overview(conn, user="", everything=True):
         profit=dict(income=v["NS"][0], expenses=round(expenses, 2), profit=v["OP"][0], net=v["NI"][0],
                     margin_pct=_pct(v["OP"][0] or 0, v["NS"][0]), invoices=invoices),
         production=prod, quality=quality, warehouse=warehouse, procurement=procurement, sales=sales_card,
-        controlling=controlling,
+        controlling=controlling, hr=hr,
         analytics=dict(op_ytd=v["OP"][0], gm_pct=_pct(v["GM"][0] or 0, v["NS"][0]), month_sales=v["NS"][2],
                        prev_year=v["NS"][3], op_trend=[op_by_m.get(m, 0) or 0 for m in show]),
         tasks=tasks)

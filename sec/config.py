@@ -12,19 +12,20 @@ Two layers, like SAP:
 MENU_AREAS = {"Sales": "SD", "Marketing": "SD", "Logistics Execution": "MM",
               "Procurement": "PUR", "Production": "PP", "Financial Accounting": "FI",
               "Controlling": "CO", "Master Data": "MD", "Common": "CA",
-              "Administration": "BC"}
+              "Administration": "BC", "Human Resources": "HR"}
 AREAS = {"SD": "Sales and distribution", "MM": "Inventory / logistics execution",
          "PUR": "Procurement", "PP": "Production", "FI": "Financial accounting",
          "CO": "Controlling", "MD": "Master data", "CA": "Cross-application tools",
+         "HR": "Human resources (personnel data, salaries - confidential)",
          "BC": "User and authorisation administration"}
 ACTIVITIES = {"02": "Change", "03": "Display", "*": "All"}
 
 # URL prefix -> area; anything else under /api is inventory management (MM)
-API_AREAS = (("/api/sd/", "SD"), ("/api/fi/", "FI"), ("/api/co/", "CO"), ("/api/pur/", "PUR"),
+API_AREAS = (("/api/forms/PAYSLIP/", "HR"), ("/api/sd/", "SD"), ("/api/fi/", "FI"), ("/api/co/", "CO"), ("/api/pur/", "PUR"),
              ("/api/pp/", "PP"), ("/api/md/", "MD"), ("/api/qa/", "CA"), ("/api/office/", "CA"),
              ("/api/excel/", "CA"), ("/api/pdf/", "CA"), ("/api/ppt/", "CA"), ("/api/outlook", "CA"),
              ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
-             ("/api/bi/", "CA"), ("/api/dash/", "CA"))
+             ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request",
@@ -33,7 +34,7 @@ PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/se
 OPEN_PATHS = ("/api/sec/me", "/api/sec/logout", "/api/sec/password", "/api/sec/request",
               "/api/sec/inbox", "/api/sec/su53", "/api/shutdown", "/api/meta", "/api/dashboard",
               "/api/materials", "/api/plant", "/api/sloc", "/api/vendor", "/api/kostl",
-              "/api/qa/lms", "/api/bi/view", "/api/gui/menu")
+              "/api/qa/lms", "/api/bi/view", "/api/gui/menu", "/api/hrself")
 # transactions every user may start
 ALWAYS = ("HOME", "ZAMS", "ZINBOX", "SU53", "ZWORKPLACE", "ZLMS")
 
@@ -50,6 +51,8 @@ OBJECTS = {
     "M_ISEG_WDB": "Post physical inventory differences (MI07)",
     "M_PERIOD": "Open and close MM periods (MMPV / MMRV)",
     "S_DATA_IMP": "Data import for go-live (ZIMPORT, post)",
+    "P_ABSENCE": "Approve leave requests",
+    "P_PYEVRUN": "Run, post and pay the payroll",
 }
 # (method, path regex, object, value taken from the request body or '*')
 ROUTE_OBJECTS = (
@@ -64,6 +67,8 @@ ROUTE_OBJECTS = (
     ("POST", r"/api/mi/post", "M_ISEG_WDB", None),
     ("POST", r"/api/(mmpv|mmrv)", "M_PERIOD", None),
     ("POST", r"/api/import/run", "S_DATA_IMP", None),
+    ("POST", r"/api/hr/absence/decide", "P_ABSENCE", None),
+    ("POST", r"/api/hr/payroll/(run|post|reverse|pay)", "P_PYEVRUN", None),
 )
 # successful calls written to the audit log (SM20) besides the object routes above
 AUDIT_ROUTES = (
@@ -105,6 +110,9 @@ DEMO_ROLES = {
                     D + [("S_AREA", "MD", "02"), ("F_LFA1_BEK", "*", "02")]),
     "AUDITOR": ("Auditor (display only)", ["*"], D + [("S_USER_GRP", "*", "03")]),
     "ADMIN": ("Administrator (all)", ["*"], [("*", "*", "*")]),
+    "HR_ADMIN": ("HR administrator", ["@HR", "@CA"], D + [("S_AREA", "HR", "02"), ("P_ABSENCE", "*", "02")]),
+    "PAYROLL": ("Payroll accountant", ["@HR", "@CA", "@FI"],
+                D + [("S_AREA", "HR", "02"), ("P_PYEVRUN", "*", "02"), ("S_AREA", "FI", "02")]),
 }
 # demo users: name -> (full name, roles, business area, cost center)
 DEMO_USERS = {
@@ -124,4 +132,6 @@ DEMO_USERS = {
     "MDM1": ("Master data maintainer", ["MD_MAINTAINER"], "Master Data", "4100"),
     "MDA1": ("Master data approver", ["MD_APPROVER"], "Master Data", "4100"),
     "AUDIT1": ("Auditor", ["AUDITOR"], "Finance", "4200"),
+    "HR1": ("HR specialist", ["HR_ADMIN"], "Finance & Administration", "9100"),
+    "PAY1": ("Payroll accountant", ["PAYROLL"], "Finance & Administration", "9100"),
 }

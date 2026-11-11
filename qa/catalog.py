@@ -343,6 +343,38 @@ PROCESSES = [
              ("SVC-03", "Reservation partial issue", "MB21 MIGO", "Open quantity remains reserved", ["test_pp.ServiceParts.test_reservation_partial_issue"]),
              ("SVC-04", "Forecast and safety stock for spare parts", "MP30 MP38", "Forecast and safety stock computed", ["test_pp.ServiceParts.test_forecast_and_safety_stock"]),
          ]),
+    # ------------------------------------------------------------------ HR
+    dict(id="H2R", folder="A", module="HR", map="ZHR_COCKPIT", version="1.0",
+         name="Hire to Retire (HR & Payroll)",
+         purpose="The right people on the right positions, every leave approved, every salary correct and in the books.",
+         lanes=["Employee", "HR administration", "Payroll", "Finance / Controlling"],
+         steps=[
+             (1, 1, 0, "s", "Hire employee", "PA40", [2]),
+             (2, 1, 1, "t", "Position & cost center", "PPOME", [3]),
+             (3, 0, 2, "t", "Leave request", "ZLEAVE", [4]),
+             (4, 1, 3, "d", "Approve leave / overtime", "PA61", [5]),
+             (5, 2, 4, "t", "Payroll run (Egypt)", "PC00_M99_CALC", [6]),
+             (6, 2, 5, "t", "Post to accounting", "PC00_M99_CIPE", [7]),
+             (7, 3, 6, "t", "Salary bank transfer", "PC00_M99_DTA", [8]),
+             (8, 0, 7, "e", "Payslip", "PC00_M99_CEDT", []),
+         ],
+         controls=[
+             ("Valid national ID and bank account", "14-digit national ID matches the birth date; Egyptian IBAN", "H2R-01"),
+             ("Leave only within the quota, approved by another person", "21 / 30 days, casual max. 6, no own approval", "H2R-03"),
+             ("Legal deductions calculated, not typed", "Social insurance 11 % / 18.75 % within limits, tax brackets, martyrs' fund", "H2R-04"),
+             ("Payroll in the books per cost center", "Personnel cost reaches FI and CO; payable cleared by the transfer", "H2R-05"),
+             ("Salaries are confidential", "HR data only with an explicit HR authorization", "H2R-07"),
+         ],
+         kpis=["Headcount", "Personnel cost / sales", "Overtime hours", "Absence rate", "Turnover"],
+         cases=[
+             ("H2R-01", "Hiring checks, change documents, leaving", "PA40 PA30 PA20", "Invalid data refused; changes logged; position freed", ["test_hr.Personnel.test_hire_checks_change_documents_and_leaving"]),
+             ("H2R-02", "Organization, positions and headcount", "PPOME ZHR_HEADCOUNT", "Units and positions; headcount = employees", ["test_hr.Personnel.test_organization_positions_and_headcount"]),
+             ("H2R-03", "Leave quota, casual limit, overlap, approval", "PA61 PT50 ZLEAVE", "Quota and rules enforced; nobody approves own leave", ["test_hr.Time.test_leave_quota_casual_limit_overlap_and_approval"]),
+             ("H2R-04", "Egyptian payroll calculation", "PC00_M99_CALC", "Overtime, unpaid leave, SI limits, tax brackets, martyrs' fund exact", ["test_hr.Payroll.test_egyptian_payroll_calculation"]),
+             ("H2R-05", "Posting, reversal, bank transfer", "PC00_M99_CIPE PC00_M99_DTA", "FI document = payroll; CO cost centers charged; payable cleared", ["test_hr.Payroll.test_run_post_pay_reverse_and_books"]),
+             ("H2R-06", "Payslip", "PC00_M99_CEDT ZLEAVE", "Payslip printed from the payroll result", ["test_hr.Payroll.test_payslip_form"]),
+             ("H2R-07", "Confidential personnel data", "PFCG SUIM", "Display-everywhere roles do not see HR; HR roles do", ["test_hr.Confidentiality.test_hr_area_needs_explicit_authorization", "test_security.Http.test_salaries_are_refused_without_hr_authorization"]),
+         ]),
     # ------------------------------------------------------------------ AMS (Basis)
     dict(id="AMS", folder="A", module="CA", map="ZAMS", version="1.0",
          name="ID & Authorization (AMS)",
@@ -372,6 +404,7 @@ PROCESSES = [
              ("AMS-03", "Role maintenance", "PFCG", "Roles with transactions and authorizations; assigned roles cannot be deleted", ["test_security.Authorisation.test_pfcg_role_maintenance"]),
              ("AMS-04", "Transaction, area and object checks", "SU53 SUIM", "Sales clerk cannot post in FI, release credit or start FI transactions", ["test_security.Authorisation.test_tcode_area_and_objects_per_role", "test_security.Http.test_session_and_refusals", "test_security.Http.test_object_route_is_audited"]),
              ("AMS-05", "Access request through the approval inbox", "ZAMS ZINBOX SUIM", "Request approved by the administrator; own request refused", ["test_security.Authorisation.test_access_request_inbox_and_suim"]),
+             ("AMS-06", "Desktop client MM Core Logon / Easy Access", "ZAMS", "System entries checked, command field, favorites per system, every menu transaction has a text", ["test_gui.Client.test_system_entries_are_checked", "test_gui.Client.test_command_field", "test_gui.Client.test_favorites_per_system_and_session_url", "test_gui.Client.test_menu_for_the_client_has_every_transaction_with_a_title"]),
          ]),
 ]
 

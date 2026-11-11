@@ -241,6 +241,21 @@ def ledger(conn):
     return out
 
 
+# ------------------------------------------------------------------ human resources (aggregated, no names)
+def personnel(conn):
+    org = _texts(conn, "SELECT orgeh, text FROM hr_orgunit")
+    grp = {"W": "Workers", "S": "Staff", "M": "Management"}
+    out = []
+    for r in conn.execute("SELECT r.*, e.orgeh, e.gender FROM hr_payroll r JOIN hr_employee e USING (pernr) "
+                          "JOIN hr_payroll_run u USING (gjahr, perio) WHERE u.status IN ('REL','POST','PAID')"):
+        out.append(dict(version="ACT", gjahr=r["gjahr"], perio=r["perio"], month="%04d-%02d" % (r["gjahr"], r["perio"]),
+                        orgunit="%s %s" % (r["orgeh"], org.get(r["orgeh"], "")), kostl=r["kostl"],
+                        subgroup=grp.get(r["persk"], r["persk"]), gender={"M": "Male", "F": "Female"}.get(r["gender"], "#"),
+                        employees=1, gross=r["gross"], overtime=r["overtime"], tax=r["tax"], si_er=r["si_er"],
+                        si_ee=r["si_ee"], net=r["net"], cost=r["gross"] + r["si_er"]))
+    return out
+
+
 PROVIDERS = {
     # id: (text, function, characteristics, key figures)
     "COPA": ("Profitability (CO-PA, plan and actual)", copa,
@@ -290,6 +305,12 @@ PROVIDERS = {
              {"planned": ("Planned qty", QTY), "delivered": ("Delivered qty", QTY), "yield_qty": ("Confirmed yield", QTY),
               "scrap": ("Scrap qty", QTY), "target_cost": ("Target cost", AMT), "actual_cost": ("Actual cost", AMT),
               "variance": ("Variance", AMT), "orders": ("Orders", NUM)}),
+    "HR": ("Personnel cost (payroll results)", personnel,
+           {"month": "Month", "orgunit": "Organizational unit", "kostl": "Cost center", "subgroup": "Employee subgroup",
+            "gender": "Gender"},
+           {"employees": ("Employees", NUM), "gross": ("Gross pay", AMT), "overtime": ("Overtime", AMT),
+            "si_er": ("Employer social insurance", AMT), "cost": ("Personnel cost", AMT), "tax": ("Income tax", AMT),
+            "net": ("Net pay", AMT)}),
     "GL": ("General ledger", ledger,
            {"month": "Month", "account": "G/L account", "fsv": "Financial statement item", "typ": "Statement"},
            {"amount": ("Amount", AMT)}),

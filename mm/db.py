@@ -167,6 +167,9 @@ def migrate_schema(conn):
     conn.executescript(OUT_SCHEMA)
     from bi.catalog import VIEW_SCHEMA
     conn.executescript(VIEW_SCHEMA)
+    from hr.schema import HR_SCHEMA, install as hr_install
+    conn.executescript(HR_SCHEMA)
+    hr_install(conn)
     from fi.wht import WHT_SCHEMA, install as wht_install
     conn.executescript(WHT_SCHEMA)
     wht_install(conn)

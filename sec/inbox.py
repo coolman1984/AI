@@ -58,6 +58,19 @@ def inbox(conn, user, everything=False):
             n = len(json.loads(p["proposal"] or "[]"))
             add("Payment run", "%s/%s" % (p["laufd"], p["laufi"]), "Payment proposal with %d items "
                 "waiting for execution" % n, p["laufd"], None, "F110", p["usnam"])
+    if can("P_ABSENCE"):
+        from hr.config import ABSENCE_TYPES
+        for a in conn.execute("SELECT a.*, e.name, e.bname FROM hr_absence a JOIN hr_employee e USING (pernr) "
+                              "WHERE a.status='R' ORDER BY a.begda").fetchall():
+            add("Leave request", a["pernr"], "Request %s - %s: %s %s - %s (%d day(s)) %s" % (a["id"],
+                a["name"], ABSENCE_TYPES.get(a["awart"], {}).get("text", a["awart"]), a["begda"], a["endda"],
+                a["days"], a["reason"] or ""), a["created"], None, "PA61", a["bname"] or a["created_by"])
+    if can("P_PYEVRUN"):
+        for r in conn.execute("SELECT * FROM hr_payroll_run WHERE status IN ('REL','POST') ORDER BY gjahr, perio"):
+            add("Payroll", "%04d/%02d" % (r["gjahr"], r["perio"]), "Payroll %04d/%02d is %s - %s" % (
+                r["gjahr"], r["perio"], {"REL": "released", "POST": "posted"}[r["status"]],
+                "post it to accounting" if r["status"] == "REL" else "transfer the net pay"), r["run_ts"], None,
+                "PC00_M99_CIPE" if r["status"] == "REL" else "PC00_M99_DTA", r["usnam"])
     for r in out:
         r["own"] = r["by"] == user        # two-person rule: own documents cannot be approved
     return out

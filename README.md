@@ -21,7 +21,7 @@ The first start loads demo data: 2 plants, 10 materials and about 4 months of mo
 logon on, run `tools/Login ON.bat` (back off: `tools/Login OFF.bat`) and start MM Core again
 (or `python run.py --login`). With the logon on, every person has an own user (AMS - ID & Authorization).
 Demo users: `ADMIN / admin` (everything), `SALES1 / sales1`, `CREDIT1`, `BUYER1`, `PURMGR1`,
-`WH1`, `QM1`, `PLAN1`, `SHOP1`, `AP1`, `AR1`, `GL1`, `CTRL1`, `MDM1`, `MDA1`, `AUDIT1`
+`WH1`, `QM1`, `PLAN1`, `SHOP1`, `AP1`, `AR1`, `GL1`, `CTRL1`, `MDM1`, `MDA1`, `AUDIT1`, `HR1`, `PAY1`
 (password = user name in small letters). A database without demo data gets one `ADMIN`
 user with a one-time password in `data/first_login.txt`.
 
@@ -38,6 +38,23 @@ user with a one-time password in `data/first_login.txt`.
   hours without use. The server checks every call: the transaction, the area (display /
   change) and the critical object (release, payment run, periods, reversals, user admin).
 - `python run.py --dev` starts without logon (developer mode for tests and tools).
+
+## Human Resources (HR) and Egyptian payroll
+
+| T-code | What it does |
+|---|---|
+| ZHR_COCKPIT / ZHR_HEADCOUNT / ZHR_EMPLOYEES | HR cockpit (headcount, payroll cost, leave today, open requests), headcount report, employee list |
+| PA40 / PA30 / PA20 | Personnel actions (hiring, organizational change, pay change, leaving), maintain / display employee data with change documents |
+| PPOME | Organizational units and positions on cost centers (vacant / occupied) |
+| PA61 / PT50 / ZLEAVE | Absences and overtime with approval, leave quota (21 / 30 days, casual max. 6), employee self-service (own leave and payslips) |
+| PC00_M99_CALC / _CIPE / _DTA / _CEDT / _CWTR | Payroll run, posting to accounting (cost per cost center to CO), bank transfer, payslip, payroll journal |
+| ZHR_CONF | Social insurance 11 % / 18.75 % with min. / max. insurable wage, salary tax brackets and exemption, martyrs' fund, overtime and leave rules |
+
+Delivered with the rules of social insurance law 148/2019 and the salary tax brackets of law 7/2023 -
+**confirm every rate with your payroll / tax adviser before go-live** (ZHR_CONF). Personnel data and
+salaries are confidential: only roles with the HR area (demo users `HR1`, `PAY1`, `ADMIN`) see them;
+the general display authorization of other roles does not include HR. Leave requests and payroll
+steps appear in the approval inbox (ZINBOX), payroll cost in BI (category HR) and on the ERP dashboard.
 
 ## BI (Business Intelligence) - ZBI
 
