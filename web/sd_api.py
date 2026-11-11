@@ -15,7 +15,8 @@ AMT = {"netwr", "mwsbk", "netpr", "mwsbp", "wavwr", "kzwi1", "kzwi2", "freight",
        "disc", "net", "cogs", "revenue", "deductions", "cost", "margin", "returns", "credits", "order_value",
        "incoming", "backlog", "delivered_not_billed", "pipeline", "samples", "credit_blocked", "klimk",
        "open_items", "open_orders", "exposure", "overdue", "weighted", "plan", "actual", "total", "budget",
-       "used", "price", "tax", "rfwrt"}
+       "used", "price", "tax", "rfwrt", "netwr_fc", "mwsbk_fc", "kzwi1_fc", "kzwi2_fc", "freight_fc", "mwsbp_fc",
+       "netpr_fc", "gross_fc", "disc_fc", "net_fc"}
 QTY = {"kwmeng", "bmeng", "wmeng", "lfimg", "pikmg", "fkimg", "delivered", "billed", "confirmed", "qty", "due",
        "missing", "on_time", "order_qty", "rfmng", "menge"}
 
@@ -37,6 +38,8 @@ def out(o):
 
 
 def _conds(cs):
+    """condition values are kept in local currency (EGP); the order header has the
+    document-currency values"""
     for c in cs:
         c["kbetr_txt"] = ("%.2f %%" % (c["kbetr"] / 100.0)) if c["krech"] == "A" else "%.2f EGP" % (c["kbetr"] / 100.0)
     return cs
@@ -136,7 +139,8 @@ def sd_price(req, q):
 def sd_conditions(req, q):
     r = pricing.pricing_report(db(), q.get("kschl") or None, q.get("date") or None)
     for x in r:
-        x["rate"] = ("%.2f %%" % (x["kbetr"] / 100.0)) if x["konwa"] == "%" else "%.2f" % (x["kbetr"] / 100.0)
+        x["rate"] = ("%.2f %%" % (x["kbetr"] / 100.0)) if x["konwa"] == "%" else "%.2f %s" % (x["kbetr"] / 100.0,
+                                                                                        x["konwa"] or "EGP")
         x["scales_txt"] = "; ".join("from %g: %.2f" % (s[0] / 1000.0, s[1] / 100.0) for s in x["scales"])
     return r
 

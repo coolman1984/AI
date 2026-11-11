@@ -16,10 +16,11 @@ const ymNow = () => { const t = today(); return { y: t.slice(0, 4), p: String(+t
 
 // ------------------------------------------------------------------ cockpit
 register("ZHR_COCKPIT", { title: "HR Cockpit", async render(app) {
-  const d = await run(() => api("/api/hr/cockpit")); if (!d) return;
+  const d = await run(() => api("/api/hr/cockpit?currency=" + App.dispCur())); if (!d) return;
   const hc = d.headcount, last = d.last || {};
+  app.append(panel(null, grid(field("Display currency", App.curSel(() => App.render()))), d.currency_note ? note(d.currency_note) : null));
   app.append(h("div.kpis", null, kpi("Headcount", hc.total, `${hc.male} men · ${hc.female} women`),
-    kpi("Monthly salary cost", fmtAmt(hc.monthly_cost), "contractual, EGP"),
+    kpi("Monthly salary cost", fmtAmt(hc.monthly_cost), `contractual, ${d.currency} · pay currencies ${(hc.by_currency || []).join(" / ")}`),
     kpi("Last payroll gross", last.gross !== undefined ? fmtAmt(last.gross) : "-", last.gjahr ? `${last.gjahr}/${last.perio} · ${last.employees} employees` : ""),
     kpi("Employer social insurance", last.si_er !== undefined ? fmtAmt(last.si_er) : "-", "last payroll"),
     kpi("On leave today", d.on_leave.length, d.on_leave.map(a => a.name).join(", ").slice(0, 60)),
@@ -28,7 +29,7 @@ register("ZHR_COCKPIT", { title: "HR Cockpit", async render(app) {
     kpi("Hires / leavers this year", `${d.hires_ytd} / ${d.leavers_ytd}`, `turnover ${d.turnover_pct} %`)));
   app.append(h("div.ams-cols", null,
     alv({ rows: hc.by_org.map(([k, n]) => ({ org: k, n })), title: "Headcount by organizational unit", columns: [{ key: "org", label: "Unit" }, { key: "n", label: "Employees", type: "int", sum: true }] }),
-    alv({ rows: d.trend, title: "Payroll by month", columns: [{ key: "gjahr", label: "Year", type: "int" }, { key: "perio", label: "Month", type: "int" },
+    alv({ rows: d.trend, title: `Payroll by month (${d.currency})`, columns: [{ key: "gjahr", label: "Year", type: "int" }, { key: "perio", label: "Month", type: "int" },
       { key: "employees", label: "Employees", type: "int" }, { key: "gross", label: "Gross", type: "amt" }, { key: "overtime", label: "Overtime", type: "amt" },
       { key: "tax", label: "Income tax", type: "amt" }, { key: "si_er", label: "Employer SI", type: "amt" }, { key: "net", label: "Net pay", type: "amt" }] })));
   toolbar([{ label: "Employees", onClick: () => go("ZHR_EMPLOYEES") }, { label: "Hire (PA40)", primary: true, onClick: () => go("PA40") },
@@ -47,7 +48,7 @@ register("ZHR_EMPLOYEES", { title: "Employee List", async render(app) {
     out.append(alv({ rows, title: "Employees", columns: [{ key: "pernr", label: "Pers. no.", link: r => go("PA20", { id: r.pernr }) },
       { key: "name", label: "Name" }, { key: "name_ar", label: "Name (Arabic)" }, { key: "org_text", label: "Unit" }, { key: "job", label: "Job" },
       { key: "kostl", label: "Cost center" }, { key: "persk", label: "Subgroup" }, { key: "hire_date", label: "Hired", type: "date" },
-      { key: "basic", label: "Basic salary", type: "amt", sum: true }, { key: "status", label: "St" }] }));
+      { key: "basic", label: "Basic salary", type: "amt" }, { key: "waers", label: "Crcy" }, { key: "status", label: "St" }] }));
   };
   toolbar([{ label: "Execute", key: "F8", primary: true, onClick: exec }, { label: "Hire (PA40)", onClick: () => go("PA40") }]);
   exec();
@@ -67,15 +68,17 @@ function empForm(m, e, ro) {
     allow_housing: inp({ value: e.allow_housing, w: "m" }), allow_other: inp({ value: e.allow_other, w: "m" }),
     ins_wage: inp({ value: e.ins_wage || "", w: "m", ph: "= contractual wage" }), iban: inp({ value: e.iban, w: "l", ph: "EG.. (29 characters)" }),
     si_no: inp({ value: e.si_no, w: "m" }), phone: inp({ value: e.phone, w: "m" }), email: inp({ value: e.email, w: "l" }),
-    bname: inp({ value: e.bname, w: "s", upper: true, ph: "MM Core user" }) };
+    bname: inp({ value: e.bname, w: "s", upper: true, ph: "MM Core user" }),
+    waers: sel([["EGP", "EGP - Egyptian pound"], ["USD", "USD - US dollar"]], e.waers || "EGP") };
   if (ro) Object.values(f).forEach(x => { x.disabled = true; });
   const body = h("div", null,
     panel("Personal data (IT0002)", grid(field("Name", f.name, { req: true }), field("Name (Arabic)", f.name_ar), field("National ID (14 digits)", f.national_id),
       field("Birth date", f.birth_date), field("Gender", f.gender), field("Phone", f.phone), field("E-mail", f.email), field("MM Core user", f.bname))),
     panel("Organizational assignment (IT0001)", grid(field("Organizational unit", f.orgeh, { req: true }), field("Position", f.plans), field("Cost center", f.kostl),
       field("Job title", f.job), field("Employee group", f.persg), field("Employee subgroup", f.persk))),
-    panel("Basic pay (IT0008) - EGP per month", grid(field("Basic salary", f.basic, { req: true }), field("Transport allowance", f.allow_transport),
-      field("Housing allowance", f.allow_housing), field("Other allowance", f.allow_other), field("Insurable wage (optional)", f.ins_wage))),
+    panel("Basic pay (IT0008) - per month in the pay currency", grid(field("Pay currency", f.waers), field("Basic salary", f.basic, { req: true }), field("Transport allowance", f.allow_transport),
+      field("Housing allowance", f.allow_housing), field("Other allowance", f.allow_other), field("Insurable wage (optional)", f.ins_wage)),
+      note("USD salaries: social insurance and income tax are calculated on the EGP amount at the month-end rate (OB08); the net pay is transferred in USD.")),
     panel("Bank and social insurance (IT0009)", grid(field("IBAN", f.iban), field("Social insurance no.", f.si_no))));
   const data = () => { const o = {}; for (const [k, x] of Object.entries(f)) o[k] = k === "bname" ? up(x) : val(x); return o; };
   return { body, data, f };
@@ -248,7 +251,8 @@ const payCols = [{ key: "pernr", label: "Pers. no." }, { key: "name", label: "Na
   { key: "basic", label: "Basic", type: "amt", sum: true }, { key: "allowances", label: "Allowances", type: "amt", sum: true }, { key: "overtime", label: "Overtime", type: "amt", sum: true },
   { key: "unpaid", label: "Unpaid", type: "amt", sum: true }, { key: "gross", label: "Gross", type: "amt", sum: true }, { key: "si_ee", label: "SI 11 %", type: "amt", sum: true },
   { key: "tax", label: "Income tax", type: "amt", sum: true }, { key: "martyrs", label: "Martyrs", type: "amt", sum: true }, { key: "net", label: "Net pay", type: "amt", sum: true },
-  { key: "si_er", label: "Employer SI", type: "amt", sum: true }];
+  { key: "si_er", label: "Employer SI", type: "amt", sum: true },
+  { key: "waers", label: "Pay crcy" }, { key: "net_fc", label: "Net pay (pay currency)", type: "amt" }];
 
 function payrollScreen(mode) {
   return async (app, params) => {
@@ -290,7 +294,7 @@ register("PC00_M99_CWTR", { title: "Payroll Journal", render: payrollScreen("cwt
 
 // ------------------------------------------------------------------ headcount, customizing
 register("ZHR_HEADCOUNT", { title: "Headcount Report", async render(app) {
-  const d = await run(() => api("/api/hr/cockpit")); if (!d) return;
+  const d = await run(() => api("/api/hr/cockpit?currency=" + App.dispCur())); if (!d) return;
   const hc = d.headcount;
   app.append(h("div.kpis", null, kpi("Headcount", hc.total), kpi("Men / women", `${hc.male} / ${hc.female}`), kpi("Average age", hc.avg_age), kpi("Average service", `${hc.avg_service} years`)),
     h("div.ams-cols", null,

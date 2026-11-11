@@ -60,6 +60,20 @@ def master(conn):
     pr.save_condition(conn, "K007", "A307", dict(kunnr="C1002", kbetr="5", datab=start), "MIGRATION")
     pr.save_condition(conn, "K004", "A304", dict(matnr="TR-5001", kbetr="2", datab=start), "MIGRATION")
     pr.save_condition(conn, "ZLAB", "A304", dict(kbetr="350", datab=start), "MIGRATION")
+    # export customer invoiced in US dollars with a USD price list entry (prices stay exact in USD)
+    from md import partner as bp
+    if not conn.execute("SELECT 1 FROM customer WHERE kunnr='C2001'").fetchone():
+        bp.create_customer(conn, dict(
+            ktokd="0001", kunnr="C2001", name="Gulf Home Furnishings LLC", street="Al Quoz Industrial 3",
+            pstlz="00000", city="Dubai", land="AE", email="buying@gulfhome.example", akont="140000",
+            stcd1="100-245-871",
+            zterm="NT30", klimk="2500000", mahna="0001", zwels="T", waers="USD",
+            sales=[dict(vkorg="1000", vtweg="10", spart="00", bzirk="UPE", kdgrp="01", konda="01",
+                        kalks="2", vsbed="01", inco1="FOB", inco2="Alexandria", zterm="NT30",
+                        ktgrd="02", taxkd="0", waers="USD")]), "MIGRATION")
+    for matnr, usd in (("FG-3001", "95"), ("FG-3002", "128.50")):
+        pr.save_condition(conn, "PR00", "A305", dict(kunnr="C2001", matnr=matnr, kbetr=usd, konwa="USD",
+                                                     datab=start), "MIGRATION")
     last = calendar.monthrange(y, m)[1]
     sv.save_deal(conn, dict(knuma="WINTER%d" % y, botext="Winter promotion wall cabinets",
                             datab=d1.isoformat(), datbi=datetime.date(y, m, last).isoformat(), budget="20000",

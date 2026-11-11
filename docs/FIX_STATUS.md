@@ -21,7 +21,7 @@ Every review item is listed below as **done**, **partial** (what is missing is n
 | BUG-007 GR reversal below invoiced qty | done | `_check_not_invoiced` |
 | BUG-008 duplicate vendor invoice | done | F5 117, reference mandatory |
 | BUG-009 period-end programs run twice | done | `vat_run`, `fx_run`, `grir_run` |
-| BUG-010 foreign currency | **partial** | Purchasing (PO, GR, MIRO, payment) is done. Sales bills in the customer currency, but sales prices stay in EGP |
+| BUG-010 foreign currency | done | Purchasing (PO, GR, MIRO, payment) and sales: condition records in USD (VK11 currency), orders priced in the customer currency (rate of the pricing date), the invoice keeps the exact document-currency amounts; local amounts at the billing-date rate. Payroll in USD and a display currency for reports were added too |
 | BUG-011 delivery change / delete | done | VL02N |
 | BUG-012 rounding in billing | done | integer split |
 | BUG-013 operation sequence | done | RU 006 / 007, scrap reasons |

@@ -7,7 +7,7 @@ from web.server import db, route
 @route("GET", "/api/dash/overview")
 def dash_overview(req, q):
     auth_on = getattr(getattr(req, "server", None), "auth", False)
-    out = overview.overview(db(), req.user, everything=not auth_on)
+    out = overview.overview(db(), req.user, everything=not auth_on, currency=q.get("currency") or None)
     out["user"] = req.user
     out["auth"] = auth_on
     return out

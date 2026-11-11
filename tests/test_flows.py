@@ -148,6 +148,46 @@ class CustomerCurrency(unittest.TestCase):
         pay(c, "D", "C1003", TODAY, [(it["belnr"], it["gjahr"], it["buzei"])], U, tcode="F-28")
         self.assertEqual(check(c), [])
 
+    def test_usd_price_is_kept_exactly_from_order_to_invoice(self):
+        """BUG-010: a dollar price (VK11 in USD) stays the same dollar amount on the invoice,
+        the local amount follows the exchange rate of the billing date."""
+        from fi import gl
+        from md import partner
+        from qa.invariants import check
+        from sd import billing, delivery, order, pricing
+        c = demo()
+        gl.set_rate(c, "USD", TODAY, "50.00")
+        partner.change_customer(c, "C1002", {"waers": "USD"}, U)
+        pricing.save_condition(c, "PR00", "A305", dict(kunnr="C1002", matnr="FG-3002", kbetr="123.45",
+                                                       konwa="USD", datab=TODAY), U)
+        err = None
+        try:
+            pricing.save_condition(c, "PR00", "A305", dict(kunnr="C1002", matnr="FG-3002", kbetr="1",
+                                                           konwa="XYZ", datab=TODAY), U)
+        except MMError as e:
+            err = e.msg_no
+        self.assertEqual(err, "011")
+        v = sales_order(c, "FG-3002", "3", kunnr="C1002")
+        k = order.detail(c, v)
+        self.assertEqual((k["waerk"], k["kursk"]), ("USD", 5000000))
+        p = k["items"][0]
+        self.assertEqual(p["kzwi1_fc"], 3 * 12345)                       # USD price x quantity, exact
+        self.assertEqual(p["kzwi1"], 3 * 12345 * 50)                     # local value at the order rate
+        net_fc = p["kzwi1_fc"] - p["kzwi2_fc"] + p["freight_fc"]
+        gl.set_rate(c, "USD", TODAY, "51.37")                            # the rate moves before billing
+        lf = delivery.create(c, v, U, TODAY)["vbeln"]
+        delivery.post_gi(c, lf, U, TODAY)
+        inv = billing.create(c, lf, U, TODAY)["vbeln"]
+        b = c.execute("SELECT * FROM billing WHERE vbeln=?", (inv,)).fetchone()
+        self.assertEqual((b["waerk"], b["kurrf"], b["netwr_fc"]), ("USD", 5137000, net_fc))
+        it = c.execute("SELECT wrbtr, dmbtr FROM acc_doc_item WHERE belnr=? AND koart='D'", (b["belnr"],)).fetchone()
+        self.assertEqual(it["wrbtr"], net_fc + p["mwsbp_fc"])            # the customer owes the order dollars
+        self.assertEqual(it["dmbtr"], round((net_fc + p["mwsbp_fc"]) * 51.37))
+        from mm import forms
+        html = forms.render(c, "INVOICE", inv)                           # the printed invoice shows the dollars
+        self.assertIn("<b>Total %s USD</b>" % "{:,.2f}".format((net_fc + p["mwsbp_fc"]) / 100.0), html)
+        self.assertEqual(check(c), [])
+
 
 if __name__ == "__main__":
     unittest.main()

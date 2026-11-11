@@ -63,6 +63,7 @@ PROCESSES = [
              ("O2C-18", "Partial billing adds up exactly", "VL01N VF01", "Sum of partial invoices = order item to the cent", ["test_controls.SalesLimits.test_partial_billing_adds_up_exactly"]),
              ("O2C-19", "Sales order change (VA02): quantity, price, add and delete item", "VA02", "New pricing; delivered quantity and follow-on documents protected", ["test_flows.SalesOrderChange.test_va02_quantity_price_add_delete"]),
              ("O2C-20", "Invoice in customer currency and payment", "VF01 F-28", "Receivable in USD at the billing-date rate; payment clears it", ["test_flows.CustomerCurrency.test_usd_customer_invoice_and_payment"]),
+             ("O2C-21", "USD price list: order and invoice in USD to the cent", "VK11 VA01 VF01", "USD price stays exact on the invoice; local amount at the billing-date rate", ["test_flows.CustomerCurrency.test_usd_price_is_kept_exactly_from_order_to_invoice"]),
          ]),
     # ------------------------------------------------------------------ P2P
     dict(id="P2P", folder="4", module="PUR", map="ZPUR_PROCESS", version="2.1",
@@ -279,6 +280,7 @@ PROCESSES = [
              ("CTL-07", "FI result = CO-PA operating result", "ZCO_RECON", "Reconciled", ["test_co.ClosingResults.test_fi_result_reconciles_with_copa_operating_result", "test_e2e.E2E_Control.test_period_close_reconciles"]),
              ("CTL-08", "Commitments from account-assigned purchase orders", "ME21N KSB2", "Open PO value committed on the cost center until the goods receipt", ["test_flows.Commitments.test_account_assigned_po_is_committed_until_receipt"]),
              ("CTL-09", "BI reports and dashboards on live data (PL Detail, PL Status, KPI cockpit)", "ZBI ZBI_DASH", "Every report runs; P/L lines add up; filters, drill-down and saved views work", ["test_bi.Reports.test_every_report_runs", "test_bi.Reports.test_pl_structure_adds_up_and_matches_copa", "test_bi.Reports.test_filter_drilldown_spread_and_total", "test_bi.Reports.test_saved_views_per_user", "test_bi.Dashboards.test_status_dashboards_currency_and_scaling", "test_bi.Overview.test_erp_dashboard_counts_confirmations_and_scrap"]),
+             ("CTL-10", "Reports and dashboards in USD (display currency)", "ZBI ZDASH ZHR_COCKPIT", "Amounts translated at the period-end rate; quantities, counts and % unchanged", ["test_bi.DisplayCurrency.test_reports_dashboard_and_hr_cockpit_in_usd"]),
          ]),
     # ------------------------------------------------------------------ MD
     dict(id="MDM", folder="8", module="MD", map="ZMD_PROCESS", version="2.1",
@@ -373,6 +375,7 @@ PROCESSES = [
              ("H2R-04", "Egyptian payroll calculation", "PC00_M99_CALC", "Overtime, unpaid leave, SI limits, tax brackets, martyrs' fund exact", ["test_hr.Payroll.test_egyptian_payroll_calculation"]),
              ("H2R-05", "Posting, reversal, bank transfer", "PC00_M99_CIPE PC00_M99_DTA", "FI document = payroll; CO cost centers charged; payable cleared", ["test_hr.Payroll.test_run_post_pay_reverse_and_books"]),
              ("H2R-06", "Payslip", "PC00_M99_CEDT ZLEAVE", "Payslip printed from the payroll result", ["test_hr.Payroll.test_payslip_form"]),
+             ("H2R-08", "Salary in USD", "PA30 PC00_M99_CALC PC00_M99_DTA", "Insurance and tax on the EGP amount; net pay transferred in USD", ["test_hr.Payroll.test_usd_salary_insurance_and_tax_in_egp_paid_in_usd"]),
              ("H2R-07", "Confidential personnel data", "PFCG SUIM", "Display-everywhere roles do not see HR; HR roles do", ["test_hr.Confidentiality.test_hr_area_needs_explicit_authorization", "test_security.Http.test_salaries_are_refused_without_hr_authorization"]),
          ]),
     # ------------------------------------------------------------------ AMS (Basis)

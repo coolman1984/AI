@@ -44,6 +44,16 @@ def annual_tax(conn, taxable_year):
 
 
 def calc(conn, e, y, p, first, last):
+    """Pay currency USD: the contract amounts are converted to EGP at the month-end rate
+    (OB08); insurance, tax and posting are in EGP, the net pay is paid in USD."""
+    from fi.config import LOCAL_CURRENCY
+    from fi.document import rate
+    waers = (e["waers"] if "waers" in e.keys() and e["waers"] else LOCAL_CURRENCY)
+    kurs = rate(conn, waers, last)
+    if waers != LOCAL_CURRENCY:
+        e = dict(e)
+        for f in ("basic", "allow_transport", "allow_housing", "allow_other", "ins_wage"):
+            e[f] = rdiv((e[f] or 0) * kurs, 100000)
     days_m = cfg_int(conn, "days_per_month")
     start = max(first, e["hire_date"])
     end = min(last, e["leave_date"]) if e["leave_date"] else last
@@ -83,7 +93,9 @@ def calc(conn, e, y, p, first, last):
     return dict(gjahr=y, perio=p, pernr=e["pernr"], kostl=e["kostl"], persk=e["persk"], days=days_m,
                 paid_days=paid_days - unpaid_days, basic=basic, allowances=allow, overtime=ot, unpaid=unpaid,
                 gross=gross, ins_wage=ins, si_ee=si_ee, si_er=si_er, taxable=taxable, tax=tax, martyrs=martyrs,
-                other=0, net=net)
+                other=0, net=net, waers=waers, kurs=kurs,
+                gross_fc=gross if waers == LOCAL_CURRENCY else rdiv(gross * 100000, kurs),
+                net_fc=net if waers == LOCAL_CURRENCY else rdiv(net * 100000, kurs))
 
 
 def status(conn, y, p):
@@ -197,7 +209,9 @@ def pay(conn, y, p, user, budat=None):
                        dict(hkont=ACCOUNTS["bank"], amount=-net, sgtxt="Salary transfer %04d/%02d" % (y, p))],
                       tcode="PC00_M99_DTA")
         conn.execute("UPDATE hr_payroll_run SET status='PAID', pay_belnr=? WHERE gjahr=? AND perio=?", (belnr, y, p))
-        transfers = [dict(pernr=r["pernr"], name=r["name"], iban=r["iban"], amount=r["net"]) for r in results(conn, y, p)]
+        transfers = [dict(pernr=r["pernr"], name=r["name"], iban=r["iban"], local=r["net"],
+                          waers=r["waers"] or "EGP", amount=r["net_fc"] if r["net_fc"] is not None else r["net"])
+                     for r in results(conn, y, p)]
     return dict(belnr=belnr, transfers=transfers,
                 message="Net pay %04d/%02d transferred - accounting document %s" % (y, p, belnr))
 

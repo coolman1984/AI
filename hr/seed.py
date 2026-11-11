@@ -1,5 +1,5 @@
 """HR demo data: organization (units, positions on the existing cost centers),
-24 employees (fictional names), leave and overtime, and posted payroll for the
+25 employees (fictional names, one paid in USD), leave and overtime, and posted payroll for the
 two months before the CO sample month (paid); the sample month itself is released only."""
 import datetime
 
@@ -47,6 +47,10 @@ EMP = [
     ("Laila Fawzy", "ليلى فوزي", "F", "1994-03-27", "2021-01-15", "10006000", "HR Specialist", "S", 16500, 1500, 1000, "HR1"),
 ]
 
+# one expatriate paid in US dollars (pay currency USD): insurance and tax on the EGP amount
+EXPAT = ("Adam Clarke", "آدم كلارك", "M", "1986-05-20", "2023-09-01", "10005000", "Export Sales Manager", "M",
+         1800, 150, 400, "")
+
 
 def _nid(birth, i):
     y = int(birth[:4])
@@ -63,7 +67,7 @@ def seed(conn):
     for orgeh, text, parent, kostl in ORG:
         engine.save_orgunit(conn, orgeh, text, parent, kostl)
     t = mmclock.today()
-    for i, (name, ar, g, birth, hire, unit, job, sg, basic, tr, ho, bname) in enumerate(EMP, start=1):
+    for i, (name, ar, g, birth, hire, unit, job, sg, basic, tr, ho, bname) in enumerate(EMP + [EXPAT], start=1):
         plans = "5%07d" % i
         kostl = [o for o in ORG if o[0] == unit][0][3]
         engine.save_position(conn, plans, job, unit, kostl, sg)
@@ -71,7 +75,8 @@ def seed(conn):
                                hire_date=hire, orgeh=unit, plans=plans, kostl=kostl, persk=sg, job=job,
                                basic=str(basic), allow_transport=str(tr), allow_housing=str(ho), iban=_iban(i),
                                si_no="%09d" % (310000000 + i * 37), bname=bname,
-                               email="%s@factory-egypt.example" % name.split()[0].lower()), USER)
+                               email="%s@factory-egypt.example" % name.split()[0].lower(),
+                               waers="USD" if name == EXPAT[0] else "EGP"), USER)
     for o in ORG:                                       # managers of the units
         m = conn.execute("SELECT pernr FROM hr_employee WHERE orgeh=? ORDER BY basic DESC LIMIT 1", (o[0],)).fetchone()
         if m:

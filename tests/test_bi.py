@@ -123,5 +123,38 @@ class Dashboards(unittest.TestCase):
             D.run(c, "NOPE", {})
 
 
+class DisplayCurrency(unittest.TestCase):
+    def test_reports_dashboard_and_hr_cockpit_in_usd(self):
+        """Every BI report, the ERP dashboard and the HR cockpit can be shown in USD: local
+        amounts translated at the rate of the period end, quantities and counts unchanged."""
+        from bi import engine, overview
+        from fi.document import rate
+        from hr import reports as hr_reports
+        c = demo()
+        k = rate(c, "USD", "2026-10-31") / 100000.0
+        q = dict(provider="SALES", rows=["customer"], year=2026, period=10,
+                 columns=[dict(kf="qty"), dict(kf="net")])
+        egp, usd = engine.run(c, q), engine.run(c, dict(q, currency="USD"))
+        self.assertEqual((usd["currency"], usd["rate_date"]), ("USD", "2026-10-31"))
+        te, tu = egp["rows"][-1]["values"], usd["rows"][-1]["values"]
+        self.assertEqual(te[0], tu[0])                                   # quantity is not converted
+        self.assertAlmostEqual(tu[1], round(te[1] / k, 2), 1)
+        pl = engine.run(c, dict(provider="COPA", structure="PL", year=2026, period=10, currency="USD",
+                                columns=[dict(version="ACT", time="P"), dict(pct=True)]))
+        ns = [r for r in pl["rows"] if r["node"] == "NS"][0]["values"]
+        self.assertEqual(ns[1], 100.0)                                   # % columns stay %
+        with self.assertRaises(MMError):
+            engine.run(c, dict(q, currency="XYZ"))
+        o_e, o_u = overview.overview(c), overview.overview(c, currency="USD")
+        self.assertEqual(o_u["currency"], "USD")
+        kt = o_u["rate"]
+        self.assertAlmostEqual(o_u["finance"]["bank"], round(o_e["finance"]["bank"] / kt, 2), 0)
+        self.assertEqual(o_u["production"], o_e["production"])
+        self.assertEqual(o_u["hr"]["headcount"], o_e["hr"]["headcount"])
+        h_e, h_u = hr_reports.cockpit(c), hr_reports.cockpit(c, "USD")
+        self.assertEqual(h_u["currency"], "USD")
+        self.assertAlmostEqual(h_u["trend"][-1]["gross"], h_e["trend"][-1]["gross"] / kt, delta=1)
+
+
 if __name__ == "__main__":
     unittest.main()

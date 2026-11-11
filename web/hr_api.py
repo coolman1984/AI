@@ -20,7 +20,7 @@ def _emp_out(e):
 
 
 def _pay_out(r):
-    for k in PAY:
+    for k in PAY + ("gross_fc", "net_fc"):
         if k in r and r[k] is not None:
             r[k] = amt_out(r[k])
     return r
@@ -185,14 +185,14 @@ def hr_payroll_act(req, q, act):
     if act == "reverse":
         return payroll.reverse_posting(c, y, p, req.user)
     r = payroll.pay(c, y, p, req.user, req.body.get("budat"))
-    r["transfers"] = [dict(t, amount=amt_out(t["amount"])) for t in r["transfers"]]
+    r["transfers"] = [dict(t, amount=amt_out(t["amount"]), local=amt_out(t["local"])) for t in r["transfers"]]
     return r
 
 
 # ------------------------------------------------------------------ reports, customizing
 @route("GET", "/api/hr/cockpit")
 def hr_cockpit(req, q):
-    d = reports.cockpit(db())
+    d = reports.cockpit(db(), q.get("currency") or None)
     d["headcount"]["monthly_cost"] = amt_out(d["headcount"]["monthly_cost"])
     for t in d["trend"]:
         for k in ("gross", "si_er", "net", "tax", "overtime"):

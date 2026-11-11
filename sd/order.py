@@ -170,7 +170,7 @@ def create(conn, data, user):
             raise MMError("Enter at least one item", "V1", "005")
         conn.execute("INSERT INTO sd_vbak (vbeln,auart,vbtyp,vkorg,vtweg,spart,kunnr,kunwe,kunrg,bstnk,"
                      "audat,vdatu,prsdt,bnddt,zterm,inco1,inco2,kalsm,vgbel,vgtyp,augru,faksk,lifsk,"
-                     "prob,kostl,ernam,erdat) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                     "prob,kostl,ernam,erdat,waerk,kursk) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      (vbeln, auart, t["vbtyp"], "1000", area["vtweg"], area["spart"], kunnr, kunwe,
                       kunnr, data.get("bstnk") or "", audat, vdatu, audat,
                       parse_date(data["bnddt"]) if data.get("bnddt") else
@@ -180,7 +180,7 @@ def create(conn, data, user):
                       ref["vbtyp"] if ref else None, augru, t["faksk"], "",
                       int(data.get("prob") or (50 if auart == "QT" else 0)),
                       (data.get("kostl") or ("4500" if auart == "FD" else "")).upper() or None,
-                      user, audat))
+                      user, audat) + _currency(conn, c, audat))
         msgs = []
         for n, it in enumerate(items, start=1):
             msgs += _add_item(conn, vbeln, n * 10, it, c, area, auart, t, audat, vdatu, ref)
@@ -218,6 +218,14 @@ def create(conn, data, user):
     return result
 
 
+def _currency(conn, c, day):
+    """document currency = customer currency (XD02), rate of the pricing date (OB08)"""
+    from fi.config import LOCAL_CURRENCY
+    from fi.document import rate
+    waerk = (c["waers"] if "waers" in c.keys() and c["waers"] else LOCAL_CURRENCY)
+    return waerk, rate(conn, waerk, day)
+
+
 def _reference(conn, auart, vgbel, audat):
     src = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (vgbel,)).fetchone()
     if src:
@@ -234,7 +242,9 @@ def _reference(conn, auart, vgbel, audat):
                                     if src["auart"] == "QT" else 0)
             if open_q > 0:
                 items.append(dict(matnr=p["matnr"], qty="%.3f" % (open_q / 1000.0), vgbel=vgbel,
-                                  vgpos=p["posnr"], price="%.2f" % (p["netpr"] / 100.0)
+                                  vgpos=p["posnr"], price="%.2f" % ((p["netpr_fc"] if p["netpr_fc"] is not None
+                                                                      and src["waerk"] not in (None, "", "EGP")
+                                                                      else p["netpr"]) / 100.0)
                                   if src["auart"] == "QT" else None))
         return dict(vbeln=vgbel, vbtyp=src["vbtyp"], kunnr=src["kunnr"], items=items)
     b = conn.execute("SELECT * FROM billing WHERE vbeln=?", (vgbel,)).fetchone()
@@ -245,7 +255,9 @@ def _reference(conn, auart, vgbel, audat):
     if b["cancelled"]:
         raise MMError("Billing document %s is cancelled" % vgbel, "V1", "018")
     items = [dict(matnr=i["matnr"], qty="%.3f" % (i["fkimg"] / 1000.0), vgbel=vgbel, vgpos=i["posnr"],
-                  price="%.2f" % (rdiv(i["gross"] * 1000, i["fkimg"]) / 100.0) if i["fkimg"] else None,
+                  price="%.2f" % (rdiv((i["gross_fc"] if i["gross_fc"] is not None and b["waerk"] not in
+                                        (None, "", "EGP") else i["gross"]) * 1000, i["fkimg"]) / 100.0)
+                  if i["fkimg"] else None,
                   werks=i["werks"], lgort=i["lgort"])
              for i in conn.execute("SELECT * FROM billing_item WHERE vbeln=? AND matnr IS NOT NULL",
                                    (vgbel,))]
@@ -281,16 +293,18 @@ def _add_item(conn, vbeln, posnr, it, c, area, auart, t, audat, vdatu, ref):
     price = None
     if it.get("price") not in (None, ""):
         price = parse_price(it["price"])
+    hd = conn.execute("SELECT waerk, kursk FROM sd_vbak WHERE vbeln=?", (vbeln,)).fetchone()
     pr = pricing.price_item(conn, c, area, matnr, qty, audat, werks, it.get("disc"), price,
-                            free=not ic["pricing"], inco1=area["inco1"], vbtyp=t["vbtyp"])
+                            free=not ic["pricing"], inco1=area["inco1"], vbtyp=t["vbtyp"],
+                            waerk=hd["waerk"], kurs=hd["kursk"])
     lgort = it.get("lgort") or _sloc(conn, matnr, werks)
     kd = conn.execute("SELECT kdmat FROM sd_custmat WHERE kunnr=? AND matnr=?", (c["kunnr"], matnr)).fetchone()
     conn.execute("INSERT INTO sd_vbap (vbeln,posnr,matnr,arktx,pstyv,kwmeng,vrkme,werks,lgort,netwr,netpr,"
-                 "mwsbp,wavwr,kzwi1,kzwi2,freight,vgbel,vgpos,kdmat,equnr) VALUES "
-                 "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                 "mwsbp,wavwr,kzwi1,kzwi2,freight,vgbel,vgpos,kdmat,equnr,kzwi1_fc,kzwi2_fc,freight_fc,"
+                 "netwr_fc,mwsbp_fc,netpr_fc) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                  (vbeln, posnr, matnr, m["maktx"], pstyv, qty, m["meins"], werks, lgort, pr["net"],
                   pr["netpr"], pr["tax"], pr["cost"], pr["gross"], pr["disc"], pr["freight"],
-                  it.get("vgbel"), it.get("vgpos"), kd["kdmat"] if kd else None, it.get("equnr")))
+                  it.get("vgbel"), it.get("vgpos"), kd["kdmat"] if kd else None, it.get("equnr")) + _fc(pr))
     pricing.store(conn, vbeln, posnr, pr["conds"])
     if pr["net"] and pr["net"] < pr["cost"]:
         msgs.append("Item %d: net price below cost (margin %.2f)" % (posnr, (pr["net"] - pr["cost"]) / 100.0))
@@ -349,6 +363,9 @@ def _check_reference_limit(conn, auart, vgbel, vgpos, qty, price, posnr):
     if auart == "CR":
         value = rdiv(parse_price(price) * qty, 1000) if price not in (None, "") else \
             rdiv(bi["net"] * qty, bi["fkimg"]) if bi["fkimg"] else 0
+        b = conn.execute("SELECT waerk, kurrf FROM billing WHERE vbeln=?", (vgbel,)).fetchone()
+        if price not in (None, "") and b["kurrf"] and b["waerk"] not in (None, "", "EGP"):
+            value = rdiv(value * b["kurrf"], 100000)          # price in the invoice currency
         net_item = bi["net"]
         returned_value = rdiv(net_item * ret_q, bi["fkimg"]) if bi["fkimg"] else 0
         if cr_v + value > net_item - returned_value:
@@ -365,10 +382,18 @@ def _sloc(conn, matnr, werks):
     return "0003" if m and m["mtart"] == "FERT" else "0001"
 
 
+def _fc(pr):
+    f = pr["fc"]
+    return f["gross"], f["disc"], f["freight"], f["net"], f["tax"], f["netpr"]
+
+
 def _totals(conn, vbeln):
-    r = conn.execute("SELECT COALESCE(SUM(netwr+freight),0) n, COALESCE(SUM(mwsbp),0) t FROM sd_vbap "
+    r = conn.execute("SELECT COALESCE(SUM(netwr+freight),0) n, COALESCE(SUM(mwsbp),0) t, "
+                     "COALESCE(SUM(COALESCE(netwr_fc,netwr)+COALESCE(freight_fc,freight)),0) nf, "
+                     "COALESCE(SUM(COALESCE(mwsbp_fc,mwsbp)),0) tf FROM sd_vbap "
                      "WHERE vbeln=? AND COALESCE(abgru,'')=''", (vbeln,)).fetchone()
-    conn.execute("UPDATE sd_vbak SET netwr=?, mwsbk=? WHERE vbeln=?", (r["n"], r["t"], vbeln))
+    conn.execute("UPDATE sd_vbak SET netwr=?, mwsbk=?, netwr_fc=?, mwsbk_fc=? WHERE vbeln=?",
+                 (r["n"], r["t"], r["nf"], r["tf"], vbeln))
 
 
 def flow(conn, vbelv, posnv, vbeln, posnn, tv, tn, qty, value):
@@ -480,11 +505,13 @@ def _change_item(conn, k, p, it, user):
     price = parse_price(it["price"]) if it.get("price") not in (None, "") else None
     pr = pricing.price_item(conn, c, area, p["matnr"], qty, k["audat"], p["werks"],
                             it.get("disc") if it.get("disc") not in (None, "") else None, price,
-                            free=not ic["pricing"], inco1=area["inco1"], vbtyp=t["vbtyp"])
+                            free=not ic["pricing"], inco1=area["inco1"], vbtyp=t["vbtyp"],
+                            waerk=k["waerk"], kurs=k["kursk"])
     conn.execute("UPDATE sd_vbap SET kwmeng=?, netwr=?, netpr=?, mwsbp=?, wavwr=?, kzwi1=?, kzwi2=?, "
-                 "freight=? WHERE vbeln=? AND posnr=?",
+                 "freight=?, kzwi1_fc=?, kzwi2_fc=?, freight_fc=?, netwr_fc=?, mwsbp_fc=?, netpr_fc=? "
+                 "WHERE vbeln=? AND posnr=?",
                  (qty, pr["net"], pr["netpr"], pr["tax"], pr["cost"], pr["gross"], pr["disc"],
-                  pr["freight"], k["vbeln"], p["posnr"]))
+                  pr["freight"]) + _fc(pr) + (k["vbeln"], p["posnr"]))
     pricing.store(conn, k["vbeln"], p["posnr"], pr["conds"])
     key = "%s/%s" % (k["vbeln"], p["posnr"])
     if qty != p["kwmeng"]:

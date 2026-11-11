@@ -34,7 +34,10 @@ function money(v) {
   if (a >= 1e4) return nf1.format(v / 1e3) + "K";
   return nf0.format(v);
 }
-const egp = v => money(v) + " EGP";
+// display currency (same choice as the BI reports in MM Core: kept in this browser)
+let CUR = "EGP";
+try { CUR = localStorage.getItem("mm_dispcur") || "EGP"; } catch (e) { CUR = "EGP"; }
+const egp = v => money(v) + " " + CUR;
 const pct = v => v === null || v === undefined ? "-" : nf1.format(v) + "%";
 
 function api(path) {
@@ -199,7 +202,7 @@ function render(d) {
     h("div", { class: "kpis" }, kpi("Operating profit YTD", egp(A.op_ytd), A.op_ytd < 0 ? "neg" : "pos"), kpi("Gross margin", pct(A.gm_pct))),
     areaChart(A.op_trend, months, C.violet, { h: 120 }),
     h("div", { class: "lbl" }, `Net sales this month ${egp(A.month_sales)} · same month last year ${egp(A.prev_year)}`)));
-  $("#sub").textContent = `Live data · period ${d.period} · business date ${d.date} · refreshed ${new Date().toLocaleTimeString()}`;
+  $("#sub").textContent = `Live data · period ${d.period} · business date ${d.date} · ${d.currency_note || "amounts in EGP"} · refreshed ${new Date().toLocaleTimeString()}`;
   $("#avatar").textContent = (d.user || "?").slice(0, 2);
   $("#avatar").title = d.user;
   $("#foot").textContent = d.auth ? "User logon ON" : "User logon OFF";
@@ -208,7 +211,9 @@ function render(d) {
 async function load() {
   $("#err").innerHTML = "";
   try {
-    render(await api("/api/dash/overview"));
+    const d = await api("/api/dash/overview?currency=" + encodeURIComponent(CUR));
+    CUR = d.currency || CUR;
+    render(d);
   } catch (e) {
     const box = h("div", { class: "err" }, (e && e.text) || "No connection to MM Core. Is it running?");
     if (e && e.logon) box.append(" ", h("button", { class: "btn", on: { click: () => { window.open("/", "_blank"); } } }, "Log on in MM Core"),
@@ -217,6 +222,12 @@ async function load() {
   }
 }
 $("#refresh").addEventListener("click", load);
+$("#cur").value = CUR;
+$("#cur").addEventListener("change", () => {
+  CUR = $("#cur").value;
+  try { localStorage.setItem("mm_dispcur", CUR); } catch (e) { /* private window */ }
+  load();
+});
 $("#bi").addEventListener("click", () => openTx("ZBI"));
 document.querySelectorAll("nav a").forEach(a => a.addEventListener("click", e => {
   if (a.dataset.ext) return;

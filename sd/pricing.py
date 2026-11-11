@@ -49,6 +49,10 @@ def save_condition(conn, kschl, kotab, data, user=""):
     for s in data.get("scales") or []:
         if s.get("from") not in (None, "") and s.get("kbetr") not in (None, ""):
             scales.append([int(round(float(s["from"]) * 1000)), int(round(float(s["kbetr"]) * 100))])
+    from fi.config import CURRENCIES, LOCAL_CURRENCY
+    konwa = "%" if pct else (str(data.get("konwa") or LOCAL_CURRENCY).upper())
+    if not pct and konwa not in CURRENCIES:
+        raise MMError("Currency %s is not defined (OY03)" % konwa, "VK", "011")
     if scales and not ct["scales"]:
         raise MMError("Condition type %s does not allow scales" % kschl, "VK", "008")
     scales.sort()
@@ -65,7 +69,7 @@ def save_condition(conn, kschl, kotab, data, user=""):
                            "kbetr,konwa,kpein,scales,knuma,ernam,erdat) VALUES "
                            "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                            (kschl, kotab, "1000", data.get("vtweg") or "", kunnr, matnr,
-                            data.get("inco1") or None, datab, datbi, kbetr, "%" if pct else "EGP",
+                            data.get("inco1") or None, datab, datbi, kbetr, konwa,
                             1, json.dumps(scales) if scales else "", data.get("knuma") or None,
                             user, now_ts()[:10]))
     return cur.lastrowid
@@ -118,19 +122,37 @@ def _scale(rec, qty):
 
 
 def price_item(conn, cust, area, matnr, qty, day, werks="1000", manual_disc=None, price=None,
-               free=False, inco1=None, vbtyp="C"):
-    """Returns dict(conds=[...], gross, disc, net, freight, tax, cost, netpr, mwskz)."""
+               free=False, inco1=None, vbtyp="C", waerk=None, kurs=None):
+    """Returns dict(conds=[...], gross, disc, net, freight, tax, cost, netpr, mwskz) in local
+    currency, and fc = the same values in the document currency waerk (rate kurs = local
+    currency per unit x 100000). Foreign-currency documents are priced in the document
+    currency (a USD price stays exact) and converted to local currency at the end; a
+    manual price is in the document currency."""
+    from fi.config import LOCAL_CURRENCY
+    from fi.document import rate as fx_rate
+    fc = bool(waerk and waerk != LOCAL_CURRENCY and kurs)
+
+    def doc(v, konwa):
+        """amount of a condition record (currency konwa) in the document currency"""
+        konwa = konwa if konwa not in (None, "", "%") else LOCAL_CURRENCY
+        if fc and konwa == waerk:
+            return v
+        local = v if konwa == LOCAL_CURRENCY else rdiv(v * fx_rate(conn, konwa, day), 100000)
+        return rdiv(local * 100000, kurs) if fc else local
     proc = PRICING_PROCS[PRICING_DETERMINATION.get((area or {}).get("kalks") or "1", "RVAA01")]
     kunnr = cust["kunnr"]
     conds = []
     v = conn.execute("SELECT * FROM valuation WHERE matnr=? AND bwkey=?", (matnr, werks)).fetchone() \
         if matnr else None
     cost = value_of(qty, (v["stprs"] if v["vprsv"] == "S" else v["verpr"]), v["peinh"]) if v else 0
+    cost_local = cost
+    if fc:
+        cost = rdiv(cost * 100000, kurs)
     if free:
         conds.append(dict(stunr=900, kschl="VPRS", krech="C", kbetr=cost * 1000 // qty if qty else 0,
                           kwert=cost, kinak="", manual=0, knumh=None))
-        return dict(conds=conds, gross=0, disc=0, net=0, freight=0, tax=0, cost=cost, netpr=0,
-                    mwskz="A0", proc=proc)
+        return _local(dict(conds=conds, gross=0, disc=0, net=0, freight=0, tax=0, cost=cost, netpr=0,
+                           mwskz="A0", proc=proc), fc, kurs, cost_local, qty)
     gross = 0
     disc = 0
     for step, k in enumerate(proc, start=1):
@@ -147,14 +169,14 @@ def price_item(conn, cust, area, matnr, qty, day, werks="1000", manual_disc=None
                 if not rec:
                     raise MMError("Pricing error: mandatory condition PR00 is missing for %s "
                                   "(VK11)" % matnr, "V1", "805")
-                rate, knumh, manual = _scale(rec, qty), rec["knumh"], 0
+                rate, knumh, manual = doc(_scale(rec, qty), rec["konwa"]), rec["knumh"], 0
             gross = value_of(qty, rate, 1)
             conds.append(dict(stunr=st, kschl=k, krech="C", kbetr=rate, kwert=gross, kinak="",
                               manual=manual, knumh=knumh))
         elif k in ("K004",):
             rec, _ = find(conn, k, kunnr, matnr, day)
             if rec:
-                rate = _scale(rec, qty)
+                rate = doc(_scale(rec, qty), rec["konwa"])
                 w = value_of(qty, rate, 1)
                 disc += w
                 conds.append(dict(stunr=st, kschl=k, krech="C", kbetr=-rate, kwert=-w, kinak="",
@@ -196,8 +218,29 @@ def price_item(conn, cust, area, matnr, qty, day, werks="1000", manual_disc=None
                               manual=0, knumh=None))
     conds.append(dict(stunr=90, kschl="VPRS", krech="C", kbetr=cost * 1000 // qty if qty else 0,
                       kwert=cost, kinak="", manual=0, knumh=None))
-    return dict(conds=conds, gross=gross, disc=disc, net=net, freight=freight, tax=tax, cost=cost,
-                netpr=net * 1000 // qty if qty else 0, mwskz=mwskz, proc=proc)
+    return _local(dict(conds=conds, gross=gross, disc=disc, net=net, freight=freight, tax=tax, cost=cost,
+                       netpr=net * 1000 // qty if qty else 0, mwskz=mwskz, proc=proc), fc, kurs, cost_local, qty)
+
+
+def _local(r, fc, kurs, cost_local, qty):
+    """r is in the document currency: keep it as r['fc'] and return local-currency values
+    (each component converted on its own, so that it converts back to the exact amount)."""
+    r["fc"] = {k: r[k] for k in ("gross", "disc", "net", "freight", "tax", "netpr")}
+    if not fc:
+        return r
+    loc = lambda v: rdiv(v * kurs, 100000)       # noqa: E731
+    r["gross"], r["disc"], r["freight"], r["tax"] = loc(r["gross"]), loc(r["disc"]), loc(r["freight"]), loc(r["tax"])
+    r["net"] = r["gross"] - r["disc"]
+    r["netpr"] = r["net"] * 1000 // qty if qty else 0
+    r["cost"] = cost_local
+    for c in r["conds"]:
+        if c["kschl"] == "VPRS":
+            c["kwert"], c["kbetr"] = cost_local, cost_local * 1000 // qty if qty else 0
+            continue
+        c["kwert"] = loc(c["kwert"])
+        if c["krech"] == "C":
+            c["kbetr"] = loc(c["kbetr"])
+    return r
 
 
 def store(conn, knumv, kposn, conds):

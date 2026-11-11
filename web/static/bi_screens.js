@@ -78,6 +78,7 @@ async function analysis(app, tab) {
   const q = tab.query;
   if (q.dashboard) return dashboard(app, tab);
   let res;
+  q.currency = q.currency || App.dispCur();
   try { res = await api("/api/bi/query?q=" + encodeURIComponent(JSON.stringify(q))); }
   catch (e) { App.err(e); res = null; }
   app.innerHTML = "";
@@ -122,6 +123,7 @@ async function analysis(app, tab) {
     Object.entries(q.filters || {}).filter(([, v]) => v && v.length).map(([k, v]) => chip(`${res.chars[k]} = ${[].concat(v).join(", ")}`, () => { delete q.filters[k]; draw(app); })),
     h("div.bi-sec", null, "Variables"),
     h("div.bi-var", null, "Year ", year), h("div.bi-var", null, "Period ", per),
+    h("div.bi-var", null, "Currency ", App.curSel(v => { q.currency = v; draw(app); })),
     h("button.btn.primary", { type: "button", on: { click: refresh } }, "Apply"));
   // ---------------- grid
   const cols = res.columns.map((c, i) => Object.assign({ i }, c)).filter(c => tab.opt.pct || !c.pct);
@@ -146,8 +148,8 @@ async function analysis(app, tab) {
     })));
   });
   grid.append(h("thead", null, hd), tb);
-  const head = h("div.bi-head", null, h("b", null, tab.title), h("span", null, ` · ${res.provider_text} · year ${res.year}, period ${res.period}` +
-    (Object.keys(q.filters || {}).length ? " · filtered" : "")));
+  const head = h("div.bi-head", null, h("b", null, tab.title), h("span", null, ` · ${res.provider_text} · year ${res.year}, period ${res.period} · ${res.currency}` +
+    (Object.keys(q.filters || {}).length ? " · filtered" : "")), res.currency_note ? h("small", null, " · " + res.currency_note) : null);
   shell(app, h("div.bi-work", null, data, layout, h("div.bi-gridwrap", null, head, h("div.bi-scroll", null, grid))));
 }
 
@@ -245,14 +247,14 @@ function chart(d) {
 // ------------------------------------------------------------------ status dashboards (charts + table)
 async function statusBoard(app, tab) {
   const q = tab.query;
-  const qs = new URLSearchParams({ year: q.year || "", period: q.period || "", currency: q.currency || "EGP", scale: q.scale || "1" });
+  const qs = new URLSearchParams({ year: q.year || "", period: q.period || "", currency: q.currency || App.dispCur(), scale: q.scale || "1" });
   let d = null;
   try { d = await api(`/api/bi/dashboard/${q.dashboard}?${qs}`); } catch (e) { App.err(e); }
   app.innerHTML = "";
   const year = h("input.f.w-s", { value: q.year || (d && d.year) || "" }), per = h("input.f.w-s", { value: q.period || (d && d.period) || "" });
-  const cur = h("select.f", null, [["EGP", "Egyptian pound"], ["USD", "US Dollar"], ["EUR", "Euro"]].map(([k, t]) => h("option", { value: k, selected: (q.currency || "EGP") === k }, t)));
+  const cur = h("select.f", null, [["EGP", "Egyptian pound"], ["USD", "US Dollar"], ["EUR", "Euro"]].map(([k, t]) => h("option", { value: k, selected: (q.currency || App.dispCur()) === k }, t)));
   const sc = h("select.f", null, [["1", "1"], ["1000", "1,000"], ["1000000", "1,000,000"]].map(([k, t]) => h("option", { value: k, selected: (q.scale || "1") === k }, t)));
-  const apply = () => { q.year = year.value; q.period = per.value; q.currency = cur.value; q.scale = sc.value; draw(app); };
+  const apply = () => { q.year = year.value; q.period = per.value; q.currency = App.dispCur(cur.value); q.scale = sc.value; draw(app); };
   toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: apply },
     d && d.drill ? { label: "Detail report", onClick: () => openReport(app, d.drill) } : null,
     { label: "Excel", onClick: () => d && boardExcel(tab, d) }, { label: "Print", onClick: () => window.print() }]);
