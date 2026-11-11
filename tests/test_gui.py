@@ -40,6 +40,7 @@ class Client(unittest.TestCase):
             self.assertNotEqual(C.load_favorites("TRN"), [dict(type="tx", tcode="MIGO")])
         finally:
             C.FAV_FILE, C.DATA = old
+        self.assertEqual(C.dashboard_url(dict(port=8081)), "http://localhost:8081/dashboard.html")
         u = C.session_url(dict(port=8080), "mb52", "SALES1", "tok")
         self.assertEqual(u, "http://localhost:8080/?session=1&user=SALES1&sso=tok#/MB52")
 

@@ -207,7 +207,7 @@ def production(conn):
         var[r["aufnr"]] = r
     scrap = {}
     for r in conn.execute("SELECT aufnr, COALESCE(grund,'') g, SUM(xmnga) x, SUM(lmnga) y FROM confirmation WHERE "
-                          "COALESCE(stokz,'')='' GROUP BY aufnr, g"):
+                          "COALESCE(stokz,0) IN (0,'0','') GROUP BY aufnr, g"):
         scrap.setdefault(r["aufnr"], []).append(r)
     out = []
     for o in conn.execute("SELECT * FROM orders WHERE matnr IS NOT NULL AND matnr<>''"):

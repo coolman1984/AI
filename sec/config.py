@@ -24,7 +24,7 @@ API_AREAS = (("/api/sd/", "SD"), ("/api/fi/", "FI"), ("/api/co/", "CO"), ("/api/
              ("/api/pp/", "PP"), ("/api/md/", "MD"), ("/api/qa/", "CA"), ("/api/office/", "CA"),
              ("/api/excel/", "CA"), ("/api/pdf/", "CA"), ("/api/ppt/", "CA"), ("/api/outlook", "CA"),
              ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
-             ("/api/bi/", "CA"))
+             ("/api/bi/", "CA"), ("/api/dash/", "CA"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request",

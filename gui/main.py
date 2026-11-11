@@ -467,6 +467,7 @@ class EasyAccess(tk.Toplevel):
         mb.add_cascade(label="Extras", menu=x)
         s = tk.Menu(mb, tearoff=0)
         s.add_command(label="New session", command=lambda: self.run("HOME"))
+        s.add_command(label="ERP Dashboard", command=lambda: C.open_app(self.s, C.dashboard_url(self.s), "1560,960"))
         s.add_command(label="User profile (AMS)", command=lambda: self.run("ZAMS"))
         s.add_command(label="Status", command=self.sys_status)
         mb.add_cascade(label="System", menu=s)

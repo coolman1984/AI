@@ -78,6 +78,27 @@ class Reports(unittest.TestCase):
         self.assertEqual(catalog.views(c, "U1"), [])
 
 
+class Overview(unittest.TestCase):
+    def test_erp_dashboard_counts_confirmations_and_scrap(self):
+        """Confirmations that are not cancelled (stokz 0 / '') count for yield and scrap."""
+        from bi import overview, providers
+        c = demo()
+        n, scrap = c.execute("SELECT COUNT(*), COALESCE(SUM(xmnga),0) FROM confirmation WHERE "
+                             "COALESCE(stokz,0) IN (0,'0','')").fetchone()
+        d = overview.overview(c, "QA", everything=True)
+        self.assertEqual(d["quality"]["confirmations"], n)
+        self.assertEqual(d["quality"]["scrap"], scrap / 1000.0)
+        if scrap:
+            self.assertLess(d["quality"]["yield_pct"], 100.0)
+        self.assertEqual(sum(f["scrap"] for f in providers.production(c)), scrap)
+        for key in ("finance", "profit", "production", "quality", "warehouse", "procurement", "sales",
+                    "controlling", "analytics", "tasks"):
+            self.assertIn(key, d)
+        self.assertAlmostEqual(d["warehouse"]["value"],
+                               sum(f["value"] for f in providers.inventory(c)) / 100.0, 2)
+        self.assertTrue(d["tasks"])                       # demo has open approvals
+
+
 class Dashboards(unittest.TestCase):
     def test_status_dashboards_currency_and_scaling(self):
         from bi import dashboards as D, engine
