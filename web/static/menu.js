@@ -169,6 +169,14 @@ MENU.push(
     ["e-Learning & Quality", ["ZLMS", "ZQA_TEST", "ZQA_CHECK"]],
     ["More transactions", ["OKEON", "CS12", "MC82", "KKAO", "VKM3", "IW53"]],
   ]],
+  ["Human Resources", [
+    ["Overview", ["ZHR_COCKPIT", "ZHR_HEADCOUNT", "ZHR_EMPLOYEES"]],
+    ["Personnel Administration", ["PA40", "PA30", "PA20"]],
+    ["Organizational Management", ["PPOME"]],
+    ["Time Management", ["PA61", "PT50", "ZLEAVE"]],
+    ["Payroll Egypt", ["PC00_M99_CALC", "PC00_M99_CIPE", "PC00_M99_DTA", "PC00_M99_CEDT", "PC00_M99_CWTR"]],
+    ["Customizing", ["ZHR_CONF"]],
+  ]],
   ["Administration", [
     ["AMS - ID & Authorization", ["ZAMS", "ZINBOX", "SU53"]],
     ["User Maintenance", ["SU01", "PFCG", "SUIM"]],
@@ -177,7 +185,7 @@ MENU.push(
   ]]);
 // N-ERP order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
-  "Marketing", "Master Data", "Common", "Administration"];
+  "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
 MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));
 
 // Process view: end-to-end flows across modules

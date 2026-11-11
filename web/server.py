@@ -467,8 +467,9 @@ class Handler(BaseHTTPRequestHandler):
                     if self._audit:
                         self._write_audit(method, u.path)
                     return self._json(200, result)
-                except MMError as e:
-                    return self._json(422, e.as_dict())
+                except MMError as e:            # authorization refusals inside a function -> 403
+                    auth_refusal = e.msg_class == "00" and e.msg_no in ("077", "078")
+                    return self._json(403 if auth_refusal else 422, e.as_dict())
                 except com_bridge.ComError as e:
                     return self._json(422, {"type": "E", "class": "COM",
                                             "number": "001", "text": str(e)})
@@ -639,3 +640,4 @@ from web import p6_api  # noqa: E402,F401
 from web import bi_api  # noqa: E402,F401
 from web import gui_api  # noqa: E402,F401
 from web import dash_api  # noqa: E402,F401
+from web import hr_api  # noqa: E402,F401

@@ -92,7 +92,7 @@ class Overview(unittest.TestCase):
             self.assertLess(d["quality"]["yield_pct"], 100.0)
         self.assertEqual(sum(f["scrap"] for f in providers.production(c)), scrap)
         for key in ("finance", "profit", "production", "quality", "warehouse", "procurement", "sales",
-                    "controlling", "analytics", "tasks"):
+                    "controlling", "analytics", "tasks", "hr"):
             self.assertIn(key, d)
         self.assertAlmostEqual(d["warehouse"]["value"],
                                sum(f["value"] for f in providers.inventory(c)) / 100.0, 2)

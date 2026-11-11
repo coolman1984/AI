@@ -606,3 +606,7 @@ table.bd-table td.neg { color: #bb0000; }
 body.gui-session .sidemenu, body.gui-session .shell-workplace, body.gui-session .shell-power,
 body.gui-session #menu-btn { display: none !important; }
 body.gui-session .shell { min-height: 38px; }
+
+/* ---------------------------------------------------------------- HR */
+.hr-tree { font-size: 14px; } .hr-unit { padding: 6px 0 2px; } .hr-pos { padding: 2px 0; color: #3c4a5a; }
+.hr-meta { color: #6b7787; font-size: 12px; } tr.hr-open td { background: #fff8e6 !important; }

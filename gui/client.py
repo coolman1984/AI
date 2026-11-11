@@ -31,6 +31,8 @@ DEFAULT_FAVORITES = [
                                          dict(type="tx", tcode="VL01N"), dict(type="tx", tcode="VF01")]),
     dict(type="folder", name="CO Check", items=[dict(type="tx", tcode="KSB1"), dict(type="tx", tcode="KE30"),
                                                dict(type="tx", tcode="ZCO_RECON")]),
+    dict(type="folder", name="HR", items=[dict(type="tx", tcode="ZHR_COCKPIT"), dict(type="tx", tcode="PA20"),
+                                         dict(type="tx", tcode="PA61"), dict(type="tx", tcode="PC00_M99_CALC")]),
     dict(type="tx", tcode="F.01"), dict(type="tx", tcode="ZAMS"),
 ]
 

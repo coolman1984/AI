@@ -169,6 +169,20 @@ CATALOG = [
                                                                  filters={"release": ["Waiting for release"]})),
         ]),
     ]),
+    ("HR", [
+        ("Personnel Cost", [
+            ("HR_COST_ORG", "Personnel cost by organizational unit (monthly)", True,
+             q("HR", ["orgunit"], ["cost"], colchar="month")),
+            ("HR_COST_CC", "Personnel cost by cost center", True,
+             q("HR", ["kostl"], ["employees", "gross", "si_er", "cost"])),
+            ("HR_OVERTIME", "Overtime by unit (monthly)", False, q("HR", ["orgunit"], ["overtime"], colchar="month")),
+            ("HR_TAX", "Income tax and social insurance (monthly)", False, q("HR", ["month"], ["gross", "tax", "si_er", "net"])),
+        ]),
+        ("Headcount", [
+            ("HR_HEAD_GROUP", "Headcount by subgroup and gender (paid)", True, q("HR", ["subgroup", "gender"], ["employees"],
+                                                                                    colchar="month")),
+        ]),
+    ]),
     ("Production", [
         ("Orders", [
             ("PP_STATUS", "Production orders by status", True, q("PROD", ["status", "material"], ["planned", "delivered", "orders"])),

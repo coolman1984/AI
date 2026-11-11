@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS output_log (     -- NAST: message status per document
 """
 FORMS = {"PO": "Purchase order", "RFQ": "Request for quotation", "DELIVERY": "Delivery note / picking list",
          "INVOICE": "Invoice", "DUNNING": "Dunning letter", "PAYADVICE": "Payment advice",
-         "COUNT": "Inventory count sheet", "PRODORDER": "Production order"}
+         "COUNT": "Inventory count sheet", "PRODORDER": "Production order", "PAYSLIP": "Payslip"}
 
 CSS = """
 @page { size: A4; margin: 16mm 14mm; }
@@ -228,8 +228,35 @@ def _prodorder(conn, key):
                   for p in ops], "", extra, ["Production planner", "Shop floor"])
 
 
+def _payslip(conn, key):
+    """key: YYYY-MM-PERNR (e.g. 2026-10-10001)"""
+    from hr import payroll
+    try:
+        y, p, pernr = str(key).split("-", 2)
+        y, p = int(y), int(p)
+    except ValueError:
+        raise MMError("Enter the payslip as YYYY-MM-personnel number (e.g. 2026-10-10001)", "PY", "010")
+    r = payroll.results(conn, y, p, pernr)
+    if not r:
+        raise MMError("No payroll result for %s in %04d/%02d" % (pernr, y, p), "PY", "011")
+    r = r[0]
+    lines = [("Basic salary", _a(r["basic"]), ""), ("Allowances", _a(r["allowances"]), ""),
+             ("Overtime", _a(r["overtime"]), ""), ("Unpaid absence", "", _a(r["unpaid"])),
+             ("Social insurance (employee 11 %)", "", _a(r["si_ee"])), ("Salary income tax", "", _a(r["tax"])),
+             ("Martyrs' fund", "", _a(r["martyrs"]))]
+    return _page("Payslip", "%04d/%02d - %s" % (y, p, r["pernr"]),
+                 [("Employee", "%s %s" % (r["pernr"], r["name"])), ("Organizational unit", r["org_text"]),
+                  ("Position", r["job"]), ("Paid days", r["paid_days"]), ("Insurable wage", _a(r["ins_wage"])),
+                  ("Bank account", r["iban"])], "<b>%s</b><br>%s" % (e(r["name"]), e(r["name_ar"] or "")),
+                 [("Wage type", 0), ("Earnings", 1), ("Deductions", 1)], lines,
+                 "Gross %s - Deductions %s - <b>Net pay %s EGP</b>" % (_a(r["gross"]), _a(r["gross"] - r["net"]),
+                                                                       _a(r["net"])),
+                 "<div class='box'>Employer social insurance (18.75 %%): %s EGP - not deducted from your pay.</div>"
+                 % _a(r["si_er"]), ["HR department"])
+
+
 _R = {"PO": _po, "RFQ": _rfq, "DELIVERY": _delivery, "INVOICE": _invoice, "DUNNING": _dunning,
-      "PAYADVICE": _payadvice, "COUNT": _count, "PRODORDER": _prodorder}
+      "PAYADVICE": _payadvice, "COUNT": _count, "PRODORDER": _prodorder, "PAYSLIP": _payslip}
 
 
 def render(conn, form, key):

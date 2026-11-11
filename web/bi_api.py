@@ -32,11 +32,22 @@ def bi_query(req, q):
         raise MMError("The query is not valid", "BI", "007")
     if not isinstance(query, dict):
         raise MMError("The query is not valid", "BI", "007")
+    _hr_guard(req, query.get("provider"))
     return engine.run(db(), query)
+
+
+def _hr_guard(req, provider):
+    """Personnel cost is confidential: only users with the HR area (when the logon is on)."""
+    if provider != "HR" or not getattr(getattr(req, "server", None), "auth", False):
+        return
+    from sec import auth
+    if not auth.area_allowed(auth.profile(db(), req.user), "HR", "03"):
+        raise auth.refuse(db(), req.user, "S_AREA", "HR", "Human resources - Display")
 
 
 @route("GET", "/api/bi/values")
 def bi_values(req, q):
+    _hr_guard(req, q.get("provider"))
     return engine.values(db(), q.get("provider"), q.get("char"))
 
 
