@@ -56,6 +56,17 @@ salaries are confidential: only roles with the HR area (demo users `HR1`, `PAY1`
 the general display authorization of other roles does not include HR. Leave requests and payroll
 steps appear in the approval inbox (ZINBOX), payroll cost in BI (category HR) and on the ERP dashboard.
 
+## Egyptian pound and US dollar (EGP / USD)
+
+The books are kept in EGP (local currency). The exchange rates come from OB08 (type M).
+
+| Where | What happens |
+|---|---|
+| Sales | A customer with invoice currency USD (XD02) gets orders in USD. A VK11 price in USD is used as it is; an EGP price is converted at the order-date rate. The invoice shows the same dollars as the order; the EGP amount follows the billing-date rate. Demo: export customer `C2001` (Dubai) with USD prices |
+| Purchasing | Purchase orders, goods receipts, invoices and payments in the vendor currency (realized exchange differences) |
+| Payroll | Pay currency USD per employee (PA30). Social insurance and income tax are calculated on the EGP amount at the month-end rate; the net pay is transferred in USD; the payslip shows both. Demo: Adam Clarke |
+| Reports | Display currency EGP / USD / EUR in every BI report (ZBI, variable "Currency"), the status dashboards, the ERP dashboard and the HR cockpit. Amounts are translated at the period-end rate; quantities, counts and % stay as they are. The choice is remembered in the browser |
+
 ## BI (Business Intelligence) - ZBI
 
 Report portal like a BI launchpad: category bar (Risk Management, Executive Summary,

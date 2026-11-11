@@ -125,12 +125,40 @@ class Payroll(unittest.TestCase):
         payroll.reverse_posting(c, y, m, U)
         payroll.post(c, y, m, U)
         r = payroll.pay(c, y, m, U)
-        self.assertEqual(sum(t["amount"] for t in r["transfers"]), sum(x["net"] for x in payroll.results(c, y, m)))
+        self.assertEqual(sum(t["local"] for t in r["transfers"]), sum(x["net"] for x in payroll.results(c, y, m)))
+        self.assertEqual({t["waers"] for t in r["transfers"]}, {"EGP", "USD"})       # the expat is paid in USD
         bal = c.execute("SELECT COALESCE(SUM(CASE WHEN shkzg='S' THEN dmbtr ELSE -dmbtr END),0) FROM acc_doc_item "
                         "WHERE hkont='176000'").fetchone()[0]
         self.assertEqual(bal, 0)                                      # payroll payable cleared by the payments
         err(self, lambda: payroll.run(c, 2027, 1, U), "003")
         self.assertEqual(check(c), [])
+
+    def test_usd_salary_insurance_and_tax_in_egp_paid_in_usd(self):
+        """An employee paid in US dollars: social insurance and tax on the EGP equivalent at the
+        month-end rate, the expense is booked in EGP, the net pay is transferred in USD."""
+        from fi import gl
+        from hr import engine, payroll
+        from mm import forms
+        c = system()
+        err(self, lambda: engine.hire(c, dict(NEW, waers="XYZ", national_id="29504120112348"), U), "015")
+        gl.set_rate(c, "USD", "2026-11-01", "50.00")
+        p = engine.hire(c, dict(NEW, basic="1000", allow_transport="100", waers="usd", hire_date="2026-01-01",
+                                national_id="29504120112348"), U)
+        self.assertEqual(engine.employee(c, p)["waers"], "USD")
+        r = [x for x in payroll.run(c, 2026, 11, U, simulate=True)["results"] if x["pernr"] == p][0]
+        self.assertEqual((r["waers"], r["kurs"]), ("USD", 5000000))
+        self.assertEqual(r["gross"], 110000 * 50)                       # 1,100 USD = 55,000 EGP
+        self.assertEqual(r["ins_wage"], 1450000)                        # EGP maximum insurable wage
+        self.assertEqual(r["si_ee"], 159500)
+        self.assertEqual(r["tax"], round(payroll.annual_tax(c, (r["gross"] - r["si_ee"]) * 12 - 2000000) / 12))
+        self.assertEqual(r["gross_fc"], 110000)
+        self.assertEqual(r["net_fc"], round(r["net"] / 50))
+        payroll.run(c, 2026, 11, U)
+        payroll.post(c, 2026, 11, U)
+        t = [x for x in payroll.pay(c, 2026, 11, U)["transfers"] if x["pernr"] == p][0]
+        self.assertEqual((t["waers"], t["amount"]), ("USD", r["net_fc"]))
+        html = forms.render(c, "PAYSLIP", "2026-11-%s" % p)
+        self.assertIn("USD", html)
 
     def test_payslip_form(self):
         from mm import forms

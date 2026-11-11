@@ -15,7 +15,7 @@ from .config import ABSENCE_TYPES, EMPLOYEE_GROUPS, EMPLOYEE_SUBGROUPS, LEAVE_RE
 
 MONEY = ("basic", "allow_transport", "allow_housing", "allow_other", "ins_wage")
 FIELDS = ("name", "name_ar", "national_id", "birth_date", "gender", "orgeh", "plans", "kostl", "werks", "persg",
-          "persk", "job", "iban", "si_no", "phone", "email", "bname") + MONEY
+          "persk", "job", "iban", "si_no", "phone", "email", "bname", "waers") + MONEY
 
 
 def cfg(conn, key):
@@ -80,6 +80,11 @@ def _normalize(conn, data, old=None):
         x = data.get(f)
         if f in MONEY:
             v[f] = parse_amount(x, allow_zero=True) if str(x or "").strip() != "" else 0
+        elif f == "waers":
+            from fi.config import CURRENCIES, LOCAL_CURRENCY
+            v[f] = str(x or LOCAL_CURRENCY).strip().upper()
+            if v[f] not in CURRENCIES:
+                raise MMError("Currency %s is not defined - pay currency EGP or USD" % v[f], "PG", "015")
         elif f == "birth_date":
             v[f] = parse_date(x) if x else ""
         else:

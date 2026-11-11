@@ -612,7 +612,22 @@ const App = (() => {
     datalist("dl-lifnr", S.meta.vendors.map(v => [v.lifnr, `${v.lifnr} ${v.name}`]));
   }
 
-  return { S, h, $, $$, api, msg, err, run, dialog, ask, confirmBox, field, inp, sel,
+  // ------------------------------------------------------------------ display currency (reports)
+  // Books are in EGP; BI reports, dashboards and the HR cockpit can be shown in USD / EUR
+  // (translated at the OB08 rate of the key date). The choice is kept per browser.
+  function dispCur(v) {
+    if (v) { try { localStorage.setItem("mm_dispcur", v); } catch (e) {} return v; }
+    try { return localStorage.getItem("mm_dispcur") || "EGP"; } catch (e) { return "EGP"; }
+  }
+  function curSel(onChange) {
+    const s = h("select.f", { title: "Display currency of the amounts", "aria-label": "Display currency" },
+      [["EGP", "EGP - Egyptian pound"], ["USD", "USD - US dollar"], ["EUR", "EUR - Euro"]].map(([k, t]) =>
+        h("option", { value: k, selected: dispCur() === k }, t)));
+    s.addEventListener("change", () => { dispCur(s.value); if (onChange) onChange(s.value); });
+    return s;
+  }
+
+  return { S, h, $, $$, api, msg, err, run, dialog, ask, confirmBox, field, inp, sel, dispCur, curSel,
     val, up, datalist, slocList, binList, loadMaterials, matText, matUnit, slocName,
     isBinManaged, alv, exportRows, register, go, toolbar, render, start, refreshMeta,
     allowed, logon, logoff, changePassword, unlockRequest, loadMe,

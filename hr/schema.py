@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS hr_employee (      -- PA0001 / 0002 / 0008 / 0009 / 0
     basic INTEGER NOT NULL DEFAULT 0, allow_transport INTEGER DEFAULT 0, allow_housing INTEGER DEFAULT 0,
     allow_other INTEGER DEFAULT 0, ins_wage INTEGER DEFAULT 0, iban TEXT DEFAULT '', si_no TEXT DEFAULT '',
     phone TEXT DEFAULT '', email TEXT DEFAULT '', bname TEXT DEFAULT '', created TEXT, changed TEXT,
-    changed_by TEXT DEFAULT '');
+    changed_by TEXT DEFAULT '', waers TEXT DEFAULT 'EGP');
 CREATE INDEX IF NOT EXISTS hr_emp_org ON hr_employee (orgeh);
 CREATE TABLE IF NOT EXISTS hr_action (        -- PA0000 personnel actions
     id INTEGER PRIMARY KEY AUTOINCREMENT, pernr TEXT, massn TEXT, begda TEXT, reason TEXT DEFAULT '',
@@ -36,11 +36,25 @@ CREATE TABLE IF NOT EXISTS hr_payroll (       -- payroll results (RT) per employ
     gjahr INTEGER, perio INTEGER, pernr TEXT, kostl TEXT, persk TEXT, days INTEGER, paid_days INTEGER,
     basic INTEGER, allowances INTEGER, overtime INTEGER, unpaid INTEGER, gross INTEGER, ins_wage INTEGER,
     si_ee INTEGER, si_er INTEGER, taxable INTEGER, tax INTEGER, martyrs INTEGER, other INTEGER DEFAULT 0,
-    net INTEGER, PRIMARY KEY (gjahr, perio, pernr));
+    net INTEGER, waers TEXT DEFAULT 'EGP', kurs INTEGER DEFAULT 100000, gross_fc INTEGER, net_fc INTEGER,
+    PRIMARY KEY (gjahr, perio, pernr));
 """
+
+# upgrades of older databases: pay currency (EGP / USD) of the employee and the results
+HR_COLUMN_ADDS = {
+    "hr_employee": [("waers", "TEXT DEFAULT 'EGP'")],
+    "hr_payroll": [("waers", "TEXT DEFAULT 'EGP'"), ("kurs", "INTEGER DEFAULT 100000"), ("gross_fc", "INTEGER"),
+                   ("net_fc", "INTEGER")],
+}
+
 
 def install(conn):
     from .config import DEFAULTS
+    for table, cols in HR_COLUMN_ADDS.items():
+        have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
+        for col, typ in cols:
+            if col not in have:
+                conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
     for k, v in DEFAULTS.items():
         conn.execute("INSERT OR IGNORE INTO hr_config VALUES (?,?)", (k, v))
     # HR roles for databases that already have users (the demo bootstrap creates them too)

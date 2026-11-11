@@ -3,15 +3,21 @@ activities, equipment, notifications, e-invoices. Billing uses the existing
 VBRK/VBRP tables (billing / billing_item) with additional fields."""
 
 SD_COLUMN_ADDS = {
-    "sd_vbak": [("cmfre", "TEXT")],          # date of the last credit release (VKM1)
+    "sd_vbak": [("cmfre", "TEXT"),           # date of the last credit release (VKM1)
+                # document currency (customer currency): rate at the pricing date + values in it
+                ("kursk", "INTEGER"), ("netwr_fc", "INTEGER DEFAULT 0"), ("mwsbk_fc", "INTEGER DEFAULT 0")],
+    "sd_vbap": [("kzwi1_fc", "INTEGER"), ("kzwi2_fc", "INTEGER"), ("freight_fc", "INTEGER"),
+                ("netwr_fc", "INTEGER"), ("mwsbp_fc", "INTEGER"), ("netpr_fc", "INTEGER")],
     "billing": [("fkart", "TEXT DEFAULT 'F2'"), ("vbtyp", "TEXT DEFAULT 'M'"), ("vgbel", "TEXT"),
                 ("kunrg", "TEXT"), ("zterm", "TEXT"), ("mwsbk", "INTEGER DEFAULT 0"),
                 ("waerk", "TEXT DEFAULT 'EGP'"), ("rfbsk", "TEXT DEFAULT 'C'"), ("sfakn", "TEXT"),
                 ("vkorg", "TEXT DEFAULT '1000'"), ("vtweg", "TEXT"), ("eta_uuid", "TEXT"),
-                ("eta_status", "TEXT"), ("aubel", "TEXT")],
+                ("eta_status", "TEXT"), ("aubel", "TEXT"), ("kurrf", "INTEGER"),
+                ("netwr_fc", "INTEGER"), ("mwsbk_fc", "INTEGER")],
     "billing_item": [("vgbel", "TEXT"), ("vgpos", "INTEGER"), ("aubel", "TEXT"),
                      ("aupos", "INTEGER"), ("pstyv", "TEXT"), ("mwsbp", "INTEGER DEFAULT 0"),
-                     ("freight", "INTEGER DEFAULT 0"), ("arktx", "TEXT")],
+                     ("freight", "INTEGER DEFAULT 0"), ("arktx", "TEXT"), ("gross_fc", "INTEGER"),
+                     ("disc_fc", "INTEGER"), ("freight_fc", "INTEGER"), ("net_fc", "INTEGER")],
 }
 
 SD_SCHEMA = """

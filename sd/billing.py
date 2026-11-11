@@ -108,8 +108,24 @@ def create(conn, ref, user, fkdat=None):
             else:
                 g, d, fr = (rdiv(p["kzwi1"] * q, p["kwmeng"]), rdiv(p["kzwi2"] * q, p["kwmeng"]),
                             rdiv(p["freight"] * q, p["kwmeng"]))
+            fcv = {}
+            if k["kursk"] and k["waerk"] not in (None, "", "EGP") and p["kzwi1_fc"] is not None:
+                # foreign-currency order: the document-currency values are billed exactly
+                df = conn.execute("SELECT COALESCE(SUM(i.gross_fc),0) g, COALESCE(SUM(i.disc_fc),0) d, "
+                                  "COALESCE(SUM(i.freight_fc),0) f FROM billing_item i JOIN billing b USING "
+                                  "(vbeln) WHERE i.aubel=? AND i.aupos=? AND b.cancelled=0 AND b.fkart NOT IN "
+                                  "('S1')", (p["vbeln"], p["posnr"])).fetchone()
+                if not p["kwmeng"]:
+                    fcv = dict(gross_fc=0, disc_fc=0, freight_fc=0)
+                elif done["q"] + q >= p["kwmeng"]:
+                    fcv = dict(gross_fc=p["kzwi1_fc"] - df["g"], disc_fc=p["kzwi2_fc"] - df["d"],
+                               freight_fc=p["freight_fc"] - df["f"])
+                else:
+                    fcv = dict(gross_fc=rdiv(p["kzwi1_fc"] * q, p["kwmeng"]),
+                               disc_fc=rdiv(p["kzwi2_fc"] * q, p["kwmeng"]),
+                               freight_fc=rdiv(p["freight_fc"] * q, p["kwmeng"]))
             items.append(dict(matnr=p["matnr"], werks=p["werks"], lgort=p["lgort"], qty=q, arktx=p["arktx"],
-                              gross=g, disc=d, freight=fr, cogs=cogs, pstyv=p["pstyv"],
+                              gross=g, disc=d, freight=fr, cogs=cogs, pstyv=p["pstyv"], **fcv,
                               aubel=p["vbeln"], aupos=p["posnr"], vgbel=ref, vgpos=lpos or p["posnr"],
                               mwskz="A1" if p["mwsbp"] else "A0"))
         r = post(conn, fkart, k, c, items, fkdat, user, ref)
@@ -129,8 +145,21 @@ def post(conn, fkart, k, c, items, fkdat, user, ref, service_order=None):
     area = conn.execute("SELECT * FROM md_knvv WHERE kunnr=? AND vtweg=?", (k["kunnr"], k["vtweg"])).fetchone()
     ktgrd = (area["ktgrd"] if area else "01") or "01"
     from fi.ap import _tax_lines
+    from fi.config import LOCAL_CURRENCY
+    from fi.document import rate, write
+    # invoice currency = customer currency; the local amounts use the billing-date rate.
+    # Orders priced in the document currency bill those exact amounts (fcmode); older
+    # local-currency orders are converted at the billing-date rate.
+    waerk = (c["waers"] if "waers" in c.keys() and c["waers"] else LOCAL_CURRENCY)
+    kursf = rate(conn, waerk, fkdat)
+    fcmode = waerk != LOCAL_CURRENCY and items and all(it.get("gross_fc") is not None for it in items)
+    if fcmode:
+        for it in items:
+            it["gross"], it["disc"], it["freight"] = (rdiv(it[x + "_fc"] * kursf, 100000)
+                                                      for x in ("gross", "disc", "freight"))
     acc = []
     tax_base = {}
+    tax_base_fc = {}
     for n, it in enumerate(items, start=1):
         it["posnr"] = n * 10
         mv = conn.execute("SELECT ktgrm FROM md_mvke WHERE matnr=? AND vtweg=?", (it.get("matnr"), k["vtweg"])
@@ -140,27 +169,35 @@ def post(conn, fkart, k, c, items, fkdat, user, ref, service_order=None):
         pa = "%s/%s" % (vbeln, it["posnr"])
         base = dict(matnr=it.get("matnr"), werks=it.get("werks") or "1000", menge=it["qty"],
                     zeile=it["posnr"], paobj=pa, mwskz=it["mwskz"])
-        acc.append(dict(base, ktosl="ERL", hkont=rev, amount=-s * it["gross"]))
+        fx = lambda k: it[k + "_fc"] if fcmode else None        # noqa: E731
+        acc.append(dict(base, ktosl="ERL", hkont=rev, amount=-s * it["gross"], fc=-s * (fx("gross") or 0)))
         if it["disc"]:
-            acc.append(dict(base, ktosl="ERS", hkont=DEDUCTION_ACCOUNT, amount=s * it["disc"]))
+            acc.append(dict(base, ktosl="ERS", hkont=DEDUCTION_ACCOUNT, amount=s * it["disc"],
+                            fc=s * (fx("disc") or 0)))
         if it["freight"]:
-            acc.append(dict(base, ktosl="ERF", hkont=FREIGHT_ACCOUNT, amount=-s * it["freight"]))
+            acc.append(dict(base, ktosl="ERF", hkont=FREIGHT_ACCOUNT, amount=-s * it["freight"],
+                            fc=-s * (fx("freight") or 0)))
         net = it["gross"] - it["disc"] + it["freight"]
         tax_base[it["mwskz"]] = tax_base.get(it["mwskz"], 0) + net
         it["net"] = net
         it["tax"] = rdiv(net * (1400 if it["mwskz"] == "A1" else 0), 10000)
-    for a in acc:
-        a["wrbtr"] = a["amount"]
-    acc += _tax_lines(tax_base, 100000, -s)
+        if fcmode:
+            it["net_fc"] = it["gross_fc"] - it["disc_fc"] + it["freight_fc"]
+            tax_base_fc[it["mwskz"]] = tax_base_fc.get(it["mwskz"], 0) + it["net_fc"]
+            it["tax_fc"] = rdiv(it["net_fc"] * (1400 if it["mwskz"] == "A1" else 0), 10000)
+            it["tax"] = rdiv(it["tax_fc"] * kursf, 100000)
+    if fcmode:
+        for a in acc:
+            a["wrbtr"] = a.pop("fc")
+        acc += _tax_lines(tax_base_fc, kursf, -s)
+    else:
+        for a in acc:
+            a.pop("fc")
+            a["wrbtr"] = a["amount"]
+        acc += _tax_lines(tax_base, 100000, -s)
+        for a in acc:
+            a["wrbtr"] = a["amount"] if waerk == LOCAL_CURRENCY else rdiv(a["amount"] * 100000, kursf)
     total = -sum(a["amount"] for a in acc)
-    # invoice currency = customer currency (prices are kept in local currency and
-    # converted at the billing-date rate); the receivable is managed in that currency
-    from fi.config import LOCAL_CURRENCY
-    from fi.document import rate, write
-    waerk = (c["waers"] if "waers" in c.keys() and c["waers"] else LOCAL_CURRENCY)
-    kursf = rate(conn, waerk, fkdat)
-    for a in acc:
-        a["wrbtr"] = a["amount"] if waerk == LOCAL_CURRENCY else rdiv(a["amount"] * 100000, kursf)
     acc.append(dict(kunnr=c["kunnr"], koart="D", amount=total, wrbtr=-sum(a["wrbtr"] for a in acc),
                     zfbdt=fkdat, zterm=k["zterm"], sgtxt="%s %s" % (bt["text"], vbeln)))
     belnr = write(conn, "RV", fkdat, user, "VF%s" % vbeln, "%s %s" % (bt["text"], vbeln), acc,
@@ -183,20 +220,25 @@ def post(conn, fkart, k, c, items, fkdat, user, ref, service_order=None):
             user=user, qty=s * it["qty"], budat=fkdat, aufnr=service_order))
     netwr = sum(it["net"] for it in items)
     mwsbk = abs(total) - netwr
+    cust_fc = abs(acc[-1]["wrbtr"])
+    netwr_fc = sum(it["net_fc"] for it in items) if fcmode else (netwr if waerk == LOCAL_CURRENCY
+                                                                 else rdiv(netwr * 100000, kursf))
     conn.execute("INSERT INTO billing (vbeln,fkdat,kunnr,netwr,usnam,belnr,copa,cancelled,fkart,vbtyp,vgbel,"
-                 "kunrg,zterm,mwsbk,waerk,rfbsk,vkorg,vtweg,aubel) VALUES "
-                 "(?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,'C','1000',?,?)",
+                 "kunrg,zterm,mwsbk,waerk,rfbsk,vkorg,vtweg,aubel,kurrf,netwr_fc,mwsbk_fc) VALUES "
+                 "(?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,'C','1000',?,?,?,?,?)",
                  (vbeln, fkdat, k["kunnr"], s * netwr, user, belnr, ",".join(copa), fkart, bt["vbtyp"],
-                  ref, c["kunnr"], k["zterm"], mwsbk, waerk, k["vtweg"], k["vbeln"]))
+                  ref, c["kunnr"], k["zterm"], mwsbk, waerk, k["vtweg"], k["vbeln"], kursf, s * netwr_fc,
+                  cust_fc - netwr_fc))
     for it in items:
         conn.execute("INSERT INTO billing_item (vbeln,posnr,matnr,werks,lgort,fkimg,price,disc_pct,gross,disc,"
-                     "net,cogs,vgbel,vgpos,aubel,aupos,pstyv,mwsbp,freight,arktx) VALUES "
-                     "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                     "net,cogs,vgbel,vgpos,aubel,aupos,pstyv,mwsbp,freight,arktx,gross_fc,disc_fc,freight_fc,"
+                     "net_fc) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      (vbeln, it["posnr"], it.get("matnr"), it.get("werks") or "1000", it.get("lgort"), it["qty"],
                       rdiv(it["gross"] * 1000, it["qty"]) if it["qty"] else 0,
                       rdiv(it["disc"] * 10000, it["gross"]) if it["gross"] else 0, it["gross"], it["disc"],
                       it["net"], it.get("cogs") or 0, it.get("vgbel"), it.get("vgpos"), it.get("aubel"),
-                      it.get("aupos"), it.get("pstyv"), it["tax"], it["freight"], it.get("arktx")))
+                      it.get("aupos"), it.get("pstyv"), it["tax"], it["freight"], it.get("arktx"),
+                      it.get("gross_fc"), it.get("disc_fc"), it.get("freight_fc"), it.get("net_fc")))
         if it.get("aubel"):
             flow(conn, it["vgbel"], it["vgpos"], vbeln, it["posnr"],
                  "J" if it["vgbel"] != it.get("aubel") else k["vbtyp"], bt["vbtyp"], it["qty"], it["net"])

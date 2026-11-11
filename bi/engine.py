@@ -144,6 +144,7 @@ def run(conn, q):
         facts = [f for f in facts if str(f.get(ch)) in vals]
     columns = _expand_columns(q, facts, prov)
     rows_out = []
+    r_typ = {n[0]: n[4] for n in STRUCTURES.get(q.get("structure") or "", [])}
     if q.get("structure"):
         nodes = STRUCTURES.get(q["structure"])
         if not nodes:
@@ -212,12 +213,22 @@ def run(conn, q):
                        values=[(100.0 if c.get("pct") and t is None else _scale(t, c["type"])) for t, c in zip(totals, columns)])
         rows_out.append(tot_row)
         hdr = [{"key": ch, "label": prov[2][ch]} for ch in chars]
-    return {"provider": q["provider"], "provider_text": prov[0], "year": y, "period": p,
+    # display currency: local amounts translated at the rate of the period end
+    from fi.display import Display
+    dc = Display(conn, q.get("currency"), y, p)
+    if not dc.local:
+        for r in rows_out:
+            typs = [r_typ[r["node"]]] * len(columns) if q.get("structure") else [c["type"] for c in columns]
+            r["values"] = [dc.units(v) if t == AMT and not c.get("pct") else v
+                           for v, t, c in zip(r["values"], typs, columns)]
+    out = {"provider": q["provider"], "provider_text": prov[0], "year": y, "period": p,
             "row_headers": hdr, "columns": [dict(label=c["label"], type=c["type"], version=c.get("version"),
                                                   time=c.get("time"), pct=bool(c.get("pct")), total=bool(c.get("total")))
                                              for c in columns],
             "rows": rows_out, "chars": prov[2], "kfs": {k: v[0] for k, v in prov[3].items()},
             "structures": list(STRUCTURES), "months": _months(facts)}
+    out.update(dc.info())
+    return out
 
 
 def values(conn, provider, char):

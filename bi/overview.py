@@ -25,17 +25,26 @@ def _months(today, n=12):
     return out[::-1]
 
 
-def overview(conn, user="", everything=True):
+def overview(conn, user="", everything=True, currency=None):
+    """currency: display currency (EGP / USD / EUR) at today's rate; counts stay as they are."""
+    from fi.display import Display
     t = mmclock.today()
     y, p = t.year, t.month
+    dc = Display(conn, currency, day=t)
+
+    def _a(c):                                      # local cents -> display-currency units
+        return dc.units(round((c or 0) / 100.0, 2))
+
+    def run(q):
+        return engine.run(conn, dict(q, currency=dc.cur))
     months = _months(t, 12)
 
     # ---------------------------------------------------------------- P&L (CO-PA)
-    pl = engine.run(conn, dict(provider="COPA", structure="PL", year=y, period=p,
+    pl = run(dict(provider="COPA", structure="PL", year=y, period=p,
                                columns=[dict(version="ACT", time="YTD"), dict(version="PLAN", time="YTD"),
                                         dict(version="ACT", time="P"), dict(version="ACT", time="PY")]))
     v = {r["node"]: r["values"] for r in pl["rows"]}
-    trend = engine.run(conn, dict(provider="COPA", structure="PL", columns=[dict(version="ACT")], colchar="month"))
+    trend = run(dict(provider="COPA", structure="PL", columns=[dict(version="ACT")], colchar="month"))
     tm = trend["months"]
     tv = {r["node"]: r["values"] for r in trend["rows"]}
     ns_by_m = {m: tv["NS"][i] for i, m in enumerate(tm)}
@@ -131,7 +140,7 @@ def overview(conn, user="", everything=True):
                                       sum(f["net"] for f in sales if f["month"][:4] == str(y))))
 
     # ---------------------------------------------------------------- controlling (cost centers)
-    ovh = engine.run(conn, dict(provider="OVH", rows=["cost_center"], year=y, period=p, filters={"category": ["Primary"]},
+    ovh = run(dict(provider="OVH", rows=["cost_center"], year=y, period=p, filters={"category": ["Primary"]},
                                 columns=[dict(kf="amount", version="PLAN", time="YTD"), dict(kf="amount", version="ACT", time="YTD")]))
     tot = [r for r in ovh["rows"] if r.get("total")][0]["values"]
     cc = sorted([r for r in ovh["rows"] if not r.get("total")], key=lambda r: -(r["values"][1] or 0))[:4]
@@ -158,7 +167,7 @@ def overview(conn, user="", everything=True):
              for r in inbox.inbox(conn, user, everything=everything)][:8]
 
     return dict(
-        date=today, period="%04d/%02d" % (y, p), months=show,
+        date=today, period="%04d/%02d" % (y, p), months=show, **dc.info(),
         finance=dict(income_ytd=v["NS"][0], income_plan=v["NS"][1], income_ach=_pct(v["NS"][0] or 0, v["NS"][1]),
                      income_trend=income, bank=_a(bank), receivables=_a(ar), payables=_a(ap), overdue=_a(ar_over)),
         profit=dict(income=v["NS"][0], expenses=round(expenses, 2), profit=v["OP"][0], net=v["NI"][0],

@@ -8,6 +8,7 @@ const panel = (title, ...body) => h("div.panel", null, title ? h("h2", null, tit
 const grid = (...f) => h("div.form-grid", null, ...f);
 const badge = (t, cls) => h("span.badge" + (cls ? "." + cls : ""), null, t);
 const out = () => h("div");
+const note = t => h("div.note", null, t);
 const gap = () => h("div", { style: { height: "12px" } });
 const card = (t, sub, ...b) => h("div.card", null, h("h3", null, t), sub ? h("div.sub", null, sub) : null, h("div.body", null, ...b));
 const kpi = (l, v, s, goTo, cls) => h("div.kpi", { on: goTo ? { click: () => go(goTo) } : null }, h("div.k", null, l), h("div.v" + (cls ? "." + cls : ""), null, v), s ? h("div.s", null, s) : null);
@@ -162,6 +163,8 @@ function vaDisplay(tcode, title, change) {
       body.innerHTML = "";
       body.append(panel(null, attrs([["Document", `${d.vbeln} ${d.auart} ${d.type_text}`], ["Sold-to", `${d.kunnr} ${d.name}`], ["Ship-to", d.kunwe], ["PO", d.bstnk || "-"],
         ["Doc. date", fmtDate(d.audat)], ["Req. delivery", fmtDate(d.vdatu)], ["Net value", fmtAmt(d.netwr) + " EGP"], ["Tax", fmtAmt(d.mwsbk)],
+        ...(d.waerk && d.waerk !== "EGP" ? [["Document currency", `${d.waerk} · rate ${(d.kursk / 100000).toFixed(4)}`],
+          ["Net value " + d.waerk, `${fmtAmt(d.netwr_fc)} ${d.waerk} + tax ${fmtAmt(d.mwsbk_fc)}`]] : []),
         ["Pricing", d.kalsm], ["Incoterms", `${d.inco1 || "-"} ${d.inco2 || ""}`], ["Status", gb(d.gbstk)], ["Credit", cm(d.cmgst) || "-"],
         ["Blocks", `${d.faksk ? "billing " + d.faksk : ""} ${d.lifsk ? "delivery " + d.lifsk : ""}` || "-"], ["Reason", d.reason_text || "-"]]),
         d.credit_note ? h("p.crit", null, d.credit_note) : null, d.incomplete.length ? h("p.neg", null, "Incomplete: " + d.incomplete.join(", ")) : null));
@@ -171,6 +174,7 @@ function vaDisplay(tcode, title, change) {
         ["Items", alv({ rows: d.items, columns: [{ key: "posnr", label: "Item", type: "int" }, { key: "matnr", label: "Material" }, { key: "kdmat", label: "Cust. material" }, { key: "arktx", label: "Description" },
           { key: "pstyv", label: "ItCa" }, { key: "kwmeng", label: "Order qty", type: "qty" }, { key: "confirmed", label: "Confirmed", type: "qty" }, { key: "delivered", label: "Delivered", type: "qty" },
           { key: "billed", label: "Billed", type: "qty" }, { key: "netpr", label: "Net price", type: "amt" }, { key: "netwr", label: "Net value", type: "amt", sum: true },
+          ...(d.waerk && d.waerk !== "EGP" ? [{ key: "netpr_fc", label: `Net price ${d.waerk}`, type: "amt" }, { key: "netwr_fc", label: `Net value ${d.waerk}`, type: "amt", sum: true }] : []),
           { key: "freight", label: "Freight", type: "amt", sum: true }, { key: "mwsbp", label: "Tax", type: "amt", sum: true }, { key: "wavwr", label: "Cost", type: "amt", sum: true },
           { key: "margin", label: "Margin", type: "amt", sum: true }, { key: "abgru", label: "Rejected", render: r => r.abgru ? badge(SM.rejections[r.abgru] || r.abgru, "B") : "" }] })],
         ["Conditions", alv({ rows: condRows, columns: [{ key: "posnr", label: "Item", type: "int" }, { key: "stunr", label: "Step", type: "int" }, { key: "kschl", label: "CnTy" }, { key: "text", label: "Name" },
@@ -263,15 +267,17 @@ register("VK11", { title: "Create Condition Record", async render(app, params) {
   await meta();
   const k = sel(Object.entries(SM.cond_types).map(([x, t]) => [x, `${x} ${t.text}`]), params.kschl || "PR00", { w: "xl" }), tab = sel([], ""), body = out();
   const f = { kunnr: inp({ list: "dl-sd-kunnr", upper: true, w: "m" }), matnr: inp({ list: "dl-sd-matnr", upper: true, w: "m" }), kbetr: inp({ type: "number", w: "s", step: "any" }),
-    datab: inp({ type: "date", value: today(), w: "m" }), datbi: inp({ type: "date", value: "9999-12-31", w: "m" }) };
+    datab: inp({ type: "date", value: today(), w: "m" }), datbi: inp({ type: "date", value: "9999-12-31", w: "m" }),
+    konwa: sel([["EGP", "EGP"], ["USD", "USD"], ["EUR", "EUR"]], params.konwa || "EGP") };
   const sc = Array.from({ length: 3 }, () => ({ from: inp({ type: "number", w: "s" }), kbetr: inp({ type: "number", w: "s", step: "any" }) }));
   const fill = () => { tab.innerHTML = ""; SM.cond_types[k.value].access.forEach(a => tab.append(h("option", { value: a }, `${a} ${SM.access[a]}`))); if (k.value === "ZLAB") tab.append(h("option", { value: "A304" }, "A304 Material")); };
   k.addEventListener("change", fill); fill();
   app.append(panel("Condition type and key combination", grid(field("Condition type", k), field("Key combination (table)", tab))),
-    panel("Condition record", grid(field("Customer", f.kunnr), field("Material", f.matnr), field("Amount / % ", f.kbetr, { req: true }), field("Valid from", f.datab), field("Valid to", f.datbi))),
+    panel("Condition record", grid(field("Customer", f.kunnr), field("Material", f.matnr), field("Amount / % ", f.kbetr, { req: true }), field("Currency (amounts)", f.konwa), field("Valid from", f.datab), field("Valid to", f.datbi)),
+      note("Prices in USD are used as they are for USD customers (invoice in USD, exact); for EGP customers they are converted at the pricing-date rate (OB08).")),
     panel("Scales (quantity from - amount)", h("table.grid", null, h("tbody", null, sc.map(s => h("tr", null, h("td", null, s.from), h("td", null, s.kbetr)))))), body);
   toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
-    const r = await run(() => api("/api/sd/condition", { kschl: k.value, kotab: tab.value, kunnr: up(f.kunnr), matnr: up(f.matnr), kbetr: f.kbetr.value, datab: f.datab.value, datbi: f.datbi.value,
+    const r = await run(() => api("/api/sd/condition", { kschl: k.value, kotab: tab.value, kunnr: up(f.kunnr), matnr: up(f.matnr), kbetr: f.kbetr.value, konwa: f.konwa.value, datab: f.datab.value, datbi: f.datbi.value,
       scales: sc.map(s => ({ from: s.from.value, kbetr: s.kbetr.value })) })); if (r) msgLink("S", r.message, "Pricing report", "V/LD"); } }]);
 } });
 register("VK12", { title: "Change Condition Records", render: () => go("V/LD") });
@@ -381,6 +387,7 @@ register("VF03", { title: "Display Billing Document", async render(app, params) 
   const load = async () => {
     const d = await run(() => api(`/api/sd/billing/${enc(val(v))}`)); if (!d) return; body.innerHTML = "";
     body.append(panel(null, attrs([["Billing document", `${d.vbeln} ${d.fkart} ${d.type_text}`], ["Payer", `${d.kunnr} ${d.name}`], ["Date", fmtDate(d.fkdat)], ["Net value", fmtAmt(d.netwr)],
+      ...(d.waerk && d.waerk !== "EGP" ? [["Invoice currency", `${fmtAmt(d.netwr_fc)} ${d.waerk} + tax ${fmtAmt(d.mwsbk_fc || 0)} · rate ${((d.kurrf || 100000) / 100000).toFixed(4)}`]] : []),
       ["Tax", fmtAmt(d.mwsbk)], ["Accounting doc.", d.belnr], ["Due date", fmtDate(d.netdt)], ["Paid", d.paid ? badge("Cleared", "U") : badge("Open", "Q")],
       ["Status", d.cancelled ? badge("Cancelled", "B") : badge("Posted", "U")], ["E-invoice", d.einv ? badge(d.einv.status, d.einv.status.startsWith("Valid") ? "U" : "B") : "-"]])),
       alv({ rows: d.items, columns: [{ key: "posnr", label: "Item", type: "int" }, { key: "matnr", label: "Material" }, { key: "arktx", label: "Description" }, { key: "fkimg", label: "Qty", type: "qty" },

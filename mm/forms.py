@@ -9,7 +9,7 @@ import html
 import json
 
 from mm.db import atomic, rows
-from mm.util import MMError, now_ts
+from mm.util import MMError, now_ts, rdiv
 
 OUT_SCHEMA = """
 CREATE TABLE IF NOT EXISTS output_log (     -- NAST: message status per document
@@ -143,14 +143,26 @@ def _invoice(conn, key):
         e(h["eta_uuid"] or "not yet submitted (ZEINV)"), e(h["eta_status"] or "-"))
     if h["cancelled"]:
         extra += "<div class='box'><b>CANCELLED</b></div>"
+    waerk = h["waerk"] or "EGP"
+    fc = waerk != "EGP" and h["netwr_fc"] is not None
+    if fc:
+        # foreign-currency invoice: the amounts the customer pays (document currency)
+        net, tax = h["netwr_fc"] or 0, h["mwsbk_fc"] or 0
+        extra += "<div class='box'>Exchange rate %.5f EGP per %s - net %s EGP, VAT %s EGP</div>" % (
+            (h["kurrf"] or 100000) / 100000.0, e(waerk), _a(h["netwr"]), _a(h["mwsbk"]))
+        lines = [(i["posnr"], i["matnr"], i["arktx"] or i["maktx"], _q(i["fkimg"]),
+                  _a(rdiv((i["gross_fc"] or 0) * 1000, i["fkimg"]) if i["fkimg"] else 0), _a(i["disc_fc"]),
+                  _a(i["net_fc"] if i["net_fc"] is not None else 0)) for i in its]
+    else:
+        net = h["netwr"] or 0
+        lines = [(i["posnr"], i["matnr"], i["arktx"] or i["maktx"], _q(i["fkimg"]), _a(i["price"]), _a(i["disc"]),
+                  _a(i["net"])) for i in its]
     return _page(title, key, [("Date", h["fkdat"]), ("Customer", h["kunnr"]), ("Payment terms", h["zterm"]),
-                              ("Currency", h["waerk"] or "EGP"), ("Order", h["aubel"])], _addr(c),
+                              ("Currency", waerk), ("Order", h["aubel"])], _addr(c),
                  [("Item", 0), ("Material", 0), ("Description", 0), ("Quantity", 1), ("Price", 1), ("Discount", 1),
-                  ("Net", 1)],
-                 [(i["posnr"], i["matnr"], i["arktx"] or i["maktx"], _q(i["fkimg"]), _a(i["price"]), _a(i["disc"]),
-                   _a(i["net"])) for i in its],
-                 "Net %s - VAT %s - <b>Total %s %s</b>" % (_a(h["netwr"]), _a(tax), _a((h["netwr"] or 0) + tax),
-                                                          e(h["waerk"] or "EGP")), extra, ["Accounting"])
+                  ("Net", 1)], lines,
+                 "Net %s - VAT %s - <b>Total %s %s</b>" % (_a(net), _a(tax), _a(net + tax), e(waerk)),
+                 extra, ["Accounting"])
 
 
 def _dunning(conn, key):
@@ -250,9 +262,18 @@ def _payslip(conn, key):
                   ("Bank account", r["iban"])], "<b>%s</b><br>%s" % (e(r["name"]), e(r["name_ar"] or "")),
                  [("Wage type", 0), ("Earnings", 1), ("Deductions", 1)], lines,
                  "Gross %s - Deductions %s - <b>Net pay %s EGP</b>" % (_a(r["gross"]), _a(r["gross"] - r["net"]),
-                                                                       _a(r["net"])),
+                                                                       _a(r["net"])) + _fc_pay(r),
                  "<div class='box'>Employer social insurance (18.75 %%): %s EGP - not deducted from your pay.</div>"
                  % _a(r["si_er"]), ["HR department"])
+
+
+def _fc_pay(r):
+    """pay currency USD: amounts in EGP (insurance and tax law), paid in USD"""
+    w = r["waers"] if "waers" in r and r["waers"] else "EGP"
+    if w == "EGP":
+        return ""
+    return ("<br>Pay currency %s at %.5f EGP: gross %s %s - <b>net pay transferred %s %s</b>"
+            % (w, (r["kurs"] or 100000) / 100000.0, _a(r["gross_fc"] or 0), w, _a(r["net_fc"] or 0), w))
 
 
 _R = {"PO": _po, "RFQ": _rfq, "DELIVERY": _delivery, "INVOICE": _invoice, "DUNNING": _dunning,
