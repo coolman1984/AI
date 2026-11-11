@@ -9,9 +9,10 @@ from . import auth
 from . import users
 
 
-def inbox(conn, user):
+def inbox(conn, user, everything=False):
+    """everything=True: all open work items (logon switched off / dashboard overview)."""
     prof = auth.profile(conn, user)
-    can = lambda obj: auth.object_allowed(prof, obj, "*", "02")   # noqa: E731
+    can = lambda obj: everything or auth.object_allowed(prof, obj, "*", "02")   # noqa: E731
     out = []
 
     def add(typ, key, text, date, value, tcode, by=""):

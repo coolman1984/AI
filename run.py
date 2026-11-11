@@ -134,6 +134,8 @@ def main():
     ap.add_argument("--reset", action="store_true")
     ap.add_argument("--empty", action="store_true")
     ap.add_argument("--no-browser", action="store_true")
+    ap.add_argument("--no-open", action="store_true",
+                    help="do not open the browser, but stop when the last window closes (desktop launchers)")
     ap.add_argument("--keep-running", action="store_true")
     ap.add_argument("--backup", action="store_true", help="copy the database to data/backup and exit")
     ap.add_argument("--restore", metavar="FILE", help="restore a backup (stops a running server)")
@@ -160,7 +162,7 @@ def main():
     # Second click while it is already running: just open the browser again.
     if not a.reset and already_running(a.port):
         print("MM Core is already running - opening the browser.")
-        if not a.no_browser:
+        if not (a.no_browser or a.no_open):
             webbrowser.open("http://localhost:%d" % a.port)
         return
 
@@ -189,7 +191,7 @@ def main():
     except Exception as e:      # the server would start on a broken database: show why
         log.exception("start-up failed")
         print("MM Core could not start:", e)
-        if a.no_browser:
+        if a.no_browser or a.no_open:
             sys.exit(1)
         show_startup_error(a.host, a.port, e)
         return
@@ -214,7 +216,7 @@ def main():
     print("MM Core is running: %s" % url)
     print("It stops automatically when you close the browser tab."
           if auto_stop else "Press Ctrl+C to stop.")
-    if not a.no_browser:
+    if not (a.no_browser or a.no_open):
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     try:
         httpd.serve_forever()

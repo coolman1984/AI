@@ -135,8 +135,9 @@ def _python():
     return exe
 
 
-def start(system, wait=120, progress=None):
-    """Start the server of a system (if needed). Returns True when this call started it."""
+def start(system, wait=120, progress=None, keep_running=True):
+    """Start the server of a system (if needed). Returns True when this call started it.
+    keep_running=False: the server stops by itself when its last window is closed."""
     port = int(system["port"])
     st = status(system)
     if st == "running":
@@ -147,7 +148,8 @@ def start(system, wait=120, progress=None):
     db = _abs(system["db"])
     os.makedirs(os.path.dirname(db), exist_ok=True)
     env = dict(os.environ, MM_DB=db)
-    args = [_python(), os.path.join(ROOT, "run.py"), "--no-browser", "--keep-running", "--port", str(port)]
+    args = [_python(), os.path.join(ROOT, "run.py"), "--port", str(port)]
+    args += ["--no-browser", "--keep-running"] if keep_running else ["--no-open"]
     if system.get("empty") and not os.path.exists(db):
         args.append("--empty")
     log = open(os.path.join(DATA, "server_%s.log" % system["sid"]), "a", encoding="utf-8")
@@ -260,18 +262,26 @@ def session_url(system, tcode, user, token=None):
     return u + "#/" + quote((tcode or "HOME").upper())
 
 
-def open_session(system, tcode, user, token=None):
-    url = session_url(system, tcode, user, token)
+def open_app(system, url, size="1400,900"):
+    """Open url in its own application window (no address bar); fallback: browser."""
     exe = _browser()
     if exe:
         prof = os.path.join(DATA, "gui_profile_%s" % system["sid"])
         subprocess.Popen([exe, "--app=" + url, "--user-data-dir=" + prof, "--no-first-run",
-                          "--window-size=1400,900"], stdin=subprocess.DEVNULL,
+                          "--window-size=" + size], stdin=subprocess.DEVNULL,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         import webbrowser
         webbrowser.open(url)
     return url
+
+
+def open_session(system, tcode, user, token=None):
+    return open_app(system, session_url(system, tcode, user, token))
+
+
+def dashboard_url(system):
+    return "http://localhost:%d/dashboard.html" % int(system["port"])
 
 
 def parse_okcode(text):

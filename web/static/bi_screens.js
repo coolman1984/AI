@@ -313,6 +313,13 @@ function short(v) {
   return a >= 1e9 ? NF1.format(v / 1e9) + "B" : a >= 1e6 ? NF1.format(v / 1e6) + "M" : a >= 1e4 ? NF0.format(v / 1e3) + "K" : NF0.format(v);
 }
 
+register("ZDASH", { title: "ERP Dashboard", async render(app) {
+  const open = () => window.open("/dashboard.html", "mmcore_dashboard", "width=1560,height=960");
+  toolbar([{ label: "Open in its own window", primary: true, onClick: open }, { label: "Refresh", key: "F8", onClick: () => { fr.src = "/dashboard.html"; } }]);
+  const fr = h("iframe", { src: "/dashboard.html", title: "ERP Dashboard", style: { width: "100%", height: "calc(100vh - 150px)", border: "0", borderRadius: "8px", background: "#eef2f7" } });
+  app.append(fr);
+} });
+
 register("ZBI_DASH", { title: "BI Dashboard - PL Status", async render(app, params) {
   go("ZBI", { id: params.id || "DB_PL_STATUS" });
 } });

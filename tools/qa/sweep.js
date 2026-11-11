@@ -32,7 +32,11 @@ const { chromium } = require('playwright');
     if (errs.length) bad.push('BI ' + id + ' :: ' + [...new Set(errs)].join(' ; '));
     await p.evaluate(() => { location.hash = '#/HOME'; }); await p.waitForTimeout(150);
   }
-  console.log('screens', info.reg.length, 'BI reports', reps.length, 'problems', bad.length);
+  errs = [];                                       // the separate ERP dashboard window
+  await p.goto(base + '/dashboard.html'); await p.waitForTimeout(2500);
+  const cards = await p.locator('.card').count();
+  if (errs.length || cards < 10) bad.push('dashboard.html :: ' + cards + ' cards ' + [...new Set(errs)].join(' ; '));
+  console.log('screens', info.reg.length, 'BI reports', reps.length, 'dashboard cards', cards, 'problems', bad.length);
   bad.forEach(x => console.log('  ' + x));
   await b.close();
   process.exit(bad.length ? 1 : 0);

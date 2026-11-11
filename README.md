@@ -85,6 +85,20 @@ Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when instal
 Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running] [--dev]`.
 The server log (when started hidden) is in `data/server.log`.
 
+## MM Core Dashboard (separate icon)
+
+Double-click **`MM Core Dashboard.bat`** - or run `tools/Create desktop icons.bat` once to get
+three icons on the desktop and in the Start menu: **MM Core Dashboard**, **MM Core** and
+**MM Core Logon** (icons in `icons/`, drawn by `tools/icons/make_icons.py`).
+
+The dashboard opens in its own window (no menus, no address bar) with live cards: Finance
+(income trend, plan achievement), Cash & open items, Profitability (donut + recent invoices),
+Manufacturing (orders completed / in progress / delayed), Quality (yield, scrap, activity),
+Warehouse (stock value by group, reorder alerts), Procurement (spend by group, open POs),
+Sales & CRM, Controlling (cost centers plan / actual), Analytics and Tasks (open approvals).
+Every card links to its transaction; it refreshes every 2 minutes. It starts the system if
+needed and stops it again when the window is closed. Inside MM Core: transaction **ZDASH**.
+
 ## Desktop client - MM Core Logon (like SAP Logon / SAP GUI)
 
 Double-click **`MM Core Logon.bat`** (needs Python from python.org with "tcl/tk" - ticked by default).
