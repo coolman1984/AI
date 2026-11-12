@@ -2,7 +2,7 @@
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, confirmBox, field, inp, sel, val, up, alv, register, go,
-  toolbar, fmtQty, fmtAmt, fmtDate, fmtShort, today, enc, S } = App;
+  toolbar, fmtQty, fmtAmt, fmtDate, fmtShort, today, enc, S, exportRows } = App;
 
 // ------------------------------------------------------------------ helpers
 const panel = (title, ...body) => h("div.panel", null, title ? h("h2", null, title) : null, h("div.panel-body", null, ...body));
@@ -503,6 +503,91 @@ register("F.01", { title: "Financial Statements (Balance Sheet / P&L)", async re
   det.addEventListener("change", exec);
   execBar(exec, [{ label: "Print", ghost: true, onClick: () => window.print() }]); exec();
 }});
+// ------------------------------------------------------------------ financial statement by BA / profit center
+register("ZFS_BAPC", { title: "Financial Statement by BA/Pctr", async render(app, params) {
+  await meta();
+  const KEY = "mm_fsorg_variant";
+  let v = {};
+  try { v = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { v = {}; }
+  const ym = d => d.slice(0, 4) + d.slice(5, 7);
+  const t = today();
+  const radio = (name, opts, cur) => h("div.fsorg-radios", null, opts.map(([k, txt, dis]) => h("label", null,
+    h("input", { type: "radio", name, value: k, checked: k === cur, disabled: !!dis }), " ", txt)));
+  const rv = (name) => (app.querySelector(`input[name=${name}]:checked`) || {}).value;
+  const ro = x => { x.readOnly = true; x.classList.add("ro"); return x; };
+  const f = {
+    ktopl: ro(inp({ value: FI.ktopl || "INT", w: "s" })), fsv: inp({ value: params.fsv || v.fsv || "FSEG", w: "s", upper: true }),
+    lang: inp({ value: "EN", w: "s", upper: true }), hk1: inp({ value: v.hk1 || "", w: "m" }), hk2: inp({ value: v.hk2 || "", w: "m" }),
+    bukrs: ro(inp({ value: "1000", w: "s" })), ledger: ro(inp({ value: "0L", w: "s" })),
+    orgview: h("input", { type: "checkbox", checked: !!v.orgview }),
+    o1: inp({ value: v.o1 || "", w: "s", upper: true }), o2: inp({ value: v.o2 || "", w: "s", upper: true }),
+    m1: inp({ value: params.mfrom || v.m1 || t.slice(0, 4) + "01", w: "s" }), m2: inp({ value: params.mto || v.m2 || ym(t), w: "s" }) };
+  const orgLbl = h("span", null, "Business Area");
+  const sec = (title, ...rows) => h("div.fsorg-sec", null, h("h3", null, title), ...rows);
+  const row = (label, el, req, to) => h("div.fsorg-row", null, h("label.fsorg-l", null, req ? h("span.req", null, "* ") : null, label, ":"), el,
+    to ? h("span.fsorg-to", null, "to:") : null, to || null);
+  const selScreen = h("div.fsorg-sel", null,
+    sec("G/L Account Selection", row("Chart of Accounts", f.ktopl), h("div.fsorg-row", null, h("label.fsorg-l", null, h("span.req", null, "* "), "Version of Financial Statement:"), f.fsv,
+      h("label.fsorg-l.short", null, h("span.req", null, "* "), "Language:"), f.lang), row("G/L Account", f.hk1, false, f.hk2), row("Company Code", f.bukrs, true)),
+    sec("Trial Balance Display", radio("fsview", [["BS", "BS"], ["PL", "PL"]], params.view || v.view || "PL")),
+    sec("Transaction Figures Selection", row("Ledger", f.ledger, true), h("label.fsorg-chk", null, f.orgview, " Organization View (all business areas / profit centers)")),
+    sec("Select Type", radio("fsorg", [["BA", "Business Area"], ["PC", "Profit Center"]], params.org || v.org || "BA"),
+      h("div.fsorg-row", null, h("label.fsorg-l", null, orgLbl, ":"), f.o1, h("span.fsorg-to", null, "to:"), f.o2),
+      row("Month", f.m1, true, f.m2)),
+    sec("Currency Type", radio("fscur", [["10", "Local Currency (EGP)"], ["20", "2nd Currency (USD)"], ["30", "3rd Currency (EUR)"]], params.curtp || v.curtp || "10")),
+    h("div.note", null, "Business area = plant (Cairo / Alexandria) or head office; profit center from the material type and the cost center. " +
+      "P&L lines without an assignment belong to the head office / corporate center, balance sheet lines without one are 'not assigned' (#). " +
+      "2nd / 3rd currency: translated at the rate (OB08) of the last day of the reporting period."));
+  selScreen.addEventListener("change", e => { if (e.target.name === "fsorg") orgLbl.textContent = e.target.value === "PC" ? "Profit Center" : "Business Area"; });
+  if ((params.org || v.org) === "PC") orgLbl.textContent = "Profit Center";
+  const outBox = h("div");
+  app.append(selScreen, outBox);
+  const query = () => ({ fsv: val(f.fsv), hkont_from: val(f.hk1), hkont_to: val(f.hk2), view: rv("fsview"), org: rv("fsorg"),
+    orgs_from: up(f.o1), orgs_to: up(f.o2), mfrom: val(f.m1), mto: val(f.m2), curtp: rv("fscur"), all_orgs: f.orgview.checked ? "1" : "" });
+  const collapsed = new Set();
+  let res = null;
+  const draw = () => {
+    outBox.innerHTML = "";
+    if (!res) return;
+    const hasKids = new Set(res.rows.filter(r => r.parent).map(r => r.parent));
+    const hiddenBy = r => { let p = r.parent; while (p) { if (collapsed.has(p)) return true; p = (res.rows.find(x => x.id === p) || {}).parent; } return false; };
+    const nf = n => n === null || n === undefined ? "" : (n < 0 ? fmtAmt(-n) + "-" : fmtAmt(n));
+    const tbl = h("table.fsorg-grid", null, h("thead", null, h("tr", null, h("th.l", null, "F.S.Item/account"), res.columns.map(c => h("th", { title: c.text }, c.key === "TOTAL" ? "Total" : c.key, c.key === "TOTAL" ? null : h("div.fsorg-ct", null, c.text))))),
+      h("tbody", null, res.rows.filter(r => !hiddenBy(r)).map(r => {
+        const kids = hasKids.has(r.id);
+        const tg = kids ? h("span.fsorg-tg", { on: { click: () => { if (collapsed.has(r.id)) collapsed.delete(r.id); else collapsed.add(r.id); draw(); } } }, collapsed.has(r.id) ? "›" : "⌄") : h("span.fsorg-tg");
+        return h("tr" + (r.total ? ".tot" : "") + (r.account ? ".acc" : ""), null,
+          h("td.l", { style: { paddingLeft: (8 + r.level * 18) + "px" } }, tg, r.account ? "" : h("span.fsorg-fold", null, "🗀 "), r.text),
+          r.values.map(x => h("td" + (x < 0 ? ".neg" : ""), null, nf(x))));
+      })));
+    const setAll = on => { collapsed.clear(); if (on) res.rows.filter(r => hasKids.has(r.id) && r.level === 0).forEach(r => collapsed.add(r.id)); draw(); };
+    const head = h("div.fsorg-head", null, h("h2", null, "※ " + res.view_text + " by " + res.org_text),
+      h("table.fsorg-meta", null, h("tbody", null, [[res.bukrs, res.company], [res.ledger, res.ledger_text], [res.currency, res.currency_text + (res.currency_note ? " · " + res.currency_note : "")],
+        [res.periods, "Reporting periods"], [res.fsv, "Financial statement version"]].map(([a, b]) => h("tr", null, h("td", null, h("b", null, a)), h("td", null, b))))));
+    const tb = h("div.fsorg-tb", null,
+      h("button.btn", { type: "button", title: "Expand all", on: { click: () => setAll(false) } }, "⇊ Expand all"),
+      h("button.btn", { type: "button", title: "Collapse all", on: { click: () => setAll(true) } }, "⇈ Collapse all"),
+      h("button.btn", { type: "button", on: { click: () => exportRows({ title: "Financial statement " + res.org, columns: [{ key: "text", label: "F.S.Item/account" }].concat(res.columns.map((c, i) => ({ key: "c" + i, label: c.key }))) },
+        res.rows.map(r => Object.assign({ text: "  ".repeat(r.level) + r.text }, ...r.values.map((x, i) => ({ ["c" + i]: x }))))) } }, "⇩ Excel"),
+      h("button.btn", { type: "button", on: { click: () => { res = null; selScreen.style.display = ""; draw(); } } }, "◂ Selection"));
+    outBox.append(head, tb, h("div.fsorg-wrap", null, tbl));
+  };
+  const exec = async () => {
+    const q = query();
+    const r = await run(() => api("/api/fi/fs_org?" + new URLSearchParams(q))); if (!r) return;
+    res = r; collapsed.clear();
+    res.rows.filter(x => x.level >= 1 && !x.account && res.rows.some(y => y.parent === x.id)).forEach(x => collapsed.add(x.id));   // accounts closed
+    selScreen.style.display = "none";
+    msg("S", `${res.view_text} by ${res.org_text}: ${res.columns.length - 1} column(s), ${res.periods}`);
+    draw();
+  };
+  toolbar([{ label: "Execute", key: "F8", primary: true, onClick: exec },
+    { label: "Save as Variant…", onClick: () => {
+      const q = query();
+      try { localStorage.setItem(KEY, JSON.stringify({ fsv: q.fsv, hk1: q.hkont_from, hk2: q.hkont_to, view: q.view, org: q.org, o1: q.orgs_from, o2: q.orgs_to, m1: q.mfrom, m2: q.mto, curtp: q.curtp, orgview: !!q.all_orgs })); msg("S", "Variant saved (this browser)"); }
+      catch (e) { msg("W", "The variant could not be saved in this browser"); } } }]);
+  if (params.run) exec();
+} });
 register("S_ALR_87012284", { title: "Balance Sheet / P&L Statement", render: (a, p) => go("F.01", p) });
 
 register("FAGL_FCV", { title: "Foreign Currency Valuation", async render(app) {

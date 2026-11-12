@@ -204,5 +204,38 @@ class Closing(unittest.TestCase):
         self.assertFalse([r for r in ap.open_items(c, "K", "200006") if r["belnr"] in (b, new)])
 
 
+class OrgStatement(unittest.TestCase):
+    def test_pl_and_bs_by_business_area_and_profit_center(self):
+        """Financial statement by business area / profit center: the columns add up to the
+        total, the total equals the financial statements (F.01), USD at the key-date rate."""
+        from fi import orgstatement as O
+        from fi.document import rate
+        c = demo()
+        y = fixture.T.year
+        ref = reports.statements(c, y, 1, 10)
+        for typ in ("BA", "PC"):
+            r = O.report(c, dict(view="PL", org=typ, mfrom="%d01" % y, mto="%d10" % y))
+            ni = [x for x in r["rows"] if x["id"] == "NI"][0]
+            self.assertAlmostEqual(ni["values"][-1], ref["result"], 2)                      # total = F.01 result
+            self.assertAlmostEqual(sum(ni["values"][:-1]), ni["values"][-1], 2)            # columns add up
+            self.assertNotIn("#", [k["key"] for k in r["columns"]][:-1])                   # P&L fully assigned
+            gp = {x["id"]: x["values"][-1] for x in r["rows"]}
+            self.assertAlmostEqual(gp["GP"], gp["SALES"] - gp["COS"], 2)
+        bs = O.report(c, dict(view="BS", org="BA", mfrom="%d10" % y, mto="%d10" % y))
+        tot = {x["id"]: x["values"][-1] for x in bs["rows"]}
+        self.assertAlmostEqual(tot["ASSETS"], tot["LIAB"], 2)                              # balanced in total
+        acc = O.report(c, dict(view="PL", org="PC", mfrom="%d01" % y, mto="%d10" % y, hkont_from="800000",
+                               hkont_to="800000", orgs_from="PC100", orgs_to="PC100"))
+        self.assertEqual([k["key"] for k in acc["columns"]], ["PC100", "TOTAL"])
+        self.assertTrue(all(x["level"] < 3 or x["id"] == "800000" for x in acc["rows"]))
+        usd = O.report(c, dict(view="PL", org="BA", mfrom="%d01" % y, mto="%d10" % y, curtp="20"))
+        k = rate(c, "USD", "%d-10-31" % y) / 100000.0
+        self.assertEqual(usd["currency"], "USD")
+        self.assertAlmostEqual([x for x in usd["rows"] if x["id"] == "NI"][0]["values"][-1], round(ref["result"] / k, 2), 0)
+        for bad in (dict(view="XX"), dict(org="ZZ"), dict(mfrom="%d05" % y, mto="%d01" % y), dict(fsv="ABC")):
+            with self.assertRaises(MMError):
+                O.report(c, dict(dict(view="PL", org="BA", mfrom="%d01" % y, mto="%d10" % y), **bad))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -610,3 +610,33 @@ body.gui-session .shell { min-height: 38px; }
 /* ---------------------------------------------------------------- HR */
 .hr-tree { font-size: 14px; } .hr-unit { padding: 6px 0 2px; } .hr-pos { padding: 2px 0; color: #3c4a5a; }
 .hr-meta { color: #6b7787; font-size: 12px; } tr.hr-open td { background: #fff8e6 !important; }
+
+/* ---------------------------------------------------------------- ZFS_BAPC financial statement by BA / profit center */
+.fsorg-sel { background: #fff; border: 1px solid #e5e8ec; border-radius: 6px; padding: 8px 18px 14px; max-width: 980px; }
+.fsorg-sec h3 { font-size: 15px; font-weight: 500; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #d9dde3; }
+.fsorg-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+.fsorg-l { width: 230px; text-align: right; color: var(--text); font-size: 13px; }
+.fsorg-l.short { width: auto; margin-left: 28px; }
+.fsorg-to { margin: 0 8px 0 40px; font-size: 13px; }
+.fsorg-row .req, .fsorg-l .req { color: #bb0000; }
+.fsorg-radios { display: flex; gap: 60px; padding: 2px 22px; font-size: 13px; }
+.fsorg-chk { display: block; padding: 4px 0; font-size: 13px; }
+input.ro { background: #f2f4f6; }
+.fsorg-head { background: #f7f9fb; border: 1px solid #e5e8ec; padding: 10px 14px; margin-top: 4px; }
+.fsorg-head h2 { margin: 0 0 8px; font-size: 22px; font-weight: 400; }
+.fsorg-meta td { padding: 1px 28px 1px 0; font-size: 12.5px; }
+.fsorg-tb { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
+.fsorg-wrap { overflow: auto; max-height: calc(100vh - 330px); border: 1px solid #d9dde3; }
+table.fsorg-grid { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+table.fsorg-grid th { background: #f2f4f6; position: sticky; top: 0; padding: 6px 12px; text-align: right; border-bottom: 1px solid #c9ced6; border-left: 1px solid #e5e8ec; white-space: nowrap; }
+table.fsorg-grid th.l, table.fsorg-grid td.l { text-align: left; position: sticky; left: 0; background: #fff; min-width: 300px; border-right: 1px solid #c9ced6; }
+table.fsorg-grid th.l { background: #f2f4f6; z-index: 2; }
+table.fsorg-grid td { padding: 4px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid #eef0f3; border-left: 1px solid #f2f4f6; color: #0a5ea8; font-variant-numeric: tabular-nums; }
+table.fsorg-grid td.l { color: var(--text); }
+table.fsorg-grid tr.tot td { font-weight: 600; background: #f7f9fb; }
+table.fsorg-grid tr.tot td.l { background: #f7f9fb; }
+table.fsorg-grid tr.acc td { color: #32363a; font-size: 12.5px; }
+table.fsorg-grid td.neg { color: #bb0000; }
+.fsorg-tg { display: inline-block; width: 16px; cursor: pointer; color: #556; }
+.fsorg-fold { color: #6a7b8c; }
+.fsorg-ct { font-weight: 400; font-size: 11px; color: var(--muted); }

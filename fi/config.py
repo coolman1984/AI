@@ -245,3 +245,22 @@ def account_type(hkont):
 
 def pnl_accounts():
     return {k for k, v in CHART.items() if v[1] == "PL"}
+
+
+# ---------------------------------------------------------------- business areas / profit centers
+# Derived for reporting from the posting line (no document splitting): plant, cost center,
+# material type. P&L lines without any assignment (financial result, asset retirement) go to
+# the head office / corporate center; balance sheet lines without one are "not assigned" (#).
+BUSINESS_AREAS = {"1000": "Cairo Plant", "1100": "Alexandria Plant", "9000": "Head Office",
+                  "#": "Not assigned"}
+PROFIT_CENTERS = {"PC100": "Kitchen Furniture", "PC200": "Trading & Service", "PC300": "Sales & Marketing",
+                  "PC900": "Corporate Center", "#": "Not assigned"}
+# cost center -> (business area, profit center)
+CC_ORG = {"4100": ("1000", "PC100"), "4120": ("1000", "PC100"), "4200": ("1000", "PC100"),
+          "4210": ("1000", "PC100"), "4300": ("1000", "PC100"), "4400": ("1000", "PC100"),
+          "4500": ("9000", "PC300"), "8100": ("9000", "PC300"), "9100": ("9000", "PC900"),
+          "9900": ("9000", "PC900")}
+# material type -> profit center
+MTART_PC = {"FERT": "PC100", "HALB": "PC100", "ROH": "PC100", "VERP": "PC100", "HAWA": "PC200",
+            "HIBE": "PC100", "DIEN": "PC200"}
+SERVICE_REVENUE = ("810000",)

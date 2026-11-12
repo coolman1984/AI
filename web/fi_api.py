@@ -584,6 +584,13 @@ def fi_fs(req, q):
     return reports.statements(db(), y, parse_int(q.get("pfrom"), "pfrom", default=p), parse_int(q.get("pto"), "pto", default=p))
 
 
+@route("GET", "/api/fi/fs_org")
+def fi_fs_org(req, q):
+    """Financial statement by business area / profit center (ZFS_BAPC)"""
+    from fi import orgstatement
+    return orgstatement.report(db(), q)
+
+
 @route("GET", "/api/fi/partners")
 def fi_partners(req, q):
     y, _ = _yp(q)
