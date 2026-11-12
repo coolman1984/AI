@@ -137,6 +137,21 @@ Sales & CRM, Controlling (cost centers plan / actual), Analytics and Tasks (open
 Every card links to its transaction; it refreshes every 2 minutes. It starts the system if
 needed and stops it again when the window is closed. Inside MM Core: transaction **ZDASH**.
 
+## MM Core Mobile - the dashboard on your phone (live)
+
+1. Double-click **MM Core Mobile.bat** (or the desktop icon "MM Core Mobile"). A page with a QR code opens on the PC.
+2. Scan the QR code with the phone camera (the phone must be in the **same Wi-Fi** as the PC) and open the link.
+3. Put it on the home screen: iPhone Safari "Share > Add to Home Screen", Android Chrome "⋮ > Add to Home screen".
+
+The phone shows sales, finance, production, warehouse, procurement, cost centers, HR, open tasks and the
+latest invoices, in EGP / USD / EUR. It is **live**: whenever anything is saved in MM Core, the phone
+updates by itself within about 2 seconds (green dot "Live"). It is **read-only** - nothing can be
+changed from the phone (the database is opened read-only, the mobile server has no other functions).
+Only paired phones get data (secret key in the QR code, kept in `data/mobile_key.txt`); "New key"
+on the pairing page disconnects every phone. The first time, Windows may ask to allow Python on the
+network: choose **Private networks**. The PC must be on and MM Core Mobile running (it does not need
+MM Core itself to be open). Outside the Wi-Fi (mobile data) the phone cannot reach the PC.
+
 ## Desktop client - MM Core Logon (like SAP Logon / SAP GUI)
 
 Double-click **`MM Core Logon.bat`** (needs Python from python.org with "tcl/tk" - ticked by default).

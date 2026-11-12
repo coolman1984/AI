@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MM Core Mobile - pair a phone</title>
+<link rel="icon" href="/m/icon.png">
+<link rel="stylesheet" href="/m/m.css">
+</head>
+<body class="pair">
+<header class="top"><div class="brand"><b>MM</b><span>·</span><b>CORE</b></div><div class="live on"><i></i><span>Mobile access is ON</span></div></header>
+<main>
+  <section class="card">
+    <h3>1. Scan with the phone camera</h3>
+    <div id="qr" class="qr"></div>
+    <p class="mut">The phone must be in the <b>same Wi-Fi</b> as this PC. Open the link that the camera shows.</p>
+    <p class="mut">Address: <b id="link"></b></p>
+    <div id="ips"></div>
+  </section>
+  <section class="card">
+    <h3>2. Put it on the home screen</h3>
+    <div class="row"><span>iPhone (Safari)</span><b>Share ⇧ → Add to Home Screen</b></div>
+    <div class="row"><span>Android (Chrome)</span><b>⋮ → Add to Home screen</b></div>
+    <p class="mut">The icon "MM Core" opens the dashboard; it updates by itself whenever something is saved in MM Core.</p>
+  </section>
+  <section class="card">
+    <h3>Status</h3>
+    <div class="row"><span>Phones connected now</span><b id="conn">0</b></div>
+    <div class="row"><span>Database</span><b id="db"></b></div>
+    <button class="btn" id="renew" type="button">New key (disconnect all phones)</button>
+    <button class="btn danger" id="stop" type="button">Stop mobile access</button>
+    <p class="mut">Windows may ask "Allow access" for Python the first time: choose <b>Private networks</b>.</p>
+  </section>
+</main>
+<script src="/m/pair.js"></script>
+</body>
+</html>
