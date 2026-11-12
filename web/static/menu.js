@@ -108,7 +108,7 @@ const MENU = [
       ["Document Entry", ["F-02", "FB50", "FBS1"]],
       ["Document", ["FB03", "FB08", "FBRA", "F.81"]],
       ["Account", ["FS10N", "FBL3N", "F.13", "F-03"]],
-      ["Information System", ["S_ALR_87012277", "F.01", "FAGLB03", "S_ALR_87012284", "S_ALR_87012182", "S_ALR_87012089"]],
+      ["Information System", ["S_ALR_87012277", "F.01", "ZFS_BAPC", "FAGLB03", "S_ALR_87012284", "S_ALR_87012182", "S_ALR_87012089"]],
     ]],
     ["!Investment Management", []],
     ["General Components", [
@@ -198,7 +198,7 @@ const PROCESS = [
   ["Subcontracting", ["MD04", "ZME21_SC", "ME2O", "MBLB", "MIGO"]],
   ["Service parts", ["MP38", "MP33", "MB21", "MB25", "ZREF01"]],
   ["Test & e-Learning", ["ZQA_TEST", "ZLMS", "ZPROCESS_ALL"]],
-  ["Record-to-Report", ["ZFI_PROCESS", "OB52", "FAGL_FCV", "AFAB", "F.01", "ZCO_RECON"]],
+  ["Record-to-Report", ["ZFI_PROCESS", "OB52", "FAGL_FCV", "AFAB", "F.01", "ZFS_BAPC", "ZCO_RECON"]],
 ];
 const open = new Set();
 let favs = [];

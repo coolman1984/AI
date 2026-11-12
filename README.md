@@ -67,6 +67,16 @@ The books are kept in EGP (local currency). The exchange rates come from OB08 (t
 | Payroll | Pay currency USD per employee (PA30). Social insurance and income tax are calculated on the EGP amount at the month-end rate; the net pay is transferred in USD; the payslip shows both. Demo: Adam Clarke |
 | Reports | Display currency EGP / USD / EUR in every BI report (ZBI, variable "Currency"), the status dashboards, the ERP dashboard and the HR cockpit. Amounts are translated at the period-end rate; quantities, counts and % stay as they are. The choice is remembered in the browser |
 
+## Financial statement by business area / profit center - ZFS_BAPC
+
+Selection screen like SAP (G/L accounts, BS or PL, ledger 0L, business area or profit center
+from-to, months YYYYMM from-to, currency type local EGP / 2nd USD / 3rd EUR, save as variant) and
+the statement as an expandable tree: Sales, Cost of Sales, Gross Profit, FG / WIP valuation,
+functional area, other operating result, Operating Income, financial result, Income before tax,
+Net Income - with one column per business area (Cairo plant, Alexandria plant, head office) or
+profit center (Kitchen Furniture, Trading & Service, Sales & Marketing, Corporate Center) and a
+total that equals F.01. Menu: Financial Accounting > General Accounting > Information System.
+
 ## BI (Business Intelligence) - ZBI
 
 Report portal like a BI launchpad: category bar (Risk Management, Executive Summary,
