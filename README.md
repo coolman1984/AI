@@ -1,11 +1,11 @@
-# MM Core
+# NERP
 
 A small inventory system that works like SAP MM (Materials Management).
 Pure Python. Nothing to download or install except Python itself.
 
 ## Start it (one click)
 
-Double-click **`Start MM Core.bat`** in this folder.
+Double-click **`Start NERP.bat`** in this folder.
 
 - The server runs hidden in the background (no black window).
 - The browser opens at `http://localhost:8080`.
@@ -17,8 +17,8 @@ Double-click **`Start MM Core.bat`** in this folder.
 
 The first start loads demo data: 2 plants, 10 materials and about 4 months of movements.
 
-**Log on - switched OFF for now.** MM Core starts without user and password. To switch the
-logon on, run `tools/Login ON.bat` (back off: `tools/Login OFF.bat`) and start MM Core again
+**Log on - switched OFF for now.** NERP starts without user and password. To switch the
+logon on, run `tools/Login ON.bat` (back off: `tools/Login OFF.bat`) and start NERP again
 (or `python run.py --login`). With the logon on, every person has an own user (AMS - ID & Authorization).
 Demo users: `ADMIN / admin` (everything), `SALES1 / sales1`, `CREDIT1`, `BUYER1`, `PURMGR1`,
 `WH1`, `QM1`, `PLAN1`, `SHOP1`, `AP1`, `AR1`, `GL1`, `CTRL1`, `MDM1`, `MDA1`, `AUDIT1`, `HR1`, `PAY1`
@@ -93,7 +93,7 @@ reports per group, and an analysis workspace with tabs:
   net sales bars with net profit % line; table Plan / Actual / Ach(%) for the month,
   year to date and last year), **Sales Status**, **Inventory Status**, **Cost Center Status** -
   with display currency (EGP, USD, EUR at the period-end rate) and amount scaling.
-All reports read the live MM Core data (CO-PA, billing, orders, cost centers, stock,
+All reports read the live NERP data (CO-PA, billing, orders, cost centers, stock,
 open items, purchasing, production, G/L) - no extract, always current.
 
 ## Go-live functions
@@ -123,11 +123,11 @@ Needs Python 3.8 or newer (python.org, tick "Add python.exe to PATH" when instal
 Command line: `python run.py [--reset] [--empty] [--port 9000] [--keep-running] [--dev]`.
 The server log (when started hidden) is in `data/server.log`.
 
-## MM Core Dashboard (separate icon)
+## NERP Dashboard (separate icon)
 
-Double-click **`MM Core Dashboard.bat`** - or run `tools/Create desktop icons.bat` once to get
-three icons on the desktop and in the Start menu: **MM Core Dashboard**, **MM Core** and
-**MM Core Logon** (icons in `icons/`, drawn by `tools/icons/make_icons.py`).
+Double-click **`NERP Dashboard.bat`** - or run `tools/Create desktop icons.bat` once to get
+three icons on the desktop and in the Start menu: **NERP Dashboard**, **NERP** and
+**NERP Logon** (icons in `icons/`, drawn by `tools/icons/make_icons.py`).
 
 The dashboard opens in its own window (no menus, no address bar) with live cards: Finance
 (income trend, plan achievement), Cash & open items, Profitability (donut + recent invoices),
@@ -135,53 +135,53 @@ Manufacturing (orders completed / in progress / delayed), Quality (yield, scrap,
 Warehouse (stock value by group, reorder alerts), Procurement (spend by group, open POs),
 Sales & CRM, Controlling (cost centers plan / actual), Analytics and Tasks (open approvals).
 Every card links to its transaction; it refreshes every 2 minutes. It starts the system if
-needed and stops it again when the window is closed. Inside MM Core: transaction **ZDASH**.
+needed and stops it again when the window is closed. Inside NERP: transaction **ZDASH**.
 
 ## Real company data - start with purchasing (Excel)
 
-- **Start MM Core LIVE (real data).bat** (or "04. My Company - LIVE" in MM Core Logon) opens a separate,
-  empty system (`data/company.db`, port 8083). It never gets demo data; the demo stays in "Start MM Core.bat".
+- **Start NERP LIVE (real data).bat** (or "04. My Company - LIVE" in NERP Logon) opens a separate,
+  empty system (`data/company.db`, port 8083). It never gets demo data; the demo stays in "Start NERP.bat".
 - **ZIMPORT** (Administration > Data Transfer): download the **Purchasing template** (Excel) - guide in Arabic,
   one sheet each for plants, storage locations, material groups, buyers, vendors, materials, vendor prices
   (info records) and open purchase orders, dropdown lists and a Control sheet. The **Purchasing example**
   has sample data to practise in the sandbox first.
 - Choose the filled workbook, **Simulate** (every line checked, nothing saved; errors with sheet and Excel row),
-  **Post**, then **Compare file with system**: every value of the file is compared with MM Core, with control
+  **Post**, then **Compare file with system**: every value of the file is compared with NERP, with control
   totals (lines found, open purchase order value) to tick off against the Control sheet.
 - Old vendor numbers are kept (field "Old vendor no.") and can be used in the later sheets; old purchase
   order numbers are kept as "your reference" of the new orders.
 
-## MM Core Mobile - the dashboard on your phone (live)
+## NERP Mobile - the dashboard on your phone (live)
 
-1. Double-click **MM Core Mobile.bat** (or the desktop icon "MM Core Mobile"). A page with a QR code opens on the PC.
+1. Double-click **NERP Mobile.bat** (or the desktop icon "NERP Mobile"). A page with a QR code opens on the PC.
 2. Scan the QR code with the phone camera (the phone must be in the **same Wi-Fi** as the PC) and open the link.
 3. Put it on the home screen: iPhone Safari "Share > Add to Home Screen", Android Chrome "⋮ > Add to Home screen".
 
 The phone shows sales, finance, production, warehouse, procurement, cost centers, HR, open tasks and the
-latest invoices, in EGP / USD / EUR. It is **live**: whenever anything is saved in MM Core, the phone
+latest invoices, in EGP / USD / EUR. It is **live**: whenever anything is saved in NERP, the phone
 updates by itself within about 2 seconds (green dot "Live"). It is **read-only** - nothing can be
 changed from the phone (the database is opened read-only, the mobile server has no other functions).
 Only paired phones get data (secret key in the QR code, kept in `data/mobile_key.txt`); "New key"
 on the pairing page disconnects every phone. The first time, Windows may ask to allow Python on the
-network: choose **Private networks**. The PC must be on and MM Core Mobile running (it does not need
-MM Core itself to be open). Outside the Wi-Fi (mobile data) the phone cannot reach the PC.
+network: choose **Private networks**. The PC must be on and NERP Mobile running (it does not need
+NERP itself to be open). Outside the Wi-Fi (mobile data) the phone cannot reach the PC.
 
-### Android app "MM Core" (Google Play)
+### Android app "NERP" (Google Play)
 
 `android/` holds the Android app: scan the QR code once, then the live dashboard opens like any
 app. Build and Google Play publishing: `android/README.md`, store texts and privacy policy:
 `android/play/`. The signing key is never stored in git.
 
-## Desktop client - MM Core Logon (like SAP Logon / SAP GUI)
+## Desktop client - NERP Logon (like SAP Logon / SAP GUI)
 
-Double-click **`MM Core Logon.bat`** (needs Python from python.org with "tcl/tk" - ticked by default).
+Double-click **`NERP Logon.bat`** (needs Python from python.org with "tcl/tk" - ticked by default).
 
-- **MM Core Logon**: list of systems - `01. MM Core ERP (PRD)` (the database of the one-click
-  start), `02. MM Core Training (TRN)`, `03. MM Core Sandbox - empty (SBX)`; *New / Change /
+- **NERP Logon**: list of systems - `01. NERP ERP (PRD)` (the database of the one-click
+  start), `02. NERP Training (TRN)`, `03. NERP Sandbox - empty (SBX)`; *New / Change /
   Delete* entries (description, system ID, database file, port), *Start / Stop* a system,
   *Variable Logon* to any running port. *Log On* starts the system if needed and shows the
   logon screen (client, user, password, language).
-- **MM Core Easy Access**: menus Menu / Edit / Favorites / Extras / System / Help, the command
+- **NERP Easy Access**: menus Menu / Edit / Favorites / Extras / System / Help, the command
   field (`MIGO`, `/oVA01`, `/nend`), *Favorites* with folders (insert, change, delete, move,
   right-click menu) stored per system, the full menu tree with transaction texts (Extras: show
   technical names), Find, System status.
@@ -364,7 +364,7 @@ Logic like SAP:
 
 ## Office (COM)
 
-Python cannot use COM directly without extra packages. MM Core asks Windows
+Python cannot use COM directly without extra packages. NERP asks Windows
 PowerShell (built into Windows) to drive Excel, Outlook, Word and PowerPoint.
 Office opens the files itself, so files protected by NASCA (DRM) can still be read.
 
@@ -399,8 +399,8 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
   last test run, manual search, and the LMS ID flow (request -> HQ registers -> connect).
 - **PowerPoint manuals** in `web/static/manuals/`: one deck per process (swimlane flow chart,
   best-practice controls with their test case, KPIs, test script with result) and the full
-  `MM_Core_Process_Test_Book.pptx` with summary, test approach, landscape and sign-off.
-- **Arabic process guide** `MM_Core_Process_Guide_AR.pptx` (55 slides, right-to-left): the big idea,
+  `NERP_Process_Test_Book.pptx` with summary, test approach, landscape and sign-off.
+- **Arabic process guide** `NERP_Process_Guide_AR.pptx` (55 slides, right-to-left): the big idea,
   the 8 modules, the goods-and-money journey, then for every process the flow chart, every step
   explained (what you do / what the system does), a worked example with journal entries, controls,
   common mistakes and KPIs, plus a glossary and a learning order. In ZLMS choose language AR.
@@ -410,7 +410,7 @@ Office opens the files itself, so files protected by NASCA (DRM) can still be re
   `python -m qa.export qa.json` and `node tools/manuals/make_manuals.js qa.json web/static/manuals`
   (needs pptxgenjs, react, react-dom, react-icons, sharp).
 
-## Quality gate (keep MM Core bug free)
+## Quality gate (keep NERP bug free)
 
 Every push and pull request on GitHub runs `.github/workflows/ci.yml`:
 
@@ -421,7 +421,7 @@ Every push and pull request on GitHub runs `.github/workflows/ci.yml`:
 | Static check (pyflakes) | no undefined names or broken Python code |
 | ESLint | no undefined names or duplicates in the screens |
 | Browser sweep | every screen and every BI report opens and executes without error (`tools/qa/sweep.js`) |
-| Desktop smoke test | MM Core Logon / Easy Access start, log on, run transactions, favorites (`tools/qa/gui_smoke.py`) |
+| Desktop smoke test | NERP Logon / Easy Access start, log on, run transactions, favorites (`tools/qa/gui_smoke.py`) |
 
 A red check means: do not merge. Locally: double-click `tools/Run all checks.bat`
 (or `python tools/qa/check_all.py`). Rule for every bug fix: first a test that fails,

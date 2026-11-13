@@ -1,4 +1,4 @@
-/* MM Core - go-live functions: physical inventory (MI01..MI07, MICN), MM periods
+/* NERP - go-live functions: physical inventory (MI01..MI07, MICN), MM periods
    (MMPV, MMRV), MB5B, print forms (ZPRINT), data import (ZIMPORT), withholding
    tax (ZWHT, ZWHT_RPT), manual clearing (F-44, F-32, F-03), down payments
    (F-47, F-37, F-48, F-29, F-54, F-39) */
@@ -222,7 +222,7 @@ register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
   let xlsx = null;                                   // base64 of the chosen Excel file
   const showCols = () => {
     const o = m.objects.find(x => x.obj === obj.value);
-    cols.textContent = o ? `${o.columns}  (Excel sheet "${o.sheet}")` : "every MM Core sheet of the workbook, e.g. 01 Plants ... 08 Open purchase orders";
+    cols.textContent = o ? `${o.columns}  (Excel sheet "${o.sheet}")` : "every NERP sheet of the workbook, e.g. 01 Plants ... 08 Open purchase orders";
   };
   obj.addEventListener("change", showCols); showCols();
   file.addEventListener("change", () => {
@@ -247,7 +247,7 @@ register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
     note("The workbook has a guide in Arabic (sheet '00 Start here'), one sheet per data type with dropdown lists, and a 'Control' sheet with the counts and the open order value to compare.")),
     panel("2. File", grid(field("Object (load in this order)", obj), field("Excel workbook (.xlsx) or CSV file", file)), h("div", null, "File: ", fname),
       h("div", null, "Columns: ", cols), text,
-      note(`Simulate = test every line with all checks, nothing is saved. Post = save every correct line (wrong lines are listed and skipped). Compare = after the upload, every value of the file is compared with MM Core. Open items, balances and stock are posted against the takeover account 399999 - current balance ${App.fmtAmt(m.takeover)} (must be 0 when the load is complete).`)), out);
+      note(`Simulate = test every line with all checks, nothing is saved. Post = save every correct line (wrong lines are listed and skipped). Compare = after the upload, every value of the file is compared with NERP. Open items, balances and stock are posted against the takeover account 399999 - current balance ${App.fmtAmt(m.takeover)} (must be 0 when the load is complete).`)), out);
   const body = extra => {
     if (xlsx) return Object.assign({ obj: obj.value, xlsx }, extra);
     if (obj.value === "ALL") { msg("E", "Choose an Excel workbook (.xlsx) for 'all sheets', or choose one object for a CSV file", "ZI", "002"); return null; }
@@ -261,7 +261,7 @@ register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
     msg(r.errors ? "W" : "S", r.message); out.innerHTML = "";
     if (r.sheets) out.append(alv({ rows: r.sheets, title: "Per sheet", columns: [{ key: "sheet", label: "Sheet" }, { key: "ok", label: "OK", type: "int", sum: true }, { key: "errors", label: "Errors", type: "int", sum: true }] }));
     out.append(alv({ rows: r.log, title: (simulate ? "Simulation log" : "Import log") + " - S = OK, E = error (fix it in the file)", rowClass: x => x.status === "E" ? ".neg" : "",
-      columns: [{ key: "sheet", label: "Sheet" }, { key: "line", label: "Line (Excel row)" }, { key: "status", label: "Status" }, { key: "key", label: "Number in MM Core" }, { key: "message", label: "Message" }] }));
+      columns: [{ key: "sheet", label: "Sheet" }, { key: "line", label: "Line (Excel row)" }, { key: "status", label: "Status" }, { key: "key", label: "Number in NERP" }, { key: "message", label: "Message" }] }));
   };
   const compare = async () => {
     const b = body({}); if (!b) return;
@@ -271,9 +271,9 @@ register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
       h("div.kpi", null, h("div.k", null, "Values compared"), h("div.v", null, String(r.checked))),
       h("div.kpi", null, h("div.k", null, "Missing / different"), h("div.v" + (r.differences.length ? ".neg" : ""), null, String(r.differences.length)))));
     out.append(alv({ rows: r.summary.map(s => Object.assign({}, s, { st: s.control_ok === false ? "✖" : (s.control_ok ? "✔" : "-") })), title: "Control totals per sheet (compare with the 'Control' sheet of the workbook)",
-      columns: [{ key: "sheet", label: "Sheet" }, { key: "lines", label: "Lines in file", type: "int" }, { key: "found", label: "Found in MM Core", type: "int" }, { key: "control", label: "Control" }, { key: "st", label: "OK" }] }));
-    out.append(alv({ rows: r.differences, title: "Missing or different values (empty = everything matches)", rowClass: () => ".neg", emptyText: "No differences - every value of the file is in MM Core",
-      columns: [{ key: "sheet", label: "Sheet" }, { key: "line", label: "Line" }, { key: "key", label: "Record" }, { key: "field", label: "Field" }, { key: "file", label: "Value in file" }, { key: "system", label: "Value in MM Core" }, { key: "status", label: "Status" }] }));
+      columns: [{ key: "sheet", label: "Sheet" }, { key: "lines", label: "Lines in file", type: "int" }, { key: "found", label: "Found in NERP", type: "int" }, { key: "control", label: "Control" }, { key: "st", label: "OK" }] }));
+    out.append(alv({ rows: r.differences, title: "Missing or different values (empty = everything matches)", rowClass: () => ".neg", emptyText: "No differences - every value of the file is in NERP",
+      columns: [{ key: "sheet", label: "Sheet" }, { key: "line", label: "Line" }, { key: "key", label: "Record" }, { key: "field", label: "Field" }, { key: "file", label: "Value in file" }, { key: "system", label: "Value in NERP" }, { key: "status", label: "Status" }] }));
   };
   toolbar([{ label: "CSV template", onClick: async () => { if (obj.value === "ALL") return download(false); const r = await run(() => api("/api/import/template/" + obj.value)); if (r) { xlsx = null; text.value = r.csv; } } },
     { label: "Simulate", key: "F8", primary: true, onClick: () => exec(true) }, { label: "Post", onClick: () => exec(false) },

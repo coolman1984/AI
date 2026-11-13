@@ -1,4 +1,4 @@
-/* MM Core - Procurement (MM-PUR) screens */
+/* NERP - Procurement (MM-PUR) screens */
 "use strict";
 (() => {
 const { h, $, api, msg, run, confirmBox, field, inp, sel, val, up, alv, register, go,

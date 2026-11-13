@@ -1,4 +1,4 @@
-/* MM Core - Sales & distribution (SD) screens */
+/* NERP - Sales & distribution (SD) screens */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, field, inp, sel, val, up, alv, register, go, toolbar,

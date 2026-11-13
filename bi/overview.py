@@ -1,4 +1,4 @@
-"""ERP dashboard (separate "MM Core Dashboard" window): one call returns every card -
+"""ERP dashboard (separate "NERP Dashboard" window): one call returns every card -
 finance, profitability, manufacturing, quality, warehouse, procurement, sales,
 controlling, analytics and the open work items - from the live data."""
 import datetime

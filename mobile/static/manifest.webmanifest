@@ -1,6 +1,6 @@
 {
-  "name": "MM Core Mobile Dashboard",
-  "short_name": "MM Core",
+  "name": "NERP Mobile Dashboard",
+  "short_name": "NERP",
   "start_url": "/m/",
   "scope": "/m/",
   "display": "standalone",

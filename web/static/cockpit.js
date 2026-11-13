@@ -1,4 +1,4 @@
-/* MM Core - Inventory Cockpit (dashboard) */
+/* NERP - Inventory Cockpit (dashboard) */
 "use strict";
 (() => {
 const { h, api, msg, run, alv, register, go, toolbar, fmtQty, fmtAmt, fmtShort, fmtDate, S } = App;
@@ -122,7 +122,7 @@ async function outlook(d) {
     `<br>Blocked: ${esc(fmtAmt(k.blocked_value))} ${cur}<br>Open PO items: ${k.open_po_items}</p>` +
     (rows ? `<p><b>Below reorder point (${d.below_reorder.length})</b></p><table border="1" cellpadding="4" cellspacing="0" ` +
       `style="border-collapse:collapse;font-size:12px"><tr><th>Material</th><th>Description</th><th>Plant</th><th>Stock</th>` +
-      `<th>Reorder pt</th></tr>${rows}</table>` : "") + `<p style="color:#888">Created by MM Core</p></div>`;
+      `<th>Reorder pt</th></tr>${rows}</table>` : "") + `<p style="color:#888">Created by NERP</p></div>`;
   const res = await run(() => api("/api/office/outlook-draft", { to: r.to, subject: `Inventory cockpit ${fmtDate(S.meta.today)}`, html }));
   if (res) msg("S", res.message);
 }

@@ -1,4 +1,4 @@
-/* Arabic explanation of every MM Core process (used by make_manual_ar.js).
+/* Arabic explanation of every NERP process (used by make_manual_ar.js).
    steps[i] belongs to catalog step i+1: [title, what the user does, what the system does]
    example: illustrative numbers + journal entries [account debit, account credit, amount] */
 "use strict";

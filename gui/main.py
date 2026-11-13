@@ -1,8 +1,8 @@
-"""MM Core desktop client: "MM Core Logon" (system list) and "MM Core Easy Access"
+"""NERP desktop client: "NERP Logon" (system list) and "NERP Easy Access"
 (menu tree with favorites, command field, menus), like the classic SAP GUI.
 Transactions open in their own window (application mode, no address bar).
 
-Start: double-click "MM Core Logon.bat" (Windows) or  python gui/main.py
+Start: double-click "NERP Logon.bat" (Windows) or  python gui/main.py
 Needs Python with Tkinter (standard in the python.org installer)."""
 import os
 import sys
@@ -75,7 +75,7 @@ def _bg(widget, fn, done=None, fail=None, tick=None):
                 if k == "ok" and done:
                     done(v)
                 if k == "err":
-                    (fail or (lambda e: messagebox.showerror("MM Core", str(e))))(v)
+                    (fail or (lambda e: messagebox.showerror("NERP", str(e))))(v)
                 return
         except queue.Empty:
             pass
@@ -151,7 +151,7 @@ class LogonDialog(tk.Toplevel):
         self.result = None
         f = ttk.Frame(self, padding=16)
         f.pack(fill="both", expand=True)
-        tk.Label(f, text="MM Core", font=("Segoe UI", 18, "bold italic"), fg=BLUE).grid(row=0, column=0, columnspan=2, sticky="w")
+        tk.Label(f, text="NERP", font=("Segoe UI", 18, "bold italic"), fg=BLUE).grid(row=0, column=0, columnspan=2, sticky="w")
         ttk.Label(f, text=system["name"]).grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
         self.client, self.user, self.pw, self.lang = (tk.StringVar(self, "800"), tk.StringVar(self, last_user or ""),
                                                       tk.StringVar(self), tk.StringVar(self, "EN"))
@@ -181,14 +181,14 @@ class LogonDialog(tk.Toplevel):
         self.destroy()
 
 
-# ------------------------------------------------------------------ MM Core Logon (system list)
+# ------------------------------------------------------------------ NERP Logon (system list)
 class LogonPad:
     def __init__(self, root):
         self.root = root
         self.systems = C.load_systems()
         self.open_windows = []
         self.started = {}
-        root.title("MM Core Logon %s" % VERSION)
+        root.title("NERP Logon %s" % VERSION)
         _center(root, 860, 520)
         self.ic = {k: _icon(root, k) for k in ("folder", "open", "system")}
         bar = ttk.Frame(root, padding=(6, 4))
@@ -370,19 +370,19 @@ class LogonPad:
         self.open_windows.append(EasyAccess(self, s, user, token))
 
     def variable_logon(self):
-        port = simpledialog.askinteger("Variable Logon", "Port of a running MM Core system:", parent=self.root,
+        port = simpledialog.askinteger("Variable Logon", "Port of a running NERP system:", parent=self.root,
                                        minvalue=1024, maxvalue=65000)
         if not port:
             return
         i = C.info(port)
         if not i:
-            return messagebox.showerror("Variable Logon", "No MM Core system on port %d" % port, parent=self.root)
+            return messagebox.showerror("Variable Logon", "No NERP system on port %d" % port, parent=self.root)
         s = dict(name="Variable logon (port %d)" % port, sid="VAR", db=i["db"], port=port, empty=False, text=i["db"])
         self._logon_dialog(s)
 
     def quit(self):
         running = [s for s in self.systems if s["sid"] in self.started]
-        if running and messagebox.askyesno("Exit", "Stop the systems started by MM Core Logon (%s)?"
+        if running and messagebox.askyesno("Exit", "Stop the systems started by NERP Logon (%s)?"
                                            % ", ".join(s["sid"] for s in running), parent=self.root):
             for s in running:
                 C.stop(s)
@@ -394,7 +394,7 @@ class EasyAccess(tk.Toplevel):
     def __init__(self, pad, system, user, token):
         super().__init__(pad.root)
         self.pad, self.s, self.user, self.token = pad, system, user, token
-        self.title("MM Core Easy Access  -  %s (%s) - %s" % (system["name"], system["sid"], user))
+        self.title("NERP Easy Access  -  %s (%s) - %s" % (system["name"], system["sid"], user))
         _center(self, 1000, 760)
         self.ic = {k: _icon(self, k) for k in ("folder", "open", "star", "tx")}
         self.tech = tk.BooleanVar(self, True)
@@ -404,7 +404,7 @@ class EasyAccess(tk.Toplevel):
         self._toolbar()
         band = tk.Frame(self, bg="#dfe3e8")
         band.pack(fill="x")
-        tk.Label(band, text="MM Core Easy Access", font=("Segoe UI", 16, "bold italic"), bg="#dfe3e8",
+        tk.Label(band, text="NERP Easy Access", font=("Segoe UI", 16, "bold italic"), bg="#dfe3e8",
                  fg="#1d2a3a").pack(side="left", padx=10, pady=6)
         tb2 = ttk.Frame(self, padding=(6, 2))
         tb2.pack(fill="x")
@@ -473,8 +473,8 @@ class EasyAccess(tk.Toplevel):
         mb.add_cascade(label="System", menu=s)
         h = tk.Menu(mb, tearoff=0)
         h.add_command(label="e-Learning (ZLMS)", command=lambda: self.run("ZLMS"))
-        h.add_command(label="About MM Core", command=lambda: messagebox.showinfo(
-            "About", "MM Core desktop client %s\nSystem %s on port %s\nDatabase %s"
+        h.add_command(label="About NERP", command=lambda: messagebox.showinfo(
+            "About", "NERP desktop client %s\nSystem %s on port %s\nDatabase %s"
             % (VERSION, self.s["sid"], self.s["port"], self.s["db"]), parent=self))
         mb.add_cascade(label="Help", menu=h)
         self.config(menu=mb)
@@ -524,7 +524,7 @@ class EasyAccess(tk.Toplevel):
                     n = self.tv.insert(parent, "end", text=" " + self._label(it["tcode"]), image=self.ic["star"], tags=("tx",))
                     self.node[n] = ("fav", it)
         add_fav(fav, self.favs)
-        root = self.tv.insert("", "end", text=" MM Core Menu", image=self.ic["open"], open=True)
+        root = self.tv.insert("", "end", text=" NERP Menu", image=self.ic["open"], open=True)
         self.node[root] = ("menuroot", None)
 
         def add_menu(parent, items):

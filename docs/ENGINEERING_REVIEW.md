@@ -1,4 +1,4 @@
-# MM Core — Engineering Review and Work Order
+# NERP — Engineering Review and Work Order
 
 Review date: 2026-11-09 · Code base: `main` at commit `08b03cb` (29,279 lines: Python engines, JSON API, vanilla-JS SPA)
 
@@ -41,8 +41,8 @@ This file is a **work order for the engineer (or coding model) who will fix and 
 - **Every write must be inside `with transaction(conn):`** (`mm/db.py`). The connection is in autocommit mode; a write outside a transaction is committed immediately and is not protected by `WRITE_LOCK`.
 - **Schema changes**: new tables go in the module's `schema.py`; new columns on existing tables go in the `*_COLUMN_ADDS` dict so that existing databases are upgraded in `mm.db.connect`. Use **named-column INSERTs** only.
 - **Front end**: `App.register(tcode, {title, render})`, `api(path, body)` (a body means POST; do not pass `{method, body}`), helpers `alv`, `toolbar`, `field`, `inp`, `sel`.
-- **Brand**: the product is "MM Core". Do not add third-party brand names.
-- **Git**: develop on the working branch, push, open a PR, merge. Deliver a zip with `git archive`. `Start MM Core.bat` must keep working.
+- **Brand**: the product is "NERP". Do not add third-party brand names.
+- **Git**: develop on the working branch, push, open a PR, merge. Deliver a zip with `git archive`. `Start NERP.bat` must keep working.
 
 ### 1.2 How to verify
 

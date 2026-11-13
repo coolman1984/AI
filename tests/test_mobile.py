@@ -1,5 +1,5 @@
-"""MM Core Mobile: QR code, pairing with the secret key, read-only gateway and the live
-stream (a change committed by MM Core reaches the phone without reloading)."""
+"""NERP Mobile: QR code, pairing with the secret key, read-only gateway and the live
+stream (a change committed by NERP reaches the phone without reloading)."""
 import http.client
 import json
 import os
@@ -32,7 +32,7 @@ class QrCode(unittest.TestCase):
             self.assertEqual(m[y0 + 3][x0 + 3], 1)
             self.assertEqual(m[y0 + 1][x0 + 1], 0)
         self.assertEqual(m[n - 8][8], 1)                                 # dark module
-        self.assertIn("<svg", qr.svg("MM Core"))
+        self.assertIn("<svg", qr.svg("NERP"))
         with self.assertRaises(ValueError):
             qr.matrix("x" * 300)
 
@@ -90,7 +90,7 @@ class Gateway(unittest.TestCase):
         self.assertEqual((st, d["currency"]), (200, "USD"))
         self.assertIn("finance", d)
         self.assertEqual(self.call("/m/api/overview?currency=XYZ", cookie=ck)[0], 400)
-        self.assertEqual(self.call("/api/meta", cookie=ck)[0], 404)          # nothing of MM Core itself
+        self.assertEqual(self.call("/api/meta", cookie=ck)[0], 404)          # nothing of NERP itself
         self.assertEqual(self.call("/m/", cookie=ck)[0], 200)
         st, info, _ = self.call("/m/api/pairinfo")
         self.assertTrue(info["links"][0].endswith(self.srv.key))
@@ -121,7 +121,7 @@ class Gateway(unittest.TestCase):
         first = next_event()
         self.assertIn("finance", first)
         t0 = time.time()
-        w = connect(self.db)                                                # MM Core saves something
+        w = connect(self.db)                                                # NERP saves something
         w.execute("UPDATE material SET maktx=maktx || ' ' WHERE matnr='FG-3001'")
         w.close()
         second = next_event()

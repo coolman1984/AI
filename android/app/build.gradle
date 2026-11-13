@@ -9,10 +9,10 @@ def ks = new Properties()
 if (ksFile.exists()) { ksFile.withInputStream { ks.load(it) } }
 
 android {
-    namespace "com.mmcore.dashboard"
+    namespace "com.nerp.dashboard"
     compileSdk 36
     defaultConfig {
-        applicationId "com.mmcore.dashboard"
+        applicationId "com.nerp.dashboard"
         minSdk 24
         targetSdk 36
         versionCode 1

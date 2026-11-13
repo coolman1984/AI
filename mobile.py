@@ -1,6 +1,6 @@
-"""MM Core Mobile - the ERP dashboard on the phone, updated live.
+"""NERP Mobile - the ERP dashboard on the phone, updated live.
 
-Started by "MM Core Mobile.bat". Opens the pairing page with the QR code on this PC;
+Started by "NERP Mobile.bat". Opens the pairing page with the QR code on this PC;
 the phone (same Wi-Fi) scans it once and then has the dashboard as an icon on its home
 screen. Read-only: nothing can be changed from the phone.
 
@@ -23,7 +23,7 @@ def _message(text):
         from tkinter import messagebox
         r = tk.Tk()
         r.withdraw()
-        messagebox.showerror("MM Core Mobile", text)
+        messagebox.showerror("NERP Mobile", text)
         r.destroy()
     except Exception:  # noqa - no Tk: the console is all we have
         print(text)
@@ -38,9 +38,9 @@ def _running(port):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="MM Core Mobile - live dashboard for the phone")
+    ap = argparse.ArgumentParser(description="NERP Mobile - live dashboard for the phone")
     ap.add_argument("--port", type=int, default=int(os.environ.get("MM_MOBILE_PORT") or 8090))
-    ap.add_argument("--db", default=None, help="database (default: the first system of MM Core Logon)")
+    ap.add_argument("--db", default=None, help="database (default: the first system of NERP Logon)")
     ap.add_argument("--no-browser", action="store_true")
     a = ap.parse_args(argv)
     pair = "http://localhost:%d/m/pair" % a.port
@@ -54,7 +54,7 @@ def main(argv=None):
         s = C.load_systems()[0]
         db = s["db"] if os.path.isabs(s["db"]) else os.path.join(ROOT, s["db"])
     if not os.path.exists(db):
-        _message("No MM Core database yet (%s).\nStart MM Core once (Start MM Core.bat), then MM Core Mobile." % db)
+        _message("No NERP database yet (%s).\nStart NERP once (Start NERP.bat), then NERP Mobile." % db)
         return 1
     from mobile.gateway import serve
     try:
@@ -62,7 +62,7 @@ def main(argv=None):
     except OSError as e:
         _message("Port %d is in use by another program (%s).\nStart with another port: mobile.py --port 8091" % (a.port, e))
         return 1
-    print("MM Core Mobile on port %d - pairing page %s" % (a.port, pair))
+    print("NERP Mobile on port %d - pairing page %s" % (a.port, pair))
     if not a.no_browser:
         webbrowser.open(pair)
     try:

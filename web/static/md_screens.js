@@ -1,4 +1,4 @@
-/* MM Core - Master data screens (material, customer, vendor, CIN, Exim, governance) */
+/* NERP - Master data screens (material, customer, vendor, CIN, Exim, governance) */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, confirmBox, field, inp, sel, val, up, alv, register, go,
@@ -570,7 +570,7 @@ function partnerScreen(kind, tcode, mode, parts, title) {
     const vtweg = sel(opts(MD.channels), params.vtweg || "10", { w: "m" });
     const body = out();
     app.append(panel(isV ? "Vendor" : "Customer", grid(field(isV ? "Vendor" : "Customer", key, { hint: mode === "create" ? "internal number range: leave empty" : "" }),
-      mode === "create" ? field("Account group", grp, { req: true }) : null, field("Company code", inp({ value: "1000 MM Core Egypt", readonly: true, w: "l" })),
+      mode === "create" ? field("Account group", grp, { req: true }) : null, field("Company code", inp({ value: "1000 NERP Egypt", readonly: true, w: "l" })),
       parts.includes("s") ? (isV ? field("Purchasing organization", inp({ value: "1000", readonly: true, w: "s" })) : field("Sales area", h("span", null, "1000 / ", vtweg, " / 00"))) : null)), body);
     const info = () => { const g = groups[grp.value]; return h("p.muted", null, `Account group ${grp.value}: required ${g.req.join(", ")}${g.sup.length ? " · suppressed " + g.sup.join(", ") : ""}${g.partners ? " · partner functions " + g.partners : ""}`); };
 

@@ -447,12 +447,12 @@ def bootstrap(conn, demo):
                          "password": pw, "roles": ["ADMIN"], "create": True}, "SYSTEM")
         return pw
     for b, (name, rls, area, kostl) in DEMO_USERS.items():
-        save_user(conn, {"bname": b, "name": name, "company": "MM Core Demo", "busarea": area,
+        save_user(conn, {"bname": b, "name": name, "company": "NERP Demo", "busarea": area,
                          "kostl": kostl, "valid_from": vf, "password": b.lower(),
                          "roles": [{"role": r, "valid_from": vf} for r in rls], "create": True}, "SYSTEM")
         conn.execute("UPDATE usr SET must_change=0 WHERE bname=?", (b,))
     # one user who has not logged on for half a year -> shows "Locked: long-term unused"
-    save_user(conn, {"bname": "TEMP01", "name": "Temporary staff", "company": "MM Core Demo",
+    save_user(conn, {"bname": "TEMP01", "name": "Temporary staff", "company": "NERP Demo",
                      "busarea": "Sales", "valid_from": vf, "password": "temp01",
                      "roles": [{"role": "SALES_CLERK", "valid_from": vf}], "create": True}, "SYSTEM")
     old = (mmclock.today() - datetime.timedelta(days=180)).isoformat() + " 09:00:00"

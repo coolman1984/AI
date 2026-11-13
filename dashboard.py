@@ -1,7 +1,7 @@
-"""MM Core Dashboard - the ERP dashboard in its own window (no menus, no address bar).
+"""NERP Dashboard - the ERP dashboard in its own window (no menus, no address bar).
 
-Started by "MM Core Dashboard.bat" (or the desktop icon made by tools/Create desktop
-icons.bat). Uses the first system of MM Core Logon (default: data/mm.db, port 8080),
+Started by "NERP Dashboard.bat" (or the desktop icon made by tools/Create desktop
+icons.bat). Uses the first system of NERP Logon (default: data/mm.db, port 8080),
 starts it when it is not running, and opens http://localhost:PORT/dashboard.html."""
 import os
 import sys
@@ -17,7 +17,7 @@ def _message(text):
         from tkinter import messagebox
         r = tk.Tk()
         r.withdraw()
-        messagebox.showerror("MM Core Dashboard", text)
+        messagebox.showerror("NERP Dashboard", text)
         r.destroy()
     except Exception:  # noqa - no Tk: the console is all we have
         print(text)

@@ -3,7 +3,7 @@
 purchasing_workbook(example=False) -> .xlsx bytes
   00 Start here (Arabic guide) · 01 Plants · 02 Storage locations · 03 Material groups ·
   04 Purchasing groups · 05 Vendors · 06 Materials · 07 Info records · 08 Open purchase
-  orders · Control (counts and totals to compare with MM Core) · Lists (dropdown values)
+  orders · Control (counts and totals to compare with NERP) · Lists (dropdown values)
   Row 1 = column title (English | Arabic), row 2 = technical name (read by ZIMPORT),
   row 3 = rule, data from row 4. example=True fills consistent sample data that loads
   without errors (to practise in the sandbox system first).
@@ -155,11 +155,11 @@ EXAMPLES = {
 }
 
 GUIDE = [
-    ("title", "رفع بيانات المشتريات على MM Core - ابدأ من هنا"),
+    ("title", "رفع بيانات المشتريات على NERP - ابدأ من هنا"),
     ("p", "الملف ده فيه كل بيانات المشتريات اللي البرنامج محتاجها عشان تبدأ شغل حقيقي. كل شيت = نوع بيانات. املاه، ارفعه على البرنامج، واتأكد إن كل حاجة اتسجلت صح."),
     ("h", "1) قبل ما تبدأ"),
-    ("p", "• ابدأ بالتجربة: ارفع الملف الأول على نظام التجربة الفاضي (03. MM Core Sandbox - empty) وبعد ما تتأكد ارفعه على النظام الحقيقي (04. My Company - LIVE)."),
-    ("p", "• في ملف تاني اسمه MM_Core_Purchasing_EXAMPLE.xlsx فيه بيانات مثال كاملة - ارفعه على نظام التجربة عشان تشوف الخطوات قبل ما تحط بياناتك."),
+    ("p", "• ابدأ بالتجربة: ارفع الملف الأول على نظام التجربة الفاضي (03. NERP Sandbox - empty) وبعد ما تتأكد ارفعه على النظام الحقيقي (04. My Company - LIVE)."),
+    ("p", "• في ملف تاني اسمه NERP_Purchasing_EXAMPLE.xlsx فيه بيانات مثال كاملة - ارفعه على نظام التجربة عشان تشوف الخطوات قبل ما تحط بياناتك."),
     ("h", "2) قواعد الملء (مهمة)"),
     ("p", "• الصف 1 = اسم الخانة، الصف 2 = الاسم اللي البرنامج بيقراه (ماتغيرهوش)، الصف 3 (اللي بيبدأ بـ ℹ) = القاعدة. ابدأ بياناتك من الصف 4."),
     ("p", "• ماتغيرش أسماء الشيتات ولا ترتيب الأعمدة. الخانات الحمرا في الصف 3 = مطلوبة."),
@@ -170,7 +170,7 @@ GUIDE = [
     ("p", "01 المصانع ← 02 المخازن ← 03 مجموعات الأصناف ← 04 المشترين ← 05 الموردين ← 06 الأصناف ← 07 أسعار الموردين ← 08 أوامر الشراء المفتوحة."),
     ("p", "لو مصانعك ومخازنك موجودة بالفعل في البرنامج سيب شيت 01 و02 فاضيين."),
     ("h", "4) إزاي ترفع الملف على البرنامج"),
-    ("p", "1. افتح MM Core واكتب ZIMPORT في خانة الأوامر فوق واضغط Enter (أو: القائمة ← Administration ← Data Transfer (go-live) ← ZIMPORT)."),
+    ("p", "1. افتح NERP واكتب ZIMPORT في خانة الأوامر فوق واضغط Enter (أو: القائمة ← Administration ← Data Transfer (go-live) ← ZIMPORT)."),
     ("p", "2. في (Object) اختار: Excel workbook - all sheets. في (File) اختار الملف ده."),
     ("p", "3. اضغط Simulate (تجربة): البرنامج بيجرب كل سطر بكل الفحوصات ومش بيحفظ حاجة. هيطلعلك جدول: كل سطر S = تمام، E = فيه غلط ومكتوب السبب ورقم الشيت والسطر."),
     ("p", "4. صحح الأخطاء في الإكسل، احفظ، واختار الملف تاني واعمل Simulate لحد ما مايبقاش فيه ولا E."),
@@ -247,13 +247,13 @@ def purchasing_workbook(example=False):
     for title, intro, cols in SHEETS:
         c.set(r, 0, title)
         c.set(r, 1, "COUNTA('%s'!A%d:A%d)" % (title, FIRST, LAST), GOOD, "f")
-        c.set(r, 2, "ZIMPORT Compare: lines / found in MM Core", WRAP)
+        c.set(r, 2, "ZIMPORT Compare: lines / found in NERP", WRAP)
         r += 1
     po = "'08 Open purchase orders'!"
     c.set(r + 1, 0, "Open PO value | قيمة الأوامر المفتوحة", HEADER)
     c.set(r + 1, 1, "SUMPRODUCT(%sI%d:I%d,%sJ%d:J%d,1/(%sK%d:K%d+(%sK%d:K%d=0)))" % (
         po, FIRST, LAST, po, FIRST, LAST, po, FIRST, LAST, po, FIRST, LAST), GOOD, "f")
-    c.set(r + 1, 2, "ZIMPORT Compare: 'Order value (open qty x price): file ... / MM Core ...' و ME2N", WRAP)
+    c.set(r + 1, 2, "ZIMPORT Compare: 'Order value (open qty x price): file ... / NERP ...' و ME2N", WRAP)
     c.set(r + 2, 0, "Open PO quantity | إجمالي الكميات المفتوحة", HEADER)
     c.set(r + 2, 1, "SUM(%sI%d:I%d)" % (po, FIRST, LAST), GOOD, "f")
     # lists for the dropdowns

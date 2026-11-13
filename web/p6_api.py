@@ -171,7 +171,7 @@ def _xlsx_body(b):
 
 @route("POST", "/api/import/xlsx")
 def imp_xlsx(req, q):
-    """the Excel workbook: all MM Core sheets in the loading order (obj = ALL) or one object"""
+    """the Excel workbook: all NERP sheets in the loading order (obj = ALL) or one object"""
     b = req.body
     only = (b.get("obj") or "ALL").upper()
     return dataimport.run_xlsx(db(), _xlsx_body(b), req.user, b.get("simulate", True) is not False,
@@ -180,7 +180,7 @@ def imp_xlsx(req, q):
 
 @route("POST", "/api/import/verify")
 def imp_verify(req, q):
-    """compare the file with MM Core field by field (after the upload)"""
+    """compare the file with NERP field by field (after the upload)"""
     b = req.body
     if b.get("xlsx"):
         only = (b.get("obj") or "ALL").upper()
@@ -198,7 +198,7 @@ def imp_workbook(req, q, area):
         raise MMError("Templates exist for: PUR (purchasing)", "ZI", "030")
     ex = q.get("example") in ("1", "true", "X")
     data = templates.purchasing_workbook(example=ex)
-    return {"name": "MM_Core_Purchasing_%s.xlsx" % ("EXAMPLE" if ex else "Template"),
+    return {"name": "NERP_Purchasing_%s.xlsx" % ("EXAMPLE" if ex else "Template"),
             "xlsx": base64.b64encode(data).decode("ascii")}
 
 

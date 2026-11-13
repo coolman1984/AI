@@ -224,7 +224,7 @@ class Sheet:
             out.append('<dataValidations count="%d">' % len(self.validations))
             for sqref, formula, prompt in self.validations:
                 out.append('<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" '
-                           'errorTitle="MM Core" error="Choose a value from the list" promptTitle="MM Core" '
+                           'errorTitle="NERP" error="Choose a value from the list" promptTitle="NERP" '
                            'prompt="%s" sqref="%s"><formula1>%s</formula1></dataValidation>'
                            % (escape(prompt or "Choose from the list", {'"': "&quot;"}), sqref, escape(formula)))
             out.append("</dataValidations>")

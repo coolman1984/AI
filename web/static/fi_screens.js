@@ -1,4 +1,4 @@
-/* MM Core - Financial Accounting (FI) screens */
+/* NERP - Financial Accounting (FI) screens */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, confirmBox, field, inp, sel, val, up, alv, register, go,

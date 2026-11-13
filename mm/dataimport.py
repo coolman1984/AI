@@ -9,7 +9,7 @@ and rolls back; "Post" keeps the good lines. Each line runs in its own savepoint
 bad line does not stop the file; the log shows sheet, line, status and message.
 
 verify() compares a file with what is in the system field by field (after the upload,
-to prove that the data in MM Core is the data of the file) and gives control totals.
+to prove that the data in NERP is the data of the file) and gives control totals.
 
 Nested views use dotted column names: plant.werks, plant.price, sloc.lgort (material);
 sales.vkorg, sales.vtweg (customer / material). Open items, G/L balances and stock are
@@ -76,18 +76,18 @@ def _nest(row):
 
 
 def vendor_no(conn, v):
-    """vendor number in MM Core, or the legacy vendor number (altkn) of the old system"""
+    """vendor number in NERP, or the legacy vendor number (altkn) of the old system"""
     v = (v or "").strip().upper()
     if not v:
-        raise MMError("Enter the vendor (number in MM Core or the old vendor number)", "ZI", "010")
+        raise MMError("Enter the vendor (number in NERP or the old vendor number)", "ZI", "010")
     if conn.execute("SELECT 1 FROM vendor WHERE lifnr=?", (v,)).fetchone():
         return v
     r = conn.execute("SELECT lifnr FROM vendor WHERE UPPER(altkn)=?", (v,)).fetchall()
     if len(r) == 1:
         return r[0]["lifnr"]
     if len(r) > 1:
-        raise MMError("Old vendor number %s belongs to %d vendors - give the MM Core number" % (v, len(r)), "ZI", "011")
-    raise MMError("Vendor %s does not exist (neither MM Core number nor old vendor number) - load the vendors "
+        raise MMError("Old vendor number %s belongs to %d vendors - give the NERP number" % (v, len(r)), "ZI", "011")
+    raise MMError("Vendor %s does not exist (neither NERP number nor old vendor number) - load the vendors "
                   "first" % v, "ZI", "012")
 
 
@@ -331,7 +331,7 @@ def workbook_sheets(data):
         if o:
             found.append((o, name, rows))
     if not found:
-        raise MMError("No MM Core sheet found in the workbook (e.g. '05 Vendors') - use the template of ZIMPORT",
+        raise MMError("No NERP sheet found in the workbook (e.g. '05 Vendors') - use the template of ZIMPORT",
                       "ZI", "006")
     order = {o[0]: n for n, o in enumerate(OBJECTS)}
     found.sort(key=lambda x: order[x[0][0]])
@@ -390,7 +390,7 @@ def run(conn, obj, text, user, simulate=True):
 
 
 def run_xlsx(conn, data, user, simulate=True, only=None):
-    """the Excel workbook: every MM Core sheet in the loading order (or only one object).
+    """the Excel workbook: every NERP sheet in the loading order (or only one object).
     Simulation runs the sheets one after the other in one transaction (later sheets see
     the plants / vendors / materials of earlier sheets) and then rolls everything back."""
     sheets = workbook_sheets(data)
@@ -601,7 +601,7 @@ def _verify_po(conn, items, diffs, sheet):
             diffs.append(dict(sheet=sheet, line=line, key="old PO %s = %s" % (k, h["ebeln"]), field=f, file=str(fv),
                               system=str(sv), status="OK" if ok else "DIFFERENT"))
     return dict(sheet=sheet, lines=len(items), records=len(order), found=found,
-                control="Order value (open qty x price): file %.2f / MM Core %.2f" % (value_file / 100.0,
+                control="Order value (open qty x price): file %.2f / NERP %.2f" % (value_file / 100.0,
                                                                                      value_sys / 100.0),
                 control_ok=value_file == value_sys)
 
@@ -632,7 +632,7 @@ def verify_items(conn, obj, items, sheet=""):
             diffs.append(dict(sheet=sheet, line=line, key=key, field=f, file=_fmt(kind, fv) if fv is not None else v,
                               system=_fmt(kind, sv), status="OK" if ok else "DIFFERENT"))
     return diffs, dict(sheet=sheet, lines=len(items), records=len(items), found=found,
-                       control="%d of %d lines found in MM Core" % (found, len(items)), control_ok=found == len(items))
+                       control="%d of %d lines found in NERP" % (found, len(items)), control_ok=found == len(items))
 
 
 def _verify_result(diffs, summaries):
@@ -640,7 +640,7 @@ def _verify_result(diffs, summaries):
     checked = len(diffs)
     return {"differences": bad, "checked": checked, "ok": checked - len(bad), "summary": summaries,
             "all_ok": not bad and all(s["control_ok"] is not False for s in summaries),
-            "message": ("Everything in the file is in MM Core exactly as in the file (%d values compared)" % checked)
+            "message": ("Everything in the file is in NERP exactly as in the file (%d values compared)" % checked)
             if not bad else "%d of %d compared values are missing or different - see the list" % (len(bad), checked)}
 
 

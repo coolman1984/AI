@@ -1,6 +1,6 @@
-# Quality gate of MM Core: runs on every push and pull request.
+# Quality gate of NERP: runs on every push and pull request.
 # A red check = do not merge. See README "Quality gate".
-name: MM Core quality gate
+name: NERP quality gate
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Lint the screens (undefined names, duplicates)
         run: npx eslint --no-eslintrc -c tools/qa/eslintrc.json web/static/*.js
-      - name: Start MM Core (developer mode, fresh demo data)
+      - name: Start NERP (developer mode, fresh demo data)
         run: |
           MM_DB=$RUNNER_TEMP/sweep.db nohup python run.py --dev --no-browser --keep-running --port 8091 > $RUNNER_TEMP/server.log 2>&1 &
           for i in $(seq 1 120); do curl -sf -H "Host: localhost:8091" http://localhost:8091/api/gui/info && break; sleep 1; done
@@ -60,7 +60,7 @@ jobs:
         run: tail -n 100 $RUNNER_TEMP/server.log || true
 
   desktop:
-    name: Desktop client (MM Core Logon)
+    name: Desktop client (NERP Logon)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

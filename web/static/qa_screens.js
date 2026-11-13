@@ -1,4 +1,4 @@
-/* MM Core - e-Learning (ZLMS: manuals repository + LMS ID) and Process Test Center (ZQA_TEST) */
+/* NERP - e-Learning (ZLMS: manuals repository + LMS ID) and Process Test Center (ZQA_TEST) */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, register, go, toolbar, fmtDate } = App;
@@ -41,13 +41,13 @@ function menuCodes(path) {
 function buildDocs(opt) {
   const docs = [];
   const seen = new Set();
-  const book = "MM_Core_Process_Test_Book.pptx";
+  const book = "NERP_Process_Test_Book.pptx";
   const run = CAT.run || {};
-  docs.push({ folder: "", key: "MM CORE", status: run.cases ? (run.failed ? "F" : "P") : "", module: "QA", course: "S_QA00001_1.0",
+  docs.push({ folder: "", key: "NERP", status: run.cases ? (run.failed ? "F" : "P") : "", module: "QA", course: "S_QA00001_1.0",
     doc: "Material", type: "PR", title: "Process Manual & Test Book - all processes(EN)", href: "/manuals/" + book, dl: true });
-  docs.push({ folder: "", key: "MM CORE", lang: "AR", status: run.cases ? (run.failed ? "F" : "P") : "", module: "QA",
+  docs.push({ folder: "", key: "NERP", lang: "AR", status: run.cases ? (run.failed ? "F" : "P") : "", module: "QA",
     course: "S_QA00002_AR", doc: "Material", type: "PR", title: "دليل العمليات بالعربي - شرح كل Process في كل موديول(AR)",
-    href: "/manuals/MM_Core_Process_Guide_AR.pptx", dl: true });
+    href: "/manuals/NERP_Process_Guide_AR.pptx", dl: true });
   for (const p of CAT.processes) {
     const r = runOf(p.id);
     const st = r ? (r.passed === r.total ? "P" : "F") : "";
@@ -57,7 +57,7 @@ function buildDocs(opt) {
       title: `Process Manual ${p.module} ${p.version} ${p.name}(EN)` });
     for (const s of p.steps) docs.push({ ...base, status: st, course: `S_${p.module}${p.id}${String(s.no).padStart(2, "0")}_${p.version}`,
       title: `Process Manual ${p.module} ${p.version}.${s.no} ${s.title} [${s.tcode}](EN)` });
-    docs.push({ ...base, lang: "AR", status: st, course: `S_${p.module}${p.id}_AR`, href: "/manuals/MM_Core_Process_Guide_AR.pptx",
+    docs.push({ ...base, lang: "AR", status: st, course: `S_${p.module}${p.id}_AR`, href: "/manuals/NERP_Process_Guide_AR.pptx",
       title: `شرح العملية بالعربي - ${p.name} (${p.module})(AR)` });
     if (opt.all) for (const c of p.cases) {
       const cr = caseRun(p.id, c.id);
@@ -110,7 +110,7 @@ register("ZLMS", { title: "e-Learning - On-line Academy (Manuals)", async render
       cell(arr, "PR", txt), cell(arr, "PG", txt));
     let groups;
     if (mode === "Set") {
-      tb.append(row("MM CORE", docs.filter(d => d.folder === ""), 0));
+      tb.append(row("NERP", docs.filter(d => d.folder === ""), 0));
       groups = CAT.folders.map(([k, t]) => [k, `${k} ${t}`, docs.filter(d => d.folder === k)]);
     } else {
       const mods = [...new Set(docs.map(d => d.module))].sort();
@@ -150,7 +150,7 @@ register("ZLMS", { title: "e-Learning - On-line Academy (Manuals)", async render
   search.addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
   const launch = () => {
     if (lms.status !== "CONNECTED") { msg("W", "Connect your LMS ID first (tab LMS ID)"); return showTab(1); }
-    const a = h("a", { href: "/manuals/MM_Core_Process_Test_Book.pptx", download: "" }); document.body.append(a); a.click(); a.remove();
+    const a = h("a", { href: "/manuals/NERP_Process_Test_Book.pptx", download: "" }); document.body.append(a); a.click(); a.remove();
     msg("S", "LMS launched - Process Manual & Test Book downloaded");
   };
   const manuals = h("div", null,
@@ -185,7 +185,7 @@ register("ZLMS", { title: "e-Learning - On-line Academy (Manuals)", async render
       path(`M${r(1)},${y(0)} H${cx(2)} V${y(1) - 31}`) + path(`M${r(2)},${y(1)} H${l(3)}`);
     flow.innerHTML = "";
     flow.append(h("div.lms-lanes", null,
-      h("div.lms-lane", null, h("span", null, "MM Core (HQ)")), h("div.lms-lane", null, h("span", null, "User")), svg,
+      h("div.lms-lane", null, h("span", null, "NERP (HQ)")), h("div.lms-lane", null, h("span", null, "User")), svg,
       node("check", 0, 0, "Check LMS ID?", 0, "dia"), node("req", 1, 0, "Request LMS ID", 1), node("requested", 1, 1, "Requested"),
       node("register", 0, 1, "Register ID", 2), node("connect", 1, 2, "Connect LMS", 3), node("end", 1, 3, "Manuals & tests open", 0, "end")),
     h("div.obj-header", null, [["User", lms.user], ["Status", st], ["LMS ID", lms.lms_id || "-"], ["Requested", lms.request_at || "-"],
@@ -274,7 +274,7 @@ register("ZQA_TEST", { title: "Process Test Center - End-to-End Tests", async re
     draw();
   };
   toolbar([{ label: "Execute", key: "F8", primary: true, onClick: exec },
-    { label: "Test book (PowerPoint)", onClick: () => { const a = h("a", { href: "/manuals/MM_Core_Process_Test_Book.pptx", download: "" });
+    { label: "Test book (PowerPoint)", onClick: () => { const a = h("a", { href: "/manuals/NERP_Process_Test_Book.pptx", download: "" });
       document.body.append(a); a.click(); a.remove(); } },
     { label: "e-Learning manuals", ghost: true, onClick: () => go("ZLMS") }]);
   app.append(panel(null, h("p", null, "Every process is tested end to end like a key-user acceptance test: each test case has its T-codes, " +

@@ -1,4 +1,4 @@
-// Browser sweep: opens every registered screen of a running MM Core (developer mode),
+// Browser sweep: opens every registered screen of a running NERP (developer mode),
 // presses Execute where there is one and fails on page errors, console errors,
 // HTTP 5xx, internal errors, menu codes without screen and every BI report / dashboard.
 // Usage: node tools/qa/sweep.js http://localhost:8091      (exit code 1 = problems)
