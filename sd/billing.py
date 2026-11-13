@@ -26,7 +26,7 @@ from .order import flow, _status
 from mm import util as mmclock  # noqa: E402
 
 COMPANY_TAX_ID = "204-114-007"
-COMPANY_NAME = "MM Core Egypt S.A.E."
+COMPANY_NAME = "NERP Egypt S.A.E."
 
 
 def due_list(conn, until=None):

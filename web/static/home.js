@@ -1,4 +1,4 @@
-/* MM Core - home page in the N-ERP portal layout:
+/* NERP - home page in the N-ERP portal layout:
    navy banner with round app icons (favorites first), portal carousel,
    notice line and footer. The classic tile launchpad is "Workplace" (ZWORKPLACE). */
 "use strict";
@@ -159,7 +159,7 @@ register("HOME", { title: "Home", async render(app) {
   const a = h("a.notice-link", { href: "#/" + n[1] }, n[0]);
   const when = h("span.notice-date", null, new Date().toString().replace(/ \(.*\)$/, ""));
   app.append(h("section.notice", null, h("span.notice-icon", null, "🔈"), h("b", null, "Notice"), a, when),
-    h("footer.home-foot", null, "© MM Core ", h("a", { href: "#/ZWORKPLACE" }, "Workplace"), " · Privacy Policy & Legal"));
+    h("footer.home-foot", null, "© NERP ", h("a", { href: "#/ZWORKPLACE" }, "Workplace"), " · Privacy Policy & Legal"));
 } });
 
 // "All process maps" entry of the portal

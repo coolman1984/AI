@@ -1,7 +1,7 @@
-# MM Core - Android app (Google Play)
+# NERP - Android app (Google Play)
 
 A small native Android app (Java, no third-party libraries except the Google Play services
-code scanner) that shows the live dashboard of **MM Core Mobile** (`mobile/` in this repository).
+code scanner) that shows the live dashboard of **NERP Mobile** (`mobile/` in this repository).
 
 - First start: "Scan QR code" (no camera permission needed) or type the address of the PC.
 - Then the dashboard of the PC is shown full screen; it updates live (Server-Sent Events).

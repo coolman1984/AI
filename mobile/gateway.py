@@ -1,4 +1,4 @@
-"""MM Core Mobile - the ERP dashboard on the phone, live.
+"""NERP Mobile - the ERP dashboard on the phone, live.
 
 A small separate server for the phone (same Wi-Fi as the PC). It can only READ the
 dashboard: the database is opened read-only (PRAGMA query_only), and it has no other
@@ -150,7 +150,7 @@ class Hub:
 
 # ------------------------------------------------------------------ HTTP
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MMCoreMobile/1.0"
+    server_version = "NERPMobile/1.0"
     protocol_version = "HTTP/1.1"
 
     def log_message(self, fmt, *args):         # quiet
@@ -232,7 +232,7 @@ class Handler(BaseHTTPRequestHandler):
             if self._blocked():
                 return self._err(429, "Too many wrong keys - try again in 10 minutes")
             if not (self._key_ok(self._cookie()) or (self._local() and self.server.local_free)):
-                return self._err(401, "This phone is not paired - scan the QR code on the PC (MM Core Mobile)")
+                return self._err(401, "This phone is not paired - scan the QR code on the PC (NERP Mobile)")
             cur = (q.get("currency") or "EGP").upper()
             if cur not in CURRENCIES:
                 return self._err(400, "Currency must be EGP, USD or EUR")

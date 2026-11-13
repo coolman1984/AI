@@ -1,4 +1,4 @@
-package com.mmcore.dashboard;
+package com.nerp.dashboard;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -31,16 +31,16 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 
 /**
- * MM Core - the live ERP dashboard of MM Core on the phone.
+ * NERP - the live ERP dashboard of NERP on the phone.
  *
- * The dashboard is served by "MM Core Mobile" on the company PC (same Wi-Fi). The first
+ * The dashboard is served by "NERP Mobile" on the company PC (same Wi-Fi). The first
  * start asks to scan the QR code shown on the PC (Google code scanner - no camera
  * permission needed); the link contains the address of the PC and the pairing key. The
- * dashboard itself is the web page of MM Core Mobile in a WebView; it is read-only and
+ * dashboard itself is the web page of NERP Mobile in a WebView; it is read-only and
  * updates live. Only the paired PC is shown inside the app, other links open the browser.
  */
 public class MainActivity extends Activity {
-    private static final String PREFS = "mmcore";
+    private static final String PREFS = "nerp";
     private static final String BASE = "base";
     private static final int NAVY = Color.parseColor("#0b1f3a");
     private static final int BLUE = Color.parseColor("#0a6ed1");
@@ -86,9 +86,9 @@ public class MainActivity extends Activity {
         int p = dp(24);
         box.setPadding(p, dp(48), p, p);
 
-        TextView logo = text("MM · CORE", 30, Color.WHITE, true);
+        TextView logo = text("NERP", 30, Color.WHITE, true);
         TextView sub = text("Live dashboard", 16, Color.parseColor("#9fb4cf"), false);
-        TextView how = text("1. On the PC start \"MM Core Mobile\" - a QR code appears.\n"
+        TextView how = text("1. On the PC start \"NERP Mobile\" - a QR code appears.\n"
                 + "2. This phone must be in the same Wi-Fi as the PC.\n"
                 + "3. Tap \"Scan QR code\" and point the camera at the code.", 15, Color.WHITE, false);
         how.setPadding(0, dp(32), 0, dp(24));
@@ -145,12 +145,12 @@ public class MainActivity extends Activity {
         if (!link.startsWith("http://") && !link.startsWith("https://")) link = "http://" + link;
         Uri u = Uri.parse(link);
         if (u.getHost() == null || u.getHost().isEmpty()) {
-            showSetup("This is not an MM Core Mobile link - scan the QR code on the PC.");
+            showSetup("This is not an NERP Mobile link - scan the QR code on the PC.");
             return;
         }
         String path = u.getPath() == null ? "" : u.getPath();
         if (!path.isEmpty() && !path.equals("/") && !path.startsWith("/m")) {
-            showSetup("This is not an MM Core Mobile link - scan the QR code on the PC.");
+            showSetup("This is not an NERP Mobile link - scan the QR code on the PC.");
             return;
         }
         base = u.getScheme() + "://" + u.getHost() + (u.getPort() > 0 ? ":" + u.getPort() : "");
@@ -169,13 +169,13 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(false);
         s.setAllowContentAccess(false);
-        s.setUserAgentString(s.getUserAgentString() + " MMCoreApp/1.0");
+        s.setUserAgentString(s.getUserAgentString() + " NERPApp/1.0");
         CookieManager.getInstance().setAcceptCookie(true);
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri u = req.getUrl();
-                if ("mmcore".equals(u.getScheme())) {                // links of the page: mmcore://rescan
+                if ("nerp".equals(u.getScheme())) {                // links of the page: nerp://rescan
                     showSetup(null);
                     return true;
                 }
@@ -208,7 +208,7 @@ public class MainActivity extends Activity {
         int p = dp(28);
         box.setPadding(p, p, p, p);
         box.addView(text("No connection to the PC", 22, Color.WHITE, true));
-        TextView t = text("Is the PC on, \"MM Core Mobile\" running and this phone in the same Wi-Fi?\n\n" + base
+        TextView t = text("Is the PC on, \"NERP Mobile\" running and this phone in the same Wi-Fi?\n\n" + base
                 + "\n(" + why + ")", 15, Color.parseColor("#c6d3e3"), false);
         t.setPadding(0, dp(16), 0, dp(24));
         box.addView(t);

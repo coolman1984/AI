@@ -1,6 +1,6 @@
 """HR customizing (Egypt).
 
-The legal rates below are the defaults delivered with MM Core; they are stored in
+The legal rates below are the defaults delivered with NERP; they are stored in
 the table hr_config and can be changed in transaction ZHR_CONF. CONFIRM THEM WITH
 THE COMPANY'S PAYROLL / TAX ADVISER BEFORE GO-LIVE - laws and ceilings change.
 

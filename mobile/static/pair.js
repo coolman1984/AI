@@ -1,4 +1,4 @@
-/* MM Core Mobile - pairing page (opens only on the PC itself) */
+/* NERP Mobile - pairing page (opens only on the PC itself) */
 "use strict";
 (() => {
   const $ = s => document.querySelector(s);
@@ -32,7 +32,7 @@
     alert((await post("/m/api/renew")).message); load();
   });
   $("#stop").addEventListener("click", async () => {
-    if (!confirm("Stop mobile access? The phones show 'no connection' until you start MM Core Mobile again.")) return;
+    if (!confirm("Stop mobile access? The phones show 'no connection' until you start NERP Mobile again.")) return;
     await post("/m/api/stop");
     document.querySelector("main").textContent = "Mobile access stopped. You can close this window.";
   });

@@ -345,7 +345,7 @@ def api_outlook(req, q):
 
 # ====================================================================== handler
 class Handler(BaseHTTPRequestHandler):
-    server_version = "MMCore/1.0"
+    server_version = "NERP/1.0"
     protocol_version = "HTTP/1.1"        # keep-alive: fewer threads and database opens
 
     def log_message(self, fmt, *args):  # quieter console

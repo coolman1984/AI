@@ -1,4 +1,4 @@
-# رفع برنامج MM Core على Google Play — خطوة بخطوة
+# رفع برنامج NERP على Google Play — خطوة بخطوة
 
 ## الملفات اللي هتحتاجها (موجودة في ملف التسليم)
 | الملف | لزمته |
@@ -23,7 +23,7 @@
 - أسهل طريقة: افتح **sites.google.com**، اعمل صفحة جديدة، انسخ فيها نص `PRIVACY_POLICY.md`، ودوس **Publish**، وخد الرابط.
 
 ## الخطوة ٣: اعمل البرنامج في الـ Console
-1. **Create app** ← الاسم: `MM Core - Live ERP Dashboard` ← اللغة: English ← **App** ← **Free**.
+1. **Create app** ← الاسم: `NERP - Live ERP Dashboard` ← اللغة: English ← **App** ← **Free**.
 2. علّم على الموافقات ودوس **Create app**.
 
 ## الخطوة ٤: بيانات المتجر (Store listing)
@@ -34,7 +34,7 @@
 ## الخطوة ٥: استبيانات المحتوى (App content)
 - **Privacy policy**: الرابط من الخطوة ٢.
 - **Ads**: No.
-- **App access**: اختار إن البرنامج محتاج "MM Core Mobile" على كمبيوتر الشركة، واكتب إن المراجع يقدر يشوف الشرح في الوصف.
+- **App access**: اختار إن البرنامج محتاج "NERP Mobile" على كمبيوتر الشركة، واكتب إن المراجع يقدر يشوف الشرح في الوصف.
 - **Content rating**: اختار Utility/Productivity، وجاوب **No** على كل الأسئلة.
 - **Target audience**: 18 سنة وأكبر.
 - **Data safety**: البرنامج **لا يجمع ولا يشارك أي بيانات** (الإجابات في `STORE_LISTING.md`).
@@ -49,12 +49,12 @@
 ## الخطوة ٧: النشر للكل
 1. بعد الـ 14 يوم: **Production ← Create new release** ← ارفع نفس الـ `app-release.aab` (أو نسخة أحدث).
 2. **Send for review**. المراجعة بتاخد من كام ساعة لكام يوم.
-3. أول ما يتوافق عليه، البرنامج يظهر على Google Play باسم **MM Core**، وأي حد يقدر ينزّله.
+3. أول ما يتوافق عليه، البرنامج يظهر على Google Play باسم **NERP**، وأي حد يقدر ينزّله.
 
 ## لو عايز تجرّب النهارده من غير المتجر
 1. ابعت `app-release.apk` لتليفونك الأندرويد (واتساب لنفسك أو كابل).
 2. افتحه من التليفون ← هيقولك "Install unknown apps" ← **Settings** ← فعّل **Allow from this source** ← ارجع ودوس **Install**.
-3. افتح البرنامج ← **Scan QR code** ← صوّر الـ QR اللي ظاهر على الكمبيوتر من "MM Core Mobile.bat".
+3. افتح البرنامج ← **Scan QR code** ← صوّر الـ QR اللي ظاهر على الكمبيوتر من "NERP Mobile.bat".
 
 ## التحديثات بعد كده
 - كل نسخة جديدة لازم تتوقّع بنفس المفتاح `mmcore-upload.jks` وكلمة السر اللي في `password.txt`.

@@ -1,1 +1,1 @@
-"""MM Core desktop client (MM Core Logon and Easy Access)."""
+"""NERP desktop client (NERP Logon and Easy Access)."""

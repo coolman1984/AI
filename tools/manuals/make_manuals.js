@@ -1,6 +1,6 @@
-/* MM Core - PowerPoint process manuals and test book.
+/* NERP - PowerPoint process manuals and test book.
    Input : JSON from `python -m qa.export` (catalog + last test run)
-   Output: web/static/manuals/PM_<process>.pptx and MM_Core_Process_Test_Book.pptx
+   Output: web/static/manuals/PM_<process>.pptx and NERP_Process_Test_Book.pptx
    Usage : node tools/manuals/make_manuals.js qa.json web/static/manuals
    Needs : pptxgenjs, react, react-dom, react-icons, sharp */
 "use strict";
@@ -18,7 +18,7 @@ const RUN = D.run || { processes: [], cases: 0, passed: 0, unit_tests: 0, unit_p
 const applyTheme = SKILL ? require(path.join(SKILL, "scripts/apply_theme.js")).applyTheme : null;
 
 const THEME = {
-  name: "MM Core Manual", headFontFace: "Calibri", bodyFontFace: "Calibri",
+  name: "NERP Manual", headFontFace: "Calibri", bodyFontFace: "Calibri",
   colors: { dk1: "1D2A3A", lt1: "FFFFFF", dk2: "0B2E59", lt2: "EEF2F7", accent1: "0A6ED1",
     accent2: "2E9E5B", accent3: "E9730C", accent4: "BB0000", accent5: "6A7D93", accent6: "3BA0E6",
     hlink: "0A6ED1", folHlink: "6A7D93" },
@@ -43,10 +43,10 @@ function newDeck(title) {
   pres.layout = "LAYOUT_WIDE";                     // 13.33 x 7.5 in
   pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
   pres.title = title;
-  pres.author = "MM Core QA";
-  pres.company = "MM Core";
+  pres.author = "NERP QA";
+  pres.company = "NERP";
   const C = pres.SchemeColor;
-  const foot = { text: { text: "MM Core  ·  " + title + "  ·  Test run " + runDate,
+  const foot = { text: { text: "NERP  ·  " + title + "  ·  Test run " + runDate,
     options: { x: 0.5, y: 7.02, w: 9, h: 0.3, fontSize: 10, color: C.accent5, margin: 0 } } };
   pres.defineSlideMaster({ title: "TITLE_DARK", background: { color: HX.dk2 },
     objects: [
@@ -317,7 +317,7 @@ async function save(pres, file) {
     const title = "Process Manual & Test Book";
     const pres = newDeck(title), C = pres.SchemeColor;
     pres.addSection({ title: "Overview" });
-    titleSlide(pres, C, "End-to-end process manual & test book", `All MM Core processes - flow, best-practice controls, test script and result`,
+    titleSlide(pres, C, "End-to-end process manual & test book", `All NERP processes - flow, best-practice controls, test script and result`,
       "Overview", [[`${RUN.passed}/${RUN.cases}`, "test cases passed"], [String(RUN.unit_tests), "automated tests"],
         [String(D.processes.length), "processes"], [runDate.slice(0, 10), "test run"]]);
     summarySlide(pres, C, "Overview");
@@ -330,7 +330,7 @@ async function save(pres, file) {
     }
     pres.addSection({ title: "Sign-off" });
     signoffSlide(pres, C, "Sign-off");
-    await save(pres, path.join(OUT, "MM_Core_Process_Test_Book.pptx"));
+    await save(pres, path.join(OUT, "NERP_Process_Test_Book.pptx"));
   }
   // one process manual per process
   for (const p of D.processes) {

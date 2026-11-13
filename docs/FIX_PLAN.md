@@ -1,4 +1,4 @@
-# MM Core — Detailed Fix and Build Plan
+# NERP — Detailed Fix and Build Plan
 
 Companion to `docs/ENGINEERING_REVIEW.md`. That file lists **what is wrong** and the evidence. This file gives, for every item, **exactly how to fix or build it**: the data model, the functions and their steps, the screens, the error messages, the edge cases, the migration of existing databases, the tests, and the acceptance criteria.
 
@@ -240,7 +240,7 @@ They come from `pp/seed.py` "period end of the current month" (`period_end.overh
 1. `run.py`:
    - configure `logging` to `data/mm_core.log` (rotating, 5 × 1 MB) plus the console;
    - wrap `connect` + `seed` in `try/except`;
-   - on error, log the traceback, then start a minimal server that serves one static page "MM Core could not start — details in data/mm_core.log" with the first line of the error, and open the browser on it (the user starts with `pythonw`, so there is no console);
+   - on error, log the traceback, then start a minimal server that serves one static page "NERP could not start — details in data/mm_core.log" with the first line of the error, and open the browser on it (the user starts with `pythonw`, so there is no console);
    - exit with code 1 when started with `--no-browser`.
 2. `web/server.py` `_dispatch`: on any non-business exception, log the traceback with a reference (time stamp + random 6 characters) and return `{"type": "E", "text": "Internal error - reference <ref> (see data/mm_core.log)"}` (also SEC-003).
 
@@ -1233,4 +1233,4 @@ Every structural change in this plan is a numbered migration step (5.3). Steps i
 - [ ] Migration step added for every schema change; tested on a copy of an existing database.
 - [ ] Messages use class/number; no message names a missing transaction.
 - [ ] README and, where the catalog changed, the PowerPoint manuals regenerated.
-- [ ] PR merged; zip delivered; `Start MM Core.bat` still starts the system.
+- [ ] PR merged; zip delivered; `Start NERP.bat` still starts the system.

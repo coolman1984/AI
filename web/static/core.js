@@ -1,4 +1,4 @@
-/* MM Core - shell, router, API, formatting, status bar, dialogs, ALV grid.
+/* NERP - shell, router, API, formatting, status bar, dialogs, ALV grid.
    Plain JavaScript, no libraries. */
 "use strict";
 
@@ -70,7 +70,7 @@ const App = (() => {
       res = await fetch(path, opt);
       data = await res.json();
     } catch (e) {
-      const err = { type: "E", text: "No connection to the MM Core server. Is run.py still running?" };
+      const err = { type: "E", text: "No connection to the NERP server. Is run.py still running?" };
       throw err;
     }
     if (res.status === 401 && data && data.logon && !retried && !path.startsWith("/api/sec/login")) {
@@ -106,13 +106,13 @@ const App = (() => {
       const u = h("input.f", { autocomplete: "username", value: S.lastUser || "", spellcheck: "false" });
       const p = h("input.f", { type: "password", autocomplete: "current-password" });
       const body = h("div.logon", null,
-        h("div.logon-brand", null, h("span.shell-logo", null, "MM", h("i", null, "·"), "CORE"), h("span", null, "AMS - ID & Authorization")),
+        h("div.logon-brand", null, h("span.shell-logo", null, "NERP"), h("span", null, "AMS - ID & Authorization")),
         h("div.form-grid", { style: { gridTemplateColumns: "1fr" } },
           h("div.field", null, h("label.req", null, "User"), h("div.val", null, u)),
           h("div.field", null, h("label.req", null, "Password"), h("div.val", null, p))),
         note ? h("div.logon-err", null, note) : null,
         S.demo ? h("div.note", null, "Demo system: ADMIN / admin, SALES1 / sales1, BUYER1 / buyer1, AP1 / ap1 ... (password = user name in small letters)") : null);
-      const r = await dialog("Log on to MM Core", body, [
+      const r = await dialog("Log on to NERP", body, [
         { label: "Unlock / Change password", value: () => ({ unlock: u.value }) },
         { label: "Log on", primary: true, value: () => ({ bname: u.value, password: p.value }) }]);
       if (!r) continue;
@@ -496,7 +496,7 @@ const App = (() => {
     $("#titlebar").hidden = home;
     $("#screen-title").textContent = def.title + (home ? "" : "");
     $("#status-tcode").textContent = home ? "" : def.tcode;
-    document.title = home ? "MM Core" : `${def.tcode} - ${def.title}`;
+    document.title = home ? "NERP" : `${def.tcode} - ${def.title}`;
     toolbar([]);
     try { await def.render(app, params); } catch (e) { err(e); }
   }
@@ -549,7 +549,7 @@ const App = (() => {
       if (k === "F3") return history.back();
       if (S.keys && S.keys[k]) S.keys[k]();
     });
-    // session window of the desktop client (MM Core Logon / Easy Access): ?session=1&user=..&sso=..
+    // session window of the desktop client (NERP Logon / Easy Access): ?session=1&user=..&sso=..
     const sp = new URLSearchParams(location.search);
     if (sp.get("session") === "1") {
       document.body.classList.add("gui-session");
@@ -593,13 +593,13 @@ const App = (() => {
       navigator.sendBeacon("/api/bye", new Blob([JSON.stringify({ tab })], { type: "text/plain" }));
     });
     $("#power-btn").addEventListener("click", async () => {
-      if (!await confirmBox("Stop MM Core", "Stop the MM Core server now? All data is already saved.", "Stop")) return;
+      if (!await confirmBox("Stop NERP", "Stop the NERP server now? All data is already saved.", "Stop")) return;
       try { await api("/api/shutdown", {}); } catch (e) {}
       $("#titlebar").hidden = true;
       toolbar([]);
       $("#app").innerHTML = "";
-      $("#app").append(h("div.stopped", null, h("h2", null, "MM Core is stopped"),
-        h("p.muted", null, "All data is saved. You can close this tab. To start again, double-click \u201CStart MM Core\u201D.")));
+      $("#app").append(h("div.stopped", null, h("h2", null, "NERP is stopped"),
+        h("p.muted", null, "All data is saved. You can close this tab. To start again, double-click \u201CStart NERP\u201D.")));
       msg("S", "Server stopped");
     });
   }

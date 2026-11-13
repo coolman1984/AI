@@ -1,4 +1,4 @@
-/* MM Core - Controlling (CO) screens */
+/* NERP - Controlling (CO) screens */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, ask, confirmBox, field, inp, sel, val, up, alv, register,

@@ -1,4 +1,4 @@
-/* MM Core - ERP Dashboard (separate window, opened by "MM Core Dashboard").
+/* NERP - ERP Dashboard (separate window, opened by "NERP Dashboard").
    Plain JavaScript; every card comes from /api/dash/overview (live data). */
 "use strict";
 (() => {
@@ -34,7 +34,7 @@ function money(v) {
   if (a >= 1e4) return nf1.format(v / 1e3) + "K";
   return nf0.format(v);
 }
-// display currency (same choice as the BI reports in MM Core: kept in this browser)
+// display currency (same choice as the BI reports in NERP: kept in this browser)
 let CUR = "EGP";
 try { CUR = localStorage.getItem("mm_dispcur") || "EGP"; } catch (e) { CUR = "EGP"; }
 const egp = v => money(v) + " " + CUR;
@@ -215,8 +215,8 @@ async function load() {
     CUR = d.currency || CUR;
     render(d);
   } catch (e) {
-    const box = h("div", { class: "err" }, (e && e.text) || "No connection to MM Core. Is it running?");
-    if (e && e.logon) box.append(" ", h("button", { class: "btn", on: { click: () => { window.open("/", "_blank"); } } }, "Log on in MM Core"),
+    const box = h("div", { class: "err" }, (e && e.text) || "No connection to NERP. Is it running?");
+    if (e && e.logon) box.append(" ", h("button", { class: "btn", on: { click: () => { window.open("/", "_blank"); } } }, "Log on in NERP"),
       " then ", h("button", { class: "btn", on: { click: load } }, "Retry"));
     $("#err").append(box);
   }

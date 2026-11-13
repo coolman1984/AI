@@ -1,10 +1,10 @@
-/* MM Core Mobile - the ERP dashboard on the phone, updated live (Server-Sent Events).
-   Plain JavaScript; reads /m/api/stream of the MM Core Mobile gateway on the PC. */
+/* NERP Mobile - the ERP dashboard on the phone, updated live (Server-Sent Events).
+   Plain JavaScript; reads /m/api/stream of the NERP Mobile gateway on the PC. */
 "use strict";
 (() => {
   const $ = s => document.querySelector(s);
   const app = $("#app");
-  const IN_APP = / MMCoreApp\//.test(navigator.userAgent);     // the Android app "MM Core"
+  const IN_APP = / NERPApp\//.test(navigator.userAgent);     // the Android app "NERP"
   let CUR = "EGP", es = null, last = null, prev = {}, pollTimer = null;
   try { CUR = localStorage.getItem("mm_m_cur") || "EGP"; } catch (e) { /* private mode */ }
   $("#cur").value = CUR;
@@ -113,7 +113,7 @@
     app.replaceChildren(view);
     last = d;
     $("#foot").replaceChildren(`Period ${d.period} · business date ${d.date} · ${d.currency_note || "amounts in EGP"} · update ${d.server_time}`,
-      IN_APP ? h("div", null, h("a", { href: "mmcore://rescan", class: "rescan" }, "Connect to another PC (scan a new QR code)")) : null);
+      IN_APP ? h("div", null, h("a", { href: "nerp://rescan", class: "rescan" }, "Connect to another PC (scan a new QR code)")) : null);
   }
 
   function status(state, text) {
@@ -124,8 +124,8 @@
     if (es) { es.close(); es = null; }
     status("off", "Not paired");
     app.replaceChildren(h("div", { class: "msg" }, h("h2", null, "Pair this phone"),
-      text || "On the PC: start 'MM Core Mobile' and scan the QR code with this phone's camera.",
-      IN_APP ? h("div", null, h("a", { href: "mmcore://rescan", class: "btn" }, "Scan the QR code")) : null));
+      text || "On the PC: start 'NERP Mobile' and scan the QR code with this phone's camera.",
+      IN_APP ? h("div", null, h("a", { href: "nerp://rescan", class: "btn" }, "Scan the QR code")) : null));
   }
 
   // ---------------------------------------------------------------- connection
@@ -161,7 +161,7 @@
   async function start() {
     await pairFromLink();
     try { if (!await loadOnce()) return; } catch (e) { status("off", "No connection to the PC"); app.replaceChildren(h("div", { class: "msg" }, h("h2", null, "No connection"),
-      "Is the PC on, MM Core Mobile running and this phone in the same Wi-Fi?", h("br"), h("button", { class: "btn", on: { click: start } }, "Try again"))); return; }
+      "Is the PC on, NERP Mobile running and this phone in the same Wi-Fi?", h("br"), h("button", { class: "btn", on: { click: start } }, "Try again"))); return; }
     connect();
   }
   $("#cur").addEventListener("change", () => {

@@ -1,14 +1,18 @@
-# Creates the MM Core icons on the Windows desktop (and in the Start menu).
+# Creates the NERP icons on the Windows desktop (and in the Start menu).
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $shell = New-Object -ComObject WScript.Shell
 $targets = @(
-  @{ Name = "MM Core Dashboard"; Bat = "MM Core Dashboard.bat"; Icon = "mm_dashboard.ico"; Text = "ERP dashboard (live KPIs)" },
-  @{ Name = "MM Core";           Bat = "Start MM Core.bat";     Icon = "mm_core.ico";      Text = "MM Core (browser)" },
-  @{ Name = "MM Core Logon";     Bat = "MM Core Logon.bat";     Icon = "mm_logon.ico";     Text = "MM Core Logon / Easy Access" },
-  @{ Name = "MM Core Mobile";    Bat = "MM Core Mobile.bat";    Icon = "mm_dashboard.ico"; Text = "Dashboard on the phone (QR code, live)" }
+  @{ Name = "NERP Dashboard"; Bat = "NERP Dashboard.bat"; Icon = "mm_dashboard.ico"; Text = "ERP dashboard (live KPIs)" },
+  @{ Name = "NERP";           Bat = "Start NERP.bat";     Icon = "mm_core.ico";      Text = "NERP (browser)" },
+  @{ Name = "NERP Logon";     Bat = "NERP Logon.bat";     Icon = "mm_logon.ico";     Text = "NERP Logon / Easy Access" },
+  @{ Name = "NERP Mobile";    Bat = "NERP Mobile.bat";    Icon = "mm_dashboard.ico"; Text = "Dashboard on the phone (QR code, live)" }
 )
-$folders = @([Environment]::GetFolderPath("Desktop"), (Join-Path ([Environment]::GetFolderPath("Programs")) "MM Core"))
+$folders = @([Environment]::GetFolderPath("Desktop"), (Join-Path ([Environment]::GetFolderPath("Programs")) "NERP"))
 foreach ($f in $folders) { if (-not (Test-Path $f)) { New-Item -ItemType Directory -Path $f | Out-Null } }
+# the program was renamed from "MM Core" to "NERP": remove the old shortcuts
+foreach ($f in @([Environment]::GetFolderPath("Desktop"), (Join-Path ([Environment]::GetFolderPath("Programs")) "MM Core"))) {
+  if (Test-Path $f) { Get-ChildItem -Path $f -Filter "MM Core*.lnk" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }
+}
 foreach ($t in $targets) {
   foreach ($f in $folders) {
     $lnk = $shell.CreateShortcut((Join-Path $f ($t.Name + ".lnk")))
@@ -22,4 +26,4 @@ foreach ($t in $targets) {
   Write-Host ("  created: " + $t.Name)
 }
 Write-Host ""
-Write-Host "The icons are on the desktop and in the Start menu (folder MM Core)."
+Write-Host "The icons are on the desktop and in the Start menu (folder NERP)."

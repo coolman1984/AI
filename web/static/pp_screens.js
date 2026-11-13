@@ -1,4 +1,4 @@
-/* MM Core - Production planning (PP) screens */
+/* NERP - Production planning (PP) screens */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, run, field, inp, sel, val, up, alv, register, go, toolbar,

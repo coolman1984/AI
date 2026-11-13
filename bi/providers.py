@@ -1,6 +1,6 @@
 """Info providers: each returns facts (one dict per record) with characteristics
 and key figures, read straight from the operational tables - no copy, always
-up to date. Amounts in cents, quantities in milli, like the rest of MM Core."""
+up to date. Amounts in cents, quantities in milli, like the rest of NERP."""
 import datetime
 
 from mm import util as mmclock

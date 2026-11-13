@@ -1,4 +1,4 @@
-"""API for the desktop client (MM Core Logon / Easy Access, folder gui/):
+"""API for the desktop client (NERP Logon / Easy Access, folder gui/):
 system information, the Easy Access menu tree with transaction texts, and the
 single sign-on of session windows."""
 import json
@@ -55,7 +55,7 @@ def gui_info(req, q):
     path = os.path.abspath(os.environ.get("MM_DB") or DEFAULT_DB)
     c = db()
     demo = bool(c.execute("SELECT COUNT(*) FROM plant").fetchone()[0])
-    return {"product": "MM Core", "db": path, "auth": getattr(getattr(req, "server", None), "auth", False),
+    return {"product": "NERP", "db": path, "auth": getattr(getattr(req, "server", None), "auth", False),
             "demo": demo, "port": req.server.server_address[1] if hasattr(req, "server") else None}
 
 

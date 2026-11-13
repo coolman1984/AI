@@ -1,4 +1,4 @@
-/* MM Core - Human Resources: personnel administration (PA40 / PA30 / PA20), organization
+/* NERP - Human Resources: personnel administration (PA40 / PA30 / PA20), organization
    (PPOME), time (PA61, PT50, ZLEAVE self-service), Egyptian payroll (PC00_M99_*),
    HR cockpit, headcount and customizing. */
 "use strict";
@@ -68,12 +68,12 @@ function empForm(m, e, ro) {
     allow_housing: inp({ value: e.allow_housing, w: "m" }), allow_other: inp({ value: e.allow_other, w: "m" }),
     ins_wage: inp({ value: e.ins_wage || "", w: "m", ph: "= contractual wage" }), iban: inp({ value: e.iban, w: "l", ph: "EG.. (29 characters)" }),
     si_no: inp({ value: e.si_no, w: "m" }), phone: inp({ value: e.phone, w: "m" }), email: inp({ value: e.email, w: "l" }),
-    bname: inp({ value: e.bname, w: "s", upper: true, ph: "MM Core user" }),
+    bname: inp({ value: e.bname, w: "s", upper: true, ph: "NERP user" }),
     waers: sel([["EGP", "EGP - Egyptian pound"], ["USD", "USD - US dollar"]], e.waers || "EGP") };
   if (ro) Object.values(f).forEach(x => { x.disabled = true; });
   const body = h("div", null,
     panel("Personal data (IT0002)", grid(field("Name", f.name, { req: true }), field("Name (Arabic)", f.name_ar), field("National ID (14 digits)", f.national_id),
-      field("Birth date", f.birth_date), field("Gender", f.gender), field("Phone", f.phone), field("E-mail", f.email), field("MM Core user", f.bname))),
+      field("Birth date", f.birth_date), field("Gender", f.gender), field("Phone", f.phone), field("E-mail", f.email), field("NERP user", f.bname))),
     panel("Organizational assignment (IT0001)", grid(field("Organizational unit", f.orgeh, { req: true }), field("Position", f.plans), field("Cost center", f.kostl),
       field("Job title", f.job), field("Employee group", f.persg), field("Employee subgroup", f.persk))),
     panel("Basic pay (IT0008) - per month in the pay currency", grid(field("Pay currency", f.waers), field("Basic salary", f.basic, { req: true }), field("Transport allowance", f.allow_transport),
@@ -229,7 +229,7 @@ register("PT50", { title: "Quota Overview (Annual Leave)", async render(app) {
 
 // ------------------------------------------------------------------ self-service
 register("ZLEAVE", { title: "My Leave and Payslips (Self-Service)", async render(app) {
-  const d = await run(() => api("/api/hrself")); if (!d) return app.append(note("Your MM Core user must be entered in your employee record (PA30, field 'MM Core user')."));
+  const d = await run(() => api("/api/hrself")); if (!d) return app.append(note("Your NERP user must be entered in your employee record (PA30, field 'NERP user')."));
   const m = { ANN: "Annual leave", CAS: "Casual leave", SIC: "Sick leave", UNP: "Unpaid leave" };
   const f = { awart: sel(Object.entries(m), "ANN"), begda: inp({ type: "date", value: today() }), endda: inp({ type: "date", value: today() }), reason: inp({ w: "l" }) };
   app.append(h("div.kpis", null, kpi(d.name, d.pernr, `${d.org_text} · ${d.position_text}`), kpi(`Leave ${d.quota.year}`, `${d.quota.remaining} days`, `of ${d.quota.entitlement} · requested ${d.quota.requested}`),

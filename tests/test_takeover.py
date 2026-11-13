@@ -49,7 +49,7 @@ class PurchasingWorkbook(unittest.TestCase):
         self.assertEqual(c.execute("SELECT COUNT(*) FROM vendor").fetchone()[0], 0)     # simulation keeps nothing
         r = dataimport.run_xlsx(c, book, "BUYER1", simulate=False)
         self.assertEqual((r["errors"], r["ok"]), (0, 21))
-        # legacy numbers: vendor V-1001 got an MM Core number, the old PO has two items and is released
+        # legacy numbers: vendor V-1001 got an NERP number, the old PO has two items and is released
         v = c.execute("SELECT * FROM vendor WHERE altkn='V-1001'").fetchone()
         self.assertTrue(v["lifnr"].startswith("1"))
         h = c.execute("SELECT * FROM po_header WHERE ihrez='PO-2026-0451'").fetchone()
@@ -58,7 +58,7 @@ class PurchasingWorkbook(unittest.TestCase):
         res = dataimport.verify_xlsx(c, book)
         self.assertTrue(res["all_ok"], res["differences"])
         po = [s for s in res["summary"] if s["sheet"].startswith("08")][0]
-        self.assertIn("file 249500.00 / MM Core 249500.00", po["control"])
+        self.assertIn("file 249500.00 / NERP 249500.00", po["control"])
         c.execute("UPDATE info_record SET brutto=4900 WHERE matnr='RM-1001'")
         res = dataimport.verify_xlsx(c, book)
         self.assertEqual([(d["field"], d["file"], d["system"]) for d in res["differences"]], [("price", "48.50", "49.00")])

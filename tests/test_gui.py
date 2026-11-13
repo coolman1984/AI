@@ -1,4 +1,4 @@
-"""Desktop client logic (MM Core Logon / Easy Access): system entries, command
+"""Desktop client logic (NERP Logon / Easy Access): system entries, command
 field, favorites, session URL and the menu served for the client."""
 import os
 import sys

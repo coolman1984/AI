@@ -1,4 +1,4 @@
-/* MM Core - transaction screens */
+/* NERP - transaction screens */
 "use strict";
 (() => {
 const { h, $, $$, api, msg, err, run, ask, confirmBox, field, inp, sel, val, up,
@@ -1310,8 +1310,8 @@ register("ZCOM", { title: "Office Integration (COM) - Test Cockpit", async rende
       { key: "received", label: "Received" }, { key: "from", label: "From" }, { key: "subject", label: "Subject" },
       { key: "attachments", label: "Attachments", type: "int" }] })); } } } }, "Read newest 15 mails")),
     field("Draft a mail", h("span.split", null, to, h("button.btn", { type: "button", on: { click: async () => {
-      const r = await run(() => api("/api/office/outlook-draft", { to: val(to), subject: "MM Core test mail",
-        html: "<p>This mail was created by MM Core through Outlook COM.</p>" }));
+      const r = await run(() => api("/api/office/outlook-draft", { to: val(to), subject: "NERP test mail",
+        html: "<p>This mail was created by NERP through Outlook COM.</p>" }));
       if (r) msg("S", r.message); } } }, "Open draft"))))),
   out);
 }});

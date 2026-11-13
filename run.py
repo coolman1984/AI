@@ -1,6 +1,6 @@
-"""Start MM Core:   python run.py   [options]
+"""Start NERP:   python run.py   [options]
 
-Normally started by double-clicking "Start MM Core.bat" (Windows): the server
+Normally started by double-clicking "Start NERP.bat" (Windows): the server
 runs hidden in the background, the browser opens, and the server stops by
 itself a few seconds after the last browser tab is closed.
 
@@ -58,8 +58,8 @@ def show_startup_error(host, port, err):
     """Serve one page that explains the problem (the server runs without a console)."""
     import html
     from http.server import BaseHTTPRequestHandler, HTTPServer
-    page = ("<!doctype html><meta charset='utf-8'><title>MM Core</title><body style='font-family:"
-            "Arial;margin:40px'><h2>MM Core could not start</h2><p>%s</p><p>Details are in "
+    page = ("<!doctype html><meta charset='utf-8'><title>NERP</title><body style='font-family:"
+            "Arial;margin:40px'><h2>NERP could not start</h2><p>%s</p><p>Details are in "
             "<code>data/mm_core.log</code>. Restore a backup with <code>run.py --restore</code> or "
             "load fresh demo data with <code>tools\\Reset - fresh demo data.bat</code>.</p>"
             % html.escape(str(err))).encode("utf-8")
@@ -84,7 +84,7 @@ def show_startup_error(host, port, err):
 
 
 def already_running(port):
-    """True if MM Core already answers on this port."""
+    """True if NERP already answers on this port."""
     try:
         with urllib.request.urlopen("http://127.0.0.1:%d/api/office/status" % port,
                                     timeout=2) as r:
@@ -94,7 +94,7 @@ def already_running(port):
 
 
 def stop_running(port):
-    """Ask a running MM Core to stop and wait until the port is free."""
+    """Ask a running NERP to stop and wait until the port is free."""
     import time
     try:
         req = urllib.request.Request("http://127.0.0.1:%d/api/shutdown" % port,
@@ -119,7 +119,7 @@ def _first_users(conn, db_path):
     note = os.path.join(os.path.dirname(os.path.abspath(db_path)), "first_login.txt")
     if pw:
         with open(note, "w", encoding="utf-8") as f:
-            f.write("MM Core - first logon\n\nUser: ADMIN\nOne-time password: %s\n\n"
+            f.write("NERP - first logon\n\nUser: ADMIN\nOne-time password: %s\n\n"
                     "You must choose a new password at the first logon. Delete this file "
                     "afterwards.\n" % pw)
         print("First logon: user ADMIN, one-time password in", note)
@@ -128,7 +128,7 @@ def _first_users(conn, db_path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="MM Core - inventory management")
+    ap = argparse.ArgumentParser(description="NERP - inventory management")
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--reset", action="store_true")
@@ -146,7 +146,7 @@ def main():
     a = ap.parse_args()
     db_path = os.environ.get("MM_DB") or DEFAULT_DB
     if a.host not in ("127.0.0.1", "localhost", "::1") and not os.environ.get("MM_ALLOW_REMOTE"):
-        print("Remote access is refused: MM Core has no network-grade login yet. "
+        print("Remote access is refused: NERP has no network-grade login yet. "
               "Use the default host 127.0.0.1 (or set MM_ALLOW_REMOTE=1 at your own risk).")
         sys.exit(2)
     if a.backup:
@@ -161,7 +161,7 @@ def main():
 
     # Second click while it is already running: just open the browser again.
     if not a.reset and already_running(a.port):
-        print("MM Core is already running - opening the browser.")
+        print("NERP is already running - opening the browser.")
         if not (a.no_browser or a.no_open):
             webbrowser.open("http://localhost:%d" % a.port)
         return
@@ -192,7 +192,7 @@ def main():
         conn.close()
     except Exception as e:      # the server would start on a broken database: show why
         log.exception("start-up failed")
-        print("MM Core could not start:", e)
+        print("NERP could not start:", e)
         if a.no_browser or a.no_open:
             sys.exit(1)
         show_startup_error(a.host, a.port, e)
@@ -215,7 +215,7 @@ def main():
         print("No free port found between %d and %d." % (a.port, a.port + 19))
         sys.exit(1)
     url = "http://localhost:%d" % port
-    print("MM Core is running: %s" % url)
+    print("NERP is running: %s" % url)
     print("It stops automatically when you close the browser tab."
           if auto_stop else "Press Ctrl+C to stop.")
     if not (a.no_browser or a.no_open):
@@ -224,7 +224,7 @@ def main():
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
-    print("MM Core stopped.")
+    print("NERP stopped.")
 
 
 if __name__ == "__main__":

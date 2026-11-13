@@ -1,11 +1,11 @@
-# Google Play store listing - MM Core
+# Google Play store listing - NERP
 
-**App name (30):** MM Core - Live ERP Dashboard
+**App name (30):** NERP - Live ERP Dashboard
 
-**Short description (80):** Your MM Core ERP dashboard on the phone - live sales, finance, stock and HR.
+**Short description (80):** Your NERP ERP dashboard on the phone - live sales, finance, stock and HR.
 
 **Full description:**
-MM Core shows the live dashboard of your company's MM Core ERP on your phone.
+NERP shows the live dashboard of your company's NERP ERP on your phone.
 
 • Sales this month, net sales vs plan, operating profit and bank balance at a glance
 • Finance: receivables, overdue items, payables, net income, gross margin
@@ -17,12 +17,12 @@ MM Core shows the live dashboard of your company's MM Core ERP on your phone.
 • Open approvals and the latest invoices
 • Amounts in EGP, USD or EUR
 
-LIVE: the moment anything is saved in MM Core, the figures on the phone update by themselves.
+LIVE: the moment anything is saved in NERP, the figures on the phone update by themselves.
 
 SAFE: read-only - nothing can be changed from the phone. Only phones paired with the secret QR
 code of your PC see the data, and the key can be renewed at any time. No accounts, no ads, no tracking.
 
-How to connect: start "MM Core Mobile" on the MM Core PC, connect the phone to the same Wi-Fi,
+How to connect: start "NERP Mobile" on the NERP PC, connect the phone to the same Wi-Fi,
 open the app and scan the QR code.
 
 **Category:** Business  ·  **Contact e-mail:** (your e-mail)  ·  **Privacy policy URL:** (public link to PRIVACY_POLICY.md)

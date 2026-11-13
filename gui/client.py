@@ -1,5 +1,5 @@
 """Desktop client logic (no user interface): system list (logon pad entries),
-starting / stopping the local MM Core server of a system, logon, Easy Access
+starting / stopping the local NERP server of a system, logon, Easy Access
 menu, favorites and opening transaction sessions in their own window."""
 import json
 import os
@@ -16,11 +16,11 @@ SYSTEMS_FILE = os.path.join(DATA, "logon_systems.json")
 FAV_FILE = os.path.join(DATA, "gui_favorites.json")
 
 DEFAULT_SYSTEMS = [
-    dict(name="01. MM Core ERP (PRD)", sid="PRD", db="data/mm.db", port=8080, empty=False,
-         text="Production / demo data - the database of 'Start MM Core.bat'"),
-    dict(name="02. MM Core Training (TRN)", sid="TRN", db="data/training.db", port=8081, empty=False,
+    dict(name="01. NERP ERP (PRD)", sid="PRD", db="data/mm.db", port=8080, empty=False,
+         text="Production / demo data - the database of 'Start NERP.bat'"),
+    dict(name="02. NERP Training (TRN)", sid="TRN", db="data/training.db", port=8081, empty=False,
          text="Training system with fresh demo data"),
-    dict(name="03. MM Core Sandbox - empty (SBX)", sid="SBX", db="data/sandbox.db", port=8082, empty=True,
+    dict(name="03. NERP Sandbox - empty (SBX)", sid="SBX", db="data/sandbox.db", port=8082, empty=True,
          text="Empty system for your own tests and the data import (ZIMPORT)"),
     dict(name="04. My Company - LIVE (real data)", sid="LIV", db="data/company.db", port=8083, empty=True,
          text="Your real company data: starts empty, load it with ZIMPORT (Excel workbooks) - never demo data"),
@@ -152,7 +152,7 @@ def start(system, wait=120, progress=None, keep_running=True):
     if st == "running":
         return False
     if st != "stopped":
-        raise ClientError("Port %d is used by another MM Core system - change the port of '%s'"
+        raise ClientError("Port %d is used by another NERP system - change the port of '%s'"
                           % (port, system["name"]))
     db = _abs(system["db"])
     os.makedirs(os.path.dirname(db), exist_ok=True)

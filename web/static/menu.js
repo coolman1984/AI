@@ -1,4 +1,4 @@
-/* MM Core - SAP Easy Access style menu tree (left side) */
+/* NERP - SAP Easy Access style menu tree (left side) */
 "use strict";
 (() => {
 const { h, $, $$, go, S } = App;

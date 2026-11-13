@@ -1,6 +1,6 @@
-/* MM Core - Arabic process guide (right-to-left).
+/* NERP - Arabic process guide (right-to-left).
    Usage: node tools/manuals/make_manual_ar.js qa.json web/static/manuals [pptx-skill-dir]
-   Output: MM_Core_Process_Guide_AR.pptx */
+   Output: NERP_Process_Guide_AR.pptx */
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -16,7 +16,7 @@ const D = JSON.parse(fs.readFileSync(IN, "utf8"));
 const RUN = D.run || { processes: [] };
 const applyTheme = SKILL ? require(path.join(SKILL, "scripts/apply_theme.js")).applyTheme : null;
 const THEME = {
-  name: "MM Core Arabic Guide", headFontFace: "Arial", bodyFontFace: "Arial",
+  name: "NERP Arabic Guide", headFontFace: "Arial", bodyFontFace: "Arial",
   colors: { dk1: "1D2A3A", lt1: "FFFFFF", dk2: "0B2E59", lt2: "EEF2F7", accent1: "0A6ED1",
     accent2: "2E9E5B", accent3: "E9730C", accent4: "BB0000", accent5: "5B6B7D", accent6: "3BA0E6",
     hlink: "0A6ED1", folHlink: "5B6B7D" },
@@ -40,9 +40,9 @@ const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE";
 pres.rtlMode = true;
 pres.theme = { headFontFace: "Arial", bodyFontFace: "Arial" };
-pres.title = "دليل العمليات بالعربي - MM Core";
-pres.author = "MM Core";
-pres.company = "MM Core";
+pres.title = "دليل العمليات بالعربي - NERP";
+pres.author = "NERP";
+pres.company = "NERP";
 const C = pres.SchemeColor;
 
 pres.defineSlideMaster({ title: "AR_DARK", background: { color: HX.dk2 },
@@ -56,7 +56,7 @@ pres.defineSlideMaster({ title: "AR_CONTENT", background: { color: HX.lt1 }, mar
   objects: [
     { placeholder: { options: { name: "title", type: "title", x: M, y: 0.3, w: W - 2 * M, h: 0.8, fontSize: 30, bold: true,
       color: C.text2, valign: "middle", align: "right", rtlMode: true, margin: 0 }, text: "" } },
-    { text: { text: "MM Core  ·  دليل العمليات بالعربي", options: { x: 3.3, y: 7.02, w: 9.53, h: 0.3, fontSize: 10,
+    { text: { text: "NERP  ·  دليل العمليات بالعربي", options: { x: 3.3, y: 7.02, w: 9.53, h: 0.3, fontSize: 10,
       color: C.accent5, align: "right", rtlMode: true, margin: 0 } } },
   ],
   slideNumber: { x: 0.5, y: 7.02, w: 0.6, h: 0.3, fontSize: 10, color: HX.accent5, align: "left" } });
@@ -338,7 +338,7 @@ function closing() {
   for (const id of [...ORDER, "H2R", "AMS"]) await processSection(D.processes.find(p => p.id === id));
   closing();
   fs.mkdirSync(OUT, { recursive: true });
-  const file = path.join(OUT, "MM_Core_Process_Guide_AR.pptx");
+  const file = path.join(OUT, "NERP_Process_Guide_AR.pptx");
   await pres.writeFile({ fileName: file });
   if (applyTheme) await applyTheme(file, THEME);
   console.log("wrote", file);

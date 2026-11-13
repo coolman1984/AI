@@ -1,6 +1,6 @@
-"""Draws the Windows icons of MM Core (standard library only) into icons/*.ico:
-mm_core.ico (one-click start), mm_logon.ico (MM Core Logon), mm_dashboard.ico
-(MM Core Dashboard). Every icon holds 16 ... 256 px PNG images, drawn with
+"""Draws the Windows icons of NERP (standard library only) into icons/*.ico:
+mm_core.ico (one-click start), mm_logon.ico (NERP Logon), mm_dashboard.ico
+(NERP Dashboard). Every icon holds 16 ... 256 px PNG images, drawn with
 4x4 supersampling.   python tools/icons/make_icons.py"""
 import math
 import os

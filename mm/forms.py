@@ -63,7 +63,7 @@ def _page(title, number, meta, partner, head, lines, total="", extra="", sign=No
             "<h1>%s %s</h1><table class='meta'>%s</table>"
             "<table class='it'><thead><tr>%s</tr></thead><tbody>%s</tbody></table>"
             "<div class='tot'>%s</div>%s<div class='sign'>%s</div>"
-            "<div class='foot'>Printed by MM Core - %s</div></body></html>"
+            "<div class='foot'>Printed by NERP - %s</div></body></html>"
             % (e(title), e(number), CSS, e(_company()), partner, e(title), e(number), meta_rows, th, tr,
                total, extra, sg, e(now_ts())))
 

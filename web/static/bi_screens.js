@@ -1,4 +1,4 @@
-/* MM Core - BI (Business Intelligence): report portal with category bar and mega
+/* NERP - BI (Business Intelligence): report portal with category bar and mega
    menu, analysis workspace (Data / Layout / grid) with tabs, P/L structure,
    drill-down, filters, period variables, calculations, exceptions, saved views,
    and the executive KPI cockpit. */
@@ -57,7 +57,7 @@ function draw(app) {
       on: { click: e => { e.preventDefault(); openReport(app, r.id); } } }, ico(r.featured), r.title)))));
   toolbar([{ label: "KPI cockpit", primary: true, onClick: () => openReport(app, "EXE_KPI") }, { label: "PL Detail", onClick: () => openReport(app, "CO_PL_DETAIL") }]);
   shell(app, h("div.bi-content", null, h("h2.bi-cat", null, cat.category), mega,
-    h("div.note", null, "Every report reads the live data of MM Core (no copy). Open a report, then change rows, columns, filters and period; 'Save view' keeps your layout under 'My views'.")));
+    h("div.note", null, "Every report reads the live data of NERP (no copy). Open a report, then change rows, columns, filters and period; 'Save view' keeps your layout under 'My views'.")));
 }
 
 async function openReport(app, rid) {
