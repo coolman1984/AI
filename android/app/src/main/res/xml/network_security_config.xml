@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dashboard is served by MM Core Mobile on the company PC in the local Wi-Fi
+     (http://192.168.x.x:8090), which has no TLS certificate: plain HTTP is allowed. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
