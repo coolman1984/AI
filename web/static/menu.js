@@ -183,7 +183,7 @@ MENU.push(
     ["Monitoring", ["SM04", "SM20"]],
     ["Data Transfer (go-live)", ["ZIMPORT"]],
   ]]);
-// N-ERP order of the top-level areas
+// order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
   "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
 MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));

@@ -215,25 +215,69 @@ register("ZPRINT", { title: "Print Forms and Output Log", async render(app, para
 // ------------------------------------------------------------------ ZIMPORT
 register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
   const m = await run(() => api("/api/import/objects")); if (!m) return;
-  const obj = sel(m.objects.map(o => [o.obj, `${o.order}. ${o.text}`]), m.objects[0].obj, { w: "l" });
-  const file = h("input", { type: "file", accept: ".csv,text/csv" }), text = h("textarea.f", { rows: 8, spellcheck: "false", style: { width: "100%", fontFamily: "monospace" } });
-  const cols = h("code"), out = h("div");
-  const showCols = () => { cols.textContent = (m.objects.find(o => o.obj === obj.value) || {}).columns || ""; };
-  obj.addEventListener("change", showCols); showCols();
-  file.addEventListener("change", () => { const f = file.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { text.value = rd.result; }; rd.readAsText(f, "utf-8"); });
-  app.append(panel("File", grid(field("Object (load in this order)", obj), field("CSV file (UTF-8, comma or semicolon)", file)),
-    h("div", null, "Columns: ", cols), text,
-    note(`Every line goes through the normal transaction with all checks. Open items, balances and stock are posted against the takeover account 399999 - current balance ${App.fmtAmt(m.takeover)} (must be 0 when the load is complete).`)), out);
-  const exec = async simulate => {
-    if (!val(text)) return msg("E", "Choose a file or paste the CSV text", "ZI", "002");
-    if (!simulate && !await confirmBox("Post import", "Post every correct line now?")) return;
-    const r = await run(() => api("/api/import/run", { obj: obj.value, text: text.value, simulate })); if (!r) return;
-    msg(r.errors ? "W" : "S", r.message); out.innerHTML = "";
-    out.append(alv({ rows: r.log, title: simulate ? "Simulation log" : "Import log", rowClass: x => x.status === "E" ? ".neg" : "",
-      columns: [{ key: "line", label: "Line", type: "int" }, { key: "status", label: "Status" }, { key: "key", label: "Key" }, { key: "message", label: "Message" }] }));
+  const obj = sel([["ALL", "Excel workbook - all sheets (in the right order)"]].concat(m.objects.map(o => [o.obj, `${o.order}. ${o.text}`])), "ALL", { w: "l" });
+  const file = h("input", { type: "file", accept: ".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const text = h("textarea.f", { rows: 6, spellcheck: "false", style: { width: "100%", fontFamily: "monospace" } });
+  const cols = h("code"), out = h("div"), fname = h("b");
+  let xlsx = null;                                   // base64 of the chosen Excel file
+  const showCols = () => {
+    const o = m.objects.find(x => x.obj === obj.value);
+    cols.textContent = o ? `${o.columns}  (Excel sheet "${o.sheet}")` : "every MM Core sheet of the workbook, e.g. 01 Plants ... 08 Open purchase orders";
   };
-  toolbar([{ label: "Template", onClick: async () => { const r = await run(() => api("/api/import/template/" + obj.value)); if (r) text.value = r.csv; } },
-    { label: "Simulate", key: "F8", primary: true, onClick: () => exec(true) }, { label: "Post", onClick: () => exec(false) }]);
+  obj.addEventListener("change", showCols); showCols();
+  file.addEventListener("change", () => {
+    const f = file.files[0]; if (!f) return;
+    const rd = new FileReader();
+    fname.textContent = f.name;
+    if (/\.xlsx$/i.test(f.name)) {
+      rd.onload = () => { const b = new Uint8Array(rd.result); let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+        xlsx = btoa(s); text.value = ""; text.placeholder = `Excel file ${f.name} (${Math.round(f.size / 1024)} KB) - ready`; };
+      rd.readAsArrayBuffer(f);
+    } else { xlsx = null; rd.onload = () => { text.value = rd.result; }; rd.readAsText(f, "utf-8"); }
+  });
+  const download = async example => {
+    const r = await run(() => api("/api/import/workbook/PUR" + (example ? "?example=1" : ""))); if (!r) return;
+    const bin = atob(r.xlsx), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const a = h("a", { href: URL.createObjectURL(new Blob([u8], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })), download: r.name });
+    document.body.append(a); a.click(); a.remove(); msg("S", `${r.name} downloaded - fill it in Excel and choose it here`);
+  };
+  app.append(panel("1. Excel template", h("div", null,
+      h("button.btn", { type: "button", on: { click: () => download(false) } }, "⇩ Purchasing template (empty, for your data)"), " ",
+      h("button.btn", { type: "button", on: { click: () => download(true) } }, "⇩ Purchasing example (sample data, for the sandbox)")),
+    note("The workbook has a guide in Arabic (sheet '00 Start here'), one sheet per data type with dropdown lists, and a 'Control' sheet with the counts and the open order value to compare.")),
+    panel("2. File", grid(field("Object (load in this order)", obj), field("Excel workbook (.xlsx) or CSV file", file)), h("div", null, "File: ", fname),
+      h("div", null, "Columns: ", cols), text,
+      note(`Simulate = test every line with all checks, nothing is saved. Post = save every correct line (wrong lines are listed and skipped). Compare = after the upload, every value of the file is compared with MM Core. Open items, balances and stock are posted against the takeover account 399999 - current balance ${App.fmtAmt(m.takeover)} (must be 0 when the load is complete).`)), out);
+  const body = extra => {
+    if (xlsx) return Object.assign({ obj: obj.value, xlsx }, extra);
+    if (obj.value === "ALL") { msg("E", "Choose an Excel workbook (.xlsx) for 'all sheets', or choose one object for a CSV file", "ZI", "002"); return null; }
+    if (!val(text)) { msg("E", "Choose a file or paste the CSV text", "ZI", "002"); return null; }
+    return Object.assign({ obj: obj.value, text: text.value }, extra);
+  };
+  const exec = async simulate => {
+    const b = body({ simulate }); if (!b) return;
+    if (!simulate && !await confirmBox("Post import", "Post every correct line now? (run Simulate first)")) return;
+    const r = await run(() => api(xlsx ? "/api/import/xlsx" : "/api/import/run", b)); if (!r) return;
+    msg(r.errors ? "W" : "S", r.message); out.innerHTML = "";
+    if (r.sheets) out.append(alv({ rows: r.sheets, title: "Per sheet", columns: [{ key: "sheet", label: "Sheet" }, { key: "ok", label: "OK", type: "int", sum: true }, { key: "errors", label: "Errors", type: "int", sum: true }] }));
+    out.append(alv({ rows: r.log, title: (simulate ? "Simulation log" : "Import log") + " - S = OK, E = error (fix it in the file)", rowClass: x => x.status === "E" ? ".neg" : "",
+      columns: [{ key: "sheet", label: "Sheet" }, { key: "line", label: "Line (Excel row)" }, { key: "status", label: "Status" }, { key: "key", label: "Number in MM Core" }, { key: "message", label: "Message" }] }));
+  };
+  const compare = async () => {
+    const b = body({}); if (!b) return;
+    const r = await run(() => api("/api/import/verify", b)); if (!r) return;
+    msg(r.all_ok ? "S" : "W", r.message); out.innerHTML = "";
+    out.append(h("div.kpis", null, h("div.kpi", null, h("div.k", null, "Result"), h("div.v" + (r.all_ok ? ".pos" : ".neg"), null, r.all_ok ? "✔ Match" : "✖ Differences")),
+      h("div.kpi", null, h("div.k", null, "Values compared"), h("div.v", null, String(r.checked))),
+      h("div.kpi", null, h("div.k", null, "Missing / different"), h("div.v" + (r.differences.length ? ".neg" : ""), null, String(r.differences.length)))));
+    out.append(alv({ rows: r.summary.map(s => Object.assign({}, s, { st: s.control_ok === false ? "✖" : (s.control_ok ? "✔" : "-") })), title: "Control totals per sheet (compare with the 'Control' sheet of the workbook)",
+      columns: [{ key: "sheet", label: "Sheet" }, { key: "lines", label: "Lines in file", type: "int" }, { key: "found", label: "Found in MM Core", type: "int" }, { key: "control", label: "Control" }, { key: "st", label: "OK" }] }));
+    out.append(alv({ rows: r.differences, title: "Missing or different values (empty = everything matches)", rowClass: () => ".neg", emptyText: "No differences - every value of the file is in MM Core",
+      columns: [{ key: "sheet", label: "Sheet" }, { key: "line", label: "Line" }, { key: "key", label: "Record" }, { key: "field", label: "Field" }, { key: "file", label: "Value in file" }, { key: "system", label: "Value in MM Core" }, { key: "status", label: "Status" }] }));
+  };
+  toolbar([{ label: "CSV template", onClick: async () => { if (obj.value === "ALL") return download(false); const r = await run(() => api("/api/import/template/" + obj.value)); if (r) { xlsx = null; text.value = r.csv; } } },
+    { label: "Simulate", key: "F8", primary: true, onClick: () => exec(true) }, { label: "Post", onClick: () => exec(false) },
+    { label: "Compare file with system", onClick: compare }]);
 } });
 
 // ------------------------------------------------------------------ withholding tax

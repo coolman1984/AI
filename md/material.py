@@ -66,6 +66,45 @@ def _conv(f, v):
     return str(v).strip().upper() if f not in ("maktx", "bismt", "prdha", "lgpbe") else str(v).strip()
 
 
+def load_custom_groups(conn):
+    """material groups (md_matgroup) and purchasing groups (pur_ekgrp) maintained by the
+    customer are added to the configured lists (OMSF / OME4)."""
+    from pur.config import PURCH_GROUPS
+    for r in conn.execute("SELECT matkl, text FROM md_matgroup"):
+        MATERIAL_GROUPS[r["matkl"]] = r["text"]
+    for r in conn.execute("SELECT ekgrp, text FROM pur_ekgrp"):
+        PURCH_GROUPS[r["ekgrp"]] = r["text"]
+
+
+def save_material_group(conn, matkl, text):
+    """OMSF: material group (key max. 9 characters A-Z 0-9 -)."""
+    matkl = (matkl or "").strip().upper()
+    if not re.fullmatch(r"[A-Z0-9][A-Z0-9\-]{0,8}", matkl):
+        raise MMError("Material group %s: 1-9 characters A-Z 0-9 -" % matkl, "M3", "360")
+    if not (text or "").strip():
+        raise MMError("Enter a description for material group %s" % matkl, "M3", "361")
+    with transaction(conn):
+        conn.execute("INSERT OR REPLACE INTO md_matgroup VALUES (?,?)", (matkl, text.strip()[:40]))
+    MATERIAL_GROUPS[matkl] = text.strip()[:40]
+    return matkl
+
+
+def save_purch_group(conn, ekgrp, text):
+    """OME4: purchasing group = buyer or buying team (key 3 characters)."""
+    from pur.config import PURCH_GROUPS
+    ekgrp = (ekgrp or "").strip().upper()
+    if ekgrp.isdigit():
+        ekgrp = ekgrp.zfill(3)
+    if not re.fullmatch(r"[A-Z0-9]{3}", ekgrp):
+        raise MMError("Purchasing group %s: exactly 3 characters A-Z 0-9 (e.g. 005)" % ekgrp, "M3", "362")
+    if not (text or "").strip():
+        raise MMError("Enter the buyer / description of purchasing group %s" % ekgrp, "M3", "363")
+    with transaction(conn):
+        conn.execute("INSERT OR REPLACE INTO pur_ekgrp VALUES (?,?)", (ekgrp, text.strip()[:40]))
+    PURCH_GROUPS[ekgrp] = text.strip()[:40]
+    return ekgrp
+
+
 def attr(mtart):
     a = MATERIAL_TYPE_ATTR.get((mtart or "").upper())
     if not a:

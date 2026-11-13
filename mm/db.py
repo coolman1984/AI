@@ -137,6 +137,7 @@ def connect(path=None):
 
 def migrate_schema(conn):
     conn.executescript(SCHEMA)
+    conn.execute("CREATE TABLE IF NOT EXISTS sys_setting (key TEXT PRIMARY KEY, value TEXT)")
     from co.schema import CO_SCHEMA, CO_NUMBER_RANGES, MM_COLUMN_ADDS
     from fi.schema import FI_SCHEMA, FI_COLUMN_ADDS
     from fi.config import CHART, NUMBER_RANGES as FI_RANGES
@@ -188,6 +189,8 @@ def migrate_schema(conn):
                      " VALUES (?,?,?,?,?,?,?)", (k, v[0], v[1], v[2], v[3], v[4], v[5]))
     from .migrations import migrate
     migrate(conn)
+    from md.material import load_custom_groups
+    load_custom_groups(conn)
     # FS00 accounts created by the user are known to the MM texts / P&L classification
     from .config import GL_ACCOUNTS, PNL_ACCOUNTS
     for r in conn.execute("SELECT hkont, txt, typ FROM gl_account"):

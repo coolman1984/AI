@@ -22,6 +22,8 @@ DEFAULT_SYSTEMS = [
          text="Training system with fresh demo data"),
     dict(name="03. MM Core Sandbox - empty (SBX)", sid="SBX", db="data/sandbox.db", port=8082, empty=True,
          text="Empty system for your own tests and the data import (ZIMPORT)"),
+    dict(name="04. My Company - LIVE (real data)", sid="LIV", db="data/company.db", port=8083, empty=True,
+         text="Your real company data: starts empty, load it with ZIMPORT (Excel workbooks) - never demo data"),
 ]
 DEFAULT_FAVORITES = [
     dict(type="tx", tcode="ZBI"), dict(type="tx", tcode="ZBI_DASH"), dict(type="tx", tcode="MMBE"),
@@ -51,6 +53,11 @@ def load_systems():
         with open(SYSTEMS_FILE, encoding="utf-8") as f:
             s = json.load(f)
             if isinstance(s, list) and s:
+                have = {x.get("sid") for x in s}
+                ports = {int(x.get("port") or 0) for x in s}
+                for d in DEFAULT_SYSTEMS:                  # new standard systems of later versions
+                    if d["sid"] not in have and d["port"] not in ports:
+                        s.append(dict(d))
                 return s
     except (OSError, ValueError):
         pass
@@ -152,7 +159,7 @@ def start(system, wait=120, progress=None, keep_running=True):
     env = dict(os.environ, MM_DB=db)
     args = [_python(), os.path.join(ROOT, "run.py"), "--port", str(port)]
     args += ["--no-browser", "--keep-running"] if keep_running else ["--no-open"]
-    if system.get("empty") and not os.path.exists(db):
+    if system.get("empty"):                     # real-data / sandbox systems never get demo data
         args.append("--empty")
     log = open(os.path.join(DATA, "server_%s.log" % system["sid"]), "a", encoding="utf-8")
     flags = 0x08000000 if os.name == "nt" else 0           # CREATE_NO_WINDOW

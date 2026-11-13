@@ -27,7 +27,7 @@ CUST_SALES = ["spart", "bzirk", "kdgrp", "konda", "kalks", "vsbed", "vwerk", "in
               "inco2", "zterm", "ktgrd", "taxkd", "waers"]
 VEND_GENERAL = ["name", "name2", "street", "pstlz", "city", "land", "telf1", "email",
                 "stcd1", "stceg", "bankn", "bankl", "iban", "swift"]
-VEND_COMPANY = ["akont", "zterm", "zwels", "reprf", "witht", "busab"]
+VEND_COMPANY = ["akont", "zterm", "zwels", "reprf", "witht", "busab", "altkn"]
 VEND_PURCH = ["ekorg", "waers", "minbw", "webre", "verkf", "lfabc", "ekgrp", "plifz",
               "inco1", "inco2"]
 BLOCKS_C = ["sperr", "aufsd", "lifsd", "faksd"]

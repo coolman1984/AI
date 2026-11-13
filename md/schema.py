@@ -41,6 +41,7 @@ MD_COLUMN_ADDS = {
         ("zwels", "TEXT DEFAULT 'T'"), ("xzver", "INTEGER DEFAULT 0"),
         ("erdat", "TEXT"), ("ernam", "TEXT")],
     "vendor": [  # LFA1 / LFB1 / LFM1
+        ("altkn", "TEXT"),                  # LFB1-ALTKN previous (legacy) account number
         ("name2", "TEXT DEFAULT ''"), ("street", "TEXT DEFAULT ''"),
         ("pstlz", "TEXT DEFAULT ''"), ("telf1", "TEXT DEFAULT ''"),
         ("email", "TEXT DEFAULT ''"), ("stceg", "TEXT DEFAULT ''"),
@@ -57,6 +58,8 @@ MD_COLUMN_ADDS = {
 }
 
 MD_SCHEMA = """
+CREATE TABLE IF NOT EXISTS md_matgroup (    -- OMSF material groups added by the customer (data takeover)
+    matkl TEXT PRIMARY KEY, text TEXT);
 CREATE TABLE IF NOT EXISTS md_marm (         -- MARM units of measure
     matnr TEXT, meinh TEXT, umrez INTEGER NOT NULL, umren INTEGER NOT NULL,
     ean11 TEXT DEFAULT '', PRIMARY KEY (matnr, meinh));
