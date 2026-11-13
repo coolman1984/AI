@@ -152,6 +152,12 @@ on the pairing page disconnects every phone. The first time, Windows may ask to 
 network: choose **Private networks**. The PC must be on and MM Core Mobile running (it does not need
 MM Core itself to be open). Outside the Wi-Fi (mobile data) the phone cannot reach the PC.
 
+### Android app "MM Core" (Google Play)
+
+`android/` holds the Android app: scan the QR code once, then the live dashboard opens like any
+app. Build and Google Play publishing: `android/README.md`, store texts and privacy policy:
+`android/play/`. The signing key is never stored in git.
+
 ## Desktop client - MM Core Logon (like SAP Logon / SAP GUI)
 
 Double-click **`MM Core Logon.bat`** (needs Python from python.org with "tcl/tk" - ticked by default).

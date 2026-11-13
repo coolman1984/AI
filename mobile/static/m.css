@@ -56,3 +56,5 @@ button.btn { background: var(--blue); color: #fff; border: 0; border-radius: 10p
 .btn.danger { background: var(--red); margin-left: 6px; }
 .card p { font-size: 13.5px; }
 #db { white-space: normal; word-break: break-all; text-align: right; font-weight: 500; }
+.foot a.rescan { color: var(--blue); display: inline-block; margin-top: 8px; }
+.msg a.btn { display: inline-block; background: var(--blue); color: #fff; border-radius: 10px; padding: 10px 16px; margin-top: 12px; text-decoration: none; }

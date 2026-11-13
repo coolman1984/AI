@@ -4,6 +4,7 @@
 (() => {
   const $ = s => document.querySelector(s);
   const app = $("#app");
+  const IN_APP = / MMCoreApp\//.test(navigator.userAgent);     // the Android app "MM Core"
   let CUR = "EGP", es = null, last = null, prev = {}, pollTimer = null;
   try { CUR = localStorage.getItem("mm_m_cur") || "EGP"; } catch (e) { /* private mode */ }
   $("#cur").value = CUR;
@@ -111,7 +112,8 @@
     prev = now;
     app.replaceChildren(view);
     last = d;
-    $("#foot").textContent = `Period ${d.period} · business date ${d.date} · ${d.currency_note || "amounts in EGP"} · update ${d.server_time}`;
+    $("#foot").replaceChildren(`Period ${d.period} · business date ${d.date} · ${d.currency_note || "amounts in EGP"} · update ${d.server_time}`,
+      IN_APP ? h("div", null, h("a", { href: "mmcore://rescan", class: "rescan" }, "Connect to another PC (scan a new QR code)")) : null);
   }
 
   function status(state, text) {
@@ -122,7 +124,8 @@
     if (es) { es.close(); es = null; }
     status("off", "Not paired");
     app.replaceChildren(h("div", { class: "msg" }, h("h2", null, "Pair this phone"),
-      text || "On the PC: start 'MM Core Mobile' and scan the QR code with this phone's camera."));
+      text || "On the PC: start 'MM Core Mobile' and scan the QR code with this phone's camera.",
+      IN_APP ? h("div", null, h("a", { href: "mmcore://rescan", class: "btn" }, "Scan the QR code")) : null));
   }
 
   // ---------------------------------------------------------------- connection
