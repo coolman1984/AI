@@ -62,10 +62,11 @@ def create_po(conn, data, user):
                          (lifnr, (it.get("matnr") or "").upper())).fetchone())]
         ebeln = str(next_number(conn, "PO"))
         conn.execute("INSERT INTO po_header (ebeln,lifnr,bedat,ernam,erdat,bsart,ekorg,ekgrp,"
-                     "zterm,waers,angnr) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                     "zterm,waers,angnr,ihrez) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                      (ebeln, lifnr, bedat, user, now_ts(), data.get("bsart") or "NB", "1000",
                       ekgrp, data.get("zterm") or v["zterm"],
-                      (data.get("waers") or v["waers"] or LOCAL_CURRENCY).upper(), data.get("angnr")))
+                      (data.get("waers") or v["waers"] or LOCAL_CURRENCY).upper(), data.get("angnr"),
+                      (data.get("ihrez") or "")[:35] or None))
         for n, it in enumerate(items, start=1):
             ebelp = n * 10
             matnr = (it.get("matnr") or "").upper() or None

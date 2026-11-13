@@ -114,6 +114,8 @@ PROCESSES = [
              ("P2P-22", "Price variance blocks payment until MRBR", "MIRO MRBR F110", "Invoice blocked, payment refused, released by a second person", ["test_controls.Tolerance.test_price_variance_blocks_payment_until_mrbr"]),
              ("P2P-23", "Three quotations or a reason for a new source", "ME21N ME49 ME29N", "PO refused without quotations; with a reason it needs release R1", ["test_golive.Quotations.test_new_source_above_limit_needs_three_quotations_or_reason"]),
              ("P2P-24", "Print forms and output log", "ZPRINT ME23N", "Every form prints; output logged, PO marked printed", ["test_golive.Forms.test_every_form_renders_and_output_is_logged"]),
+             ("P2P-25", "Purchasing data takeover with the Excel workbook", "ZIMPORT", "Template with guide, dropdowns and control sheet; whole workbook simulated and posted in the right order; old vendor / PO numbers kept; file = system compared field by field", ["test_takeover.PurchasingWorkbook.test_example_loads_verifies_and_detects_differences", "test_takeover.PurchasingWorkbook.test_errors_point_to_sheet_and_excel_row", "test_takeover.PurchasingWorkbook.test_template_has_guide_dropdowns_and_control", "test_takeover.Xlsx.test_write_read_roundtrip_dates_and_codes", "test_takeover.Http.test_upload_and_compare_over_http"]),
+             ("P2P-26", "Real-data system never gets demo data", "Start MM Core LIVE", "An empty system started again stays empty", ["test_takeover.RealDataSystem.test_empty_system_never_gets_demo_data"]),
          ]),
     # ------------------------------------------------------------------ Plan to produce
     dict(id="PTP", folder="5", module="PP", map="ZPP_PROCESS", version="2.1",

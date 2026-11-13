@@ -137,6 +137,20 @@ Sales & CRM, Controlling (cost centers plan / actual), Analytics and Tasks (open
 Every card links to its transaction; it refreshes every 2 minutes. It starts the system if
 needed and stops it again when the window is closed. Inside MM Core: transaction **ZDASH**.
 
+## Real company data - start with purchasing (Excel)
+
+- **Start MM Core LIVE (real data).bat** (or "04. My Company - LIVE" in MM Core Logon) opens a separate,
+  empty system (`data/company.db`, port 8083). It never gets demo data; the demo stays in "Start MM Core.bat".
+- **ZIMPORT** (Administration > Data Transfer): download the **Purchasing template** (Excel) - guide in Arabic,
+  one sheet each for plants, storage locations, material groups, buyers, vendors, materials, vendor prices
+  (info records) and open purchase orders, dropdown lists and a Control sheet. The **Purchasing example**
+  has sample data to practise in the sandbox first.
+- Choose the filled workbook, **Simulate** (every line checked, nothing saved; errors with sheet and Excel row),
+  **Post**, then **Compare file with system**: every value of the file is compared with MM Core, with control
+  totals (lines found, open purchase order value) to tick off against the Control sheet.
+- Old vendor numbers are kept (field "Old vendor no.") and can be used in the later sheets; old purchase
+  order numbers are kept as "your reference" of the new orders.
+
 ## MM Core Mobile - the dashboard on your phone (live)
 
 1. Double-click **MM Core Mobile.bat** (or the desktop icon "MM Core Mobile"). A page with a QR code opens on the PC.

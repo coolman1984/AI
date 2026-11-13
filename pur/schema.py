@@ -5,7 +5,8 @@ PUR_COLUMN_ADDS = {
                   ("ekgrp", "TEXT DEFAULT '001'"), ("frgke", "TEXT DEFAULT ''"),
                   ("frgzu", "TEXT DEFAULT ''"), ("frgst", "TEXT DEFAULT ''"),
                   ("angnr", "TEXT"), ("zterm", "TEXT"), ("waers", "TEXT DEFAULT 'EGP'"),
-                  ("printed", "INTEGER DEFAULT 0"), ("rfq_reason", "TEXT DEFAULT ''")],
+                  ("printed", "INTEGER DEFAULT 0"), ("rfq_reason", "TEXT DEFAULT ''"),
+                  ("ihrez", "TEXT")],                     # your reference (legacy PO number)
     "po_item": [("eindt", "TEXT"), ("knttp", "TEXT DEFAULT ''"), ("kostl", "TEXT"),
                 ("aufnr", "TEXT"), ("sakto", "TEXT"), ("txz01", "TEXT"),
                 ("matkl", "TEXT"), ("meins", "TEXT"), ("banfn", "TEXT"),
@@ -19,6 +20,8 @@ PUR_COLUMN_ADDS = {
 }
 
 PUR_SCHEMA = """
+CREATE TABLE IF NOT EXISTS pur_ekgrp (       -- OME4 purchasing groups added by the customer
+    ekgrp TEXT PRIMARY KEY, text TEXT);
 CREATE TABLE IF NOT EXISTS pr_item (        -- EBAN purchase requisition
     banfn TEXT, bnfpo INTEGER, bsart TEXT DEFAULT 'NB', matnr TEXT, txz01 TEXT,
     matkl TEXT, menge INTEGER NOT NULL, meins TEXT, werks TEXT, lgort TEXT,

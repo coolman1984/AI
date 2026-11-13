@@ -18,13 +18,24 @@ def _d(days_ago):
     return (ANCHOR[0] - datetime.timedelta(days=days_ago)).isoformat()
 
 
+def mark_no_demo(conn):
+    """a system for real company data (run.py --empty): demo data is never loaded into it,
+    also not when it is started again while it is still empty."""
+    conn.execute("INSERT OR REPLACE INTO sys_setting VALUES ('no_demo', '1')")
+
+
+def no_demo(conn):
+    r = conn.execute("SELECT value FROM sys_setting WHERE key='no_demo'").fetchone()
+    return bool(r and r[0] == "1")
+
+
 def seed(conn, business_date=None):
     """Full demo: CO master data, ~4 months of MM history, then the CO plan
     and one complete CO sample month (see co/seed.py).
     All or nothing: the whole demo is one transaction, so a failure leaves an
     empty database (seeded again on the next start), never a half-filled one.
     business_date fixes "today" for the demo (tests use a fixed date)."""
-    if conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0]:
+    if conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0] or no_demo(conn):
         return None
     from .db import transaction
     old = mmclock.set_clock(business_date) if business_date else None

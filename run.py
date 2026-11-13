@@ -6,7 +6,7 @@ itself a few seconds after the last browser tab is closed.
 
 Options:
   --reset          delete the database and load fresh demo data
-  --empty          with --reset: start with an empty system (no demo data)
+  --empty          an empty system for real data (no demo data, also on later starts)
   --port N         port (default 8080)
   --no-browser     do not open the browser
   --keep-running   do not stop when the browser tabs are closed
@@ -184,7 +184,9 @@ def main():
         if not integrity_ok(conn):
             raise RuntimeError("The database file %s is damaged - restore a backup "
                                "(run.py --restore data/backup/...)" % db_path)
-        if not a.empty and seed.seed(conn) is not None:
+        if a.empty:
+            seed.mark_no_demo(conn)                 # real data: never demo data in this database
+        elif seed.seed(conn) is not None:
             print("Demo data loaded.")
         _first_users(conn, db_path)
         conn.close()

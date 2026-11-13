@@ -155,6 +155,53 @@ def imp_run(req, q):
     return dataimport.run(db(), req.body["obj"], req.body["text"], req.user, req.body.get("simulate", True) is not False)
 
 
+def _xlsx_body(b):
+    import base64
+    import binascii
+    try:
+        data = base64.b64decode(b.get("xlsx") or "", validate=True)
+    except (binascii.Error, ValueError):
+        raise MMError("The Excel file could not be read - choose it again", "ZI", "008")
+    if not data:
+        raise MMError("Choose the Excel file", "ZI", "002")
+    if len(data) > 30 * 1024 * 1024:
+        raise MMError("The Excel file is larger than 30 MB - split it", "ZI", "009")
+    return data
+
+
+@route("POST", "/api/import/xlsx")
+def imp_xlsx(req, q):
+    """the Excel workbook: all MM Core sheets in the loading order (obj = ALL) or one object"""
+    b = req.body
+    only = (b.get("obj") or "ALL").upper()
+    return dataimport.run_xlsx(db(), _xlsx_body(b), req.user, b.get("simulate", True) is not False,
+                               None if only == "ALL" else only)
+
+
+@route("POST", "/api/import/verify")
+def imp_verify(req, q):
+    """compare the file with MM Core field by field (after the upload)"""
+    b = req.body
+    if b.get("xlsx"):
+        only = (b.get("obj") or "ALL").upper()
+        return dataimport.verify_xlsx(db(), _xlsx_body(b), None if only == "ALL" else only)
+    require(b, "obj", "text")
+    return dataimport.verify(db(), b["obj"], b["text"])
+
+
+@route("GET", "/api/import/workbook/(?P<area>[A-Za-z]+)")
+def imp_workbook(req, q, area):
+    """Excel template of a business area (PUR = purchasing); example=1 with sample data"""
+    import base64
+    from mm import templates
+    if area.upper() != "PUR":
+        raise MMError("Templates exist for: PUR (purchasing)", "ZI", "030")
+    ex = q.get("example") in ("1", "true", "X")
+    data = templates.purchasing_workbook(example=ex)
+    return {"name": "MM_Core_Purchasing_%s.xlsx" % ("EXAMPLE" if ex else "Template"),
+            "xlsx": base64.b64encode(data).decode("ascii")}
+
+
 # ------------------------------------------------------------------ withholding tax
 @route("GET", "/api/fi/wht")
 def fi_wht(req, q):
