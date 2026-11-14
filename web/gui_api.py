@@ -55,7 +55,8 @@ def gui_info(req, q):
     path = os.path.abspath(os.environ.get("MM_DB") or DEFAULT_DB)
     c = db()
     demo = bool(c.execute("SELECT COUNT(*) FROM plant").fetchone()[0])
-    return {"product": "NERP", "db": path, "auth": getattr(getattr(req, "server", None), "auth", False),
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))     # the program folder of this copy
+    return {"product": "NERP", "db": path, "root": root, "auth": getattr(getattr(req, "server", None), "auth", False),
             "demo": demo, "port": req.server.server_address[1] if hasattr(req, "server") else None}
 
 

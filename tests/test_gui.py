@@ -62,5 +62,37 @@ class Client(unittest.TestCase):
                          "run tools/gui/export_tcodes.js to refresh web/static/tcodes.json")
 
 
+class OldCopyRunning(unittest.TestCase):
+    """Start NERP.bat of a new version while an older copy (another folder) still runs on the
+    same port: the old program must be replaced, not just opened in the browser."""
+
+    def test_server_reports_its_folder_and_start_decides(self):
+        import run
+        import web.server as S
+        httpd = S.serve("127.0.0.1", 0, auto_stop=False, auth=False)
+        port = httpd.server_address[1]
+        import threading
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        try:
+            info = run.running_info(port)
+            self.assertEqual(os.path.normcase(info["root"]), os.path.normcase(run.ROOT))
+            self.assertEqual(run.start_decision(info, run.ROOT), "open")              # same copy: open it
+            self.assertEqual(run.start_decision(dict(info, root="C:/old/NERP_v23"), run.ROOT), "restart")
+            self.assertEqual(run.start_decision({"product": "NERP"}, run.ROOT), "restart")   # old version: no folder
+            self.assertEqual(run.start_decision(None, run.ROOT), "start")
+            self.assertFalse(C.old_copy(info))                                         # NERP Logon: same copy
+            self.assertTrue(C.old_copy(dict(info, root="C:/old/NERP_v23")))
+            self.assertTrue(C.old_copy({"product": "NERP"}))
+            import time
+            run.stop_running(port)                                                     # the old copy can be stopped
+            t0 = time.time()
+            while run.already_running(port) and time.time() - t0 < 10:
+                time.sleep(0.2)
+            self.assertFalse(run.already_running(port))
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()

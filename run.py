@@ -83,6 +83,42 @@ def show_startup_error(host, port, err):
     srv.serve_forever()
 
 
+def running_info(port):
+    """what runs on the port: the info of a NERP server (with its program folder), {} for an
+    old NERP version without that info, None if nothing (no NERP) answers."""
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:%d/api/gui/info" % port, timeout=2) as r:
+            d = json.loads(r.read().decode("utf-8"))
+            if isinstance(d, dict) and d.get("product"):
+                return d
+    except Exception:  # noqa - old version or nothing running
+        pass
+    return {"product": "NERP (older version)"} if already_running(port) else None
+
+
+def start_decision(info, root):
+    """start: nothing runs; open: this copy runs already; restart: another / older copy runs"""
+    if not info:
+        return "start"
+    r = info.get("root")
+    if r and os.path.normcase(os.path.abspath(r)) == os.path.normcase(os.path.abspath(root)):
+        return "open"
+    return "restart"
+
+
+def _message(text):
+    print(text)
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+        w = tk.Tk()
+        w.withdraw()
+        messagebox.showwarning("NERP", text)
+        w.destroy()
+    except Exception:  # noqa - no Tk: the console / log is all we have
+        pass
+
+
 def already_running(port):
     """True if NERP already answers on this port."""
     try:
@@ -97,8 +133,8 @@ def stop_running(port):
     """Ask a running NERP to stop and wait until the port is free."""
     import time
     try:
-        req = urllib.request.Request("http://127.0.0.1:%d/api/shutdown" % port,
-                                     data=b"{}", method="POST")
+        req = urllib.request.Request("http://127.0.0.1:%d/api/shutdown" % port, data=b"{}", method="POST",
+                                     headers={"Content-Type": "application/json"})   # the server wants JSON
         urllib.request.urlopen(req, timeout=3).read()
     except Exception:
         pass
@@ -159,12 +195,26 @@ def main():
         print("Database restored from", a.restore, "->", restore(a.restore, db_path))
         return
 
-    # Second click while it is already running: just open the browser again.
-    if not a.reset and already_running(a.port):
-        print("NERP is already running - opening the browser.")
-        if not (a.no_browser or a.no_open):
-            webbrowser.open("http://localhost:%d" % a.port)
-        return
+    # Second click while it is already running: just open the browser again - but only if it is
+    # this copy of NERP. An older copy (other folder, e.g. the previous version) is stopped first,
+    # otherwise the browser would show the old program.
+    if not a.reset:
+        info = running_info(a.port)
+        decision = start_decision(info, ROOT)
+        if decision == "open":
+            print("NERP is already running - opening the browser.")
+            if not (a.no_browser or a.no_open):
+                webbrowser.open("http://localhost:%d" % a.port)
+            return
+        if decision == "restart":
+            print("Another copy of NERP (%s) runs on port %d - stopping it and starting this one (%s)."
+                  % ((info or {}).get("root") or "older version", a.port, ROOT))
+            stop_running(a.port)
+            if already_running(a.port):
+                _message("Another copy of NERP is still running on port %d (%s) and could not be stopped.\n"
+                         "Close it (log off in NERP Logon or restart the PC) and start NERP again."
+                         % (a.port, (info or {}).get("root") or "older version"))
+                return
 
     if a.reset and already_running(a.port):
         stop_running(a.port)
