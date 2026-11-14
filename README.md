@@ -83,6 +83,23 @@ The Controlling menu is grouped like a big SAP installation: 1 Common, 2 Budget,
 | KP97 | Copy the cost center plan to another year with a % change |
 | ZCO_SIM | Profit simulation: price, volume, material, labor and overhead changes, with the break-even volume |
 
+## Purchasing in depth (numbered menu 1-1 ... 8-4)
+
+The Procurement menu is grouped: 1 Common, 2 Planning, 3 Sourcing, 4 Purchase order, 5 Import,
+6 Services, 7 Receipt & invoice, 8 Reports. New functions:
+
+| Code | What it does |
+|---|---|
+| ZPUR_CONF | Purchasing configuration: purchasing org, groups, document types, approval limits, tolerances, import cost types, accounts |
+| ZPUR_CLOSE | Purchasing month-end: requisitions and POs to release, late deliveries, service sheets, import costs, goods not invoiced, blocked invoices, MM period |
+| ZIMP01 / ZIMP02 / ZIMP03 | Import file for a foreign PO with letter of credit (LC number, bank, amount, cash cover %, port, ETA, bill of lading); workbench and overview |
+| ZLC01 | Open the LC: the margin moves from the bank to LC margin deposits (116000); released when the LC is settled |
+| ZIMP_COST | Import costs (customs, freight, insurance, clearing agent, bank charges, inland transport) paid from the bank or owed to a service provider, collected on 193500 |
+| ZIMP_LAND | Landed cost: the collected costs are added to the stock value of the received goods by value (test run first) |
+| ML81N | Service entry sheet: the work done on a service PO; a second person accepts it and only then the cost is posted |
+| ME91F | Delivery reminders: late PO items with reminder level 1 / 2 / final and reminder letters per vendor |
+| ZPUR_PRICE | Purchase price history of a material: every PO price with change %, min / average / max, agreed info record prices |
+
 ## Financial Accounting in depth (numbered menu 1-1 ... 9-3)
 
 The FI menu is grouped the same way: 1 Common, 2 G/L, 3 Receivables, 4 Payables, 5 Bank & cash,

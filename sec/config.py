@@ -58,6 +58,7 @@ OBJECTS = {
 ROUTE_OBJECTS = (
     ("POST", r"/api/sd/order/[0-9]+/release", "V_KNKK_FRE", None),
     ("POST", r"/api/pur/(pr|po)/release", "M_EINK_FRG", "frgco"),
+    ("POST", r"/api/pur/ses/(accept|reject)", "M_EINK_FRG", None),
     ("POST", r"/api/fi/mrbr", "M_RBKP_FRE", None),
     ("POST", r"/api/fi/f110(/delete|/exclude)?", "F_REGU_BUK", None),
     ("POST", r"/api/fi/ob52", "F_BKPF_BUP", None),

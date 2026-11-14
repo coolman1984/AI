@@ -36,6 +36,10 @@ def inbox(conn, user, everything=False):
                               "GROUP BY banfn").fetchall():
             add("PR release", b["banfn"], "Purchase requisition (%s)" % (b["afnam"] or ""), b["badat"],
                 amt_out(int(b["v"] or 0)), "ME55", b["afnam"])
+        for v in conn.execute("SELECT s.*, i.txz01 FROM svc_entry s JOIN po_item i ON i.ebeln=s.ebeln AND "
+                              "i.ebelp=s.ebelp WHERE s.status='P' ORDER BY s.lblni").fetchall():
+            add("Service entry", v["lblni"], "Service %s (PO %s) - %s" % (v["txz01"] or "", v["ebeln"], v["text"]),
+                v["budat"], amt_out(v["amount"]), "ML81N", v["created_by"])
     if can("V_KNKK_FRE"):
         for k in conn.execute("SELECT k.vbeln, k.audat, k.netwr, k.ernam, k.credit_note, c.name FROM "
                               "sd_vbak k LEFT JOIN customer c USING (kunnr) WHERE k.cmgst='B' "
