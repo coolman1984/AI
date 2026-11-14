@@ -69,6 +69,20 @@ CREATE TABLE IF NOT EXISTS dunning_run (    -- F150 MHNK
 CREATE TABLE IF NOT EXISTS bank_statement ( -- FF67 FEBKO/FEBEP
     id INTEGER PRIMARY KEY AUTOINCREMENT, hbkid TEXT, azdat TEXT, aznum TEXT,
     ssbtr INTEGER, esbtr INTEGER, lines TEXT, docs TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS fi_cheque (         -- cheques received (notes receivable) / issued (notes payable)
+    id INTEGER PRIMARY KEY AUTOINCREMENT, dir TEXT, chqno TEXT, bank TEXT, koart TEXT, partner TEXT,
+    amount INTEGER, due TEXT, budat TEXT, status TEXT, belnr TEXT, gjahr INTEGER, col_belnr TEXT,
+    bnc_belnr TEXT, text TEXT, usnam TEXT, ts TEXT, UNIQUE (dir, bank, chqno));
+CREATE TABLE IF NOT EXISTS fi_recurring (      -- FBD1 recurring entry documents
+    id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, first TEXT, last TEXT, lines TEXT,
+    active INTEGER NOT NULL DEFAULT 1, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS fi_recurring_run (  -- F.14 postings of the recurring documents
+    id INTEGER PRIMARY KEY AUTOINCREMENT, rec_id INTEGER, gjahr INTEGER, perio INTEGER, belnr TEXT,
+    fi_gjahr INTEGER, usnam TEXT, ts TEXT, UNIQUE (rec_id, gjahr, perio));
+CREATE TABLE IF NOT EXISTS fi_parked (         -- FV50 parked documents (posted by a second person, FBV0)
+    id INTEGER PRIMARY KEY AUTOINCREMENT, budat TEXT, bktxt TEXT, xblnr TEXT, lines TEXT, amount INTEGER,
+    status TEXT NOT NULL DEFAULT 'P', parked_by TEXT, parked_ts TEXT, posted_by TEXT, posted_ts TEXT,
+    belnr TEXT, gjahr INTEGER);
 """
 
 FI_NUMBER_RANGE_PREFIX = "FI_"

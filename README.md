@@ -83,6 +83,22 @@ The Controlling menu is grouped like a big SAP installation: 1 Common, 2 Budget,
 | KP97 | Copy the cost center plan to another year with a % change |
 | ZCO_SIM | Profit simulation: price, volume, material, labor and overhead changes, with the break-even volume |
 
+## Financial Accounting in depth (numbered menu 1-1 ... 9-3)
+
+The FI menu is grouped the same way: 1 Common, 2 G/L, 3 Receivables, 4 Payables, 5 Bank & cash,
+6 Assets, 7 Tax, 8 Closing, 9 Reports. New functions:
+
+| Code | What it does |
+|---|---|
+| ZCHQ_IN | Post-dated cheque from a customer: clears the selected invoices into notes receivable (115000), or on account |
+| ZCHQ_OUT | Cheque to a vendor: pays the selected invoices into notes payable (165000) |
+| ZCHQ | Cheque register with due dates and overdue flag: collected (to the bank 113100), cashed, bounced (the customer owes again) |
+| FBCJ | Petty cash journal (100000): cash from / to the bank, expenses with cost center, receipts; running cash book; cash never below zero |
+| FBD1 / FBD3 / F.14 | Recurring entries (rent, fees): defined once, posted once per month with a test run |
+| FV50 / FBV0 / FBV3 | Parked documents: checked but not posted; a second person posts them (approval inbox ZINBOX) |
+| F.27 | Statement of account for a customer or vendor: opening, every item with running balance, closing |
+| ZFI_CLOSE | FI closing management: recurring, parked, cheques due, accruals, depreciation, FX, GR/IR, VAT, statements, period - in order with status |
+
 ## Financial statement by business area / profit center - ZFS_BAPC
 
 Selection screen like SAP (G/L accounts, BS or PL, ledger 0L, business area or profit center

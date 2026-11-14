@@ -71,6 +71,10 @@ def inbox(conn, user, everything=False):
                 r["gjahr"], r["perio"], {"REL": "released", "POST": "posted"}[r["status"]],
                 "post it to accounting" if r["status"] == "REL" else "transfer the net pay"), r["run_ts"], None,
                 "PC00_M99_CIPE" if r["status"] == "REL" else "PC00_M99_DTA", r["usnam"])
+    if everything or auth.area_allowed(prof, "FI", "02"):
+        for p in conn.execute("SELECT * FROM fi_parked WHERE status='P' ORDER BY id").fetchall():
+            add("Parked document", p["id"], "G/L document %s (%s)" % (p["bktxt"], p["xblnr"] or "-"), p["budat"],
+                amt_out(p["amount"] or 0), "FBV0", p["parked_by"])
     for r in out:
         r["own"] = r["by"] == user        # two-person rule: own documents cannot be approved
     return out
