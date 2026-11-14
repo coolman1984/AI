@@ -153,6 +153,25 @@ Sales & CRM, Controlling (cost centers plan / actual), Analytics and Tasks (open
 Every card links to its transaction; it refreshes every 2 minutes. It starts the system if
 needed and stops it again when the window is closed. Inside NERP: transaction **ZDASH**.
 
+## Learn by example - a ceramic company (Excel)
+
+`docs/ceramic/` holds a complete example company, **Nile Ceramics** (fictional; floor and wall tiles),
+with a guide in Arabic (`docs/ceramic/README_AR.md`):
+
+- **`NERP_Ceramic_Example.xlsx`** - every master record and the opening balance in ZIMPORT sheets
+  (plants, cost centers, vendors, materials with sales prices, customers, vendor prices, an open
+  purchase order, open items, stock, fixed assets, bank and capital: 66 lines, takeover account 399999
+  ends at zero), plus the sheets to type in the screens (controlling set-up, sales prices, BOM, work
+  centers, routing, employees) and **the month of November step by step** (31 steps, every number given).
+- **`Start NERP Ceramic example.bat`** builds the finished company once (`data/ceramic.db`, port 8084):
+  the workbook + the whole month - purchasing, MRP, production with scrap, delivery, billing, payments,
+  payroll, depreciation, variances. Built by `python tools/demo/ceramic_example.py --system FILE`;
+  `tests/test_ceramic.py` checks that the numbers of the guide stay true.
+
+Fixed assets loaded with ZIMPORT are posted to their asset accounts against 399999 (acquisition value
+and accumulated depreciation), so they appear in the balance sheet. The G/L balance sheet can be named
+`GL balances` (Excel does not allow "/" in sheet names).
+
 ## Real company data - start with purchasing (Excel)
 
 - **Start NERP LIVE (real data).bat** (or "04. My Company - LIVE" in NERP Logon) opens a separate,

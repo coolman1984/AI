@@ -226,8 +226,20 @@ def _asset(conn, d, user):
     a = create_asset(conn, d.get("anlkl"), d.get("txt"), d.get("kostl"),
                      int(d["ndjar"]) if d.get("ndjar") else None, d.get("invnr") or "", user)
     anln1 = a["anln1"] if isinstance(a, dict) else a
-    legacy_transfer(conn, anln1, parse_date(d.get("aktiv")), parse_amount(d.get("apc")),
-                    parse_amount(d.get("accdep"), allow_zero=True), parse_date(d.get("takeover")))
+    apc, accdep = parse_amount(d.get("apc")), parse_amount(d.get("accdep"), allow_zero=True)
+    takeover = parse_date(d.get("takeover"))
+    legacy_transfer(conn, anln1, parse_date(d.get("aktiv")), d.get("apc"), d.get("accdep") or "0", takeover)
+    # the asset G/L accounts are reconciliation accounts (no G/L balance line possible):
+    # the opening values reach the balance sheet with this document against 399999
+    from fi.config import ASSET_CLASSES
+    from fi.document import write
+    cls = ASSET_CLASSES[conn.execute("SELECT anlkl FROM asset WHERE anln1=?", (anln1,)).fetchone()[0]]
+    lines = [dict(hkont=cls[1], anln1=anln1, anbwa="900", koart="A", amount=apc, sgtxt="Data takeover APC")]
+    if accdep:
+        lines.append(dict(hkont=cls[2], anln1=anln1, anbwa="900", koart="A", amount=-accdep,
+                          sgtxt="Data takeover depreciation"))
+    lines.append(dict(hkont=TAKEOVER, amount=-(apc - accdep), sgtxt="Data takeover asset %s" % anln1))
+    write(conn, "AA", takeover, user, "ZIMPORT", "Data takeover asset %s" % anln1, lines, tcode="ZIMPORT")
     return anln1
 
 
@@ -265,7 +277,7 @@ OBJECTS = [
      "anlkl,txt,kostl,ndjar,invnr,aktiv,apc,accdep,takeover", "Fixed assets", None),
 ]
 _BY = {o[0]: o for o in OBJECTS}
-_BY_SHEET = {o[4].lower(): o for o in OBJECTS}
+_BY_SHEET = {o[4].replace("/", "").lower(): o for o in OBJECTS}
 
 
 def objects():
@@ -327,7 +339,7 @@ def workbook_sheets(data):
         raise MMError(str(e), "ZI", "005")
     found = []
     for name, rows in book.items():
-        o = _BY_SHEET.get(name.strip().lower())
+        o = _BY_SHEET.get(name.strip().replace("/", "").lower())
         if o:
             found.append((o, name, rows))
     if not found:

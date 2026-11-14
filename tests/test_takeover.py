@@ -98,6 +98,31 @@ class PurchasingWorkbook(unittest.TestCase):
         self.assertIn("Lists!", sheet)
 
 
+class AssetTakeover(unittest.TestCase):
+    def test_imported_assets_reach_the_balance_sheet(self):
+        """ZIMPORT fixed assets: acquisition value and depreciation are posted to the asset
+        G/L accounts against 399999 (the recon accounts cannot take a G/L balance line)."""
+        from mm import dataimport as D
+        from qa.invariants import check
+        c = empty()
+        D.run(c, "COSTCENTER", "kostl,name,kosar\n4100,Press line,F\n", "QA", simulate=False)
+        r = D.run(c, "ASSET", "anlkl,txt,kostl,ndjar,aktiv,apc,accdep,takeover\n"
+                  "2000,Hydraulic press,4100,10,2024-01-15,2500000,450000,%s\n" % fixture.TODAY,
+                  "QA", simulate=False)
+        self.assertEqual((r["ok"], r["errors"]), (1, 0), r)
+
+        def bal(hkont):
+            return c.execute("SELECT COALESCE(SUM(CASE WHEN shkzg='S' THEN dmbtr ELSE -dmbtr END),0) "
+                             "FROM acc_doc_item WHERE hkont=?", (hkont,)).fetchone()[0]
+        self.assertEqual(bal("020000"), 250000000)            # acquisition value (debit)
+        self.assertEqual(bal("020100"), -45000000)            # accumulated depreciation (credit)
+        self.assertEqual(D.takeover_balance(c), -205000000)   # net book value against 399999
+        from fi.aa import values
+        anln1 = c.execute("SELECT anln1 FROM asset").fetchone()[0]
+        self.assertEqual(values(c, anln1, fixture.TODAY)[:2], (250000000, -45000000))   # sub-ledger once
+        self.assertEqual(check(c), [])
+
+
 class RealDataSystem(unittest.TestCase):
     def test_empty_system_never_gets_demo_data(self):
         from mm import seed
