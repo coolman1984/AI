@@ -125,6 +125,14 @@ def info(port, timeout=2):
         return None
 
 
+def old_copy(i):
+    """True if a NERP server of another program folder (e.g. the previous version) answers"""
+    if not i:
+        return False
+    r = i.get("root")
+    return not r or os.path.normcase(os.path.abspath(r)) != os.path.normcase(ROOT)
+
+
 def status(system):
     i = info(int(system["port"]), 1)
     if not i:
@@ -151,6 +159,13 @@ def start(system, wait=120, progress=None, keep_running=True):
     st = status(system)
     if st == "running":
         return False
+    if st != "stopped" and old_copy(info(port, 2)):         # an older copy of NERP (other folder): replace it
+        stop(system)
+        for _ in range(40):
+            if status(system) == "stopped":
+                break
+            time.sleep(0.5)
+        st = status(system)
     if st != "stopped":
         raise ClientError("Port %d is used by another NERP system - change the port of '%s'"
                           % (port, system["name"]))

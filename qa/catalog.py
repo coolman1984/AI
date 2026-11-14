@@ -417,6 +417,7 @@ PROCESSES = [
              ("AMS-04", "Transaction, area and object checks", "SU53 SUIM", "Sales clerk cannot post in FI, release credit or start FI transactions", ["test_security.Authorisation.test_tcode_area_and_objects_per_role", "test_security.Http.test_session_and_refusals", "test_security.Http.test_object_route_is_audited"]),
              ("AMS-05", "Access request through the approval inbox", "ZAMS ZINBOX SUIM", "Request approved by the administrator; own request refused", ["test_security.Authorisation.test_access_request_inbox_and_suim"]),
              ("AMS-06", "Desktop client NERP Logon / Easy Access", "ZAMS", "System entries checked, command field, favorites per system, every menu transaction has a text", ["test_gui.Client.test_system_entries_are_checked", "test_gui.Client.test_command_field", "test_gui.Client.test_favorites_per_system_and_session_url", "test_gui.Client.test_menu_for_the_client_has_every_transaction_with_a_title"]),
+             ("AMS-07", "A new version replaces an older copy still running", "Start NERP.bat NERP Logon", "The program on the port is checked by its folder; an older copy is stopped and the new one started", ["test_gui.OldCopyRunning.test_server_reports_its_folder_and_start_decides"]),
          ]),
 ]
 
