@@ -424,3 +424,35 @@ def master_lists(conn):
         "period": dict(conn.execute("SELECT * FROM posting_period WHERE id=1").fetchone()
                        or {}),
     }
+
+
+# ---------------------------------------------------------------- F.27 statement of account
+def statement(conn, koart, partner, d1, d2):
+    """customer (D) / vendor (K) statement: opening balance, every item of the period with the
+    running balance, closing balance (debit + / credit -), amounts in cents"""
+    from mm.util import MMError, parse_date
+    koart = (koart or "D").upper()
+    tab, key = ("customer", "kunnr") if koart == "D" else ("vendor", "lifnr")
+    partner = (partner or "").strip().upper()
+    p = conn.execute("SELECT * FROM %s WHERE %s=?" % (tab, key), (partner,)).fetchone()
+    if not p:
+        raise MMError("%s %s does not exist" % ("Customer" if koart == "D" else "Vendor", partner), "F5", "841")
+    d1, d2 = parse_date(d1), parse_date(d2)
+    sig = "CASE WHEN i.shkzg='S' THEN i.dmbtr ELSE -i.dmbtr END"
+    base = ("FROM acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND h.gjahr=i.gjahr WHERE i.koart=? AND i.%s=?"
+            % key)
+    opening = conn.execute("SELECT COALESCE(SUM(%s),0) %s AND h.budat<?" % (sig, base), (koart, partner, d1)).fetchone()[0]
+    run = opening
+    lines = []
+    for r in conn.execute("SELECT h.budat, h.blart, h.xblnr, h.bktxt, i.belnr, i.gjahr, i.buzei, i.sgtxt, i.shkzg, "
+                          "i.dmbtr, i.augbl, i.netdt %s AND h.budat BETWEEN ? AND ? ORDER BY h.budat, i.belnr, i.buzei"
+                          % base, (koart, partner, d1, d2)):
+        deb = r["dmbtr"] if r["shkzg"] == "S" else 0
+        cre = r["dmbtr"] if r["shkzg"] == "H" else 0
+        run += deb - cre
+        lines.append(dict(budat=r["budat"], belnr=r["belnr"], blart=r["blart"], xblnr=r["xblnr"] or "",
+                          text=r["sgtxt"] or r["bktxt"] or "", debit=deb, credit=cre, balance=run,
+                          due=r["netdt"] or "", cleared=r["augbl"] or ""))
+    return {"koart": koart, "partner": partner, "name": p["name"], "city": p["city"] if "city" in p.keys() else "",
+            "d1": d1, "d2": d2, "opening": opening, "closing": run, "lines": lines,
+            "debit": sum(x["debit"] for x in lines), "credit": sum(x["credit"] for x in lines)}

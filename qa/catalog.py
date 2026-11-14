@@ -248,6 +248,11 @@ PROCESSES = [
              ("R2R-19", "Down payment request, payment and clearing", "F-47 F-48 F-54", "Special G/L A kept apart; cleared against the invoice", ["test_golive.Clearing.test_down_payment_request_payment_and_clearing"]),
              ("R2R-20", "Posting periods per account type and period 13", "OB52 F-02", "Vendor interval enforced; special period only in December", ["test_golive.Periods.test_account_type_interval_and_special_period"]),
              ("R2R-21", "Data takeover for go-live", "ZIMPORT", "Simulation saves nothing; bad lines reported; takeover account balances", ["test_golive.Import.test_simulate_then_post_with_line_errors"]),
+             ("R2R-22", "Post-dated cheques received and issued", "ZCHQ_IN ZCHQ_OUT ZCHQ", "Invoices cleared into notes receivable / payable; collected; bounced cheque reopens the customer", ["test_fi_ext.Cheques.test_receive_collect_bounce_and_issue"]),
+             ("R2R-23", "Petty cash journal", "FBCJ", "Cash from bank and expenses; running balance; cash never below zero", ["test_fi_ext.CashJournal.test_cash_in_expense_balance_never_negative"]),
+             ("R2R-24", "Recurring entries", "FBD1 FBD3 F.14", "Monthly rent posted once per period, only inside its validity", ["test_fi_ext.Recurring.test_monthly_rent_runs_once_per_period"]),
+             ("R2R-25", "Parked documents with second-person posting", "FV50 FBV0 FBV3", "Checked when parked; the same person cannot post it", ["test_fi_ext.Parked.test_park_and_post_by_another_person"]),
+             ("R2R-26", "Statement of account and FI closing management", "F.27 ZFI_CLOSE", "Statement ties to the customer balance; closing steps in order", ["test_fi_ext.StatementAndClosing.test_statement_of_account_and_closing_status"]),
          ]),
     # ------------------------------------------------------------------ CO
     dict(id="CTL", folder="7", module="CO", map="ZCO_PROCESS", version="2.1",

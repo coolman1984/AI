@@ -38,6 +38,7 @@ CHART = {
     "140099": ("Customers - FX valuation adjustment", "BS", "A30", "", 0, ""),
     "154000": ("Input VAT", "BS", "A40", "", 0, "<"),
     "100000": ("Petty cash", "BS", "A50", "", 0, ""),
+    "115000": ("Notes receivable - cheques received", "BS", "A30", "", 0, ""),
     "113100": ("Bank NBE - current account", "BS", "A50", "", 0, ""),
     "113109": ("Bank NBE - outgoing payments clearing", "BS", "A50", "", 1, ""),
     "113101": ("Bank NBE - incoming payments clearing", "BS", "A50", "", 1, ""),
@@ -53,6 +54,7 @@ CHART = {
     # ---- payables, tax, accruals
     "160000": ("Vendors - domestic (reconciliation)", "BS", "P20", "K", 1, ""),
     "161000": ("Vendors - foreign (reconciliation)", "BS", "P20", "K", 1, ""),
+    "165000": ("Notes payable - cheques issued", "BS", "P20", "", 0, ""),
     "161099": ("Vendors - FX valuation adjustment", "BS", "P20", "", 0, ""),
     "175000": ("Output VAT", "BS", "P30", "", 0, ">"),
     "179000": ("VAT payable to tax authority", "BS", "P30", "", 0, ""),
