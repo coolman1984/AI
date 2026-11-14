@@ -66,7 +66,7 @@ ROUTE_OBJECTS = (
     ("POST", r"/api/sec/admin/.*", "S_USER_GRP", None),
     ("POST", r"/api/mi/post", "M_ISEG_WDB", None),
     ("POST", r"/api/(mmpv|mmrv)", "M_PERIOD", None),
-    ("POST", r"/api/import/run", "S_DATA_IMP", None),
+    ("POST", r"/api/import/(run|xlsx)", "S_DATA_IMP", None),
     ("POST", r"/api/hr/absence/decide", "P_ABSENCE", None),
     ("POST", r"/api/hr/payroll/(run|post|reverse|pay)", "P_PYEVRUN", None),
 )

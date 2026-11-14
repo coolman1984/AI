@@ -641,3 +641,4 @@ from web import bi_api  # noqa: E402,F401
 from web import gui_api  # noqa: E402,F401
 from web import dash_api  # noqa: E402,F401
 from web import hr_api  # noqa: E402,F401
+from web import co2_api  # noqa: E402,F401

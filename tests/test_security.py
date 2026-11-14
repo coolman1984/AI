@@ -106,6 +106,13 @@ class Authorisation(unittest.TestCase):
         acts = {r["action"] for r in auth.audit_list(c)}
         self.assertIn("REQUEST_APPROVE", acts)
 
+    def test_data_import_object_covers_excel_upload(self):
+        import re
+        from sec.config import ROUTE_OBJECTS
+        for path in ("/api/import/run", "/api/import/xlsx"):
+            self.assertTrue(any(m == "POST" and o == "S_DATA_IMP" and re.fullmatch(rx, path)
+                                for m, rx, o, _ in ROUTE_OBJECTS), path)
+
     def test_pfcg_role_maintenance(self):
         c = demo()
         users.save_role(c, {"name": "Z_TEST", "text": "Test", "tcodes": ["MM03", "MB*"],
