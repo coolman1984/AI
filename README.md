@@ -15,7 +15,10 @@ Double-click **`Start NERP.bat`** in this folder.
 - The red power button (top right) stops the server immediately.
 - All data is saved at once in `data/mm.db`. Nothing is lost when it stops.
 
-The first start loads demo data: 2 plants, 10 materials and about 4 months of movements.
+The first start loads the **ceramic example company** (Nile Ceramics: one tile factory and the whole
+month of November - see "Learn by example" below). A database that still holds the older demo company
+(kitchen cabinets, steel) is moved to `data/mm_old_demo.db` once - nothing is deleted - and
+**`Start NERP Old demo.bat`** opens it (port 8085; it builds the older demo when the file is missing).
 
 **Log on - switched OFF for now.** NERP starts without user and password. To switch the
 logon on, run `tools/Login ON.bat` (back off: `tools/Login OFF.bat`) and start NERP again
@@ -163,10 +166,11 @@ with a guide in Arabic (`docs/ceramic/README_AR.md`):
   purchase order, open items, stock, fixed assets, bank and capital: 66 lines, takeover account 399999
   ends at zero), plus the sheets to type in the screens (controlling set-up, sales prices, BOM, work
   centers, routing, employees) and **the month of November step by step** (31 steps, every number given).
-- **`Start NERP Ceramic example.bat`** builds the finished company once (`data/ceramic.db`, port 8084):
+- **`Start NERP.bat`** opens the finished company (`run.py --ceramic`; NERP Logon "01. NERP ERP" too):
   the workbook + the whole month - purchasing, MRP, production with scrap, delivery, billing, payments,
-  payroll, depreciation, variances. Built by `python tools/demo/ceramic_example.py --system FILE`;
-  `tests/test_ceramic.py` checks that the numbers of the guide stay true.
+  payroll, depreciation, variances. To practise the steps yourself, load the workbook into an empty
+  system (LIVE or Sandbox). `python tools/demo/ceramic_example.py --system FILE` builds it into another
+  file; `tests/test_ceramic.py` checks that the numbers of the guide stay true.
 
 Fixed assets loaded with ZIMPORT are posted to their asset accounts against 399999 (acquisition value
 and accumulated depreciation), so they appear in the balance sheet. The G/L balance sheet can be named

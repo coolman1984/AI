@@ -7,6 +7,8 @@ itself a few seconds after the last browser tab is closed.
 Options:
   --reset          delete the database and load fresh demo data
   --empty          an empty system for real data (no demo data, also on later starts)
+  --ceramic        the ceramic example company (Start NERP.bat); an older demo database
+                   is moved to data/mm_old_demo.db
   --port N         port (default 8080)
   --no-browser     do not open the browser
   --keep-running   do not stop when the browser tabs are closed
@@ -169,6 +171,9 @@ def main():
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--reset", action="store_true")
     ap.add_argument("--empty", action="store_true")
+    ap.add_argument("--ceramic", action="store_true",
+                    help="the ceramic example company (Start NERP.bat); an older demo database is moved "
+                         "to data/mm_old_demo.db")
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--no-open", action="store_true",
                     help="do not open the browser, but stop when the last window closes (desktop launchers)")
@@ -229,6 +234,17 @@ def main():
     elif os.path.exists(db_path):
         _daily_backup(db_path)
     log = setup_log()
+    if a.ceramic and not a.empty:
+        try:
+            sys.path.insert(0, os.path.join(ROOT, "tools", "demo"))
+            import ceramic_example
+            done = ceramic_example.prepare(db_path)
+            if done == "built":
+                print("Ceramic example company loaded.")
+            elif done:
+                print("Ceramic example company loaded - the older demo was moved to", done)
+        except Exception:       # never block the start: the normal demo is loaded instead
+            log.exception("ceramic example could not be built")
     try:
         conn = connect(db_path)
         if not integrity_ok(conn):

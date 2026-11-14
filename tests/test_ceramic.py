@@ -63,5 +63,36 @@ class CeramicExample(unittest.TestCase):
         self.assertEqual(check(c), [])
 
 
+class OneClickStart(unittest.TestCase):
+    def test_start_builds_ceramic_moves_old_demo_and_keeps_real_data(self):
+        import tempfile
+        d = tempfile.mkdtemp()
+        db = os.path.join(d, "mm.db")
+        old = connect(db)                                           # the older demo company
+        seed.seed(old)
+        old.close()
+        moved = X.prepare(db)
+        self.assertEqual(moved, os.path.join(d, "mm_old_demo.db"))
+        c = connect(moved)                                          # nothing lost: kept next to it
+        self.assertTrue(c.execute("SELECT 1 FROM material WHERE matnr='FG-3001'").fetchone())
+        c.close()
+        c = connect(db)
+        self.assertTrue(c.execute("SELECT 1 FROM material WHERE matnr='FG-FLOOR60'").fetchone())
+        self.assertTrue(c.execute("SELECT 1 FROM usr WHERE bname='ADMIN'").fetchone())
+        self.assertIsNone(seed.seed(c))                             # the old demo never comes back on top
+        c.close()
+        self.assertIsNone(X.prepare(db))                            # second start: left as it is
+        new = os.path.join(d, "new.db")
+        self.assertEqual(X.prepare(new), "built")                   # first start on a new PC
+        real = os.path.join(d, "company.db")
+        c = connect(real)
+        seed.mark_no_demo(c)
+        c.close()
+        self.assertIsNone(X.prepare(real))                          # a real-data system is never touched
+        c = connect(real)
+        self.assertEqual(c.execute("SELECT COUNT(*) FROM plant").fetchone()[0], 0)
+        c.close()
+
+
 if __name__ == "__main__":
     unittest.main()

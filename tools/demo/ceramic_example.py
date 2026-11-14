@@ -319,7 +319,7 @@ GUIDE = [
     ("p", "3. اضغط Post. البرنامج بيرفع: المصنع والمخازن ← مراكز التكلفة ← الموردين ← الأصناف ← العملاء ← أسعار الموردين ← أمر الشراء المفتوح ← الفواتير المفتوحة ← المخزون ← الأصول ← البنك ورأس المال."),
     ("p", "4. حساب 399999 (حساب نقل البيانات) لازم يطلع صفر في الآخر - ده دليل إن الميزانية الافتتاحية متوازنة."),
     ("p", "5. افتح شيت (الخطوات) وامشي خطوة خطوة. كل خطوة مكتوب فيها كود الشاشة، تكتب إيه، والمفروض تشوف إيه."),
-    ("p", "6. عايز تشوف النتيجة النهائية الأول؟ دوس على (Start NERP Ceramic example.bat): بيبني شركة السيراميك جاهزة بالشهر كله (بورت 8084) من غير ما تكتب حاجة."),
+    ("p", "6. عايز تشوف النتيجة النهائية الأول؟ دوس على (Start NERP.bat): شركة السيراميك جاهزة فيه بالشهر كله. الشركة التجريبية القديمة في (Start NERP Old demo.bat)."),
     ("p", "⚠ التواريخ في المثال على نوفمبر 2026. البرنامج بيفتح للمخازن الشهر الحالي واللي قبله بس - لو بتجرب بعد ديسمبر 2026 غيّر تواريخ الشيتات (Stock و GL balances وغيرهم) لأول شهرك."),
     ("h", "الشيتات بالإنجليزي (01 ... Fixed assets)"),
     ("p", "دي الشيتات اللي البرنامج بيقراها. ماتغيرش أسماءها ولا الصف التاني (الأسماء التقنية). الشيتات العربي (BOM، مراكز العمل، Routing، الموظفين) بتكتب بياناتها بإيدك في الشاشات - عشان تتعلم الشاشة نفسها."),
@@ -483,28 +483,71 @@ def run_story(conn, user="ADMIN"):
     return out
 
 
-def build_system(db_path):
-    """A ready ceramic company: empty system + this workbook + the November story."""
-    from mm import seed, util
-    from mm.db import connect, transaction
-    from mm import dataimport
+def fill(conn):
+    """An empty system -> the ready ceramic company: this workbook + the November story + users."""
+    from mm import dataimport, seed, util
+    from mm.db import transaction
     from sec import users
-    if os.path.exists(db_path):
-        raise SystemExit("%s exists already - delete it first" % db_path)
-    old = util.set_clock("2026-11-14")
+    old = util.set_clock("2026-11-14")                  # the business date of the story
     try:
-        conn = connect(db_path)
-        seed.mark_no_demo(conn)
+        seed.mark_no_demo(conn)                         # never the old demo on top of it
         r = dataimport.run_xlsx(conn, build(), "ADMIN", simulate=False)
         if r["errors"]:
-            raise SystemExit("Import errors: %s" % r["message"])
+            raise RuntimeError("Ceramic example - import errors: %s" % r["message"])
         with transaction(conn):
             run_story(conn)
         users.bootstrap(conn, demo=True)
-        conn.close()
     finally:
         util.set_clock(old)
+
+
+def build_system(db_path):
+    """A ready ceramic company in a new database file."""
+    from mm.db import connect
+    if os.path.exists(db_path):
+        raise SystemExit("%s exists already - delete it first" % db_path)
+    conn = connect(db_path)
+    fill(conn)
+    conn.close()
     print("Ready:", db_path)
+
+
+def prepare(db_path):
+    """run.py --ceramic (Start NERP.bat): the database of the one-click start holds the
+    ceramic company. A database with the older demo company is moved aside (never deleted) to
+    mm_old_demo.db next to it. A database with other data, the ceramic company already or a
+    real-data system (--empty) is left alone. Returns 'built', the path the old demo was moved
+    to, or None."""
+    import time
+    from mm import seed
+    from mm.db import connect
+    moved = None
+    if os.path.exists(db_path):
+        conn = connect(db_path)
+        q = lambda sql: conn.execute(sql).fetchone()[0]              # noqa: E731
+        plants = q("SELECT COUNT(*) FROM plant")
+        ceramic = q("SELECT COUNT(*) FROM material WHERE matnr='FG-FLOOR60'")
+        old_demo = q("SELECT COUNT(*) FROM material WHERE matnr='FG-3001'")
+        real = seed.no_demo(conn)
+        conn.close()
+        if ceramic or real or (plants and not old_demo):
+            return None
+        if plants:                                                   # the older demo company
+            moved = os.path.join(os.path.dirname(db_path), "mm_old_demo.db")
+            if os.path.exists(moved):
+                moved = moved[:-3] + time.strftime("_%Y%m%d_%H%M%S") + ".db"
+        for ext in ("", "-wal", "-shm"):
+            if os.path.exists(db_path + ext):
+                if moved:
+                    os.replace(db_path + ext, moved + ext)
+                else:
+                    os.remove(db_path + ext)
+        from mm import db as mdb
+        mdb._MIGRATED.discard(os.path.abspath(db_path))            # a new file: create the tables again
+    conn = connect(db_path)
+    fill(conn)
+    conn.close()
+    return moved or "built"
 
 
 def main(out=None):

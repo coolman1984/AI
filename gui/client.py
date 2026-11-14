@@ -17,7 +17,7 @@ FAV_FILE = os.path.join(DATA, "gui_favorites.json")
 
 DEFAULT_SYSTEMS = [
     dict(name="01. NERP ERP (PRD)", sid="PRD", db="data/mm.db", port=8080, empty=False,
-         text="Production / demo data - the database of 'Start NERP.bat'"),
+         text="Ceramic example company (Nile Ceramics) - the database of 'Start NERP.bat'"),
     dict(name="02. NERP Training (TRN)", sid="TRN", db="data/training.db", port=8081, empty=False,
          text="Training system with fresh demo data"),
     dict(name="03. NERP Sandbox - empty (SBX)", sid="SBX", db="data/sandbox.db", port=8082, empty=True,
@@ -176,6 +176,8 @@ def start(system, wait=120, progress=None, keep_running=True):
     args += ["--no-browser", "--keep-running"] if keep_running else ["--no-open"]
     if system.get("empty"):                     # real-data / sandbox systems never get demo data
         args.append("--empty")
+    elif os.path.normcase(db) == os.path.normcase(_abs("data/mm.db")):
+        args.append("--ceramic")                # the database of Start NERP.bat: the ceramic example
     log = open(os.path.join(DATA, "server_%s.log" % system["sid"]), "a", encoding="utf-8")
     flags = 0x08000000 if os.name == "nt" else 0           # CREATE_NO_WINDOW
     subprocess.Popen(args, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
