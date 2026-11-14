@@ -39,6 +39,7 @@ CHART = {
     "154000": ("Input VAT", "BS", "A40", "", 0, "<"),
     "100000": ("Petty cash", "BS", "A50", "", 0, ""),
     "115000": ("Notes receivable - cheques received", "BS", "A30", "", 0, ""),
+    "116000": ("LC margin deposits (cash cover at the bank)", "BS", "A40", "", 0, ""),
     "113100": ("Bank NBE - current account", "BS", "A50", "", 0, ""),
     "113109": ("Bank NBE - outgoing payments clearing", "BS", "A50", "", 1, ""),
     "113101": ("Bank NBE - incoming payments clearing", "BS", "A50", "", 1, ""),
@@ -69,6 +70,7 @@ CHART = {
     "190000": ("Accrued expenses", "BS", "P40", "", 0, ""),
     "191100": ("Goods received / invoice received (GR/IR)", "BS", "P40", "", 1, ""),
     "193000": ("Freight clearing (planned delivery costs)", "BS", "P40", "", 1, ""),
+    "193500": ("Import costs clearing (shipments in transit)", "BS", "A60", "", 0, ""),
     # ---- P&L: revenue
     "800000": ("Sales revenue - domestic", "PL", "R10", "", 0, ">"),
     "800100": ("Sales revenue - export", "PL", "R10", "", 0, ">"),

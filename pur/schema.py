@@ -67,7 +67,28 @@ CREATE TABLE IF NOT EXISTS release_log (    -- release history (PR / PO)
 CREATE TABLE IF NOT EXISTS mrp_run (        -- MD01 log
     id INTEGER PRIMARY KEY AUTOINCREMENT, werks TEXT, rundt TEXT,
     result TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS imp_file (       -- ZIMP01 import file / letter of credit
+    impno TEXT PRIMARY KEY, ebeln TEXT NOT NULL UNIQUE, lifnr TEXT, waers TEXT,
+    lcno TEXT, lcbank TEXT, lc_amount INTEGER NOT NULL DEFAULT 0,   -- PO currency, cents
+    margin_pct INTEGER NOT NULL DEFAULT 0,  -- cash cover, 1/100 %
+    margin INTEGER NOT NULL DEFAULT 0,      -- EGP cents, paid to the bank
+    margin_belnr TEXT, release_belnr TEXT, port TEXT, eta TEXT, bl_no TEXT,
+    status TEXT NOT NULL DEFAULT 'OPEN',    -- OPEN / LC / LANDED / CLOSED
+    text TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS imp_cost (       -- ZIMP_COST import costs of a file
+    id INTEGER PRIMARY KEY AUTOINCREMENT, impno TEXT NOT NULL, typ TEXT NOT NULL,
+    amount INTEGER NOT NULL, budat TEXT, lifnr TEXT, belnr TEXT, gjahr INTEGER,
+    land_belnr TEXT, text TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS svc_entry (      -- ML81N service entry sheet
+    lblni TEXT PRIMARY KEY, ebeln TEXT NOT NULL, ebelp INTEGER NOT NULL,
+    menge INTEGER NOT NULL, amount INTEGER NOT NULL, budat TEXT, text TEXT,
+    status TEXT NOT NULL DEFAULT 'P',       -- P waiting / A accepted / R rejected
+    created_by TEXT, accepted_by TEXT, reason TEXT, mblnr TEXT, mjahr INTEGER, ts TEXT);
+CREATE TABLE IF NOT EXISTS po_reminder (    -- ME91F delivery reminders sent
+    id INTEGER PRIMARY KEY AUTOINCREMENT, ebeln TEXT, ebelp INTEGER, level INTEGER,
+    sent TEXT, days INTEGER, usnam TEXT);
 """
 
 PUR_NUMBER_RANGES = {"PR": 10000000, "INFO": 5300000000, "CONTRACT": 4600000000,
-                     "RFQ": 6000000000, "SUBMI": 1}
+                     "RFQ": 6000000000, "SUBMI": 1,
+                     "IMPORT": 9100000, "SES": 1000000000}
