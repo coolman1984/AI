@@ -89,6 +89,8 @@ def post_from_fi(conn, belnr, gjahr, budat, user, awkey, bktxt, lines):
                           sgtxt=l.get("sgtxt") or bktxt))
     if not items:
         return None
+    from .budget import check_items                      # availability control (budgets)
+    check_items(conn, items, year, what="posting %s" % (bktxt or belnr), user=user)
     return post_co_doc(conn, "COIN", "04", year, perio, items,
                        bktxt or "FI document %s" % belnr, user, budat,
                        refbn="%s/%s" % (belnr, awkey), balanced=False)

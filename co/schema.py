@@ -139,6 +139,23 @@ CREATE TABLE IF NOT EXISTS cycle_run (
     run_id INTEGER PRIMARY KEY AUTOINCREMENT, cycle TEXT, kind TEXT,
     wrttp TEXT, gjahr INTEGER, perio INTEGER, belnr TEXT, ts TEXT,
     usnam TEXT, reversed INTEGER NOT NULL DEFAULT 0, summary TEXT);
+CREATE TABLE IF NOT EXISTS co_period_lock ( -- OKP1: CO period lock for actual postings
+    gjahr INTEGER, perio INTEGER, usnam TEXT, ts TEXT, PRIMARY KEY (gjahr, perio));
+CREATE TABLE IF NOT EXISTS co_budget_prof ( -- OKOB: budget profile / tolerances (availability control)
+    prof TEXT PRIMARY KEY, warn_pct INTEGER NOT NULL DEFAULT 90, err_pct INTEGER NOT NULL DEFAULT 100,
+    check_po INTEGER NOT NULL DEFAULT 1, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS co_budget (      -- BPGE: overall budget per cost center / order and year
+    objnr TEXT, gjahr INTEGER, orig INTEGER NOT NULL DEFAULT 0, supp INTEGER NOT NULL DEFAULT 0,
+    ret INTEGER NOT NULL DEFAULT 0, released INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (objnr, gjahr));
+CREATE TABLE IF NOT EXISTS co_budget_log (  -- budget documents and availability-control messages
+    id INTEGER PRIMARY KEY AUTOINCREMENT, objnr TEXT, gjahr INTEGER, typ TEXT, amount INTEGER,
+    text TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS co_accrual_rule ( -- KSA3-like accrual of annual costs (13th salary, bonus ...)
+    id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT, kostl TEXT, hkont TEXT, liab TEXT DEFAULT '190000',
+    annual INTEGER NOT NULL, gjahr INTEGER, active INTEGER NOT NULL DEFAULT 1, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS co_accrual_run (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, gjahr INTEGER, perio INTEGER, rule_id INTEGER, belnr TEXT,
+    fi_gjahr INTEGER, amount INTEGER, usnam TEXT, ts TEXT, reversed INTEGER NOT NULL DEFAULT 0);
 """
 
 # columns added to MM tables when CO is active (migration for old databases)

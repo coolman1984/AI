@@ -39,6 +39,20 @@ def _strategy(total):
     return [c for c, _, limit in PO_RELEASE if total >= limit]
 
 
+def _budget_check(conn, ebeln, bedat, user):
+    """availability control: account-assigned items (cost center / order) against the budget,
+    together with the actual costs and the other open commitments"""
+    from co import budget
+    if not budget.profile(conn)["check_po"]:
+        return
+    from mm.util import value_of
+    items = []
+    for it in conn.execute("SELECT * FROM po_item WHERE ebeln=? AND knttp IN ('K','F')", (ebeln,)):
+        obj = ("KS" + it["kostl"]) if it["knttp"] == "K" else ("OR" + (it["aufnr"] or ""))
+        items.append({"objnr": obj, "wtg": value_of(it["menge"], it["netpr"], it["peinh"] or 1)})
+    budget.check_items(conn, items, int(bedat[:4]), True, "purchase order", user, exclude_ref=ebeln)
+
+
 def create_po(conn, data, user):
     lifnr = (data.get("lifnr") or "").upper()
     items = data.get("items") or []
@@ -179,6 +193,7 @@ def create_po(conn, data, user):
         extra = _quotation_rule(conn, data, _value(conn, ebeln, unsourced) if unsourced else 0)
         if extra and extra not in codes:
             codes = [extra] + codes
+        _budget_check(conn, ebeln, bedat, user)
         conn.execute("UPDATE po_header SET frgst=?, frgke=?, frgzu='', rfq_reason=? WHERE ebeln=?",
                      (",".join(codes), "B" if codes else "", (data.get("rfq_reason") or "")[:80], ebeln))
     return ebeln

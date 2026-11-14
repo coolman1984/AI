@@ -204,3 +204,38 @@ def kspi(conn, gjahr, perio, user=""):
     return [dict(r) for r in conn.execute(
         "SELECT * FROM cc_activity WHERE gjahr=? AND perio=? ORDER BY kostl, lstar",
         (gjahr, perio))]
+
+
+def copy_plan(conn, from_year, to_year, pct="0", user=""):
+    """KP97: copy the cost center plan (primary costs KP06 and activity plan KP26) of one
+    year to another year, changed by pct % (e.g. 10 = +10 % inflation). The target plan of
+    the copied cost centers / cost elements is replaced. Returns the number of plan lines."""
+    from mm.util import parse_pct
+    fy = parse_year(from_year)
+    ty = parse_year(to_year)
+    if fy == ty:
+        raise MMError("Source and target year must be different", "KP", "020")
+    f = parse_pct(pct or "0") if str(pct or "0").strip() not in ("", "0") else 0
+    factor = 10000 + f                                                   # pct x 100
+    n = 0
+    with transaction(conn):
+        rows = conn.execute("SELECT objnr, kstar, perio, COALESCE(lstar,'') lstar, SUM(wtg) wtg, SUM(wkf) wkf "
+                            "FROM co_item WHERE wrttp='01' AND vrgng='RKP1' AND gjahr=? GROUP BY objnr, kstar, "
+                            "perio, COALESCE(lstar,'')", (fy,)).fetchall()
+        if not rows:
+            raise MMError("There is no cost center plan in %d to copy" % fy, "KP", "021")
+        for a in conn.execute("SELECT * FROM cc_activity WHERE gjahr=?", (fy,)).fetchall():
+            conn.execute("INSERT OR IGNORE INTO cc_activity (gjahr,perio,kostl,lstar,plan_qty,capacity,price_fix,"
+                         "price_var,price_ind) VALUES (?,?,?,?,?,?,?,?,?)",
+                         (ty, a["perio"], a["kostl"], a["lstar"], a["plan_qty"], a["capacity"],
+                          rdiv(a["price_fix"] * factor, 10000), rdiv(a["price_var"] * factor, 10000), a["price_ind"]))
+        for r in rows:
+            conn.execute("DELETE FROM co_item WHERE wrttp='01' AND vrgng='RKP1' AND gjahr=? AND perio=? AND objnr=? "
+                         "AND kstar=? AND COALESCE(lstar,'')=?", (ty, r["perio"], r["objnr"], r["kstar"], r["lstar"]))
+            post_co_doc(conn, "RKP1", "01", ty, r["perio"], [dict(
+                objnr=r["objnr"], kstar=r["kstar"], wtg=rdiv(r["wtg"] * factor, 10000),
+                wkf=rdiv(r["wkf"] * factor, 10000), lstar=r["lstar"] or None)],
+                "Plan copy %d -> %d (KP97)" % (fy, ty), user, balanced=False)
+            n += 1
+        _cleanup_docs(conn)
+    return n

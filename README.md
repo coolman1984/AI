@@ -67,6 +67,22 @@ The books are kept in EGP (local currency). The exchange rates come from OB08 (t
 | Payroll | Pay currency USD per employee (PA30). Social insurance and income tax are calculated on the EGP amount at the month-end rate; the net pay is transferred in USD; the payslip shows both. Demo: Adam Clarke |
 | Reports | Display currency EGP / USD / EUR in every BI report (ZBI, variable "Currency"), the status dashboards, the ERP dashboard and the HR cockpit. Amounts are translated at the period-end rate; quantities, counts and % stay as they are. The choice is remembered in the browser |
 
+## Controlling in depth (numbered menu 1-1 ... E-1)
+
+The Controlling menu is grouped like a big SAP installation: 1 Common, 2 Budget, 3 Sales, 4 Expense,
+5 Accrual, 6 Internal orders, 7 Planning, 8 CO-PA, 9 Manufacturing, E Simulation. New functions:
+
+| Code | What it does |
+|---|---|
+| ZCO_CONF | Basic configuration (controlling area, versions, categories, business transactions, value fields) |
+| ZCO_CLOSE | Closing management: every month-end step in order with its status (done / open) and a link to run it |
+| OKP1 | CO period lock: a locked month refuses every actual cost posting |
+| ZBUD_PROF / ZBUD01 / ZBUD02 / ZBUD_REL / ZBUD_RPT | Budget per cost center or order: original, supplement / return, release, report budget / actual / commitment / available. Availability control: postings and purchase orders over the released budget are refused, a warning is logged from the warning limit |
+| KE21N | Sales adjustment: manual CO-PA line (rebate, claim) |
+| ZACR_DEF / ZACR_RUN / ZACR_RPT | Accruals: annual costs (13th salary, bonus, insurance) charged to the cost center month by month (Dr expense / Cr 190000) |
+| KP97 | Copy the cost center plan to another year with a % change |
+| ZCO_SIM | Profit simulation: price, volume, material, labor and overhead changes, with the break-even volume |
+
 ## Financial statement by business area / profit center - ZFS_BAPC
 
 Selection screen like SAP (G/L accounts, BS or PL, ledger 0L, business area or profit center

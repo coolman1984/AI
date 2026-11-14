@@ -181,3 +181,41 @@ def revalue_plan(conn, gjahr, perio, user=""):
         plan_sales(conn, gjahr, perio, r["kunnr"], r["matnr"], str(r["qty"] / 1000.0),
                    "%.2f" % (r["price"] / 100.0), str(r["disc_pct"] / 100.0),
                    user=user)
+
+
+def manual_line(conn, data, user):
+    """KE21N (3-1 sales adjustment): a manual CO-PA line item, e.g. a year-end rebate, a
+    price correction or a quality claim for a customer / product. Amounts are entered
+    positive for the value field (revenue vv010, deductions vv020, costs vv030 ...).
+    The line is a CO-PA posting only (record type B) - it is not in FI and shows up as
+    an explained difference in the reconciliation (ZCO_RECON)."""
+    from .config import VV_KEYS
+    budat = parse_date(data.get("budat"))
+    gjahr, perio = period_of(budat)
+    kunnr = (data.get("kunnr") or "").strip().upper()
+    c = conn.execute("SELECT * FROM customer WHERE kunnr=?", (kunnr,)).fetchone()
+    if not c:
+        raise MMError("Customer %s does not exist" % kunnr, "KE", "102")
+    matnr = (data.get("matnr") or "").strip().upper() or None
+    m = None
+    if matnr:
+        m = conn.execute("SELECT * FROM material WHERE matnr=?", (matnr,)).fetchone()
+        if not m:
+            raise MMError("Material %s does not exist" % matnr, "KE", "103")
+    vals = {}
+    for k in VV_KEYS:
+        if str(data.get(k) or "").strip():
+            v = parse_amount(str(data[k]).lstrip("-"), allow_zero=True)
+            vals[k] = -v if str(data[k]).strip().startswith("-") else v
+    if not any(vals.values()):
+        raise MMError("Enter at least one amount (value field)", "KE", "104")
+    text = (data.get("text") or "").strip()
+    if not text:
+        raise MMError("Enter the reason of the adjustment (text)", "KE", "105")
+    from .closing import check as period_check
+    period_check(conn, gjahr, perio)
+    with transaction(conn):
+        return _copa_post(conn, "B", 0, gjahr, perio, dict(
+            kunnr=kunnr, matnr=matnr, matkl=m["matkl"] if m else None, region=c["region"], kdgrp=c["kdgrp"],
+            vtweg=c["vtweg"], werks=data.get("werks") or "1000"), vals, refdoc=text[:30], user=user,
+            budat=budat)

@@ -86,6 +86,9 @@ def post_co_doc(conn, vrgng, wrttp, gjahr, perio, items, text="", user="",
     if balanced and sum(i["wtg"] for i in items) != 0:
         raise MMError("CO document is not balanced (internal error)", "KI", "999")
     budat = budat or first_day(gjahr, perio)
+    if wrttp == "04":                                   # OKP1: period lock for actual postings
+        from .closing import check as period_check
+        period_check(conn, gjahr, perio)
     belnr = str(next_number(conn, "CODOC"))
     conn.execute("INSERT INTO co_doc (belnr,gjahr,perio,budat,vrgng,wrttp,bltxt,"
                  "usnam,cpudt,refbn,run_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
