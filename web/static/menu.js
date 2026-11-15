@@ -34,6 +34,7 @@ const MENU = [
     ["Performance", ["ZSD_COCKPIT", "MCTA", "MCTC", "KE30", "ZSD_PROCESS"]],
   ]],
   ["Production", [
+    ["Production Status Board", ["ZPP_BOARD", "ZPP_LINEPLAN", "ZPP_LOSS"]],
     ["Production Master Data", ["CS01", "CS02", "CS03", "CS11", "CS15", "CR01", "CR02", "CR03", "CR05", "CA01", "CA02", "CA03", "C223", "OPL8", "SCAL"]],
     ["SOP & Demand Management", ["MC84", "MC81", "MC75", "MD61", "MD62", "MD63"]],
     ["Production Planning", ["MD01", "MD02", "MD03", "MD11", "MD12", "MD13", "MD16", "CO40", "CO41", "CM01"]],
@@ -198,6 +199,7 @@ MENU.push(
   ]],
   ["Common", [
     ["BI (Business Intelligence)", ["ZDASH", "ZBI", "ZBI_DASH"]],
+    ["Shop-floor Boards", ["ZPP_BOARD"]],
     ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],

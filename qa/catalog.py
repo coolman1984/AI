@@ -166,6 +166,8 @@ PROCESSES = [
              ("PTP-17", "Order across the year end", "CO01 MIGO KKS2 CO88", "December costs included; order balance zero after January settlement", ["test_controls.CrossYear.test_order_released_in_december_closed_in_january"]),
              ("PTP-18", "Customer backorder planned by MRP; PIR consumed (strategy 40)", "VA01 MD04 MD01", "Customer order is an MRP requirement; planned order covers the shortage; PIR reduced by the order", ["test_flows.SalesInMrp.test_backorder_creates_planned_order_and_consumes_pir"]),
              ("PTP-19", "Operation sequence and scrap reason", "CO11N", "No operation above its predecessor's yield; scrap needs a reason", ["test_flows.ShopFloor.test_operation_sequence_and_scrap_reason", "test_flows.ShopFloor.test_picking_cannot_exceed_reservation"]),
+             ("PTP-20", "Production status board per line and area", "ZPP_BOARD CO11N", "Plan, time-based target, confirmed production, difference, defects, loss and UPH per line; totals per area; shipping, attendance, shortages, quality and late POs", ["test_pp_board.Board.test_lines_grouped_with_plan_target_production_and_loss", "test_pp_board.Board.test_target_follows_the_clock_during_the_shift"]),
+             ("PTP-21", "Daily line plan and downtime log", "ZPP_LINEPLAN ZPP_LOSS", "UPH from plan / hours; plans copied to the next day; wrong line, time, order and reason refused", ["test_pp_board.Inputs.test_line_plan_copy_and_downtime_checks"]),
          ]),
     # ------------------------------------------------------------------ Inventory
     dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",

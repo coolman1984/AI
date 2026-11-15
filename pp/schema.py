@@ -7,7 +7,8 @@ PP_COLUMN_ADDS = {
                ("ref_matnr", "TEXT"), ("rsnum", "TEXT"), ("dispo", "TEXT")],
     "work_center": [("kapaz", "INTEGER DEFAULT 8000"), ("ngrad", "INTEGER DEFAULT 85"),
                     ("shifts", "INTEGER DEFAULT 1"), ("verwe", "TEXT DEFAULT '0001'"),
-                    ("steus", "TEXT DEFAULT 'PP01'"), ("veran", "TEXT DEFAULT ''")],
+                    ("steus", "TEXT DEFAULT 'PP01'"), ("veran", "TEXT DEFAULT ''"),
+                    ("area", "TEXT DEFAULT ''")],                       # ZPP_BOARD group
     "routing": [("steus", "TEXT DEFAULT 'PP01'"), ("vgw_setup", "INTEGER DEFAULT 0"),
                 ("lifnr", "TEXT"), ("preis", "INTEGER DEFAULT 0"),
                 ("plifz", "INTEGER DEFAULT 0"), ("ekgrp", "TEXT")],
@@ -24,6 +25,16 @@ PP_COLUMN_ADDS = {
 }
 
 PP_SCHEMA = """
+CREATE TABLE IF NOT EXISTS pp_lineplan (    -- ZPP_LINEPLAN daily plan per line (work center)
+    datum TEXT NOT NULL, arbpl TEXT NOT NULL, aufnr TEXT, matnr TEXT,
+    plan INTEGER NOT NULL DEFAULT 0,         -- planned quantity of the day (milli)
+    uph INTEGER NOT NULL DEFAULT 0,          -- target units per hour (milli)
+    man INTEGER NOT NULL DEFAULT 0,          -- operators on the line
+    start TEXT NOT NULL DEFAULT '08:00', hours INTEGER NOT NULL DEFAULT 8,
+    usnam TEXT, ts TEXT, PRIMARY KEY (datum, arbpl));
+CREATE TABLE IF NOT EXISTS pp_loss (        -- ZPP_LOSS downtime of a line
+    id INTEGER PRIMARY KEY AUTOINCREMENT, datum TEXT NOT NULL, arbpl TEXT NOT NULL,
+    minutes INTEGER NOT NULL, reason TEXT NOT NULL, text TEXT, usnam TEXT, ts TEXT);
 CREATE TABLE IF NOT EXISTS pp_oper (        -- AFVC / AFVV order operations
     aufnr TEXT, vornr TEXT, arbpl TEXT, steus TEXT, ltxa1 TEXT,
     mgvrg INTEGER, vgw INTEGER, vgw_setup INTEGER DEFAULT 0, ism INTEGER DEFAULT 0,

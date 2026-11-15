@@ -239,6 +239,9 @@ def sample(conn, vendors):
     service.wip(conn, y, m, USER)
     period_end.variances(conn, y, m, user=USER)
     period_end.settle(conn, y, m, user=USER)
+    # 12 production board: line areas, daily line plans and downtime (ZPP_BOARD)
+    from pp import board
+    board.sample(conn, {k: d(k) for k in (3, 5, 6, 7)}, USER)
     with transaction(conn):
         conn.execute("INSERT OR REPLACE INTO settings VALUES ('pp_sample', ?)", ("%04d-%02d" % (y, m),))
     return dict(carcass=a_car, pantry=a_fg, pantry2=a_fg2, rework=a_rw, refurb=a_ref, subcon=sc,

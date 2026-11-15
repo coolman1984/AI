@@ -83,6 +83,27 @@ The Controlling menu is grouped like a big SAP installation: 1 Common, 2 Budget,
 | KP97 | Copy the cost center plan to another year with a % change |
 | ZCO_SIM | Profit simulation: price, volume, material, labor and overhead changes, with the break-even volume |
 
+## Production status board - ZPP_BOARD
+
+A dark shop-floor screen for a TV in the factory (button "TV" = full screen, refreshes itself
+every minute, switch ON / OFF). Every line (work center) grouped by its area:
+
+| Column | Meaning |
+|---|---|
+| PLAN | planned quantity of the day (ZPP_LINEPLAN) |
+| TARG | what should be done by now: plan x elapsed part of the shift |
+| PROD / DIFF | confirmed yield of the day (CO11N) and the difference to the target (red = behind) |
+| ACH % / ON TIME | production / target; hours in which the hourly target was reached |
+| DEFECT % | scrap / (yield + scrap) from the confirmations |
+| LOSS | downtime minutes of the day (ZPP_LOSS) and the units lost by it |
+| UPH / MAN | target and actual units per hour; operators on the line |
+
+Below the lines: shipping (this and last week: ordered, delivery created, shipped, not shipped),
+attendance per team (HR absences), material shortages of released orders, quality (scrap
+today / yesterday / week, open rework orders, blocked stock) and late purchase order items
+(due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
+day) and ZPP_LOSS (stop of a line with reason).
+
 ## Purchasing in depth (numbered menu 1-1 ... 8-4)
 
 The Procurement menu is grouped: 1 Common, 2 Planning, 3 Sourcing, 4 Purchase order, 5 Import,
