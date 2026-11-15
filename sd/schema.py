@@ -79,9 +79,18 @@ CREATE TABLE IF NOT EXISTS sd_qmel (        -- IW51 service notification
     qmnum TEXT PRIMARY KEY, qmart TEXT, equnr TEXT, kunnr TEXT, matnr TEXT, qmtxt TEXT,
     erdat TEXT, priok TEXT, warranty INTEGER DEFAULT 0, aufnr TEXT, status TEXT DEFAULT 'OSNO',
     billed TEXT, ernam TEXT);
+CREATE TABLE IF NOT EXISTS sd_rebate (      -- ZREB01 customer rebate agreement (volume targets)
+    knuma TEXT PRIMARY KEY, kunnr TEXT NOT NULL, text TEXT, datab TEXT NOT NULL, datbi TEXT NOT NULL,
+    scale TEXT NOT NULL,                     -- json [[threshold cents, rate 1/100 %], ...]
+    accrued INTEGER NOT NULL DEFAULT 0, settled INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'A',        -- A active / S settled / X cancelled
+    set_belnr TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS sd_rebate_acr (  -- ZREB_ACR accrual postings
+    id INTEGER PRIMARY KEY AUTOINCREMENT, knuma TEXT, budat TEXT, basis INTEGER, earned INTEGER,
+    amount INTEGER, belnr TEXT, usnam TEXT);
 CREATE TABLE IF NOT EXISTS sd_einv (        -- e-invoice (Egyptian Tax Authority) log
     vbeln TEXT PRIMARY KEY, uuid TEXT, payload TEXT, status TEXT, ts TEXT);
 """
 
-SD_NUMBER_RANGES = {"INQ": 10000000, "QUOT": 20000000, "SORD": 30000000, "RET": 60000000,
+SD_NUMBER_RANGES = {"REBATE": 7000000, "INQ": 10000000, "QUOT": 20000000, "SORD": 30000000, "RET": 60000000,
                     "DLV": 80000000, "EQUI": 10000000, "QMEL": 300000000}
