@@ -58,3 +58,57 @@ def pp_loss(req, q):
 @route("POST", "/api/pp/loss")
 def pp_loss_add(req, q):
     return board.add_loss(db(), req.body, req.user)
+
+
+# ------------------------------------------------------------------ ZSD_BOARD / ZMM_BOARD
+def _amt(d, keys):
+    from mm.util import amt_out
+    for k in keys:
+        if isinstance(d.get(k), int):
+            d[k] = amt_out(d[k])
+    return d
+
+
+@route("GET", "/api/sd/board")
+def sd_board(req, q):
+    from sd import board as sdb
+    b = sdb.board(db(), q.get("datum") or None)
+    keys = ("plan", "target", "actual", "diff", "today", "backlog")
+    for g in b["groups"]:
+        for r in g["lines"]:
+            _amt(r, keys)
+            _q(r, ("plan_qty", "qty"))
+        _amt(g["total"], keys)
+    if b["total"]:
+        _amt(b["total"], keys)
+    for c in b["customers"]:
+        _amt(c, ("sales", "backlog", "receivable", "overdue"))
+    for k in ("today", "week", "month", "quotations"):
+        _amt(b["orders"][k], ("value",))
+    _amt(b["orders"], ("backlog",))
+    _amt(b["credit"], ("value",))
+    _amt(b["aging"], tuple(b["aging"]))
+    _amt(b["returns"]["month"], ("value",))
+    _amt(b["returns"]["credit_memos"], ("value",))
+    return b
+
+
+@route("GET", "/api/wm/board")
+def wm_board(req, q):
+    from mm import board as mmb
+    b = mmb.board(db(), q.get("datum") or None)
+    keys = ("value", "quality", "blocked")
+    for g in b["groups"]:
+        for r in g["lines"]:
+            _amt(r, keys)
+        _amt(g["total"], keys)
+    if b["total"]:
+        _amt(b["total"], keys)
+    _amt(b["inbound"], ("late_value",))
+    for r in b["reorder"]:
+        _q(r, ("stock", "reorder", "safety"))
+    for r in b["slow"]:
+        _q(r, ("qty",))
+        _amt(r, ("value",))
+    _amt(b, ("slow_value",))
+    return b

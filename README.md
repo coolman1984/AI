@@ -104,6 +104,16 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 (due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
 day) and ZPP_LOSS (stop of a line with reason).
 
+## Sales and warehouse status boards - ZSD_BOARD, ZMM_BOARD
+
+Same dark TV screen as the production board (TV button, refresh every minute, ON / OFF,
+last working day). Values in EGP thousand.
+
+| Board | Main table | Panels |
+|---|---|---|
+| ZSD_BOARD | per product, grouped by material group: sales plan of the month (KE11), target to date (plan x elapsed share of the month), actual (billing / CO-PA), difference, achievement %, today, open order backlog; top 10 customers with open orders, receivables, overdue and credit blocks | sales orders (today / week / month, open quotations, backlog), deliveries (due, late, shipped, not billed), credit and receivables aging, returns and complaints, e-invoice status |
+| ZMM_BOARD | per storage location, grouped by plant: materials, stock value (quality / blocked), goods receipts, issues and transfers of the day, bins, last movement | inbound (PO items due / late, receipts, quality inspection), outbound (to pick, to ship, shipped), production supply and physical inventory, below reorder point / safety stock, slow-moving stock (no movement in 90 days) |
+
 ## Purchasing in depth (numbered menu 1-1 ... 8-4)
 
 The Procurement menu is grouped: 1 Common, 2 Planning, 3 Sourcing, 4 Purchase order, 5 Import,
