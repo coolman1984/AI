@@ -16,6 +16,7 @@ const MENU = [
     ["Customizing", ["OMS2", "OMS3", "OMS4", "OMSF", "OMSK", "CUNI", "OBD2", "OBD3", "XDN1", "XKN1", "J1ID"]],
   ]],
   ["Sales", [
+    ["Sales Status Board", ["ZSD_BOARD"]],
     ["Master", ["XD01", "XD02", "XD03", "VD51", "VB01", "FD32"]],
     ["Sample", ["ZSD_SAMPLE", "ZSD_SAMPLES"]],
     ["Condition", ["VK11", "VK12", "VK13", "V/LD", "ZPRICE", "V/06", "V/08", "VKOA"]],
@@ -85,6 +86,7 @@ const MENU = [
   ]],
   ["Logistics Execution", [
     ["Materials Management", [
+      ["Warehouse Status Board", ["ZMM_BOARD"]],
       ["Inventory Management", ["MIGO", "MB03", "MBST", "MB51", "MB52", "MMBE", "MB5B", "MB5K", "ZMM_COCKPIT"]],
       ["Physical Inventory", ["MI01", "MI03", "MI04", "MI11", "MI20", "MI07", "MICN"]],
       ["Period", ["MMPV", "MMRV"]],
@@ -199,7 +201,7 @@ MENU.push(
   ]],
   ["Common", [
     ["BI (Business Intelligence)", ["ZDASH", "ZBI", "ZBI_DASH"]],
-    ["Shop-floor Boards", ["ZPP_BOARD"]],
+    ["Shop-floor Boards", ["ZPP_BOARD", "ZSD_BOARD", "ZMM_BOARD"]],
     ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],

@@ -168,6 +168,8 @@ PROCESSES = [
              ("PTP-19", "Operation sequence and scrap reason", "CO11N", "No operation above its predecessor's yield; scrap needs a reason", ["test_flows.ShopFloor.test_operation_sequence_and_scrap_reason", "test_flows.ShopFloor.test_picking_cannot_exceed_reservation"]),
              ("PTP-20", "Production status board per line and area", "ZPP_BOARD CO11N", "Plan, time-based target, confirmed production, difference, defects, loss and UPH per line; totals per area; shipping, attendance, shortages, quality and late POs", ["test_pp_board.Board.test_lines_grouped_with_plan_target_production_and_loss", "test_pp_board.Board.test_target_follows_the_clock_during_the_shift"]),
              ("PTP-21", "Daily line plan and downtime log", "ZPP_LINEPLAN ZPP_LOSS", "UPH from plan / hours; plans copied to the next day; wrong line, time, order and reason refused", ["test_pp_board.Inputs.test_line_plan_copy_and_downtime_checks"]),
+             ("PTP-22", "Sales status board", "ZSD_BOARD", "Plan, month-to-date target and actual per product equal the CO-PA figures; backlog, aging and panels consistent", ["test_boards.SalesBoard.test_plan_target_actual_and_panels"]),
+             ("PTP-23", "Warehouse status board", "ZMM_BOARD", "Stock value per storage location = quants x price; movements of the day; reorder, slow-moving and late receipts", ["test_boards.WarehouseBoard.test_stock_values_movements_and_panels"]),
          ]),
     # ------------------------------------------------------------------ Inventory
     dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",
