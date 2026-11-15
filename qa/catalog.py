@@ -64,6 +64,8 @@ PROCESSES = [
              ("O2C-19", "Sales order change (VA02): quantity, price, add and delete item", "VA02", "New pricing; delivered quantity and follow-on documents protected", ["test_flows.SalesOrderChange.test_va02_quantity_price_add_delete"]),
              ("O2C-20", "Invoice in customer currency and payment", "VF01 F-28", "Receivable in USD at the billing-date rate; payment clears it", ["test_flows.CustomerCurrency.test_usd_customer_invoice_and_payment"]),
              ("O2C-21", "USD price list: order and invoice in USD to the cent", "VK11 VA01 VF01", "USD price stays exact on the invoice; local amount at the billing-date rate", ["test_flows.CustomerCurrency.test_usd_price_is_kept_exactly_from_order_to_invoice"]),
+             ("O2C-22", "Customer rebate agreement with targets, accrual and settlement", "ZREB01 ZREB02 ZREB_ACR ZREB03", "Reached tier on net billed sales; accrual only the difference; customer credited and accrual cleared at the end", ["test_sd_mm_ext.Rebates.test_tiers_accrual_and_settlement"]),
+             ("O2C-23", "Quotation follow-up, sales configuration and month-end", "ZSD_QFU ZSD_CONF ZSD_CLOSE", "Conversion and hit rate; settings displayed; open sales work in order", ["test_sd_mm_ext.SalesFollowUp.test_quotations_config_and_month_end"]),
          ]),
     # ------------------------------------------------------------------ P2P
     dict(id="P2P", folder="4", module="PUR", map="ZPUR_PROCESS", version="2.1",
@@ -209,6 +211,7 @@ PROCESSES = [
              ("INV-11", "Physical inventory with posting block and recount", "MI01 MI04 MI11 MI20 MI07", "Movements blocked during the count; differences posted 701/702", ["test_golive.PhysicalInventory.test_freeze_count_recount_and_post_differences"]),
              ("INV-12", "Count without difference", "MI04 MI07", "Document closed, nothing posted", ["test_golive.PhysicalInventory.test_zero_difference_closes_without_posting"]),
              ("INV-13", "MM periods and stock on a posting date", "MMPV MMRV MB5B", "Only open periods; MB5B = valuation", ["test_golive.Periods.test_mm_period_and_stock_on_posting_date"]),
+             ("INV-14", "Stock aging, ABC analysis, coverage and warehouse month-end", "ZMM_AGING ZMM_ABC ZMM_COVER ZMM_CONF ZMM_CLOSE", "Aging buckets add up to the stock value; A = 80 % of consumption value, saved for cycle counting; days of stock = stock / daily use", ["test_sd_mm_ext.WarehouseAnalysis.test_aging_abc_coverage_and_month_end"]),
          ]),
     # ------------------------------------------------------------------ R2R
     dict(id="R2R", folder="7", module="FI", map="ZFI_PROCESS", version="2.1",

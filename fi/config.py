@@ -68,6 +68,7 @@ CHART = {
     "170000": ("Down payments received (special G/L A)", "BS", "P20", "D", 1, ""),
     "288000": ("Payment differences", "PL", "R90", "", 0, ""),
     "190000": ("Accrued expenses", "BS", "P40", "", 0, ""),
+    "291000": ("Accrued customer rebates", "BS", "P40", "", 0, ""),
     "191100": ("Goods received / invoice received (GR/IR)", "BS", "P40", "", 1, ""),
     "193000": ("Freight clearing (planned delivery costs)", "BS", "P40", "", 1, ""),
     "193500": ("Import costs clearing (shipments in transit)", "BS", "A60", "", 0, ""),
@@ -76,6 +77,7 @@ CHART = {
     "800100": ("Sales revenue - export", "PL", "R10", "", 0, ">"),
     "830000": ("Other operating income", "PL", "R10", "", 0, ">"),
     "880000": ("Sales deductions (discounts)", "PL", "R20", "", 0, ""),
+    "881000": ("Customer rebates (volume agreements)", "PL", "R20", "", 0, ""),
     "880100": ("Cash discount granted", "PL", "R20", "", 0, ""),
     "500000": ("Cost of goods sold (COGS)", "PL", "R30", "", 0, ""),
     # ---- P&L: primary costs

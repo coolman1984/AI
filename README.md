@@ -104,6 +104,23 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 (due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
 day) and ZPP_LOSS (stop of a line with reason).
 
+## Sales and warehouse in depth (numbered menus)
+
+Sales: 1 Common, 2 Pricing, 3 Pre-sales, 4 Orders, 5 Shipping, 6 Billing, 7 Returns & service,
+8 Reports. Warehouse (Logistics Execution): 1 Common, 2 Inbound, 3 Stock, 4 Outbound,
+5 Inventory, 6 Analysis. New functions:
+
+| Code | What it does |
+|---|---|
+| ZSD_CONF / ZMM_CONF | Sales / warehouse configuration (document types, conditions, credit, accounts / plants, storage locations, bins, movement types, counting intervals) |
+| ZSD_CLOSE / ZMM_CLOSE | Month-end of sales (blocks, incomplete, late orders, not shipped, not billed, not posted, e-invoices, returns, rebate accrual) and of the warehouse (late receipts, quality / blocked stock, reservations, deliveries, counts, negative stock, MM period) |
+| ZREB01 / ZREB02 | Customer rebate agreement with targets (e.g. from 1 M EGP 2 %, from 2 M 3.5 %) and its status: sales so far, reached tier, earned, missing to the next tier |
+| ZREB_ACR / ZREB03 | Monthly rebate accrual (Dr 881000 / Cr 291000, only the difference) and settlement: credit to the customer, accrual cleared |
+| ZSD_QFU | Quotation follow-up: validity, days left, ordered value, conversion and hit rate, quotations to call about |
+| ZMM_AGING | Stock aging by goods receipt date: 0-30 / 31-90 / 91-180 / 181-365 / > 365 days in value |
+| ZMM_ABC | ABC analysis of the consumption value (12 months); saving it sets the ABC indicator used by cycle counting (MICN) |
+| ZMM_COVER | Range of coverage: days of stock = unrestricted stock / average daily use; short, too much, not used |
+
 ## Sales and warehouse status boards - ZSD_BOARD, ZMM_BOARD
 
 Same dark TV screen as the production board (TV button, refresh every minute, ON / OFF,

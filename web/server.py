@@ -645,3 +645,4 @@ from web import co2_api  # noqa: E402,F401
 from web import fi2_api  # noqa: E402,F401
 from web import pur2_api  # noqa: E402,F401
 from web import board_api  # noqa: E402,F401
+from web import sdmm_api  # noqa: E402,F401
