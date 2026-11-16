@@ -22,6 +22,9 @@ DEFAULTS = {
     "si_max": "1450000",
     "tax_exemption": "2000000",   # cents per year
     "tax_brackets": "4000000:0,5500000:1000,7000000:1500,20000000:2000,40000000:2250,120000000:2500,999999999999:2750",
+    # Law 7/2024 high incomes: above <threshold> the first <up to> are taxed at <rate> (lower brackets fall away)
+    "tax_high_income": "60000000:5500000:1000,70000000:7000000:1500,80000000:20000000:2000,"
+                       "90000000:40000000:2250,120000000:120000000:2500",
     "martyrs_pct": "5",           # basis points (0.05 %)
     "ot_day_pct": "13500",        # basis points of the hourly rate
     "ot_night_pct": "17000",
@@ -39,6 +42,7 @@ CONFIG_TEXT = {
     "si_max": "Maximum insurable wage per month (EGP x 100)",
     "tax_exemption": "Personal tax exemption per year (EGP x 100)",
     "tax_brackets": "Annual tax brackets: upper limit (EGP x 100) : rate (basis points), ...",
+    "tax_high_income": "High incomes (Law 7/2024): above threshold : the first <up to> : at rate (EGP x 100 / basis points)",
     "martyrs_pct": "Martyrs' fund (basis points of gross, 5 = 0.05 %)",
     "ot_day_pct": "Overtime day (basis points of hourly rate, 13500 = 135 %)",
     "ot_night_pct": "Overtime night (basis points of hourly rate)",
