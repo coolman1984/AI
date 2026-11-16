@@ -214,6 +214,25 @@ const MENU = [
 ];
 
 MENU.push(
+  ["Taxes Egypt", [
+    ["1-1 Common - Law Register (rates & updates)", ["ZTAX_LAW"]],
+    ["1-2 Common - E-Invoice Settings", ["ZTAX_CONF"]],
+    ["1-3 Common - Tax Calendar", ["ZTAX_CAL"]],
+    ["1-4 Common - Month-End", ["ZTAX_CLOSE"]],
+    ["2-1 VAT - Return (form 10)", ["ZTAX_VAT", "FB41"]],
+    ["2-2 VAT - Codes & Reports", ["FTXP", "S_ALR_87012357"]],
+    ["3-1 Withholding - Return (form 41)", ["ZTAX_41"]],
+    ["3-2 Withholding - Codes & Vendors", ["ZWHT", "ZWHT_RPT"]],
+    ["4-1 Salary Tax - Return (form 4)", ["ZTAX_SAL"]],
+    ["4-2 Salary Tax - Payroll", ["PC00_M99_CALC", "PC00_M99_CEDT"]],
+    ["5-1 Income Tax - Corporate Tax Estimate", ["ZTAX_CIT"]],
+    ["5-2 Income Tax - Simplified Regime (Law 6/2025)", ["ZTAX_SIMP"]],
+    ["6-1 E-Invoice - Issued (manual / API)", ["ZTAX_EINV", "ZEINV"]],
+    ["6-2 E-Invoice - Received from Vendors", ["ZTAX_EIN"]],
+    ["7-1 Tax Audit - Readiness Checklist", ["ZTAX_AUDIT"]],
+    ["7-2 Tax Audit - Revenue Reconciliation", ["ZTAX_REVREC"]],
+    ["7-3 Tax Audit - Audit File (Excel)", ["ZTAX_AUDITFILE"]],
+  ]],
   ["Marketing", [
     ["Sales Analysis", ["ZSD_COCKPIT", "MCTA", "MCTC", "ZSLM"]],
     ["Profitability (CO-PA)", ["KE30", "KE24", "KE11", "KEU5"]],
@@ -257,7 +276,7 @@ MENU.push(
   ]]);
 // order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
-  "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
+  "Taxes Egypt", "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
 MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));
 
 // Process view: end-to-end flows across modules

@@ -104,6 +104,21 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 (due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
 day) and ZPP_LOSS (stop of a line with reason).
 
+## Egyptian taxes - module "Taxes Egypt" (ZTAX_*)
+
+| Code | What it does |
+|---|---|
+| ZTAX_LAW | Law register: every rate, limit and deadline (VAT Law 67/2016 and Law 157/2025, withholding, salary tax Law 7/2024, social insurance Law 148/2019, corporate tax, simplified regime Law 6/2025, e-invoice rules, Unified Tax Procedures Law 206/2020) with validity, legal reference and status VERIFIED / VERIFY. A change of the law = a new version with its effective date. "Apply to payroll" / "Apply to WHT codes" bring the payroll and the withholding codes in line with the law. |
+| ZTAX_CAL / ZTAX_CLOSE | Tax calendar (every return with due date, amount, filed / paid) and the tax month-end |
+| ZTAX_VAT / ZTAX_41 / ZTAX_SAL | VAT return form 10 (with credit carried forward and input VAT at risk), withholding form 41, salary tax return |
+| ZTAX_CIT / ZTAX_SIMP | Corporate income tax estimate; simplified regime (turnover bands, eligibility) |
+| ZTAX_EINV / ZTAX_CONF | E-invoices issued: manual mode (generate the ETA document, export for signing, record the result one by one or from a result file, cancellation only inside the window) and the API settings (needs ETA client ID, signing service - not connected in this version) |
+| ZTAX_EIN | E-invoices received (ETA portal export) matched with the vendor invoices; input VAT without a valid e-invoice shown as at risk |
+| ZTAX_AUDIT / ZTAX_REVREC / ZTAX_AUDITFILE | Tax audit readiness: checklist from the data, revenue reconciliation (books = invoices = e-invoices = VAT return), Excel audit file with trial balance, journal, VAT registers, withholding, salary tax, fixed assets, e-invoice log |
+
+Salary tax follows Law 7/2024 including the high-income rule (above 600,000 EGP the lower brackets fall away).
+Rules marked VERIFY must be confirmed with the tax adviser / the official ETA texts before go-live.
+
 ## Data takeover - six Excel workbooks (ZIMPORT)
 
 One workbook per business area, each with an Arabic guide (sheet "00 Start here"), one sheet

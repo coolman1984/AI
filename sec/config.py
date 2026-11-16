@@ -12,7 +12,7 @@ Two layers, like SAP:
 MENU_AREAS = {"Sales": "SD", "Marketing": "SD", "Logistics Execution": "MM",
               "Procurement": "PUR", "Production": "PP", "Financial Accounting": "FI",
               "Controlling": "CO", "Master Data": "MD", "Common": "CA",
-              "Administration": "BC", "Human Resources": "HR"}
+              "Administration": "BC", "Human Resources": "HR", "Taxes Egypt": "FI"}
 AREAS = {"SD": "Sales and distribution", "MM": "Inventory / logistics execution",
          "PUR": "Procurement", "PP": "Production", "FI": "Financial accounting",
          "CO": "Controlling", "MD": "Master data", "CA": "Cross-application tools",
@@ -25,7 +25,7 @@ API_AREAS = (("/api/forms/PAYSLIP/", "HR"), ("/api/sd/", "SD"), ("/api/fi/", "FI
              ("/api/pp/", "PP"), ("/api/md/", "MD"), ("/api/qa/", "CA"), ("/api/office/", "CA"),
              ("/api/excel/", "CA"), ("/api/pdf/", "CA"), ("/api/ppt/", "CA"), ("/api/outlook", "CA"),
              ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
-             ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"), ("/api/wm/", "MM"))
+             ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"), ("/api/wm/", "MM"), ("/api/tax/", "FI"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request",

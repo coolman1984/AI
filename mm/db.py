@@ -174,6 +174,9 @@ def migrate_schema(conn):
     from fi.wht import WHT_SCHEMA, install as wht_install
     conn.executescript(WHT_SCHEMA)
     wht_install(conn)
+    from tax.schema import TAX_SCHEMA, install as tax_install
+    conn.executescript(TAX_SCHEMA)
+    tax_install(conn)
     from fi.clearing import DP_SCHEMA
     conn.executescript(DP_SCHEMA)
     from fi.document import PERIOD_SCHEMA

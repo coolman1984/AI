@@ -32,12 +32,26 @@ def _period(y, p):
 
 
 def annual_tax(conn, taxable_year):
-    """Bracket tax on an annual taxable amount (cents)."""
+    """Bracket tax on an annual taxable amount (cents). High incomes (Law 7/2024): above a
+    threshold the lower brackets fall away - the first part of the income is taxed at one
+    higher rate, the rest on the normal scale."""
     tax, low = 0, 0
+    rule = None
+    for part in (cfg(conn, "tax_high_income") or "").split(","):
+        if part.strip():
+            thr, upto, rate = (int(x) for x in part.split(":"))
+            if taxable_year > thr:
+                rule = (upto, rate)
+    if rule:
+        upto, rate = rule
+        tax = rdiv(min(taxable_year, upto) * rate, 10000)
+        low = upto
     for part in cfg(conn, "tax_brackets").split(","):
         upper, rate = (int(x) for x in part.split(":"))
         if taxable_year <= low:
             break
+        if upper <= low:
+            continue
         tax += rdiv((min(taxable_year, upper) - low) * rate, 10000)
         low = upper
     return tax
