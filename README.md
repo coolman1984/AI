@@ -104,6 +104,19 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 (due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
 day) and ZPP_LOSS (stop of a line with reason).
 
+## HR in depth (numbered menu 1-1 ... 5-2)
+
+The HR menu is grouped: 1 Common, 2 Personnel, 3 Time, 4 Payroll, 5 Reports. New functions:
+
+| Code | What it does |
+|---|---|
+| ZHR_LOAN | Employee loan or salary advance: paid from the bank (Dr 117000 / Cr bank), the payroll deducts the monthly installment until it is repaid (never more than the net pay) |
+| ZHR_ADDPAY | One-time entries of a payroll month: bonus and incentive (taxable earnings), penalty in days of pay (to the workers' penalties fund 177500), other deductions (recovered, 831000) |
+| ZHR_EVENTS | Follow-up: probation ending (90 days), fixed-term contracts ending, retirement age (60), service anniversaries |
+| ZHR_LEAVEBAL | Leave balances of all employees: entitlement, taken, requested, remaining |
+| ZHR_COST | Payroll cost (gross + employer social insurance) per cost center and month |
+| ZHR_CLOSE | Payroll month-end: leave requests, ended contracts, overtime, bonuses / penalties, loans, run, posting, bank transfer |
+
 ## Production in depth (numbered menu 1-1 ... 7-4)
 
 The Production menu is grouped: 1 Common, 2 Planning, 3 Orders, 4 Shop floor, 5 Special

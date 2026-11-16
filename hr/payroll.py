@@ -79,7 +79,9 @@ def calc(conn, e, y, p, first, last):
     for o in conn.execute("SELECT ottype, SUM(hours) h FROM hr_overtime WHERE pernr=? AND datum BETWEEN ? AND ? "
                           "GROUP BY ottype", (e["pernr"], first, last)):
         ot += rdiv(e["basic"] * o["h"] * pct.get(o["ottype"], 10000), hourly_div * 1000 * 10000)
-    gross = max(basic + allow + ot - unpaid, 0)
+    from .extras import period_items
+    addpay, pen, ded, inst = period_items(conn, e, y, p, contract, days_m)   # ZHR_ADDPAY / ZHR_LOAN
+    gross = max(basic + allow + ot - unpaid, 0) + addpay
     ins = e["ins_wage"] or contract
     ins = min(max(ins, cfg_int(conn, "si_min")), cfg_int(conn, "si_max"))
     ins = rdiv(ins * paid_days, days_m)
@@ -90,10 +92,21 @@ def calc(conn, e, y, p, first, last):
     tax = rdiv(annual_tax(conn, year_base), 12)
     martyrs = rdiv(gross * cfg_int(conn, "martyrs_pct"), 10000)
     net = gross - si_ee - tax - martyrs
+    # deductions after tax, never more than the net pay: penalties, other deductions, loan installments
+    pen = min(pen, max(net, 0))
+    ded = min(ded, max(net - pen, 0))
+    room, loans = max(net - pen - ded, 0), []
+    for lid, amt in inst:
+        take = min(amt, room)
+        loans.append((lid, take))
+        room -= take
+    loan = sum(a for _, a in loans)
+    net -= pen + ded + loan
     return dict(gjahr=y, perio=p, pernr=e["pernr"], kostl=e["kostl"], persk=e["persk"], days=days_m,
                 paid_days=paid_days - unpaid_days, basic=basic, allowances=allow, overtime=ot, unpaid=unpaid,
                 gross=gross, ins_wage=ins, si_ee=si_ee, si_er=si_er, taxable=taxable, tax=tax, martyrs=martyrs,
-                other=0, net=net, waers=waers, kurs=kurs,
+                other=pen + ded + loan, addpay=addpay, penalty=pen, loan=loan, _deduct=ded, _loans=loans,
+                net=net, waers=waers, kurs=kurs,
                 gross_fc=gross if waers == LOCAL_CURRENCY else rdiv(gross * 100000, kurs),
                 net_fc=net if waers == LOCAL_CURRENCY else rdiv(net * 100000, kurs))
 
@@ -124,15 +137,20 @@ def run(conn, y, p, user, simulate=False):
         return dict(status="SIM", results=res, totals=_totals(res))
     conn.execute("DELETE FROM hr_payroll WHERE gjahr=? AND perio=?", (y, p))
     for r in res:
-        conn.execute("INSERT INTO hr_payroll (%s) VALUES (%s)" % (",".join(r), ",".join("?" * len(r))), list(r.values()))
+        keep = {k: v for k, v in r.items() if not k.startswith("_")}
+        conn.execute("INSERT INTO hr_payroll (%s) VALUES (%s)" % (",".join(keep), ",".join("?" * len(keep))),
+                     list(keep.values()))
+    from .extras import store_installments
+    store_installments(conn, y, p, res)
     conn.execute("INSERT OR REPLACE INTO hr_payroll_run (gjahr,perio,status,run_ts,usnam,employees) VALUES "
                  "(?,?,?,?,?,?)", (y, p, "REL", now_ts(), user, len(res)))
     return dict(status="REL", results=res, totals=_totals(res))
 
 
 def _totals(res):
-    keys = ("basic", "allowances", "overtime", "unpaid", "gross", "si_ee", "si_er", "tax", "martyrs", "other", "net")
-    return {k: sum(r[k] for r in res) for k in keys}
+    keys = ("basic", "allowances", "overtime", "unpaid", "gross", "si_ee", "si_er", "tax", "martyrs", "other", "net",
+            "addpay", "penalty", "loan")
+    return {k: sum(r[k] or 0 for r in res) for k in keys}
 
 
 def results(conn, y, p, pernr=None):
@@ -172,7 +190,11 @@ def post(conn, y, p, user):
         for acc, amt, txt in ((ACCOUNTS["payable"], tot["net"], "Net pay"),
                               (ACCOUNTS["si_payable"], tot["si_ee"] + tot["si_er"], "Social insurance"),
                               (ACCOUNTS["tax_payable"], tot["tax"], "Salary income tax"),
-                              (ACCOUNTS["martyrs_payable"], tot["martyrs"], "Martyrs' fund")):
+                              (ACCOUNTS["martyrs_payable"], tot["martyrs"], "Martyrs' fund"),
+                              (ACCOUNTS["loans"], tot["loan"], "Loan installments"),
+                              (ACCOUNTS["penalties"], tot["penalty"], "Penalties to the workers' fund"),
+                              (ACCOUNTS["recovered"], tot["other"] - tot["loan"] - tot["penalty"],
+                               "Other deductions")):
             if amt:
                 lines.append(dict(hkont=acc, amount=-amt, sgtxt="%s %04d/%02d" % (txt, y, p)))
         belnr = write(conn, "SA", _posting_date(last), user, "PY%04d%02d" % (y, p), "Payroll %04d/%02d" % (y, p),

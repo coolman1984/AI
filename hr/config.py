@@ -69,4 +69,17 @@ LEAVE_REASONS = {"01": "Resignation", "02": "End of contract", "03": "Dismissal"
 
 # payroll accounts (company code 1000)
 ACCOUNTS = dict(salaries="430000", wages="420000", employer_si="440000", payable="176000",
-                si_payable="178000", tax_payable="178100", martyrs_payable="178200", bank="113100")
+                si_payable="178000", tax_payable="178100", martyrs_payable="178200", bank="113100",
+                loans="117000", penalties="177500", recovered="831000")
+
+# ZHR_ADDPAY wage types: additions are taxable earnings; deductions come off the net pay
+ADDPAY_TYPES = {
+    "BONUS": dict(text="Bonus", kind="+"),
+    "INCENT": dict(text="Production incentive", kind="+"),
+    "ADDOTH": dict(text="Other addition", kind="+"),
+    "PENALTY": dict(text="Penalty (days of pay) - to the workers' penalties fund", kind="-", days=True),
+    "DEDOTH": dict(text="Other deduction (e.g. damaged tools, mobile bill)", kind="-"),
+}
+LOAN_TYPES = {"LOAN": "Employee loan", "ADV": "Salary advance"}
+PROBATION_DAYS = 90
+RETIREMENT_AGE = 60
