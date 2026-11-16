@@ -104,6 +104,27 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 (due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
 day) and ZPP_LOSS (stop of a line with reason).
 
+## Data takeover - six Excel workbooks (ZIMPORT)
+
+One workbook per business area, each with an Arabic guide (sheet "00 Start here"), one sheet
+per data type with dropdown lists, a Control sheet with counts and totals, and an example
+version with consistent sample data. Load them in this order:
+
+| # | Workbook | Sheets |
+|---|---|---|
+| 1 | NERP_1_Purchasing | plants, storage locations, material groups, buyers, vendors, materials, vendor prices, open purchase orders |
+| 2 | NERP_2_Sales | product groups, customers (with credit limit), products, customer prices, open sales orders |
+| 3 | NERP_3_Warehouse | storage bins, opening stock with value |
+| 4 | NERP_4_Finance | cost centers, extra G/L accounts, opening balances, open customer and vendor invoices, fixed assets |
+| 5 | NERP_5_Production | activity types, work centers / lines, bills of material, routings |
+| 6 | NERP_6_HR | org units, employees with salary, open loans / advances |
+
+Simulate checks every line without saving; Post saves the correct lines; "Compare file with
+system" compares every value of the file with NERP. Balances, open items, stock, fixed assets
+and loans are posted against the takeover account 399999, which must be 0 at the end (the six
+examples end exactly at 0). Old numbers of vendors, customers and employees are kept and can be
+used in the later sheets.
+
 ## HR in depth (numbered menu 1-1 ... 5-2)
 
 The HR menu is grouped: 1 Common, 2 Personnel, 3 Time, 4 Payroll, 5 Reports. New functions:

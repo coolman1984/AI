@@ -222,7 +222,7 @@ register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
   let xlsx = null;                                   // base64 of the chosen Excel file
   const showCols = () => {
     const o = m.objects.find(x => x.obj === obj.value);
-    cols.textContent = o ? `${o.columns}  (Excel sheet "${o.sheet}")` : "every NERP sheet of the workbook, e.g. 01 Plants ... 08 Open purchase orders";
+    cols.textContent = o ? `${o.columns}  (Excel sheet "${o.sheet}")` : "every NERP sheet of the workbook (01 Plants ... 08 Open purchase orders, S1 Customers, W2 Opening stock, F3 GL opening balances, P3 Bills of material, H2 Employees ...)";
   };
   obj.addEventListener("change", showCols); showCols();
   file.addEventListener("change", () => {
@@ -235,16 +235,19 @@ register("ZIMPORT", { title: "Data Import for Go-Live", async render(app) {
       rd.readAsArrayBuffer(f);
     } else { xlsx = null; rd.onload = () => { text.value = rd.result; }; rd.readAsText(f, "utf-8"); }
   });
+  const area = sel([["PUR", "1. Purchasing - vendors, materials, prices, open POs"], ["SD", "2. Sales - customers, products, prices, open orders"],
+    ["MM", "3. Warehouse - bins, opening stock"], ["FI", "4. Finance - cost centers, balances, open items, fixed assets"],
+    ["PP", "5. Production - lines, BOMs, routings"], ["HR", "6. HR - org units, employees, open loans"]], "PUR", { w: "l" });
   const download = async example => {
-    const r = await run(() => api("/api/import/workbook/PUR" + (example ? "?example=1" : ""))); if (!r) return;
+    const r = await run(() => api("/api/import/workbook/" + area.value + (example ? "?example=1" : ""))); if (!r) return;
     const bin = atob(r.xlsx), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
     const a = h("a", { href: URL.createObjectURL(new Blob([u8], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })), download: r.name });
     document.body.append(a); a.click(); a.remove(); msg("S", `${r.name} downloaded - fill it in Excel and choose it here`);
   };
-  app.append(panel("1. Excel template", h("div", null,
-      h("button.btn", { type: "button", on: { click: () => download(false) } }, "⇩ Purchasing template (empty, for your data)"), " ",
-      h("button.btn", { type: "button", on: { click: () => download(true) } }, "⇩ Purchasing example (sample data, for the sandbox)")),
-    note("The workbook has a guide in Arabic (sheet '00 Start here'), one sheet per data type with dropdown lists, and a 'Control' sheet with the counts and the open order value to compare.")),
+  app.append(panel("1. Excel template", grid(field("Business area (load in this order 1 → 6)", area)), h("div", null,
+      h("button.btn", { type: "button", on: { click: () => download(false) } }, "⇩ Template (empty, for your data)"), " ",
+      h("button.btn", { type: "button", on: { click: () => download(true) } }, "⇩ Example (sample data, for the sandbox)")),
+    note("Every workbook has a guide in Arabic (sheet '00 Start here'), one sheet per data type with dropdown lists, and a 'Control' sheet with counts and totals to compare. Load the six workbooks in their order: purchasing, sales, warehouse, finance, production, HR - the takeover account 399999 is 0 at the end.")),
     panel("2. File", grid(field("Object (load in this order)", obj), field("Excel workbook (.xlsx) or CSV file", file)), h("div", null, "File: ", fname),
       h("div", null, "Columns: ", cols), text,
       note(`Simulate = test every line with all checks, nothing is saved. Post = save every correct line (wrong lines are listed and skipped). Compare = after the upload, every value of the file is compared with NERP. Open items, balances and stock are posted against the takeover account 399999 - current balance ${App.fmtAmt(m.takeover)} (must be 0 when the load is complete).`)), out);
