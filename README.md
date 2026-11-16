@@ -104,6 +104,19 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 (due today, 1, 2, 3+ days late). Inputs: ZPP_LINEPLAN (plan per line and day, copy from another
 day) and ZPP_LOSS (stop of a line with reason).
 
+## Production in depth (numbered menu 1-1 ... 7-4)
+
+The Production menu is grouped: 1 Common, 2 Planning, 3 Orders, 4 Shop floor, 5 Special
+production, 6 Service parts, 7 Reports. New functions:
+
+| Code | What it does |
+|---|---|
+| ZPP_CONF | Production configuration: order types, work centers / lines, control keys, MRP types, lot sizes, strategies, scrap reasons, working days, accounts |
+| ZPP_CLOSE | Production month-end: orders to release, late orders, components not issued, goods receipts missing, TECO, overhead, WIP, variances, settlement |
+| ZPP_OEE | OEE per line = availability (run time / planned time) x performance (output / output at target speed) x quality (good / total), with the downtime by reason; world class 85 % |
+| ZPP_SCRAP | Scrap Pareto by reason, material and line, with scrap rate and value |
+| ZPP_PROGRESS | Open production orders: confirmed and received %, days late, missing parts, not started |
+
 ## Sales and warehouse in depth (numbered menus)
 
 Sales: 1 Common, 2 Pricing, 3 Pre-sales, 4 Orders, 5 Shipping, 6 Billing, 7 Returns & service,

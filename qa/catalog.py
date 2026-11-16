@@ -172,6 +172,9 @@ PROCESSES = [
              ("PTP-21", "Daily line plan and downtime log", "ZPP_LINEPLAN ZPP_LOSS", "UPH from plan / hours; plans copied to the next day; wrong line, time, order and reason refused", ["test_pp_board.Inputs.test_line_plan_copy_and_downtime_checks"]),
              ("PTP-22", "Sales status board", "ZSD_BOARD", "Plan, month-to-date target and actual per product equal the CO-PA figures; backlog, aging and panels consistent", ["test_boards.SalesBoard.test_plan_target_actual_and_panels"]),
              ("PTP-23", "Warehouse status board", "ZMM_BOARD", "Stock value per storage location = quants x price; movements of the day; reorder, slow-moving and late receipts", ["test_boards.WarehouseBoard.test_stock_values_movements_and_panels"]),
+             ("PTP-24", "OEE per line", "ZPP_OEE", "Availability from planned time and downtime, performance at the target speed, quality from good / scrap; OEE = A x P x Q", ["test_pp_ext.Oee.test_availability_performance_quality"]),
+             ("PTP-25", "Scrap Pareto and order progress", "ZPP_SCRAP ZPP_PROGRESS", "Scrap by reason / material / line adds up and is valued; open orders with done %, late days, missing parts", ["test_pp_ext.ScrapAndProgress.test_scrap_pareto_and_order_progress"]),
+             ("PTP-26", "Production configuration and month-end", "ZPP_CONF ZPP_CLOSE", "Settings displayed; open production work and CO period-end runs in order", ["test_pp_ext.ConfigAndClosing.test_configuration_and_month_end"]),
          ]),
     # ------------------------------------------------------------------ Inventory
     dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",
