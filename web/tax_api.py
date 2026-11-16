@@ -2,7 +2,7 @@
 import base64
 
 from mm.util import amt_out, require
-from tax import audit, eta, returns, rules
+from tax import audit, eta, returns, review, rules
 
 from .server import db, route
 
@@ -55,6 +55,34 @@ def tax_law_act(req, q, act):
         return rules.set_verified(c, b["id"], req.user)
     require(b, "day")
     return rules.apply_payroll(c, b["day"], req.user) if act == "apply_payroll" else rules.apply_wht(c, b["day"], req.user)
+
+
+@route("GET", "/api/tax/review")
+def tax_review(req, q):
+    c = db()
+    if q.get("file"):
+        from fi.config import BUTXT
+        return {"name": "NERP_Tax_Adviser_Review_%s.xlsx" % clock_today(),
+                "xlsx": base64.b64encode(review.review_sheet(c, BUTXT)).decode("ascii")}
+    return review.summary(c)
+
+
+@route("POST", "/api/tax/review")
+def tax_review_load(req, q):
+    import binascii
+    from mm.util import MMError
+    try:
+        data = base64.b64decode(req.body.get("xlsx") or "", validate=True)
+    except (binascii.Error, ValueError):
+        raise MMError("The Excel file could not be read - choose it again", "TX", "940")
+    if not data:
+        raise MMError("Choose the answered Excel sheet", "TX", "940")
+    return review.import_review(db(), data, req.user, req.body.get("simulate", True) is not False)
+
+
+def clock_today():
+    from mm import util as clock
+    return clock.today().isoformat()
 
 
 # ------------------------------------------------------------------ returns and calendar

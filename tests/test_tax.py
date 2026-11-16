@@ -41,10 +41,6 @@ class SalaryTaxHighIncome(unittest.TestCase):
         self.assertEqual(annual_tax(c, 1300000 * EGP), 327500 * EGP)       # 1,200,000 x 25 % + 100,000 x 27.5 %
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class LawRegister(unittest.TestCase):
     def test_dated_rules_new_versions_and_sync_to_payroll_and_wht(self):
         from tax import rules
@@ -169,3 +165,80 @@ class Audit(unittest.TestCase):
         st = audit.close_status(c, T.year, 10)
         self.assertEqual(st["steps"][0]["tcode"], "ZTAX_EINV")
         self.assertEqual(st["done"], sum(1 for s in st["steps"] if s["status"] == "done"))
+
+
+class AdviserReview(unittest.TestCase):
+    """ZTAX_REVIEW: the sheet for the tax adviser and loading the answers back"""
+    def _answer(self, data, answers, adviser="Dr. Adviser"):
+        """fill the adviser columns of the sheet like Excel would (re-written workbook)"""
+        from mm.xlsx import Workbook, read
+        from tax.review import HEAD_ROW, SHEET
+        book = read(data)
+        wb = Workbook()
+        s = wb.add(SHEET)
+        rows = book[SHEET]
+        for n, r in enumerate(rows):
+            s.row(n, list(r))
+        s.set(1, 3, adviser)
+        s.set(2, 3, "46340")                                   # Excel serial date
+        for n in range(HEAD_ROW + 1, len(rows)):
+            a = answers.get(rows[n][2])
+            if a:
+                for i, v in enumerate(a):
+                    s.set(n, 11 + i, v)
+        return wb.save()
+
+    def test_sheet_answers_simulate_verify_correct_and_new_version(self):
+        from mm.xlsx import read
+        from tax import review, rules
+        c = system()
+        before = review.summary(c)
+        self.assertEqual(before["to_verify"], 30)               # 28 rules, SI_MIN / SI_MAX in 2 versions
+        data = review.review_sheet(c, "Test Co")
+        book = read(data)
+        self.assertEqual(set(book), {"Guide", "Rules to verify", "Verified rules"})
+        sheet = book["Rules to verify"]
+        keys = [r[2] for r in sheet[review.HEAD_ROW + 1:] if len(r) > 2]
+        self.assertEqual(len(keys), 30)
+        brackets = [r for r in sheet if len(r) > 2 and r[2] == "SAL_BRACKETS"][0]
+        self.assertEqual(brackets[6], "40000:0, 55000:10, 70000:15, 200000:20, 400000:22.5, 1200000:25, above:27.5")
+        self.assertTrue(brackets[5])                           # Arabic description
+        # answers: confirm, correct in place, new version, one bad value, one bad decision
+        bad = self._answer(data, {"WHT_SUPPLIES": ["OK"], "WHT_SERVICES": ["CHANGE", "x%", "", "Decree 1"],
+                                  "WHT_MIN": ["MAYBE"]})
+        r = review.import_review(c, bad, "T", simulate=False)
+        self.assertEqual(r["errors"], 2)
+        self.assertEqual(review.summary(c)["to_verify"], 30)    # nothing changed with errors
+        err(self, lambda: review.import_review(c, self._answer(data, {"WHT_MIN": ["OK"]}, adviser=""), "T"), "942")
+        err(self, lambda: review.import_review(c, b"not excel", "T"), "940")
+        good = self._answer(data, {
+            "WHT_SUPPLIES": ["OK"],
+            "SIMP_BANDS": ["CHANGE", "500000:0.4, 2000000:0.5, 3000000:0.75, 10000000:1, 20000000:1.5", "",
+                           "Law 6/2025 art. 7", "confirmed bands"],
+            "SAL_EXEMPTION": ["CHANGE", "25000", "2027-01-01", "Law 1/2027"]})
+        sim = review.import_review(c, good, "T", simulate=True)
+        self.assertEqual((sim["errors"], sim["answered"]), (0, 3))
+        self.assertEqual(review.summary(c)["to_verify"], 30)    # simulation writes nothing
+        res = review.import_review(c, good, "T", simulate=False)
+        self.assertEqual(res["errors"], 0)
+        self.assertEqual(res["adviser"], "Dr. Adviser")
+        self.assertEqual(res["date"], "2026-11-14")
+        self.assertEqual(rules.get(c, "WHT_SUPPLIES")["status"], "VERIFIED")
+        self.assertIn("Adviser Dr. Adviser", rules.get(c, "WHT_SUPPLIES")["note"])
+        simp = rules.get(c, "SIMP_BANDS")
+        self.assertEqual((simp["status"], simp["legal_ref"]), ("VERIFIED", "Law 6/2025 art. 7"))
+        self.assertEqual(rules.num(c, "SAL_EXEMPTION", "2026-12-31"), 20000)    # old version kept until then
+        new = rules.get(c, "SAL_EXEMPTION", "2027-01-01")
+        self.assertEqual((new["value"], new["status"]), ("25000", "VERIFIED"))
+        self.assertEqual(review.summary(c)["to_verify"], 28)    # SAL_EXEMPTION 2024 version still to verify
+        # the same sheet again: the confirmed rows are skipped, changed rule detected
+        again = review.import_review(c, good, "T", simulate=True)
+        self.assertTrue(any("already verified" in o["result"] for o in again["rows"]))
+        # brackets written by the adviser go back to the payroll format
+        self.assertEqual(review.to_register("SAL_BRACKETS", "hr format", "40000:0, 55000:10, above:27.5", 1),
+                         "4000000:0,5500000:1000,999999999999:2750")
+        self.assertEqual(review.to_register("SAL_HIGH_INCOME", "hr format", "600000:55000:10", 1), "60000000:5500000:1000")
+
+
+if __name__ == "__main__":
+    unittest.main()

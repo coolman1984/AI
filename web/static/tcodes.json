@@ -496,6 +496,7 @@
  "ZTAX_EIN": "E-Invoices Received (from vendors)",
  "ZTAX_EINV": "E-Invoices Issued (ETA)",
  "ZTAX_LAW": "Egyptian Tax Law Register (rates, limits, deadlines)",
+ "ZTAX_REVIEW": "Tax Adviser Review of the Law Register",
  "ZTAX_REVREC": "Revenue Reconciliation (books - invoices - e-invoices - VAT)",
  "ZTAX_SAL": "Salary Tax Return (form 4)",
  "ZTAX_SIMP": "Simplified Tax Regime (Law 6/2025)",
