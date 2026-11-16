@@ -114,3 +114,8 @@ def seed(conn):
         engine.request_absence(conn, pern[20], "CAS", wd(nxt, 10), wd(nxt, 10), "SALMA", "Personal matter")
     except Exception:  # noqa - demo extras must never stop the seed (e.g. year end quota)
         pass
+    # fixed-term contract ending soon and a new hire in probation (ZHR_EVENTS follow-up)
+    from mm import util as clock
+    t = clock.today()
+    conn.execute("UPDATE hr_employee SET persg='2', contract_end=? WHERE pernr=?",
+                 ((t + datetime.timedelta(days=45)).isoformat(), pern[10]))

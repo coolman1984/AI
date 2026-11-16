@@ -405,6 +405,8 @@ PROCESSES = [
              ("H2R-06", "Payslip", "PC00_M99_CEDT ZLEAVE", "Payslip printed from the payroll result", ["test_hr.Payroll.test_payslip_form"]),
              ("H2R-08", "Salary in USD", "PA30 PC00_M99_CALC PC00_M99_DTA", "Insurance and tax on the EGP amount; net pay transferred in USD", ["test_hr.Payroll.test_usd_salary_insurance_and_tax_in_egp_paid_in_usd"]),
              ("H2R-07", "Confidential personnel data", "PFCG SUIM", "Display-everywhere roles do not see HR; HR roles do", ["test_hr.Confidentiality.test_hr_area_needs_explicit_authorization", "test_security.Http.test_salaries_are_refused_without_hr_authorization"]),
+             ("H2R-09", "Loans, salary advances, bonuses and penalties in the payroll", "ZHR_LOAN ZHR_ADDPAY PC00_M99_CALC PC00_M99_CIPE", "Advance paid from the bank and deducted monthly; bonus taxed; penalty days to the workers' fund; balanced posting; rerun does not double the installment", ["test_hr_ext.LoansAndPayments.test_payroll_deducts_installments_and_books_everything"]),
+             ("H2R-10", "HR follow-up, leave balances, payroll cost and month-end", "ZHR_EVENTS ZHR_LEAVEBAL ZHR_COST ZHR_CLOSE", "Probation and contract end found; remaining = entitlement - taken - requested; cost = gross + employer SI", ["test_hr_ext.FollowUpAndReports.test_events_leave_balances_cost_and_month_end"]),
          ]),
     # ------------------------------------------------------------------ AMS (Basis)
     dict(id="AMS", folder="A", module="CA", map="ZAMS", version="1.0",

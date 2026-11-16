@@ -38,13 +38,24 @@ CREATE TABLE IF NOT EXISTS hr_payroll (       -- payroll results (RT) per employ
     si_ee INTEGER, si_er INTEGER, taxable INTEGER, tax INTEGER, martyrs INTEGER, other INTEGER DEFAULT 0,
     net INTEGER, waers TEXT DEFAULT 'EGP', kurs INTEGER DEFAULT 100000, gross_fc INTEGER, net_fc INTEGER,
     PRIMARY KEY (gjahr, perio, pernr));
+CREATE TABLE IF NOT EXISTS hr_loan (          -- ZHR_LOAN employee loan / salary advance
+    id INTEGER PRIMARY KEY AUTOINCREMENT, pernr TEXT NOT NULL, typ TEXT NOT NULL, amount INTEGER NOT NULL,
+    installment INTEGER NOT NULL, start_gjahr INTEGER NOT NULL, start_perio INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'A', belnr TEXT, text TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS hr_loan_rep (      -- installments deducted by the payroll
+    loan_id INTEGER, gjahr INTEGER, perio INTEGER, amount INTEGER, PRIMARY KEY (loan_id, gjahr, perio));
+CREATE TABLE IF NOT EXISTS hr_addpay (        -- ZHR_ADDPAY one-time payments / deductions (IT0015)
+    id INTEGER PRIMARY KEY AUTOINCREMENT, pernr TEXT NOT NULL, gjahr INTEGER NOT NULL, perio INTEGER NOT NULL,
+    wtype TEXT NOT NULL, amount INTEGER NOT NULL DEFAULT 0, days INTEGER NOT NULL DEFAULT 0,  -- days x100
+    text TEXT, usnam TEXT, ts TEXT);
 """
 
 # upgrades of older databases: pay currency (EGP / USD) of the employee and the results
 HR_COLUMN_ADDS = {
-    "hr_employee": [("waers", "TEXT DEFAULT 'EGP'")],
+    "hr_employee": [("waers", "TEXT DEFAULT 'EGP'"), ("contract_end", "TEXT DEFAULT ''")],
     "hr_payroll": [("waers", "TEXT DEFAULT 'EGP'"), ("kurs", "INTEGER DEFAULT 100000"), ("gross_fc", "INTEGER"),
-                   ("net_fc", "INTEGER")],
+                   ("net_fc", "INTEGER"), ("addpay", "INTEGER DEFAULT 0"), ("penalty", "INTEGER DEFAULT 0"),
+                   ("loan", "INTEGER DEFAULT 0")],
 }
 
 
