@@ -57,7 +57,39 @@ register("ZTAX_LAW", { title: "Egyptian Tax Law Register (rates, limits, deadlin
           const res = await run(() => api("/api/tax/law/version", Object.assign({ key: r.key }, x))); if (res) { msg("S", res.message); load(); } } } }, "New version"), " ",
         r.status !== "VERIFIED" ? h("button.btn", { type: "button", on: { click: async () => { const res = await run(() => api("/api/tax/law/verify", { id: r.id })); if (res) { msg("S", res.message); load(); } } } }, "Verified") : "") }] }));
   };
-  toolbar([{ label: "Display", key: "F8", primary: true, onClick: load }]);
+  toolbar([{ label: "Display", key: "F8", primary: true, onClick: load }, { label: "Tax adviser review", onClick: () => go("ZTAX_REVIEW") }]);
+  load();
+} });
+
+// ------------------------------------------------------------------ 1-5 ZTAX_REVIEW (tax adviser)
+register("ZTAX_REVIEW", { title: "Tax Adviser Review of the Law Register", async render(app) {
+  const out = h("div"), res = h("div"), file = h("input", { type: "file", accept: ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  let xlsx = null;
+  file.addEventListener("change", () => { const x = file.files[0]; if (!x) return; const rd = new FileReader();
+    rd.onload = () => { const u8 = new Uint8Array(rd.result); let s = ""; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); xlsx = btoa(s); msg("S", `${x.name} ready - simulate first`); };
+    rd.readAsArrayBuffer(x); });
+  app.append(note("1. Make the Excel sheet and send it to your tax adviser. 2. The adviser answers every rule with OK or CHANGE (correct value, effective date, law / decree) and writes the name on top. 3. Load the answered sheet: simulate first, then load. OK = the rule becomes Verified; CHANGE with the same date corrects the rule, with a later date it becomes a new version - the old value stays as history."),
+    out, panel("Answered sheet from the adviser", h("div", null, "Excel file: ", file)), res);
+  const load = async () => {
+    const d = await run(() => api("/api/tax/review")); if (!d) return;
+    out.innerHTML = "";
+    out.append(h("div.kpis", null, kpi("To verify", d.to_verify, "rule versions", d.to_verify ? "neg" : "pos"), kpi("Verified", d.verified, "", "pos")),
+      alv({ rows: d.rows, title: "Rules waiting for the tax adviser", columns: [{ key: "key", label: "Rule" }, { key: "text", label: "Description" }, { key: "text_ar", label: "الوصف" },
+        { key: "readable", label: "Value" }, { key: "unit", label: "Unit" }, { key: "valid_from", label: "From", type: "date" }, { key: "legal_ref", label: "Legal reference" }, { key: "note", label: "Why to verify" }] }));
+  };
+  const send = async simulate => {
+    if (!xlsx) return msg("E", "Choose the answered Excel sheet", "TX", "940");
+    const r = await run(() => api("/api/tax/review", { xlsx, simulate })); if (!r) return;
+    res.innerHTML = "";
+    res.append(h("div.kpis", null, kpi("Adviser", r.adviser || "-", r.date || ""), kpi("Answers", r.answered, `${r.unanswered} not answered`), kpi("Errors", r.errors, simulate ? "simulation" : "", r.errors ? "neg" : "pos")),
+      alv({ rows: r.rows, title: simulate ? "Simulation - nothing changed" : "Loaded", rowClass: x => x.ok ? "" : ".neg", columns: [{ key: "row", label: "Row", type: "int" }, { key: "key", label: "Rule" },
+        { key: "decision", label: "Decision" }, { key: "ok", label: "", render: x => badge(x.ok ? "OK" : "Error", x.ok ? "U" : "B") }, { key: "result", label: "Result" }] }));
+    msg(r.errors ? "E" : "S", r.message); if (!simulate && !r.errors) load();
+  };
+  toolbar([{ label: "Sheet for the tax adviser (Excel)", key: "F8", primary: true, onClick: async () => {
+    const r = await run(() => api("/api/tax/review?file=1")); if (r) { b64save(r.name, r.xlsx); msg("S", `${r.name} created - send it to your tax adviser`); } } },
+    { label: "Simulate answers", onClick: () => send(true) }, { label: "Load answers", onClick: async () => { if (await confirmBox("Adviser answers", "Update the law register with the adviser's answers?")) send(false); } },
+    { label: "Law register", onClick: () => go("ZTAX_LAW") }]);
   load();
 } });
 

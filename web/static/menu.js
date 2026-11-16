@@ -219,6 +219,7 @@ MENU.push(
     ["1-2 Common - E-Invoice Settings", ["ZTAX_CONF"]],
     ["1-3 Common - Tax Calendar", ["ZTAX_CAL"]],
     ["1-4 Common - Month-End", ["ZTAX_CLOSE"]],
+    ["1-5 Common - Tax Adviser Review", ["ZTAX_REVIEW"]],
     ["2-1 VAT - Return (form 10)", ["ZTAX_VAT", "FB41"]],
     ["2-2 VAT - Codes & Reports", ["FTXP", "S_ALR_87012357"]],
     ["3-1 Withholding - Return (form 41)", ["ZTAX_41"]],
