@@ -39,7 +39,8 @@ MD_COLUMN_ADDS = {
         ("faksd", "TEXT DEFAULT ''"), ("loevm", "INTEGER DEFAULT 0"),
         ("mahna", "TEXT DEFAULT ''"), ("busab", "TEXT DEFAULT ''"),
         ("zwels", "TEXT DEFAULT 'T'"), ("xzver", "INTEGER DEFAULT 0"),
-        ("erdat", "TEXT"), ("ernam", "TEXT")],
+        ("erdat", "TEXT"), ("ernam", "TEXT"),
+        ("altkn", "TEXT DEFAULT ''")],           # KNB1-ALTKN previous (legacy) customer number
     "vendor": [  # LFA1 / LFB1 / LFM1
         ("altkn", "TEXT"),                  # LFB1-ALTKN previous (legacy) account number
         ("name2", "TEXT DEFAULT ''"), ("street", "TEXT DEFAULT ''"),

@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS hr_addpay (        -- ZHR_ADDPAY one-time payments / 
 
 # upgrades of older databases: pay currency (EGP / USD) of the employee and the results
 HR_COLUMN_ADDS = {
-    "hr_employee": [("waers", "TEXT DEFAULT 'EGP'"), ("contract_end", "TEXT DEFAULT ''")],
+    "hr_employee": [("waers", "TEXT DEFAULT 'EGP'"), ("contract_end", "TEXT DEFAULT ''"),
+                    ("old_pernr", "TEXT DEFAULT ''")],
     "hr_payroll": [("waers", "TEXT DEFAULT 'EGP'"), ("kurs", "INTEGER DEFAULT 100000"), ("gross_fc", "INTEGER"),
                    ("net_fc", "INTEGER"), ("addpay", "INTEGER DEFAULT 0"), ("penalty", "INTEGER DEFAULT 0"),
                    ("loan", "INTEGER DEFAULT 0")],

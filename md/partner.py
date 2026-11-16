@@ -22,7 +22,7 @@ from .material import check_gstin, check_pan
 
 CUST_GENERAL = ["name", "name2", "street", "pstlz", "city", "region", "land", "telf1",
                 "email", "stcd1", "stceg", "bankn", "bankl"]
-CUST_COMPANY = ["akont", "zterm", "klimk", "mahna", "zwels", "xzver", "busab", "waers"]
+CUST_COMPANY = ["akont", "zterm", "klimk", "mahna", "zwels", "xzver", "busab", "waers", "altkn"]
 CUST_SALES = ["spart", "bzirk", "kdgrp", "konda", "kalks", "vsbed", "vwerk", "inco1",
               "inco2", "zterm", "ktgrd", "taxkd", "waers"]
 VEND_GENERAL = ["name", "name2", "street", "pstlz", "city", "land", "telf1", "email",

@@ -194,12 +194,20 @@ def imp_workbook(req, q, area):
     """Excel template of a business area (PUR = purchasing); example=1 with sample data"""
     import base64
     from mm import templates
-    if area.upper() != "PUR":
-        raise MMError("Templates exist for: PUR (purchasing)", "ZI", "030")
+    a = area.upper()
+    if a not in templates.AREAS:
+        raise MMError("Templates exist for: %s" % ", ".join(templates.AREAS), "ZI", "030")
     ex = q.get("example") in ("1", "true", "X")
-    data = templates.purchasing_workbook(example=ex)
-    return {"name": "NERP_Purchasing_%s.xlsx" % ("EXAMPLE" if ex else "Template"),
+    data = templates.workbook(a, example=ex)
+    name = "NERP_Purchasing" if a == "PUR" else templates.AREAS[a][0]
+    return {"name": "%s_%s.xlsx" % (name, "EXAMPLE" if ex else "Template"),
             "xlsx": base64.b64encode(data).decode("ascii")}
+
+
+@route("GET", "/api/import/workbooks")
+def imp_workbooks(req, q):
+    from mm import templates
+    return {"areas": [dict(area=k, file=v[0], text=v[1]) for k, v in templates.AREAS.items()]}
 
 
 # ------------------------------------------------------------------ withholding tax

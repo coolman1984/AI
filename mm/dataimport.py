@@ -25,9 +25,11 @@ from mm.db import transaction
 from mm.util import MMError
 
 TAKEOVER = "399999"
-DATE_COLS = {"budat", "bldat", "bedat", "eindt", "aktiv", "takeover"}
+DATE_COLS = {"budat", "bldat", "bedat", "eindt", "aktiv", "takeover", "audat", "vdatu", "datab", "datbi",
+             "hire_date", "birth_date", "contract_end"}
 PAD = {"werks": 4, "plant.werks": 4, "lgort": 4, "sloc.lgort": 4, "ktokk": 4, "ekgrp": 3, "plant.ekgrp": 3,
-       "spart": 2, "zterm": 4, "kosar": 0}
+       "spart": 2, "zterm": 4, "kosar": 0, "ktokd": 4, "sales.vtweg": 2, "sales.spart": 2, "sales.kdgrp": 2,
+       "vornr": 4, "persg": 1}
 
 
 class _Rollback(Exception):
@@ -144,11 +146,6 @@ def _vendor(conn, d, user):
     return create_vendor(conn, d, user, tcode="ZIMPORT")["lifnr"]
 
 
-def _customer(conn, d, user):
-    from md.partner import create_customer
-    return create_customer(conn, d, user, tcode="ZIMPORT")["kunnr"]
-
-
 def _inforec(conn, d, user):
     from pur.sourcing import save_info_record
     return save_info_record(conn, vendor_no(conn, d.get("lifnr")), d.get("matnr") or "", d.get("price"),
@@ -194,7 +191,8 @@ def _vendor_oi(conn, d, user):
 
 def _customer_oi(conn, d, user):
     from fi.ar import customer_invoice
-    return customer_invoice(conn, {"kunnr": d.get("kunnr"), "budat": d.get("budat"), "bldat": d.get("bldat"),
+    return customer_invoice(conn, {"kunnr": customer_no(conn, d.get("kunnr")), "budat": d.get("budat"),
+                                   "bldat": d.get("bldat"),
                                    "xblnr": d.get("xblnr"), "bktxt": "Data takeover", "zterm": d.get("zterm")},
                             [{"hkont": TAKEOVER, "amount": d.get("amount"), "sgtxt": d.get("text") or "Open item"}],
                             user, credit_memo=(d.get("credit") or "").upper() in ("X", "1", "Y"))
@@ -226,19 +224,205 @@ def _asset(conn, d, user):
     a = create_asset(conn, d.get("anlkl"), d.get("txt"), d.get("kostl"),
                      int(d["ndjar"]) if d.get("ndjar") else None, d.get("invnr") or "", user)
     anln1 = a["anln1"] if isinstance(a, dict) else a
-    legacy_transfer(conn, anln1, parse_date(d.get("aktiv")), parse_amount(d.get("apc")),
-                    parse_amount(d.get("accdep"), allow_zero=True), parse_date(d.get("takeover")))
+    apc, dep = parse_amount(d.get("apc")), parse_amount(d.get("accdep"), allow_zero=True)
+    if dep > apc:
+        raise MMError("Accumulated depreciation is higher than the acquisition cost", "ZI", "056")
+    takeover = parse_date(d.get("takeover"))
+    legacy_transfer(conn, anln1, parse_date(d.get("aktiv")), d.get("apc"), d.get("accdep") or "0", takeover)
+    # the asset accounts get their opening balance with the asset (they cannot be posted directly)
+    from fi.aa import ASSET_CLASSES
+    from fi.document import write
+    cls = ASSET_CLASSES[conn.execute("SELECT anlkl FROM asset WHERE anln1=?", (anln1,)).fetchone()[0]]
+    txt = "Data takeover asset %s" % anln1
+    write(conn, "AA", takeover, user, "ZIMPORT", txt, [
+        dict(hkont=cls[1], anln1=anln1, koart="A", anbwa="900", amount=apc, sgtxt=txt),
+        dict(hkont=cls[2], anln1=anln1, koart="A", anbwa="900", amount=-dep, sgtxt=txt),
+        dict(hkont=TAKEOVER, amount=-(apc - dep), sgtxt=txt)], tcode="ZIMPORT")
     return anln1
+
+
+def customer_no(conn, v):
+    """customer number in NERP, or the legacy customer number (altkn) of the old system"""
+    v = (v or "").strip().upper()
+    if not v:
+        raise MMError("Enter the customer (number in NERP or the old customer number)", "ZI", "040")
+    if conn.execute("SELECT 1 FROM customer WHERE kunnr=?", (v,)).fetchone():
+        return v
+    r = conn.execute("SELECT kunnr FROM customer WHERE UPPER(altkn)=?", (v,)).fetchall()
+    if len(r) == 1:
+        return r[0]["kunnr"]
+    if len(r) > 1:
+        raise MMError("Old customer number %s belongs to %d customers - give the NERP number" % (v, len(r)),
+                      "ZI", "041")
+    raise MMError("Customer %s does not exist - load the customers first" % v, "ZI", "042")
+
+
+def employee_no(conn, v):
+    v = (v or "").strip()
+    if not v:
+        raise MMError("Enter the employee (personnel number or old number)", "ZI", "043")
+    if conn.execute("SELECT 1 FROM hr_employee WHERE pernr=?", (v,)).fetchone():
+        return v
+    r = conn.execute("SELECT pernr FROM hr_employee WHERE old_pernr=?", (v,)).fetchall()
+    if len(r) == 1:
+        return r[0]["pernr"]
+    raise MMError("Employee %s does not exist - load the employees first" % v, "ZI", "044")
+
+
+def _bin(conn, d, user):
+    from mm.master import create_bin
+    create_bin(conn, d.get("werks"), d.get("lgort"), (d.get("lgpla") or "").upper(), d.get("bin_type") or "")
+    return "%s/%s/%s" % (d.get("werks"), d.get("lgort"), (d.get("lgpla") or "").upper())
+
+
+def _acttype(conn, d, user):
+    from co.master import create_activity_type, create_cost_element
+    lstar = (d.get("lstar") or "").upper()
+    kstar = (d.get("kstar") or "").upper() or "94" + lstar[:4].ljust(4, "0")
+    if not conn.execute("SELECT 1 FROM cost_element WHERE kstar=?", (kstar,)).fetchone():
+        create_cost_element(conn, kstar, ("Allocation %s" % (d.get("ktext") or lstar))[:40], 43)
+    if conn.execute("SELECT 1 FROM activity_type WHERE lstar=?", (lstar,)).fetchone():
+        raise MMError("Activity type %s already exists" % lstar, "ZI", "045")
+    create_activity_type(conn, lstar, d.get("ktext") or lstar, (d.get("meinh") or "H").upper(), kstar,
+                         int(d.get("ccomp") or 30))
+    return lstar
+
+
+def _customer(conn, d, user):
+    from md.partner import create_customer
+    if d.get("altkn") and conn.execute("SELECT kunnr FROM customer WHERE UPPER(altkn)=?",
+                                       (d["altkn"].upper(),)).fetchone():
+        raise MMError("A customer with the old number %s is already loaded" % d["altkn"], "ZI", "046")
+    land = (d.get("land") or "EG").upper()
+    d.setdefault("akont", "140000")
+    d.setdefault("zterm", "NT30")
+    for a in d.get("sales") or []:                       # sensible defaults of the sales area
+        a.setdefault("vkorg", "1000")
+        a.setdefault("vtweg", "10" if land == "EG" else "20")
+        a.setdefault("spart", "00")
+        a.setdefault("kalks", "1" if land == "EG" else "2")
+        a.setdefault("vsbed", "01")
+        a.setdefault("ktgrd", "01" if land == "EG" else "02")
+        a.setdefault("waers", d.get("waers") or "EGP")
+        a.setdefault("zterm", d["zterm"])
+    if not d.get("sales"):
+        d["sales"] = [dict(vkorg="1000", vtweg="10" if land == "EG" else "20", spart="00",
+                           kalks="1" if land == "EG" else "2", vsbed="01", ktgrd="01" if land == "EG" else "02",
+                           waers=d.get("waers") or "EGP", zterm=d["zterm"])]
+    return create_customer(conn, d, user, tcode="ZIMPORT")["kunnr"]
+
+
+def _price(conn, d, user):
+    from sd.pricing import save_condition
+    kunnr = customer_no(conn, d.get("kunnr")) if d.get("kunnr") else None
+    return save_condition(conn, "PR00", "A305" if kunnr else "A304",
+                          {"kunnr": kunnr, "matnr": d.get("matnr"), "kbetr": d.get("price"),
+                           "konwa": d.get("konwa") or "EGP", "datab": d.get("datab"), "datbi": d.get("datbi")}, user)
+
+
+def _so(conn, rows, user):
+    """open sales order of the old system: one row per item (open quantity), same so_no"""
+    from sd import order
+    h = rows[0]
+    legacy = (h.get("so_no") or "").strip()
+    if not legacy:
+        raise MMError("Enter the old sales order number (so_no)", "ZI", "047")
+    if conn.execute("SELECT 1 FROM sd_vbak WHERE vbtyp='C' AND bstnk=?", (legacy,)).fetchone():
+        raise MMError("Old sales order %s is already loaded" % legacy, "ZI", "048")
+    for r in rows[1:]:
+        for f in ("kunnr", "audat"):
+            if r.get(f) and r.get(f) != h.get(f):
+                raise MMError("All lines of sales order %s must have the same %s" % (legacy, f), "ZI", "049")
+    items = [{k: r[k] for k in ("matnr", "qty", "price", "werks") if r.get(k)} for r in rows]
+    res = order.create(conn, {"auart": "OR", "kunnr": customer_no(conn, h.get("kunnr")), "audat": h.get("audat"),
+                              "vdatu": h.get("vdatu"), "bstnk": legacy, "items": items}, user)
+    return res["vbeln"]
+
+
+def _workcenter(conn, d, user):
+    from pp.master import save_work_center
+    save_work_center(conn, d, user, tcode="CR01")
+    if d.get("area"):
+        conn.execute("UPDATE work_center SET area=? WHERE arbpl=?", (d["area"][:30], (d.get("arbpl") or "").upper()))
+    return (d.get("arbpl") or "").upper()
+
+
+def _bom(conn, rows, user):
+    from pp.master import save_bom
+    h = rows[0]
+    matnr = (h.get("matnr") or "").upper()
+    if conn.execute("SELECT 1 FROM bom WHERE matnr=? AND werks=?", (matnr, h.get("werks") or "1000")).fetchone():
+        raise MMError("The bill of material of %s is already loaded" % matnr, "ZI", "050")
+    items = [{k: r[k] for k in ("idnrk", "menge", "ausch", "lgort", "rgekz") if r.get(k)} for r in rows]
+    save_bom(conn, matnr, h.get("werks") or "1000", h.get("basis") or "1", items, user, tcode="CS01")
+    return matnr
+
+
+def _routing(conn, rows, user):
+    from pp.master import save_routing
+    h = rows[0]
+    matnr = (h.get("matnr") or "").upper()
+    if conn.execute("SELECT 1 FROM routing WHERE matnr=? AND werks=?", (matnr, h.get("werks") or "1000")).fetchone():
+        raise MMError("The routing of %s is already loaded" % matnr, "ZI", "051")
+    ops = [{k: r[k] for k in ("vornr", "arbpl", "steus", "ltxa1", "vgw", "vgw_setup") if r.get(k)} for r in rows]
+    save_routing(conn, matnr, h.get("werks") or "1000", h.get("basis") or "1", ops, user, tcode="CA01")
+    return matnr
+
+
+def _orgunit(conn, d, user):
+    from hr.engine import save_orgunit
+    if conn.execute("SELECT 1 FROM hr_orgunit WHERE orgeh=?", (d.get("orgeh"),)).fetchone():
+        raise MMError("Organizational unit %s is already loaded" % d.get("orgeh"), "ZI", "052")
+    save_orgunit(conn, d.get("orgeh"), d.get("text"), d.get("parent") or "", (d.get("kostl") or "").upper())
+    return d.get("orgeh")
+
+
+def _employee(conn, d, user):
+    from hr.engine import hire
+    old = (d.pop("old_pernr", "") or "").strip()
+    if old and conn.execute("SELECT 1 FROM hr_employee WHERE old_pernr=?", (old,)).fetchone():
+        raise MMError("Employee with the old number %s is already loaded" % old, "ZI", "053")
+    ce = d.pop("contract_end", "")
+    pernr = hire(conn, d, user)
+    conn.execute("UPDATE hr_employee SET old_pernr=?, contract_end=? WHERE pernr=?", (old, ce or "", pernr))
+    return pernr
+
+
+def _loan_open(conn, d, user):
+    """loan / salary advance still open in the old system: balance against the takeover account"""
+    from fi import gl
+    from hr.config import ACCOUNTS, LOAN_TYPES
+    from mm.util import now_ts, parse_amount, parse_int
+    pernr = employee_no(conn, d.get("pernr"))
+    typ = (d.get("typ") or "LOAN").upper()
+    if typ not in LOAN_TYPES:
+        raise MMError("Loan type %s does not exist (LOAN / ADV)" % typ, "ZI", "054")
+    bal = parse_amount(d.get("balance"))
+    inst = parse_amount(d.get("installment"))
+    if inst > bal:
+        raise MMError("The installment is higher than the open balance", "ZI", "055")
+    y = parse_int(d.get("gjahr"), "first year", 2000, 2100)
+    p = parse_int(d.get("perio"), "first month", 1, 12)
+    m = "%.2f" % (bal / 100.0)
+    belnr = gl.general_posting(conn, {"budat": d.get("budat"), "bktxt": "Data takeover loan"}, [
+        {"bschl": "40", "account": ACCOUNTS["loans"], "amount": m, "sgtxt": "Open loan %s" % pernr},
+        {"bschl": "50", "account": TAKEOVER, "amount": m}], user)
+    conn.execute("INSERT INTO hr_loan (pernr,typ,amount,installment,start_gjahr,start_perio,belnr,text,usnam,ts) "
+                 "VALUES (?,?,?,?,?,?,?,?,?,?)", (pernr, typ, bal, inst, y, p, belnr, "Data takeover", user, now_ts()))
+    return belnr
 
 
 # order of loading = order of this list: (object, text, function, columns, Excel sheet, group column)
 OBJECTS = [
     ("PLANT", "Plants", _plant, "werks,name,city", "01 Plants", None),
     ("SLOC", "Storage locations", _sloc, "werks,lgort,name,bin_managed", "02 Storage locations", None),
+    ("BIN", "Storage bins", _bin, "werks,lgort,lgpla,bin_type", "W1 Storage bins", None),
     ("MATGROUP", "Material groups", _matgroup, "matkl,text", "03 Material groups", None),
     ("PURCHGROUP", "Purchasing groups (buyers)", _purchgroup, "ekgrp,text", "04 Purchasing groups", None),
-    ("GL", "G/L accounts", _gl, "hkont,txt,typ,fsv,recon,oi,tax", "G/L accounts", None),
-    ("COSTCENTER", "Cost centers", _costcenter, "kostl,name,kosar,khinr,verak", "Cost centers", None),
+    ("COSTCENTER", "Cost centers", _costcenter, "kostl,name,kosar,khinr,verak", "F1 Cost centers", None),
+    ("GL", "G/L accounts", _gl, "hkont,txt,typ,fsv,recon,oi,tax", "F2 GL accounts", None),
+    ("ACTTYPE", "Activity types (machine / labour hours)", _acttype, "lstar,ktext,meinh,kstar,ccomp",
+     "P1 Activity types", None),
     ("VENDOR", "Vendors (with bank data)", _vendor,
      "altkn,ktokk,name,name2,street,pstlz,city,land,telf1,email,stcd1,bankn,bankl,iban,swift,akont,zterm,zwels,"
      "waers,ekgrp,plifz,verkf,minbw,lifnr,stceg,ekorg", "05 Vendors", None),
@@ -247,25 +431,47 @@ OBJECTS = [
      "plant.plifz,plant.dismm,plant.minbe,plant.mabst,plant.eisbe,sloc.lgort,sales.vkorg,sales.vtweg,sales.kbetr",
      "06 Materials", None),
     ("CUSTOMER", "Customers (with credit limit, one sales area)", _customer,
-     "kunnr,ktokd,name,street,pstlz,city,land,stcd1,akont,zterm,klimk,sales.vkorg,sales.vtweg,sales.spart,"
-     "sales.kdgrp", "Customers", None),
+     "kunnr,altkn,ktokd,name,name2,street,pstlz,city,land,telf1,email,stcd1,akont,zterm,klimk,waers,"
+     "sales.vtweg,sales.spart,sales.kdgrp,sales.bzirk,sales.inco1,sales.inco2", "S1 Customers", None),
     ("INFOREC", "Purchasing info records (vendor prices)", _inforec, "lifnr,matnr,werks,price,peinh,rabatt,aplfz,idnlf",
      "07 Info records", None),
+    ("PRICE", "Customer / product prices (PR00)", _price, "kunnr,matnr,price,konwa,datab,datbi",
+     "S3 Customer prices", None),
     ("PO", "Open purchase orders (one line per item)", _po,
      "po_no,lifnr,bedat,ekgrp,waers,matnr,werks,lgort,menge,netpr,peinh,eindt,txz01,matkl,meins,knttp,kostl",
      "08 Open purchase orders", "po_no"),
+    ("SO", "Open sales orders (one line per item)", _so, "so_no,kunnr,audat,vdatu,matnr,werks,qty,price",
+     "S4 Open sales orders", "so_no"),
+    ("WORKCENTER", "Work centers / production lines", _workcenter,
+     "arbpl,werks,ktext,kostl,lstar,kapaz,shifts,ngrad,steus,area", "P2 Work centers", None),
+    ("BOM", "Bills of material (one line per component)", _bom, "matnr,werks,basis,idnrk,menge,ausch,lgort,rgekz",
+     "P3 Bills of material", "matnr"),
+    ("ROUTING", "Routings (one line per operation)", _routing,
+     "matnr,werks,basis,vornr,arbpl,steus,ltxa1,vgw,vgw_setup", "P4 Routings", "matnr"),
+    ("ORGUNIT", "Organizational units", _orgunit, "orgeh,text,parent,kostl", "H1 Org units", None),
+    ("EMPLOYEE", "Employees (hiring with salary)", _employee,
+     "old_pernr,name,name_ar,national_id,birth_date,gender,hire_date,orgeh,kostl,persg,persk,job,basic,"
+     "allow_transport,allow_housing,allow_other,ins_wage,iban,si_no,phone,email,contract_end", "H2 Employees", None),
     ("VENDOR_OI", "Open vendor items (against 399999)", _vendor_oi, "lifnr,budat,bldat,xblnr,amount,zterm,credit,text",
-     "Open vendor items", None),
+     "F5 Open vendor items", None),
     ("CUSTOMER_OI", "Open customer items (against 399999)", _customer_oi,
-     "kunnr,budat,bldat,xblnr,amount,zterm,credit,text", "Open customer items", None),
+     "kunnr,budat,bldat,xblnr,amount,zterm,credit,text", "F4 Open customer items", None),
     ("GL_BALANCE", "G/L balances (against 399999; minus = credit)", _gl_balance, "hkont,amount,kostl,budat",
-     "G/L balances", None),
-    ("STOCK", "Stock per bin with value (561)", _stock, "matnr,werks,lgort,lgpla,qty,value,insmk,budat", "Stock", None),
+     "F3 GL opening balances", None),
+    ("STOCK", "Stock per bin with value (561)", _stock, "matnr,werks,lgort,lgpla,qty,value,insmk,budat",
+     "W2 Opening stock", None),
     ("ASSET", "Fixed assets with accumulated depreciation (AS91)", _asset,
-     "anlkl,txt,kostl,ndjar,invnr,aktiv,apc,accdep,takeover", "Fixed assets", None),
+     "anlkl,txt,kostl,ndjar,invnr,aktiv,apc,accdep,takeover", "F6 Fixed assets", None),
+    ("LOAN_OPEN", "Open employee loans / advances (against 399999)", _loan_open,
+     "pernr,typ,balance,installment,gjahr,perio,budat", "H3 Open loans", None),
 ]
 _BY = {o[0]: o for o in OBJECTS}
 _BY_SHEET = {o[4].lower(): o for o in OBJECTS}
+# other sheet names accepted for an object (older templates, the products sheet of the sales workbook)
+SHEET_ALIASES = {"cost centers": "COSTCENTER", "g/l accounts": "GL", "customers": "CUSTOMER",
+                 "open vendor items": "VENDOR_OI", "open customer items": "CUSTOMER_OI", "g/l balances": "GL_BALANCE",
+                 "stock": "STOCK", "fixed assets": "ASSET", "s2 products": "MATERIAL"}
+_BY_SHEET.update({k: _BY[v] for k, v in SHEET_ALIASES.items()})
 
 
 def objects():
@@ -430,7 +636,10 @@ def takeover_balance(conn):
 def _amt(v):
     from mm.util import parse_amount
     try:
-        return parse_amount(str(v).replace(",", ""), allow_zero=True)
+        t = str(v).replace(",", "").strip()
+        if t.startswith("-"):                            # credit balances of the opening balances sheet
+            return -parse_amount(t[1:], allow_zero=True)
+        return parse_amount(t, allow_zero=True)
     except (MMError, ValueError):
         return None
 
@@ -544,14 +753,157 @@ def _sys_record(conn, obj, d):
         key = "%s / %s" % (lifnr, d.get("matnr"))
         return key, r and {"price": ("amt", r["brutto"]), "peinh": ("int", r["peinh"]),
                            "rabatt": ("pct", r["rabatt"]), "aplfz": ("int", r["aplfz"]), "idnlf": ("text", r["idnlf"])}
+    if obj == "CUSTOMER":
+        try:
+            k = customer_no(conn, d.get("kunnr") or d.get("altkn"))
+        except MMError:
+            return d.get("kunnr"), None
+        r = one("SELECT * FROM customer WHERE kunnr=?", (k,))
+        f = {x: ("text", r[x]) for x in ("name", "name2", "street", "pstlz", "city", "telf1", "email")}
+        f.update({x: ("code", r[x]) for x in ("altkn", "ktokd", "land", "stcd1", "akont", "zterm", "waers")})
+        f.update(klimk=("amt", r["klimk"]))
+        return k, f
+    if obj == "COSTCENTER":
+        r = one("SELECT * FROM cost_center WHERE kostl=?", ((d.get("kostl") or "").upper(),))
+        return d.get("kostl"), r and {"name": ("text", r["name"]), "kosar": ("code", r["kosar"]),
+                                      "verak": ("text", r["verak"])}
+    if obj == "GL":
+        r = one("SELECT * FROM gl_account WHERE hkont=?", (d.get("hkont"),))
+        return d.get("hkont"), r and {"txt": ("text", r["txt"]), "typ": ("code", r["typ"]), "fsv": ("code", r["fsv"])}
+    if obj == "ACTTYPE":
+        r = one("SELECT * FROM activity_type WHERE lstar=?", ((d.get("lstar") or "").upper(),))
+        return d.get("lstar"), r and {"ktext": ("text", r["ktext"]), "meinh": ("code", r["meinh"])}
+    if obj == "BIN":
+        r = one("SELECT * FROM bin WHERE werks=? AND lgort=? AND lgpla=?",
+                (d.get("werks"), d.get("lgort"), (d.get("lgpla") or "").upper()))
+        return "%s/%s/%s" % (d.get("werks"), d.get("lgort"), d.get("lgpla")), r and {"bin_type": ("text", r["bin_type"])}
+    if obj == "WORKCENTER":
+        r = one("SELECT * FROM work_center WHERE arbpl=?", ((d.get("arbpl") or "").upper(),))
+        return d.get("arbpl"), r and {"ktext": ("text", r["ktext"]), "kostl": ("code", r["kostl"]),
+                                      "lstar": ("code", r["lstar"]), "kapaz": ("qty", r["kapaz"]),
+                                      "shifts": ("int", r["shifts"]), "ngrad": ("int", r["ngrad"]),
+                                      "steus": ("code", r["steus"]), "area": ("text", r["area"])}
+    if obj == "ORGUNIT":
+        r = one("SELECT * FROM hr_orgunit WHERE orgeh=?", (d.get("orgeh"),))
+        return d.get("orgeh"), r and {"text": ("text", r["text"]), "parent": ("code", r["parent"]),
+                                      "kostl": ("code", r["kostl"])}
+    if obj == "EMPLOYEE":
+        r = one("SELECT * FROM hr_employee WHERE old_pernr=?", (d.get("old_pernr"),))
+        if not r:
+            return "old %s" % d.get("old_pernr"), None
+        f = {x: ("text", r[x]) for x in ("name", "name_ar", "job", "iban", "si_no", "phone", "email")}
+        f.update({x: ("code", r[x]) for x in ("national_id", "birth_date", "gender", "hire_date", "orgeh", "kostl",
+                                              "persg", "persk", "contract_end")})
+        f.update({x: ("amt", r[x]) for x in ("basic", "allow_transport", "allow_housing", "allow_other", "ins_wage")})
+        return "%s (old %s)" % (r["pernr"], d.get("old_pernr")), f
+    if obj == "PRICE":
+        try:
+            k = customer_no(conn, d.get("kunnr")) if d.get("kunnr") else ""
+        except MMError:
+            return d.get("kunnr"), None
+        r = one("SELECT * FROM sd_cond WHERE kschl='PR00' AND COALESCE(kunnr,'')=? AND matnr=? AND datab=? AND loevm=0",
+                (k, (d.get("matnr") or "").upper(), d.get("datab")))
+        return "%s / %s" % (k or "all", d.get("matnr")), r and {"price": ("amt", r["kbetr"]), "konwa": ("code", r["konwa"])}
+    if obj in ("CUSTOMER_OI", "VENDOR_OI"):
+        try:
+            p = customer_no(conn, d.get("kunnr")) if obj == "CUSTOMER_OI" else vendor_no(conn, d.get("lifnr"))
+        except MMError:
+            return d.get("kunnr") or d.get("lifnr"), None
+        col, kz = ("kunnr", "D") if obj == "CUSTOMER_OI" else ("lifnr", "K")
+        r = one("SELECT i.dmbtr, h.bldat FROM acc_doc_item i JOIN acc_doc h ON h.belnr=i.belnr AND h.gjahr=i.gjahr "
+                "WHERE i.koart=? AND i.%s=? AND h.xblnr=?" % col, (kz, p, d.get("xblnr")))
+        return "%s / %s" % (p, d.get("xblnr")), r and {"amount": ("amt", r["dmbtr"]), "bldat": ("code", r["bldat"])}
+    if obj == "ASSET":
+        r = one("SELECT a.*, COALESCE(SUM(i.apc),0) apc, -COALESCE(SUM(i.dep),0) accdep FROM asset a JOIN asset_item i "
+                "ON i.anln1=a.anln1 AND i.belnr='LEGACY' WHERE a.txt=? AND a.kostl=? GROUP BY a.anln1",
+                (d.get("txt"), (d.get("kostl") or "").upper()))
+        return d.get("txt"), r and {"anlkl": ("code", r["anlkl"]), "apc": ("amt", r["apc"]),
+                                    "accdep": ("amt", r["accdep"]), "ndjar": ("int", r["ndjar"]),
+                                    "invnr": ("text", r["invnr"])}
+    if obj == "STOCK":
+        r = one("SELECT SUM(i.menge) q, SUM(i.dmbtr) v FROM mat_doc_item i JOIN mat_doc h ON h.mblnr=i.mblnr AND "
+                "h.mjahr=i.mjahr WHERE i.bwart='561' AND i.canceled=0 AND h.tcode='ZIMPORT' AND i.matnr=? AND "
+                "i.werks=? AND i.lgort=? AND COALESCE(i.lgpla,'')=?",
+                ((d.get("matnr") or "").upper(), d.get("werks") or "1000", d.get("lgort"), (d.get("lgpla") or "")))
+        return "%s %s/%s" % (d.get("matnr"), d.get("werks"), d.get("lgort")), \
+            (r and r["q"] is not None) and {"qty": ("qty", r["q"]), "value": ("amt", r["v"])} or None
+    if obj == "GL_BALANCE":
+        r = one("SELECT SUM(CASE WHEN i.shkzg='S' THEN i.dmbtr ELSE -i.dmbtr END) b FROM acc_doc_item i JOIN acc_doc h "
+                "ON h.belnr=i.belnr AND h.gjahr=i.gjahr WHERE h.bktxt='Data takeover' AND i.hkont=?", (d.get("hkont"),))
+        return d.get("hkont"), (r and r["b"] is not None) and {"amount": ("amt", r["b"])} or None
+    if obj == "LOAN_OPEN":
+        try:
+            p = employee_no(conn, d.get("pernr"))
+        except MMError:
+            return d.get("pernr"), None
+        r = one("SELECT * FROM hr_loan WHERE pernr=? AND text='Data takeover' ORDER BY id DESC", (p,))
+        return p, r and {"balance": ("amt", r["amount"]), "installment": ("amt", r["installment"]),
+                         "typ": ("code", r["typ"])}
     return "", None
 
 
-VERIFIABLE = ("PLANT", "SLOC", "MATGROUP", "PURCHGROUP", "VENDOR", "MATERIAL", "INFOREC", "PO")
+def _verify_group(conn, obj, items, diffs, sheet):
+    """open sales orders / bills of material / routings: every document and its lines"""
+    key = _BY[obj][5]
+    groups, order = {}, []
+    for line, row in items:
+        r = _clean(row)
+        k = r.get(key) or "?"
+        if k not in groups:
+            groups[k] = []
+            order.append(k)
+        groups[k].append((line, r))
+    found = 0
+    for k in order:
+        rows = groups[k]
+        if obj == "SO":
+            h = conn.execute("SELECT vbeln FROM sd_vbak WHERE vbtyp='C' AND bstnk=?", (k,)).fetchone()
+            sys_lines = conn.execute("SELECT matnr, kwmeng AS q FROM sd_vbap WHERE vbeln=? ORDER BY posnr",
+                                     (h["vbeln"],)).fetchall() if h else []
+            fld, qf, label = "matnr", "qty", "old order %s = %s" % (k, h["vbeln"] if h else "?")
+        elif obj == "BOM":
+            w = rows[0][1].get("werks") or "1000"
+            sys_lines = conn.execute("SELECT idnrk AS matnr, menge AS q FROM bom WHERE matnr=? AND werks=? ORDER BY rowid",
+                                     (k.upper(), w)).fetchall()
+            h = sys_lines or None
+            fld, qf, label = "idnrk", "menge", "BOM %s" % k
+        else:
+            w = rows[0][1].get("werks") or "1000"
+            sys_lines = conn.execute("SELECT arbpl AS matnr, vgw AS q FROM routing WHERE matnr=? AND werks=? ORDER BY vornr",
+                                     (k.upper(), w)).fetchall()
+            h = sys_lines or None
+            fld, qf, label = "arbpl", "vgw", "routing %s" % k
+        if not h:
+            diffs.append(dict(sheet=sheet, line=rows[0][0], key=label, field="-", file="", system="(missing)",
+                              status="MISSING"))
+            continue
+        found += 1
+        if len(sys_lines) != len(rows):
+            diffs.append(dict(sheet=sheet, line=rows[0][0], key=label, field="lines", file=str(len(rows)),
+                              system=str(len(sys_lines)), status="DIFFERENT"))
+        for (line, r), x in zip(rows, sys_lines):
+            for f, kind, sv in ((fld, "code", x["matnr"]), (qf, "qty", x["q"])):
+                if r.get(f):
+                    diffs.append(dict(sheet=sheet, line=line, key=label, field=f, file=str(r[f]),
+                                      system=_fmt(kind, sv), status="OK" if _same(kind, r[f], sv) else "DIFFERENT"))
+    return dict(sheet=sheet, lines=len(items), records=len(order), found=found,
+                control="%d of %d documents found in NERP" % (found, len(order)), control_ok=found == len(order))
+
+
+VERIFIABLE = ("PLANT", "SLOC", "MATGROUP", "PURCHGROUP", "VENDOR", "MATERIAL", "INFOREC", "PO", "CUSTOMER",
+              "COSTCENTER", "GL", "ACTTYPE", "BIN", "WORKCENTER", "ORGUNIT", "EMPLOYEE", "PRICE", "CUSTOMER_OI",
+              "VENDOR_OI", "ASSET", "STOCK", "GL_BALANCE", "LOAN_OPEN")
 _SKIP = {"VENDOR": {"altkn", "lifnr", "ekorg", "stceg"}, "MATERIAL": {"matnr", "sales.vkorg", "sales.vtweg",
                                                                     "sales.kbetr"},
          "INFOREC": {"lifnr", "matnr", "werks"}, "PLANT": {"werks"}, "SLOC": {"werks", "lgort"},
-         "MATGROUP": {"matkl"}, "PURCHGROUP": {"ekgrp"}}
+         "MATGROUP": {"matkl"}, "PURCHGROUP": {"ekgrp"},
+         "CUSTOMER": {"kunnr", "sales.vtweg", "sales.spart", "sales.kdgrp", "sales.bzirk", "sales.inco1", "sales.inco2"},
+         "COSTCENTER": {"kostl"}, "GL": {"hkont"}, "ACTTYPE": {"lstar"}, "BIN": {"werks", "lgort", "lgpla"},
+         "WORKCENTER": {"arbpl", "werks"}, "ORGUNIT": {"orgeh"}, "EMPLOYEE": {"old_pernr"},
+         "PRICE": {"kunnr", "matnr", "datab", "datbi"}, "CUSTOMER_OI": {"kunnr", "xblnr", "budat", "zterm", "credit", "text"},
+         "VENDOR_OI": {"lifnr", "xblnr", "budat", "zterm", "credit", "text"},
+         "ASSET": {"txt", "kostl", "aktiv", "takeover"}, "STOCK": {"matnr", "werks", "lgort", "lgpla", "insmk", "budat"},
+         "GL_BALANCE": {"hkont", "kostl", "budat"}, "LOAN_OPEN": {"pernr", "gjahr", "perio", "budat"}}
 
 
 def _verify_po(conn, items, diffs, sheet):
@@ -612,6 +964,8 @@ def verify_items(conn, obj, items, sheet=""):
     diffs = []
     if obj == "PO":
         return diffs, _verify_po(conn, items, diffs, sheet)
+    if obj in ("SO", "BOM", "ROUTING"):
+        return diffs, _verify_group(conn, obj, items, diffs, sheet)
     if obj not in VERIFIABLE:
         return diffs, dict(sheet=sheet, lines=len(items), records=len(items), found=None,
                            control="(no field comparison for this object - check the balances)", control_ok=None)
