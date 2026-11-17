@@ -29,7 +29,7 @@ const CSS = `
   display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .pb-kpi.g{border-top-color:var(--g)}.pb-kpi.r{border-top-color:var(--r)}.pb-kpi.y{border-top-color:var(--y)}
 .pb-kpi .kl{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
-.pb-kpi .kv{font-size:clamp(22px,2.1vw,34px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;line-height:1.1;color:#fff}
+.pb-kpi .kv{font-size:clamp(19px,1.85vw,34px);white-space:nowrap;font-weight:800;line-height:1.1;color:#fff}
 .pb-kpi.g .kv{color:var(--g)}.pb-kpi.r .kv{color:var(--r)}.pb-kpi.y .kv{color:var(--y)}
 .pb-kpi .ks{font-size:12px;color:var(--mut)}
 .pb-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(820px,1fr));gap:12px}
