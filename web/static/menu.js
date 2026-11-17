@@ -259,6 +259,7 @@ MENU.push(
     ["Customer Activities", ["VC01N", "VC05", "ZSD_PIPE"]],
   ]],
   ["Common", [
+    ["Ask NERP (AI assistant)", ["ZAI", "ZAI_CONF"]],
     ["BI (Business Intelligence)", ["ZDASH", "ZBI", "ZBI_DASH"]],
     ["Shop-floor Boards", ["ZPP_BOARD", "ZSD_BOARD", "ZMM_BOARD"]],
     ["Daily Meeting Boards", ["ZPP_BOARD", "ZPP_DM_INHOUSE", "ZPP_DM_PENDING", "ZPP_DM_OQC", "ZPP_DM_PDEFECT", "ZPP_DM_MDEFECT", "ZPP_DM_MLOSS", "ZPP_DM_SCRAP"]],

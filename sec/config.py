@@ -27,7 +27,8 @@ API_AREAS = (("/api/forms/PAYSLIP/", "HR"), ("/api/sd/", "SD"), ("/api/fi/", "FI
              ("/api/excel/", "CA"), ("/api/pdf/", "CA"), ("/api/ppt/", "CA"), ("/api/outlook", "CA"),
              ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
              ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"), ("/api/wm/", "MM"), ("/api/tax/", "FI"),
-             ("/api/qm/", "MM"), ("/api/pm/", "PP"))
+             ("/api/qm/", "MM"), ("/api/pm/", "PP"),
+             ("/api/ai/settings", "BC"), ("/api/ai/", "CA"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request",
