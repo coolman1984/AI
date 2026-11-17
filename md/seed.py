@@ -217,9 +217,8 @@ def sample(conn, y, p):
                                     "bktxt": "Import handles"},
                              [{"bwart": "101", "ebeln": ebeln, "ebelp": 10, "qty": "624",
                                "lgpla": "S-05"}], USER)         # 4 % over: tolerance 5 %
-    post_goods_movement(conn, {"budat": d(21), "bktxt": "QM usage decision: accepted"},
-                        [{"bwart": "321", "matnr": "TR-5001", "werks": "1000", "lgort": "0004",
-                          "lgpla": "S-05", "qty": "624"}], USER)
+    from qm.quality import usage_decision          # QA11: the lot of the receipt is accepted
+    usage_decision(conn, gr["lots"][0], {"qty_ok": "624", "datum": d(21)}, USER)
     # 4 ---------------------------------------------------------- customers + sale
     bp.create_customer(conn, dict(ktokd="0002", kunnr="S0001",
                                   name="Red Sea Hotels - Hurghada site",

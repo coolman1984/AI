@@ -214,6 +214,23 @@ const MENU = [
 ];
 
 MENU.push(
+  ["Quality", [
+    ["1-1 Common - Quality Cockpit", ["ZQM_COCKPIT"]],
+    ["1-2 Common - Inspection Plan (characteristics)", ["QP01"]],
+    ["2-1 Inspection - Lots Worklist", ["QA32"]],
+    ["2-2 Inspection - Results & Usage Decision", ["QA11"]],
+    ["2-3 Inspection - Inspection of Stock", ["QA01"]],
+    ["3-1 Complaints - Quality Notifications (NCR / CAPA)", ["QM01"]],
+    ["4-1 Analysis - Vendor Quality Rating", ["ZQM_VENDOR", "ME61"]],
+  ]],
+  ["Maintenance", [
+    ["1-1 Common - Maintenance Cockpit", ["ZPM_COCKPIT"]],
+    ["1-2 Common - Machines", ["ZPM_EQUI"]],
+    ["2-1 Planning - Preventive Plans & Scheduling", ["ZPM_PLAN"]],
+    ["2-2 Planning - Breakdown / Request", ["ZPM_NOTIF"]],
+    ["3-1 Execution - Orders, Spare Parts, Hours", ["ZPM_ORDERS"]],
+    ["4-1 Analysis - Reliability (MTBF / MTTR)", ["ZPM_REL", "ZPP_OEE"]],
+  ]],
   ["Taxes Egypt", [
     ["1-1 Common - Law Register (rates & updates)", ["ZTAX_LAW"]],
     ["1-2 Common - E-Invoice Settings", ["ZTAX_CONF"]],
@@ -276,7 +293,7 @@ MENU.push(
     ["Data Transfer (go-live)", ["ZIMPORT"]],
   ]]);
 // order of the top-level areas
-const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Financial Accounting", "Controlling",
+const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Quality", "Maintenance", "Financial Accounting", "Controlling",
   "Taxes Egypt", "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
 MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));
 

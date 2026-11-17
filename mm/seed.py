@@ -67,6 +67,8 @@ def _seed(conn):
     from sd import seed as sd_seed
     sd_seed.master(conn)
     sd_seed.sample(conn)
+    from qm import seed as qm_seed                 # quality inspection + machine maintenance
+    qm_seed.sample(conn)
     from sec import users as sec_users           # demo users and roles (AMS / SU01 / PFCG)
     sec_users.bootstrap(conn, demo=True)
     sec_users.request(conn, "SALES1", "ROLE", "CREDIT_MANAGER", "",

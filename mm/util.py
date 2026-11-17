@@ -219,3 +219,12 @@ def parse_num(text, what="number", default=None):
             return default
         raise MMError("Enter %s" % what, "00", "055")
     return float(_to_decimal(text, what))
+
+
+def parse_measure(text, what="measured value"):
+    """Measured value (may be negative, at most 3 decimals) -> milli units, exact."""
+    d = _to_decimal(text, what)
+    m = (d * 1000).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    if m != d * 1000:
+        raise MMError("%s may have at most 3 decimal places" % what.capitalize(), "00", "088")
+    return int(m)
