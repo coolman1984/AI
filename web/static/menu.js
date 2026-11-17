@@ -60,6 +60,7 @@ const MENU = [
     ["4-2 Shop Floor - Confirmation", ["CO11N", "CO13", "CO14"]],
     ["4-3 Shop Floor - Downtime", ["ZPP_LOSS"]],
     ["4-4 Shop Floor - Status Board", ["ZPP_BOARD"]],
+    ["4-5 Shop Floor - Daily Meeting", ["ZPP_BOARD", "ZPP_DM_INHOUSE", "ZPP_DM_PENDING", "ZPP_DM_OQC", "ZPP_DM_PDEFECT", "ZPP_DM_MDEFECT", "ZPP_DM_MLOSS", "ZPP_DM_SCRAP"]],
     ["5-1 Special - Rework & Orders w/o Material", ["ZPP_REWORK", "CO07"]],
     ["5-2 Special - External Processing", ["ZPP_EXTOP", "ME5A", "ME59N", "ME2N"]],
     ["5-3 Special - Subcontracting", ["ZME21_SC", "ME2O", "MBLB"]],
@@ -260,6 +261,7 @@ MENU.push(
   ["Common", [
     ["BI (Business Intelligence)", ["ZDASH", "ZBI", "ZBI_DASH"]],
     ["Shop-floor Boards", ["ZPP_BOARD", "ZSD_BOARD", "ZMM_BOARD"]],
+    ["Daily Meeting Boards", ["ZPP_BOARD", "ZPP_DM_INHOUSE", "ZPP_DM_PENDING", "ZPP_DM_OQC", "ZPP_DM_PDEFECT", "ZPP_DM_MDEFECT", "ZPP_DM_MLOSS", "ZPP_DM_SCRAP"]],
     ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],

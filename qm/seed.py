@@ -39,6 +39,9 @@ def sample(conn):
     qm.record(conn, lots[2], {"10": "4.05"}, USER)                     # still in inspection
     n = conn.execute("SELECT qmnum FROM qm_notif WHERE prueflos=?", (lots[1],)).fetchone()["qmnum"]
     qm.update_notification(conn, n, {"cause": "Pallets without corner protection"}, USER)
+    lg = conn.execute("SELECT lgort FROM quant WHERE matnr='FG-3001' AND insmk='U' AND qty>=3000 ORDER BY qty DESC").fetchone()
+    if lg:                                          # outgoing inspection of finished goods (OQC)
+        qm.create_lot(conn, {"matnr": "FG-3001", "lgort": lg["lgort"], "qty": "3", "datum": d(1)}, USER)
     qm.create_notification(conn, {"qmart": "Q3", "matnr": "FG-3001", "defect": "SURF", "qty": "3",
                                   "text": "Scratches on cabinet doors after assembly", "datum": d(2)}, USER)
     # ---------------------------------------------------------------- maintenance: machines on the lines

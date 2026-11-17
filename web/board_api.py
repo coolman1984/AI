@@ -112,3 +112,32 @@ def wm_board(req, q):
         _amt(r, ("value",))
     _amt(b, ("slow_value",))
     return b
+
+
+# ------------------------------------------------------------------ daily meeting boards
+DM = {"inhouse": "inhouse", "pending": "pending", "oqc": "oqc", "pdefect": "pdefect", "mdefect": "mdefect",
+      "mloss": "mloss", "scrap": "pending_scrap"}
+DM_QTY = {"plan", "today", "diff", "d1", "month", "scrap", "inhouse", "subcon", "subcon_open", "planned", "done",
+          "pending", "pending_qty", "stock_qty", "qty", "ok", "rej", "week", "good", "std", "actual", "over"}
+DM_AMT = {"value", "stock_value", "blocked_fg", "returns_value", "blocked_value", "usage_value", "inv_value",
+          "scrap_value", "total", "scrapped_value", "0-30 days", "31-90 days", "> 90 days"}
+
+
+def _dm(x, key=None):
+    from mm.util import amt_out
+    if isinstance(x, list):
+        return [_dm(i) for i in x]
+    if isinstance(x, dict):
+        return {k: _dm(v, k) for k, v in x.items()}
+    if isinstance(x, int) and not isinstance(x, bool):
+        if key in DM_AMT:
+            return amt_out(x)
+        if key in DM_QTY:
+            return qty_out(x)
+    return x
+
+
+@route("GET", "/api/pp/dm/(?P<kind>inhouse|pending|oqc|pdefect|mdefect|mloss|scrap)")
+def pp_daily_meeting(req, q, kind):
+    from pp import daily
+    return _dm(getattr(daily, DM[kind])(db(), q.get("datum") or None))
