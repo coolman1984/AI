@@ -177,6 +177,9 @@ def migrate_schema(conn):
     from tax.schema import TAX_SCHEMA, install as tax_install
     conn.executescript(TAX_SCHEMA)
     tax_install(conn)
+    from qm.schema import QM_SCHEMA, install as qm_install
+    conn.executescript(QM_SCHEMA)
+    qm_install(conn)
     from fi.clearing import DP_SCHEMA
     conn.executescript(DP_SCHEMA)
     from fi.document import PERIOD_SCHEMA

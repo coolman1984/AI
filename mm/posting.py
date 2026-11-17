@@ -48,6 +48,11 @@ def post_goods_movement(conn, header, items, user, tcode="MIGO",
                     e.msg = "Item %d: %s" % (n, e.msg)
                     raise
             result = doc.finish()
+            from qm.quality import lots_from_document
+            made = lots_from_document(conn, result["mblnr"], result["mjahr"], user, budat)
+            if made:
+                result["lots"] = made
+                result["message"] += " - inspection lot %s (quality inspection stock)" % ", ".join(made)
             if check_only:
                 raise _CheckOK()
             return result
@@ -68,6 +73,8 @@ def cancel_document(conn, mblnr, mjahr, budat=None, user="", reason=""):
                              " ORDER BY zeile", (mblnr, mjahr)).fetchall()
         if any(l["canceled"] for l in lines):
             raise MMError("Document %s already reversed" % mblnr, "M7", "065")
+        from qm.quality import on_reversal
+        on_reversal(conn, mblnr, mjahr)
         if any(l["smbln"] for l in lines):
             raise MMError("Document %s is itself a reversal document; "
                           "post the original movement again instead" % mblnr,
@@ -323,6 +330,8 @@ def _post_item(doc, raw):
     _sloc(conn, line["werks"], line["lgort"])
     from md.checks import goods_movement
     goods_movement(conn, line, bwart, mt["kind"], raw.get("insmk"), mt.get("st_choice"))
+    from qm.quality import check_manual_release
+    check_manual_release(conn, line, bwart, doc.tcode)
 
     # ------------------------------------------------ by movement kind
     kind = mt["kind"]
