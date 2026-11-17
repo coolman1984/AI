@@ -14,7 +14,7 @@ import datetime
 
 from mm import util as clock
 from mm.db import _next_number, transaction
-from mm.util import MMError, amt_out, now_ts, parse_date, parse_int, parse_qty, qty_out, rdiv
+from mm.util import MMError, amt_out, now_ts, parse_date, parse_int, rdiv
 
 ORDER_TYPES = {"PM01": "Corrective maintenance", "PM02": "Preventive maintenance"}
 NOTIF_TYPES = {"M1": "Maintenance request", "M2": "Breakdown"}

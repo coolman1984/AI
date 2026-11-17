@@ -117,7 +117,7 @@ register("ZPP_BOARD", { title: "Production Status Board", async render(app, para
   lastBtn.addEventListener("click", () => { if (lastDay) { date.value = lastDay; load(); } else msg("I", "No production recorded yet"); });
   tvBtn.addEventListener("click", () => { if (document.fullscreenElement) document.exitFullscreen(); else if (root.requestFullscreen) root.requestFullscreen(); });
   toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: load }, { label: "Line plan", onClick: () => go("ZPP_LINEPLAN", { datum: date.value }) },
-    { label: "Downtime", onClick: () => go("ZPP_LOSS", { datum: date.value }) }, { label: "Confirm production (CO11N)", onClick: () => go("CO11N") }]);
+    { label: "Downtime", onClick: () => go("ZPP_LOSS", { datum: date.value }) }, { label: "Confirm production (CO11N)", onClick: () => go("CO11N") }, ...meeting("ZPP_BOARD", params)]);
   clockT = setInterval(tick, 1000); tick();
   setAuto(true);
   await load();
@@ -267,5 +267,109 @@ register("ZMM_BOARD", { title: "Warehouse Status Board", async render(app, param
         ["Physical inventory open", String(b.inventory.open), b.inventory.open ? "y" : "g"], ["Last count posted", b.inventory.last_count || "-"]])),
       box("Below Reorder Point", reorder), box("Slow-moving Stock", slow))];
   }, [{ label: "Stock overview (MMBE)", onClick: () => go("MMBE") }, { label: "Goods movement (MIGO)", onClick: () => go("MIGO") }]);
+} });
+// ================================================================== daily meeting boards
+const DM = ["ZPP_BOARD", "ZPP_DM_INHOUSE", "ZPP_DM_PENDING", "ZPP_DM_OQC", "ZPP_DM_PDEFECT", "ZPP_DM_MDEFECT", "ZPP_DM_MLOSS", "ZPP_DM_SCRAP"];
+const area = (title, head, rows, empty) => h("div.pb-area", null, h("h3", null, title), rows.length ? tbl(head, rows) : h("div.pb-ok", null, empty));
+const pc = (v, bad) => v === null || v === undefined ? "-" : h("span." + (v > bad ? "r" : "g"), null, Number(v).toFixed(1));
+const egp = v => fmtQty(Math.round(v || 0));
+// meeting mode: every board 30 seconds on the TV, then the next one
+function meeting(code, params) {
+  const next = DM[(DM.indexOf(code) + 1) % DM.length];
+  const day = params.datum && params.datum !== "undefined" ? { datum: params.datum } : {};
+  params = Object.assign({}, params, day.datum ? day : { datum: undefined });
+  if (params.meeting) setTimeout(() => { if (location.hash.indexOf(code) >= 0) go(next, Object.assign({ meeting: 1 }, day)); }, 30000);
+  return [{ label: "Next board ▶", onClick: () => go(next, day) },
+    { label: params.meeting ? "■ Stop meeting mode" : "⟳ Meeting mode (30 s each)", onClick: () => go(params.meeting ? code : DM[0], params.meeting ? day : Object.assign({ meeting: 1 }, day)) }];
+}
+// ------------------------------------------------------------------ ZPP_DM_INHOUSE
+register("ZPP_DM_INHOUSE", { title: "In-house Production Status", async render(app, params) {
+  const head = [["LINE", 1, 2], ["DESCRIPTION", 1, 2], ["TODAY", 4, 0, ["PLAN", "PROD", "DIFF", "ACH %"]], ["D-1", 1, 2], ["MONTH TO DATE", 3, 0, ["YIELD", "SCRAP", "DEFECT %"]], ["OPEN ORDERS", 1, 2]];
+  const cells = r => [h("td.line." + r.status, null, r.arbpl), h("td.mdl", null, r.ktext), h("td", null, n0(r.plan)), h("td", null, n0(r.today)), h("td", null, r.plan ? sg(r.diff) : "-"),
+    h("td", null, achCell(r.ach)), h("td", null, n0(r.d1)), h("td", null, n0(r.month)), h("td", null, h("span" + (r.scrap ? ".r" : ".g"), null, n0(r.scrap))), h("td", null, pc(r.defect, 1)), h("td", null, String(r.orders))];
+  const tot = t => [h("td.l", { colSpan: 2 }, `Total (${t.running}/${t.lines} running)`), h("td", null, n0(t.plan)), h("td", null, n0(t.today)), h("td", null, t.plan ? sg(t.diff) : "-"),
+    h("td", null, achCell(t.ach)), h("td", null, n0(t.d1)), h("td", null, n0(t.month)), h("td", null, n0(t.scrap)), h("td", null, pc(t.defect, 1)), h("td", null, String(t.orders))];
+  boardFrame(app, params, "IN-HOUSE PRODUCTION", "Daily meeting 1/7", "/api/pp/dm/inhouse", b => [
+    b.groups.length ? h("div.pb-areas", null, ...b.groups.map(g => gridArea(g, head, null, cells, tot))) : h("div.pb-empty", null, "No lines defined."),
+    h("div.pb-boxes", null, box("In-house vs Subcontracting (month)", kv([["Produced in-house", n0(b.inhouse), "g"], ["Received from subcontractors", n0(b.subcon)],
+      ["In-house share %", b.inhouse_share === null ? "-" : p1(b.inhouse_share), "g"], ["Open subcontracting items", `${b.subcon_items} · ${n0(b.subcon_open)}`, b.subcon_items ? "y" : "g"]])))], meeting("ZPP_DM_INHOUSE", params));
+} });
+// ------------------------------------------------------------------ ZPP_DM_PENDING
+register("ZPP_DM_PENDING", { title: "Production Pending", async render(app, params) {
+  const head = ["Order", "Material", "Description", "Line", "Start", "Due", "Planned", "Done", "Pending", "Progress %", "Late days", "Short comp."];
+  const row = r => h("tr", null, h("td.line." + (r.bucket === "late" ? "behind" : "ahead"), null, r.aufnr), h("td.l", null, r.matnr || "-"), h("td.mdl", null, r.maktx || ""), h("td.l", null, r.line),
+    h("td", null, r.start || ""), h("td", null, r.due), h("td", null, n0(r.planned)), h("td", null, n0(r.done)), h("td.y", null, n0(r.pending)), h("td", null, p1(r.progress)),
+    h("td", null, h("span." + (r.late ? "r" : "g"), null, String(r.late))), h("td", null, h("span." + (r.short ? "r" : "g"), null, String(r.short))));
+  boardFrame(app, params, "PRODUCTION PENDING", "Daily meeting 2/7", "/api/pp/dm/pending", b => [
+    area(`LATE (${b.late})`, head, b.rows.filter(r => r.bucket === "late").map(row), "✓ No late production orders"),
+    h("div", { style: { marginTop: "8px" } }, area(`DUE TODAY (${b.today})`, head, b.rows.filter(r => r.bucket === "today").map(row), "Nothing due today")),
+    h("div", { style: { marginTop: "8px" } }, area(`NEXT DAYS (${b.next})`, head, b.rows.filter(r => r.bucket === "next").map(row), "No further orders")),
+    h("div.pb-boxes", null, box("Summary", kv([["Open orders", String(b.rows.length)], ["Quantity pending", n0(b.pending_qty), "y"], ["Late orders", String(b.late), b.late ? "r" : "g"],
+      ["Orders with missing components", String(b.short_orders), b.short_orders ? "r" : "g"], ["Not yet released", String(b.not_released), b.not_released ? "y" : "g"]])))],
+  meeting("ZPP_DM_PENDING", params).concat([{ label: "Order list (COOIS)", onClick: () => go("COOIS") }]));
+} });
+// ------------------------------------------------------------------ ZPP_DM_OQC
+register("ZPP_DM_OQC", { title: "OQC Pending (outgoing quality)", async render(app, params) {
+  boardFrame(app, params, "OQC PENDING", "Daily meeting 3/7", "/api/pp/dm/oqc", b => [
+    area("FINISHED GOODS IN QUALITY INSPECTION", ["Material", "Description", "Sloc", "Quantity", "Value EGP", "Since", "Days"], b.stock.map(r => h("tr", null,
+      h("td.line." + (r.age > 2 ? "behind" : "ahead"), null, r.matnr), h("td.mdl", null, r.maktx), h("td", null, r.lgort), h("td.y", null, n0(r.qty)), h("td", null, egp(r.value)),
+      h("td", null, r.since), h("td", null, h("span." + (r.age > 2 ? "r" : "g"), null, String(r.age))))), "✓ No finished goods waiting for inspection"),
+    h("div", { style: { marginTop: "8px" } }, area("OPEN INSPECTION LOTS (production / finished goods)", ["Lot", "Material", "Description", "Quantity", "Order", "Created", "Days", "Status"],
+      b.lots.map(r => h("tr", null, h("td.line", null, r.prueflos), h("td.l", null, r.matnr), h("td.mdl", null, r.maktx || ""), h("td", null, n0(r.qty)), h("td", null, r.aufnr || "-"),
+        h("td", null, r.created), h("td", null, h("span." + (r.age > 2 ? "r" : "g"), null, String(r.age))), h("td", null, r.status))), "✓ No open lots")),
+    h("div.pb-boxes", null, box("Decisions", kv([["Lots decided today", String(b.today.lots)], ["Accepted today", n0(b.today.ok), "g"], ["Rejected today", n0(b.today.rej), b.today.rej ? "r" : "g"],
+      ["Lots this month", String(b.month.lots)], ["Rejected ppm (month)", String(b.month.ppm), b.month.ppm ? "r" : "g"]])),
+      box("Value waiting", kv([["Finished goods in inspection", `${n0(b.stock_qty)} · ${egp(b.stock_value)} EGP`, b.stock_qty ? "y" : "g"], ["Blocked finished goods", `${egp(b.blocked_fg)} EGP`, b.blocked_fg ? "r" : "g"]])))],
+  meeting("ZPP_DM_OQC", params).concat([{ label: "Usage decision (QA11)", onClick: () => go("QA32") }]));
+} });
+// ------------------------------------------------------------------ ZPP_DM_PDEFECT
+register("ZPP_DM_PDEFECT", { title: "Production Defect", async render(app, params) {
+  boardFrame(app, params, "PRODUCTION DEFECT", "Daily meeting 4/7", "/api/pp/dm/pdefect", b => [
+    area("SCRAP PER LINE", ["Line", "Description", "Today", "Today %", "D-1", "Week", "Month", "Month %"], b.lines.map(r => h("tr", null,
+      h("td.line." + (r.month ? "behind" : "ahead"), null, r.arbpl), h("td.mdl", null, r.ktext), h("td", null, h("span" + (r.today ? ".r" : ""), null, n0(r.today))), h("td", null, pc(r.today_pct, 1)),
+      h("td", null, n0(r.d1)), h("td", null, n0(r.week)), h("td", null, n0(r.month)), h("td", null, pc(r.month_pct, 1)))).concat([h("tr.tot", null, h("td.l", { colSpan: 2 }, "Total"),
+      h("td", null, n0(b.today)), h("td", null, ""), h("td", null, ""), h("td", null, ""), h("td", null, n0(b.month)), h("td", null, pc(b.month_pct, 1)))]), ""),
+    h("div.pb-boxes", null, box("Scrap reasons (month)", b.pareto.length ? tbl(["Reason", "Quantity", "Times"], b.pareto.map(r => h("tr", null, h("td.k", null, r.text), h("td.r", null, n0(r.qty)), h("td", null, String(r.count)))))
+      : h("div.pb-ok", null, "✓ No scrap this month")),
+      box("Open internal non-conformances", b.ncr.length ? tbl(["No.", "Material", "Problem"], b.ncr.map(r => h("tr", null, h("td.k", null, r.qmnum), h("td", null, r.matnr || ""), h("td.l", null, r.text))))
+        : h("div.pb-ok", null, "✓ None open")),
+      box("Rework", kv([["Open rework / refurbish orders", String(b.rework), b.rework ? "y" : "g"]])))],
+  meeting("ZPP_DM_PDEFECT", params).concat([{ label: "Scrap analysis", onClick: () => go("ZPP_SCRAP") }]));
+} });
+// ------------------------------------------------------------------ ZPP_DM_MDEFECT
+register("ZPP_DM_MDEFECT", { title: "Material Defect (incoming)", async render(app, params) {
+  boardFrame(app, params, "MATERIAL DEFECT", "Daily meeting 5/7", "/api/pp/dm/mdefect", b => [
+    area("INCOMING INSPECTION PER VENDOR (month)", ["Vendor", "Name", "Lots", "With defects", "Received", "Rejected", "ppm"], b.vendors.map(r => h("tr", null,
+      h("td.line." + (r.rej ? "behind" : "ahead"), null, r.lifnr), h("td.mdl", null, r.name || ""), h("td", null, String(r.lots)), h("td", null, h("span." + (r.bad ? "r" : "g"), null, String(r.bad))),
+      h("td", null, n0(r.qty)), h("td", null, h("span." + (r.rej ? "r" : "g"), null, n0(r.rej))), h("td", null, h("span." + (r.ppm ? "r" : "g"), null, String(r.ppm))))), "✓ No incoming lots decided this month"),
+    h("div.pb-boxes", null, box("Defect types (month)", b.codes.length ? tbl(["Defect", "Quantity", "Lots"], b.codes.map(r => h("tr", null, h("td.k", null, r.text), h("td.r", null, n0(r.qty)), h("td", null, String(r.count)))))
+      : h("div.pb-ok", null, "✓ No defects")),
+      box("Open vendor complaints", b.complaints.length ? tbl(["No.", "Vendor", "Material", "Due"], b.complaints.map(r => h("tr", null, h("td.k", null, r.qmnum), h("td.l", null, r.name || r.lifnr),
+        h("td", null, r.matnr || ""), h("td", null, r.due || "")))) : h("div.pb-ok", null, "✓ None open")),
+      box("Summary", kv([["Rejected ppm (month)", String(b.ppm), b.ppm ? "r" : "g"], ["Lots waiting for inspection", String(b.open_lots), b.open_lots ? "y" : "g"],
+        ["Returns to vendors (month)", `${b.returns} · ${egp(b.returns_value)} EGP`], ["Blocked materials", `${egp(b.blocked_value)} EGP`, b.blocked_value ? "r" : "g"]])))],
+  meeting("ZPP_DM_MDEFECT", params).concat([{ label: "Vendor quality", onClick: () => go("ZQM_VENDOR") }]));
+} });
+// ------------------------------------------------------------------ ZPP_DM_MLOSS
+register("ZPP_DM_MLOSS", { title: "Material Loss", async render(app, params) {
+  boardFrame(app, params, "MATERIAL LOSS", "Daily meeting 6/7", "/api/pp/dm/mloss", b => [
+    area("CONSUMPTION ABOVE STANDARD (orders of the month)", ["Order", "Line", "Component", "Standard", "Actual", "Over", "Over %", "Value EGP"], b.rows.map(r => h("tr", null,
+      h("td.line.behind", null, r.aufnr), h("td.l", null, r.line), h("td.l", null, r.matnr), h("td", null, n0(r.std)), h("td", null, n0(r.actual)), h("td.r", null, n0(r.over)),
+      h("td", null, pc(r.pct, 2)), h("td.r", null, egp(r.value)))), "✓ No component used above the bill of material"),
+    h("div.pb-boxes", null, box("Loss of the month (EGP)", kv([["Over-consumption in orders", egp(b.usage_value), b.usage_value ? "r" : "g"],
+      ["Inventory differences (count)", `${b.inv_docs} · ${egp(b.inv_value)}`, b.inv_value > 0 ? "r" : "g"], ["Scrapped from stock (551)", `${b.scrap_docs} · ${egp(b.scrap_value)}`, b.scrap_value ? "r" : "g"],
+      ["Total loss", egp(b.total), b.total ? "r" : "g"]])))],
+  meeting("ZPP_DM_MLOSS", params));
+} });
+// ------------------------------------------------------------------ ZPP_DM_SCRAP
+register("ZPP_DM_SCRAP", { title: "Pending Scrap", async render(app, params) {
+  boardFrame(app, params, "PENDING SCRAP", "Daily meeting 7/7", "/api/pp/dm/scrap", b => [
+    area("BLOCKED STOCK WAITING FOR DISPOSAL", ["Material", "Description", "Type", "Sloc", "Quantity", "Value EGP", "Since", "Days"], b.rows.map(r => h("tr", null,
+      h("td.line." + (r.age > 30 ? "behind" : "ahead"), null, r.matnr), h("td.mdl", null, r.maktx), h("td", null, r.mtart), h("td", null, r.lgort), h("td.y", null, n0(r.qty)),
+      h("td.r", null, egp(r.value)), h("td", null, r.since), h("td", null, h("span." + (r.age > 30 ? "r" : "g"), null, String(r.age))))), "✓ No blocked stock"),
+    h("div.pb-boxes", null, box("Age of pending scrap (EGP)", kv(Object.entries(b.aging).map(([k, v]) => [k, egp(v), v ? (k === "0-30 days" ? "y" : "r") : "g"]).concat([["Total", egp(b.value), b.value ? "r" : "g"]]))),
+      box("Scrapped this month", kv([["Scrapping documents (551)", String(b.scrapped_docs)], ["Value written off", `${egp(b.scrapped_value)} EGP`]])),
+      box("Decision", h("div.pb-ok", { style: { color: "#ffd400", fontSize: "18px" } }, "Rework, return to vendor (122) or scrap (551 in MIGO) - decide in the meeting")))],
+  meeting("ZPP_DM_SCRAP", params).concat([{ label: "Goods movement (MIGO)", onClick: () => go("MIGO") }]));
 } });
 })();

@@ -180,6 +180,8 @@ PROCESSES = [
              ("PTP-26", "Production configuration and month-end", "ZPP_CONF ZPP_CLOSE", "Settings displayed; open production work and CO period-end runs in order", ["test_pp_ext.ConfigAndClosing.test_configuration_and_month_end"]),
              ("PTP-27", "Machine breakdown: spare parts, hours and line downtime", "ZPM_NOTIF ZPM_ORDERS ZPM_REL", "Breakdown opens an order; parts issued 201 to the cost center; labour from minutes; completion writes the downtime to the line (ZPP_LOSS) and MTTR", ["test_qm_pm.Maintenance.test_breakdown_parts_hours_completion_and_line_downtime"]),
              ("PTP-28", "Preventive maintenance plans and scheduling", "ZPM_PLAN ZPM_COCKPIT", "Due plan creates one PM02 order; completion moves the next due date by the interval", ["test_qm_pm.Maintenance.test_preventive_plan_scheduling_and_next_due"]),
+             ("PTP-29", "Daily meeting boards: in-house production, pending orders, production defects", "ZPP_DM_INHOUSE ZPP_DM_PENDING ZPP_DM_PDEFECT", "Month yield and scrap = confirmations; pending = open orders (late / today / next); scrap Pareto = confirmed scrap", ["test_daily.DailyMeeting.test_production_boards_equal_the_documents"]),
+             ("PTP-30", "Daily meeting boards: OQC, material defect, material loss, pending scrap", "ZPP_DM_OQC ZPP_DM_MDEFECT ZPP_DM_MLOSS ZPP_DM_SCRAP", "Finished goods in inspection and open lots; vendor complaints; extra component issue raises the loss; pending scrap = blocked stock with aging", ["test_daily.DailyMeeting.test_quality_loss_and_scrap_boards"]),
          ]),
     # ------------------------------------------------------------------ Inventory
     dict(id="INV", folder="6", module="MM", map="ZMM_COCKPIT", version="2.1",
