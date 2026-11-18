@@ -1,0 +1,129 @@
+"""Daily briefing and alerts to the mobile (ZNOTIF): subscriptions, the daily briefing once a day at
+the chosen time, alerts sent once per event, approvals combined, categories and authorizations
+respected, failed sends retried, channel formatting and masked secrets. A fake sender - no network."""
+import datetime
+import os
+import sys
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import fixture  # noqa: E402,F401
+from mm import seed  # noqa: E402
+from mm.db import connect  # noqa: E402
+from mm.util import MMError  # noqa: E402
+
+T = fixture.T
+
+
+def system():
+    c = connect(":memory:")
+    seed.seed(c)
+    return c
+
+
+def err(test, fn, no):
+    with test.assertRaises(MMError) as x:
+        fn()
+    test.assertEqual(x.exception.msg_no, no, str(x.exception))
+
+
+class Sender:
+    def __init__(self, fail=False):
+        self.sent, self.fail = [], fail
+
+    def __call__(self, channel, cfg, address, title, text):
+        from notify.channels import NotifyError
+        if self.fail:
+            raise NotifyError("network down")
+        self.sent.append((channel, address, title, text))
+
+
+class Subscriptions(unittest.TestCase):
+    def test_validation_and_ownership(self):
+        from notify import engine as e
+        c = system()
+        err(self, lambda: e.save_sub(c, {"channel": "sms"}, "U1"), "901")
+        err(self, lambda: e.save_sub(c, {"channel": "email", "address": "x"}, "U1"), "902")
+        err(self, lambda: e.save_sub(c, {"channel": "telegram", "address": "abc"}, "U1"), "903")
+        err(self, lambda: e.save_sub(c, {"channel": "whatsapp", "address": "0100"}, "U1"), "904")
+        err(self, lambda: e.save_sub(c, {"channel": "inapp", "daily_time": "8am"}, "U1"), "905")
+        sid = e.save_sub(c, {"channel": "telegram", "address": "123456789", "cats": ["MACH", "XX"]}, "U1")["id"]
+        self.assertEqual(e.subs(c, "U1")[0]["cats"], ["MACH"])
+        err(self, lambda: e.delete_sub(c, sid, "U2"), "906")                  # not his subscription
+        e.save_settings(c, {"telegram_token": "123:SECRETTOKEN", "alert_minutes": "10"}, "ADMIN")
+        self.assertTrue(e.public_settings(c)["telegram_token"].startswith("••••"))
+        e.save_settings(c, {"telegram_token": ""}, "ADMIN")                    # empty keeps it
+        self.assertEqual(e.settings(c)["telegram_token"], "123:SECRETTOKEN")
+        err(self, lambda: e.save_settings(c, {"alert_minutes": "1"}, "ADMIN"), "089")
+
+
+class Daily(unittest.TestCase):
+    def test_once_a_day_at_the_chosen_time_and_retry_after_failure(self):
+        from notify import engine as e
+        c = system()
+        sid = e.save_sub(c, {"channel": "telegram", "address": "111", "daily_time": "08:00", "cats": []}, "OWNER")["id"]
+        early = datetime.datetime.combine(T, datetime.time(7, 30))
+        on = datetime.datetime.combine(T, datetime.time(8, 5))
+        s = Sender()
+        self.assertEqual(e.run_daily(c, early, s), 0)
+        bad = Sender(fail=True)
+        self.assertEqual(e.run_daily(c, on, bad), 0)                          # failure is logged, not marked
+        self.assertEqual(c.execute("SELECT status FROM notif_log ORDER BY id DESC").fetchone()[0], "failed")
+        self.assertEqual(e.run_daily(c, on, s), 1)                            # retried on the next run
+        self.assertEqual(e.run_daily(c, on, s), 0)                            # once per day
+        self.assertEqual(e.run_daily(c, on + datetime.timedelta(days=1), s), 1)
+        title, text = s.sent[0][2], s.sent[0][3]
+        self.assertIn("ملخص", title)
+        self.assertIn("المبيعات", text)
+        self.assertEqual(s.sent[0][:2], ("telegram", "111"))
+        self.assertEqual(e.run_daily(c, early, s, force_sub=sid), 1)           # "send now" ignores the time
+        self.assertTrue(e.inbox(c, "OWNER")["rows"])
+
+
+class Alerts(unittest.TestCase):
+    def test_alerts_once_per_event_categories_and_authorization(self):
+        from notify import engine as e
+        from qm import maintenance as pm
+        c = system()
+        e.save_sub(c, {"channel": "inapp", "daily": False, "cats": ["MACH", "APPR", "STOCK"]}, "OWNER")
+        e.save_sub(c, {"channel": "inapp", "daily": False, "cats": ["TAX"]}, "TAXONLY")
+        start = datetime.datetime.combine(T, datetime.time(9, 0)) - datetime.timedelta(hours=2)
+        n = pm.create_notification(c, {"qmart": "M2", "equnr": "PRS-01", "text": "Hydraulic leak",
+                                       "start": start.strftime("%Y-%m-%d %H:%M")}, "T")
+        s = Sender()
+        e.run_alerts(c, s)
+        titles = [x[2] for x in s.sent]
+        self.assertEqual(sum("ماكينة واقفة" in t for t in titles), 1)
+        self.assertEqual(sum("مستنية موافقتك" in t for t in titles), 1)      # approvals in ONE message
+        self.assertFalse(c.execute("SELECT 1 FROM notif_log WHERE usnam='TAXONLY' AND cat<>'TAX'").fetchone())
+        k = len(s.sent)
+        e.run_alerts(c, s)
+        self.assertEqual(len(s.sent), k)                                    # nothing twice
+        pm.complete(c, n["aufnr"], {"finish": (start + datetime.timedelta(hours=1)).strftime("%Y-%m-%d %H:%M")}, "T")
+        self.assertFalse([a for a in e.alerts(c) if a["key"] == "MACH:%s" % n["qmnum"]])
+        from unittest import mock
+        real = e._allowed                                                   # a user without PP display
+        e.save_sub(c, {"channel": "inapp", "daily": False, "cats": ["MACH"]}, "NOPP")
+        pm.create_notification(c, {"qmart": "M2", "equnr": "ROB-01", "text": "Sensor",
+                                    "start": start.strftime("%Y-%m-%d %H:%M")}, "T")
+        with mock.patch.object(e, "_allowed", lambda conn, u: (lambda area: area != "PP") if u == "NOPP" else real(conn, u)):
+            e.run_alerts(c, s)
+        self.assertFalse(c.execute("SELECT 1 FROM notif_log WHERE usnam='NOPP' AND cat='MACH'").fetchone())
+        self.assertTrue(c.execute("SELECT 1 FROM notif_log WHERE usnam='OWNER' AND cat='MACH' AND title LIKE ?",
+                                  ("%Assembly robot%",)).fetchone())                # the others got the new breakdown
+
+class Channels(unittest.TestCase):
+    def test_formatting_and_missing_configuration(self):
+        from notify import channels as ch
+        self.assertEqual(ch.to_html("a <b> **x** & y"), "a &lt;b&gt; <b>x</b> &amp; y")
+        ch.send("inapp", {}, "", "t", "x")                                  # nothing to send
+        for fn in (lambda: ch.send("sms", {}, "1", "t", "x"), lambda: ch.send("telegram", {}, "1", "t", "x"),
+                   lambda: ch.send("email", {}, "a@b.c", "t", "x"), lambda: ch.send("whatsapp", {}, "2010", "t", "x"),
+                   lambda: ch.send("telegram", {"telegram_token": "1:a"}, " ", "t", "x")):
+            with self.assertRaises(ch.NotifyError):
+                fn()
+
+
+if __name__ == "__main__":
+    unittest.main()

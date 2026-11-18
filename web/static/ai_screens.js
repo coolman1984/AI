@@ -120,6 +120,9 @@ const CSS = `
 .cp-btn{width:62px;height:62px;border-radius:50%;border:0;padding:0;cursor:pointer;background:transparent;box-shadow:0 10px 26px rgba(11,92,173,.45);
   transition:transform .15s;position:relative}
 .cp-btn:hover{transform:scale(1.07)}
+.cp-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e5484d;color:#fff;font:700 12px/20px Arial,sans-serif;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);display:none}
+.cp-tile.wide{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px}.cp-tile.wide .e{display:inline;margin:0;font-size:20px}
 .cp-btn .dot{position:absolute;right:3px;bottom:5px;width:13px;height:13px;border-radius:50%;background:#2ee59d;border:2px solid #fff}
 .cp-tip{background:#0b2a55;color:#fff;font:600 13px Inter,"Segoe UI",Arial,sans-serif;padding:7px 12px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;
   transform:translateX(8px);transition:.2s;pointer-events:none;white-space:nowrap}
@@ -233,7 +236,7 @@ function build() {
   fab = h("div.cp-fab", null, h("button.cp-btn", { type: "button", title: "NERP Copilot", html: ICON + '<span class="dot"></span>' }),
     h("span.cp-tip", null, "NERP Copilot · اسأل"));
   const hide = h("button.cp-hide", { type: "button", title: "Hide until reload" }, "×");
-  fab.querySelector(".cp-btn").append(hide);
+  fab.querySelector(".cp-btn").append(hide, h("span.cp-badge"));
   hide.addEventListener("click", e => { e.stopPropagation(); fab.remove(); fab = null; });
   fab.querySelector(".cp-btn").addEventListener("click", open);
   document.body.append(fab);
@@ -261,7 +264,8 @@ async function open() {
         tile("📊", "اسأل عن البيانات", "مبيعات، مخزون، إنتاج…", () => { setMode("data"); suggest(["بعنا كام الشهر ده؟", "مين العملاء اللي عليهم فلوس متأخرة؟", "عندنا كام زجاج في المخزن؟", "الماكينات عاملة إيه؟"]); }),
         tile("🔎", "دوّر على شاشة", "قولّي عايز تعمل إيه", () => { setMode("search"); bubble("a", h("div", { html: md("قولّي عايز تعمل إيه وأنا أوديك للشاشة. مثلاً: **أعمل أمر شراء**، **استلام بضاعة**، **إقرار القيمة المضافة**.") })); }),
         tile("📋", "ملخص اليوم", "أهم أرقام النهارده", () => askData("اديني ملخص اليوم: المبيعات والإنتاج والفلوس المتأخرة والجودة والصيانة")),
-        tile("❓", "الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة", screenHelp))));
+        tile("❓", "الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة", screenHelp),
+        (() => { const w = tile("🔔", "الملخص والتنبيهات على موبايلك", "", () => go("ZNOTIF")); w.classList.add("wide"); return w; })())));
     for (const m of hist.slice(-8)) restore(m);
   };
   const suggest = list => bubble("a", h("div", null, "جرّب تسأل:", h("div.cp-chips", null, ...list.map(s => { const c = h("span.cp-chip", { dir: "auto" }, s); c.addEventListener("click", () => askData(s)); return c; }))));
@@ -312,6 +316,11 @@ async function open() {
   if (fab) fab.style.display = "none";
   setMode("data"); welcome(); box.focus();
 }
+async function poll() {                // unread messages -> red counter on the button
+  if (!fab || (S.auth && !S.me)) return;
+  try { const d = await api("/api/notif/my"); const b = fab.querySelector(".cp-badge");
+    if (b) { b.textContent = d.unseen > 9 ? "9+" : String(d.unseen || ""); b.style.display = d.unseen ? "block" : "none"; } } catch (e) { /* offline */ }
+}
 function close() { if (win) win.style.display = "none"; if (fab) fab.style.display = ""; }
 function sync() {                      // hidden on the full-screen assistant and before logon
   const off = cur() === "ZAI" || (S.auth && !S.me);
@@ -319,7 +328,7 @@ function sync() {                      // hidden on the full-screen assistant an
   if (off && win) win.style.display = "none";
 }
 const boot = () => { if (!document.getElementById("app") && !document.querySelector("#app-toolbar")) return; build(); sync();
-  window.addEventListener("hashchange", sync); setInterval(sync, 1500); };
+  window.addEventListener("hashchange", sync); setInterval(sync, 1500); setTimeout(poll, 4000); setInterval(poll, 60000); };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 App.copilot = { open, close, searchScreens };
 })();

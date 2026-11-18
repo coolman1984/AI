@@ -451,6 +451,8 @@
  "ZMM_COCKPIT": "Inventory Cockpit",
  "ZMM_CONF": "Warehouse - Basic Configuration (display)",
  "ZMM_COVER": "Range of Coverage (days of stock)",
+ "ZNOTIF": "My Daily Briefing and Alerts",
+ "ZNOTIF_CONF": "Daily Briefing and Alerts - Settings",
  "ZORG": "Enterprise Structure & Basic Master Data",
  "ZPM_COCKPIT": "Maintenance Cockpit",
  "ZPM_EQUI": "Machines (technical objects)",
