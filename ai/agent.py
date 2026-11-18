@@ -235,10 +235,29 @@ def _stock_query(q):
     return ""
 
 
+BRIEFING = r"ملخص.*(اليوم|النهارده|سريع)|ملخص اليوم|briefing|daily summary|summary of (the|to)day"
+
+
+def _briefing(conn, allowed, ar):
+    """several tools in one answer (daily briefing) - each part only if the user may see it"""
+    parts, used = [], []
+    for tool in ("sales_overview", "production_today", "receivables", "quality_overview", "maintenance_overview"):
+        try:
+            d = T.run(conn, tool, {}, allowed)
+        except PermissionError:
+            continue
+        parts.append(_template(tool, d, ar).split("\n" + ("للتفاصيل" if ar else "Details"))[0])
+        used.append({"tool": tool, "args": {}, "screen": d.get("screen")})
+    head = "**ملخص اليوم:**" if ar else "**Today's briefing:**"
+    return {"answer": head + "\n\n" + "\n\n".join(parts), "tools": used}
+
+
 def basic_answer(conn, question, user, check_auth=False):
     allowed = _allowed_fn(conn, user, check_auth)
     q = question or ""
     ar = _arabic(q)
+    if re.search(BRIEFING, q, re.I):
+        return _briefing(conn, allowed, ar)
     tool = next((t for t, rx in INTENTS if re.search(rx, q, re.I)), None)
     if not tool:
         return {"answer": ("مش قادر أفهم السؤال في الوضع الأساسي. جرّب تسأل عن: المبيعات، الفلوس المتأخرة عند العملاء، "

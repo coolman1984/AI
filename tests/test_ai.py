@@ -66,7 +66,10 @@ class BasicMode(unittest.TestCase):
             self.assertEqual([t["tool"] for t in r["tools"]], [tool], q)
         self.assertIn("RM-1005", agent.ask(c, "عندنا كام زجاج في المخزن؟", "T")["answer"])
         self.assertEqual(agent.ask(c, "الطقس عامل إيه؟", "T")["tools"], [])
-        self.assertGreaterEqual(c.execute("SELECT COUNT(*) FROM ai_log").fetchone()[0], n0 + 7)
+        b = agent.ask(c, "اديني ملخص اليوم", "T")                         # daily briefing: several tools
+        self.assertEqual([t["tool"] for t in b["tools"]], ["sales_overview", "production_today", "receivables",
+                                                             "quality_overview", "maintenance_overview"])
+        self.assertGreaterEqual(c.execute("SELECT COUNT(*) FROM ai_log").fetchone()[0], n0 + 8)
         err(self, lambda: agent.ask(c, "  ", "T"), "904")
 
 
