@@ -265,6 +265,9 @@ def main():
         print("No free port found between %d and %d." % (a.port, a.port + 19))
         sys.exit(1)
     url = "http://localhost:%d" % port
+    from notify.engine import start as start_notify      # daily briefing + alerts to the mobile
+    from web.server import db as _db
+    start_notify(_db)
     print("NERP is running: %s" % url)
     print("It stops automatically when you close the browser tab."
           if auto_stop else "Press Ctrl+C to stop.")
