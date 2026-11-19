@@ -252,6 +252,17 @@ MENU.push(
     ["7-2 Tax Audit - Revenue Reconciliation", ["ZTAX_REVREC"]],
     ["7-3 Tax Audit - Audit File (Excel)", ["ZTAX_AUDITFILE"]],
   ]],
+  ["External Audit", [
+    ["1-1 Common - Audit Cockpit", ["ZAUD_COCKPIT"]],
+    ["1-2 Common - Engagement, Materiality & Auditor Access", ["ZAUD_ENG"]],
+    ["2-1 Requests - PBC List (what the auditor needs)", ["ZAUD_PBC"]],
+    ["2-2 Requests - Queries & Answers", ["ZAUD_QUERY"]],
+    ["3-1 Fieldwork - Audit Analytics (JET, confirmations, ECL, NRV ...)", ["ZAUD_TESTS"]],
+    ["3-2 Fieldwork - Draft Statements & Lead Schedules", ["ZAUD_LEAD", "S_ALR_87012284"]],
+    ["4-1 Completion - Adjustments & Uncorrected Misstatements", ["ZAUD_AJE"]],
+    ["4-2 Completion - Audit Pack (Excel)", ["ZAUD_PACK"]],
+    ["4-3 Completion - Egyptian Accounting Standards", ["ZAUD_EAS"]],
+  ]],
   ["Marketing", [
     ["Sales Analysis", ["ZSD_COCKPIT", "MCTA", "MCTC", "ZSLM"]],
     ["Profitability (CO-PA)", ["KE30", "KE24", "KE11", "KEU5"]],
@@ -298,7 +309,7 @@ MENU.push(
   ]]);
 // order of the top-level areas
 const TOP = ["Sales", "Logistics Execution", "Procurement", "Production", "Quality", "Maintenance", "Financial Accounting", "Controlling",
-  "Taxes Egypt", "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
+  "Taxes Egypt", "External Audit", "Marketing", "Master Data", "Human Resources", "Common", "Administration"];
 MENU.sort((a, b) => TOP.indexOf(a[0]) - TOP.indexOf(b[0]));
 
 // Process view: end-to-end flows across modules
