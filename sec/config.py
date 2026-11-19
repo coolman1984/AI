@@ -13,12 +13,12 @@ MENU_AREAS = {"Sales": "SD", "Marketing": "SD", "Logistics Execution": "MM",
               "Procurement": "PUR", "Production": "PP", "Financial Accounting": "FI",
               "Controlling": "CO", "Master Data": "MD", "Common": "CA",
               "Administration": "BC", "Human Resources": "HR", "Taxes Egypt": "FI",
-              "Quality": "MM", "Maintenance": "PP"}
+              "Quality": "MM", "Maintenance": "PP", "External Audit": "FI"}
 AREAS = {"SD": "Sales and distribution", "MM": "Inventory / logistics execution",
          "PUR": "Procurement", "PP": "Production", "FI": "Financial accounting",
          "CO": "Controlling", "MD": "Master data", "CA": "Cross-application tools",
          "HR": "Human resources (personnel data, salaries - confidential)",
-         "BC": "User and authorisation administration"}
+         "BC": "User and authorisation administration", "AU": "External audit (engagement, queries, adjustments)"}
 ACTIVITIES = {"02": "Change", "03": "Display", "*": "All"}
 
 # URL prefix -> area; anything else under /api is inventory management (MM)
@@ -29,7 +29,8 @@ API_AREAS = (("/api/forms/PAYSLIP/", "HR"), ("/api/sd/", "SD"), ("/api/fi/", "FI
              ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"), ("/api/wm/", "MM"), ("/api/tax/", "FI"),
              ("/api/qm/", "MM"), ("/api/pm/", "PP"),
              ("/api/ai/settings", "BC"), ("/api/ai/", "CA"),
-             ("/api/notif/admin", "BC"), ("/api/notif/", "CA"))
+             ("/api/notif/admin", "BC"), ("/api/notif/", "CA"),
+             ("/api/audit/access", "BC"), ("/api/audit/aje/post", "FI"), ("/api/audit/", "AU"))
 
 # no logon needed
 PUBLIC = ("/api/sec/login", "/api/sec/status", "/api/ping", "/api/bye", "/api/sec/unlock-request",
@@ -108,12 +109,13 @@ DEMO_ROLES = {
     "AR_CLERK": ("Accounts receivable", ["@FI", "@CA", "F-28", "FBL5N"], D + [("S_AREA", "FI", "02")]),
     "GL_ACCOUNTANT": ("General ledger accountant", ["@FI", "@CA"],
                       D + [("S_AREA", "FI", "02"), ("F_BKPF_BUP", "*", "02"), ("M_PERIOD", "*", "02"),
-                           ("F_BKPF_REV", "*", "02"), ("M_RBKP_FRE", "*", "02")]),
+                           ("F_BKPF_REV", "*", "02"), ("M_RBKP_FRE", "*", "02"), ("S_AREA", "AU", "02")]),
     "CONTROLLER": ("Controller", ["@CO", "@CA", "K*"], D + [("S_AREA", "CO", "02")]),
     "MD_MAINTAINER": ("Master data maintainer", ["@MD", "@CA"], D + [("S_AREA", "MD", "02")]),
     "MD_APPROVER": ("Master data approver", ["@MD", "@CA"],
                     D + [("S_AREA", "MD", "02"), ("F_LFA1_BEK", "*", "02")]),
-    "AUDITOR": ("Auditor (display only)", ["*"], D + [("S_USER_GRP", "*", "03")]),
+    "AUDITOR": ("Auditor (display only; works in the external audit area)", ["*"],
+                D + [("S_USER_GRP", "*", "03"), ("S_AREA", "AU", "02")]),
     "ADMIN": ("Administrator (all)", ["*"], [("*", "*", "*")]),
     "HR_ADMIN": ("HR administrator", ["@HR", "@CA"], D + [("S_AREA", "HR", "02"), ("P_ABSENCE", "*", "02")]),
     "PAYROLL": ("Payroll accountant", ["@HR", "@CA", "@FI"],

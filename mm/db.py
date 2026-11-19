@@ -186,6 +186,9 @@ def migrate_schema(conn):
     from notify.schema import NOTIFY_SCHEMA, install as notify_install
     conn.executescript(NOTIFY_SCHEMA)
     notify_install(conn)
+    from extaudit.schema import AUDIT_SCHEMA, install as audit_install
+    conn.executescript(AUDIT_SCHEMA)
+    audit_install(conn)
     from fi.clearing import DP_SCHEMA
     conn.executescript(DP_SCHEMA)
     from fi.document import PERIOD_SCHEMA
