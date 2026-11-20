@@ -201,7 +201,7 @@ INTENTS = [   # (tool, keywords) - first match wins; Arabic and English
     ("stock_lookup", r"مخزون|مخزن|رصيد|كام.*(قطعة|عندنا)|stock|inventory|on hand"),
     ("hr_overview", r"موظف|عمال|مرتب|رواتب|أجور|hr\b|employee|headcount|payroll|salar"),
     ("finance_overview", r"نقدي|كاش|سيول|ربح|خسار|ميزاني|حسابات|cash|profit|loss|balance|finance"),
-    ("sales_overview", r"مبيع|بعنا|بيع|إيراد|ايراد|عميل|عملاء|sales|sold|revenue|customer"),
+    ("sales_overview", r"مبيع|بعنا|بيع|إيراد|ايراد|عميل|عملاء|sales|sell|sold|revenue|customer"),
 ]
 
 

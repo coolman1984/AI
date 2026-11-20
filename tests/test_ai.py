@@ -73,6 +73,30 @@ class BasicMode(unittest.TestCase):
         err(self, lambda: agent.ask(c, "  ", "T"), "904")
 
 
+class Languages(unittest.TestCase):
+    def test_copilot_questions_in_english_and_arabic(self):
+        """the suggested questions of the Copilot widget reach the right data and answer in the question's language"""
+        import re
+        from ai import agent
+        c = system()
+        js = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "static", "ai_screens.js"),
+                  encoding="utf-8").read()
+        for q, tool in [("How much did we sell this month?", "sales_overview"), ("Which customers have overdue receivables?", "receivables"),
+                        ("How much glass do we have in stock?", "stock_lookup"), ("How are the machines doing?", "maintenance_overview"),
+                        ("How is quality, any rejected lots?", "quality_overview"), ("Which tax returns are due soon?", "tax_calendar"),
+                        ("What are cash and profit this month?", "finance_overview"),
+                        ("How many employees and what is the payroll cost?", "hr_overview"),
+                        ("بعنا كام الشهر ده؟", "sales_overview"), ("الماكينات عاملة إيه؟", "maintenance_overview")]:
+            self.assertIn(q, js, "question not offered in the Copilot")
+            r = agent.basic_answer(c, q, "OWNER")
+            self.assertEqual(r["tools"][0]["tool"], tool, q)
+            arabic = bool(re.search("[\u0600-\u06FF]", r["answer"]))
+            self.assertEqual(arabic, agent._arabic(q), q)
+        b = agent.basic_answer(c, "Give me today's briefing: sales, production, overdue receivables, quality and maintenance", "OWNER")
+        self.assertTrue(b["answer"].startswith("**Today's briefing:**"))
+        self.assertGreaterEqual(len(b["tools"]), 3)
+
+
 class Agent(unittest.TestCase):
     def setUp(self):
         from ai import agent
