@@ -124,6 +124,63 @@ class Channels(unittest.TestCase):
             with self.assertRaises(ch.NotifyError):
                 fn()
 
+    def test_whatsapp_numbers_and_approved_templates(self):
+        from unittest import mock
+        from notify import channels as ch
+        from notify import engine as e
+        self.assertEqual(ch.wa_number("01001234567"), "201001234567")           # Egyptian mobile as dialled
+        self.assertEqual(ch.wa_number("+20 100 123 4567"), "201001234567")
+        self.assertEqual(ch.wa_number("00201001234567"), "201001234567")
+        self.assertEqual(ch.wa_number("1001234567"), "201001234567")
+        with self.assertRaises(ch.NotifyError):
+            ch.wa_number("12345")
+        # template parameters: no line breaks / tabs / 5+ spaces, limited length
+        p = ch.wa_param("**Sales**\n\tline  2" + "     x" + "y" * 2000, 900)
+        self.assertNotIn("\n", p)
+        self.assertNotIn("\t", p)
+        self.assertNotIn("     ", p)
+        self.assertNotIn("**", p)
+        self.assertLessEqual(len(p), 900)
+        cfg = {"wa_phone_id": "111", "wa_token": "tok"}
+        sent = []
+
+        def outside_window(url, payload, headers=None, timeout=20):
+            sent.append(payload)
+            if payload["type"] == "text":
+                raise ch.NotifyError('graph.facebook.com answered 400: {"error":{"code":131047,"message":"Re-engagement message"}}')
+            return {"messages": [{"id": "wamid.1"}]}
+        with mock.patch.object(ch, "_post_json", outside_window):
+            ch.send("whatsapp", cfg, "01001234567", "ملخص اليوم", "**المبيعات**\n100")     # auto: text, then template
+            self.assertEqual([x["type"] for x in sent], ["text", "template"])
+            t = sent[1]
+            self.assertEqual(t["to"], "201001234567")
+            self.assertEqual((t["template"]["name"], t["template"]["language"]["code"]), ("nerp_alert", "ar"))
+            self.assertEqual([x["text"] for x in t["template"]["components"][0]["parameters"]], ["ملخص اليوم", "المبيعات | 100"])
+            sent.clear()
+            ch.send("whatsapp", dict(cfg, wa_mode="template", wa_template="daily_brief", wa_lang="en"), "201001234567", "T", "x")
+            self.assertEqual([(x["type"], x["template"]["name"], x["template"]["language"]["code"]) for x in sent],
+                             [("template", "daily_brief", "en")])
+            sent.clear()
+            with self.assertRaises(ch.NotifyError):                              # text only: no fallback
+                ch.send("whatsapp", dict(cfg, wa_mode="text"), "201001234567", "T", "x")
+            self.assertEqual(len(sent), 1)
+
+        def other_error(url, payload, headers=None, timeout=20):
+            sent.append(payload)
+            raise ch.NotifyError("graph.facebook.com answered 401: invalid token")
+        sent.clear()
+        with mock.patch.object(ch, "_post_json", other_error):
+            with self.assertRaises(ch.NotifyError):
+                ch.send("whatsapp", cfg, "201001234567", "T", "x")
+            self.assertEqual(len(sent), 1)                                       # other errors are not retried as template
+        c = system()
+        e.save_settings(c, {"wa_mode": "template", "wa_template": "Nerp Alert!", "wa_lang": "ar"}, "ADMIN")
+        err(self, lambda: e.save_settings(c, {"wa_mode": "sms"}, "ADMIN"), "909")
+        self.assertEqual(e.settings(c)["wa_template"], "nerp_alert")              # Meta template names: a-z 0-9 _
+        sid = e.save_sub(c, {"channel": "whatsapp", "address": "0100 123 4567"}, "U1")["id"]
+        self.assertEqual(c.execute("SELECT address FROM notif_sub WHERE id=?", (sid,)).fetchone()[0], "201001234567")
+        self.assertIn("{{1}}", ch.WA_TEMPLATE_AR)
+
 
 if __name__ == "__main__":
     unittest.main()

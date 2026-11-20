@@ -45,7 +45,14 @@ def public_settings(conn):
 
 def save_settings(conn, data, user):
     keys = ("enabled", "alert_minutes", "telegram_token", "smtp_host", "smtp_port", "smtp_user", "smtp_password",
-            "smtp_from", "smtp_tls", "wa_phone_id", "wa_token")
+            "smtp_from", "smtp_tls", "wa_phone_id", "wa_token", "wa_mode", "wa_template", "wa_lang")
+    if "wa_mode" in data and (data["wa_mode"] or "auto") not in ch.WA_MODES:
+        raise MMError("WhatsApp sending must be one of: %s" % ", ".join(ch.WA_MODES), "NT", "909")
+    if data.get("wa_template") is not None:
+        n = "".join(c if c.isalnum() else "_" for c in str(data["wa_template"]).strip().lower()).strip("_")
+        data = dict(data, wa_template="_".join(x for x in n.split("_") if x) or "nerp_alert")
+    if data.get("wa_lang") is not None:
+        data = dict(data, wa_lang=str(data["wa_lang"]).strip().replace("-", "_") or "ar")
     if "alert_minutes" in data:
         m = clock.parse_int(data["alert_minutes"], "minutes between alert checks", 5, 1440)
         data = dict(data, alert_minutes=str(m))
@@ -83,8 +90,11 @@ def save_sub(conn, data, user, admin=False):
         raise MMError("Enter a valid e-mail address", "NT", "902")
     if channel == "telegram" and not address.lstrip("-").isdigit():
         raise MMError("Enter the Telegram chat id (a number - use 'Find my chat id')", "NT", "903")
-    if channel == "whatsapp" and len("".join(c for c in address if c.isdigit())) < 10:
-        raise MMError("Enter the mobile number with country code, e.g. 201001234567", "NT", "904")
+    if channel == "whatsapp":
+        try:
+            address = ch.wa_number(address)
+        except ch.NotifyError:
+            raise MMError("Enter the mobile number, e.g. 01001234567 or 201001234567", "NT", "904")
     t = (data.get("daily_time") or "08:00").strip()
     try:
         datetime.datetime.strptime(t, "%H:%M")
