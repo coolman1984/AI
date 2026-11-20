@@ -89,15 +89,62 @@ def email(cfg, to, title, text):
         raise NotifyError("E-mail: %s" % e)
 
 
+WA_MODES = {"auto": "Text, approved template when outside the 24-hour window",
+            "template": "Always the approved template", "text": "Text only (24-hour window)"}
+# body of the approved message template to create in WhatsApp Manager (category Utility); {{1}} title, {{2}} text
+WA_TEMPLATE_AR = "تنبيه من نظام NERP: {{1}}\n\n{{2}}\n\nللتفاصيل افتح البرنامج."
+WA_TEMPLATE_EN = "NERP notification: {{1}}\n\n{{2}}\n\nOpen NERP for the details."
+
+
+def wa_number(phone):
+    """international number without + / 00; an Egyptian mobile as dialled locally (01xxxxxxxxx) gets 20"""
+    d = "".join(c for c in (phone or "") if c.isdigit())
+    if d.startswith("00"):
+        d = d[2:]
+    if len(d) == 11 and d.startswith("01"):
+        d = "2" + d
+    elif len(d) == 10 and d.startswith("1"):
+        d = "20" + d
+    if not 10 <= len(d) <= 15:
+        raise NotifyError("WhatsApp number %s: enter the mobile number, e.g. 01001234567 or 201001234567" % phone)
+    return d
+
+
+def wa_param(text, limit):
+    """template parameters may not contain line breaks, tabs or more than 4 spaces in a row"""
+    t = plain(text).replace("\t", " ")
+    t = " | ".join(" ".join(x.split()) for x in t.splitlines() if x.strip())
+    return (t[:limit - 1] + "…") if len(t) > limit else t
+
+
+def _outside_window(e):
+    m = str(e).lower()
+    return "131047" in m or "re-engagement" in m or "24 hour" in m
+
+
 def whatsapp(cfg, phone, title, text):
     pid, token = cfg.get("wa_phone_id"), cfg.get("wa_token")
     if not (pid and token):
         raise NotifyError("WhatsApp Business phone number id / token are not set (ZNOTIF - settings)")
-    to = "".join(ch for ch in phone if ch.isdigit())
-    _post_json("https://graph.facebook.com/v21.0/%s/messages" % pid,
-               {"messaging_product": "whatsapp", "to": to, "type": "text",
-                "text": {"body": ("*%s*\n\n%s" % (title, text.replace("**", "*")))[:4000]}},
-               {"authorization": "Bearer %s" % token})
+    to, mode = wa_number(phone), cfg.get("wa_mode") or "auto"
+    url, auth = "https://graph.facebook.com/v21.0/%s/messages" % pid, {"authorization": "Bearer %s" % token}
+
+    def template():
+        _post_json(url, {"messaging_product": "whatsapp", "to": to, "type": "template",
+                         "template": {"name": cfg.get("wa_template") or "nerp_alert",
+                                      "language": {"code": cfg.get("wa_lang") or "ar"},
+                                      "components": [{"type": "body", "parameters": [
+                                          {"type": "text", "text": wa_param(title, 60)},
+                                          {"type": "text", "text": wa_param(text, 900)}]}]}}, auth)
+    if mode == "template":
+        return template()
+    try:
+        _post_json(url, {"messaging_product": "whatsapp", "to": to, "type": "text",
+                         "text": {"body": ("*%s*\n\n%s" % (title, text.replace("**", "*")))[:4000]}}, auth)
+    except NotifyError as e:
+        if mode == "auto" and _outside_window(e):
+            return template()                      # the person did not write in the last 24 hours
+        raise
 
 
 def send(channel, cfg, address, title, text):

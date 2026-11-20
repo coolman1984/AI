@@ -34,7 +34,8 @@ def notif_admin(req, q):
     c = db()
     return dict(settings=engine.public_settings(c), subs=engine.subs(c), log=engine.log(c, 60),
                 state={k: v for k, v in engine.STATE.items() if k != "last_alerts"},
-                alerts=engine.alerts(c, req.user), **_meta())
+                alerts=engine.alerts(c, req.user), wa={"modes": channels.WA_MODES, "ar": channels.WA_TEMPLATE_AR, "en": channels.WA_TEMPLATE_EN},
+                **_meta())
 
 
 @route("POST", "/api/notif/admin/(?P<act>settings|sub|delete|test|daily|alerts|chats)")

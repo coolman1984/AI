@@ -12,12 +12,12 @@ const btn = (t, fn) => h("button.btn", { type: "button", on: { click: fn } }, t)
 const STAT = { sent: ["Sent", "U"], inapp: ["In NERP", ""], failed: ["Failed", "B"] };
 const CSS = `.nt-msg{border:1px solid #dde4ee;border-radius:12px;padding:10px 14px;margin-bottom:8px;background:#fff;unicode-bidi:plaintext}
 .nt-msg.new{border-left:4px solid #0b5cad;background:#f5f9ff}.nt-msg h4{margin:0 0 4px;font-size:15px}.nt-msg .b{white-space:pre-line;font-size:14px;line-height:1.6;color:#2a3a52}
-.nt-msg .m{font-size:12px;color:#7a889c;margin-top:6px;display:flex;gap:10px;align-items:center}.nt-help li{margin:4px 0}`;
+.nt-msg .m{font-size:12px;color:#7a889c;margin-top:6px;display:flex;gap:10px;align-items:center}.nt-help li{margin:4px 0}.nt-tpl{background:#f4f7fb;border:1px solid #d6dee9;border-radius:6px;padding:10px 12px;white-space:pre-wrap;font-family:inherit;font-size:15px;line-height:1.7;margin:6px 0;user-select:all}`;
 const style = () => { if (!document.getElementById("nt-css")) { const s = document.createElement("style"); s.id = "nt-css"; s.textContent = CSS; document.head.append(s); } };
 const boldify = t => String(t).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
 
 function subForm(meta, s, onSave, admin) {
-  const f = { channel: sel(Object.entries(meta.channels), s ? s.channel : "telegram"), address: inp({ value: s ? s.address : "", w: "l", ph: "Telegram chat id / e-mail / 2010…" }),
+  const f = { channel: sel(Object.entries(meta.channels), s ? s.channel : "telegram"), address: inp({ value: s ? s.address : "", w: "l", ph: "Telegram chat id / e-mail / mobile 01001234567" }),
     time: inp({ value: s ? s.daily_time : "08:00", w: "s" }), daily: sel([["1", "Yes - every day"], ["0", "No"]], s && !s.daily ? "0" : "1"),
     user: admin ? inp({ value: s ? s.usnam : "", w: "m", upper: true }) : null };
   const cats = Object.entries(meta.cats).map(([k, t]) => { const c = h("input", { type: "checkbox" }); c.checked = s ? s.cats.includes(k) : true; c.dataset.k = k;
@@ -48,7 +48,7 @@ register("ZNOTIF", { title: "My Daily Briefing and Alerts", async render(app) {
       : note("No messages yet.")),
       subList, panel("Add a subscription", subForm(d, null, load, false),
         h("ul.nt-help", null, h("li", null, "Telegram (free, recommended): open the company's NERP bot in Telegram, press Start, and ask the administrator for your chat id (ZNOTIF_CONF → Find chat ids)."),
-          h("li", null, "E-mail: needs the company mail server in ZNOTIF_CONF."), h("li", null, "WhatsApp: needs a Meta WhatsApp Business account; messages work inside the 24-hour window or with approved templates."),
+          h("li", null, "E-mail: needs the company mail server in ZNOTIF_CONF."), h("li", null, "WhatsApp: any normal mobile number (e.g. 01001234567); the company needs a Meta WhatsApp Business account and an approved template for messages outside the 24-hour window."),
           h("li", null, "Only NERP: the messages appear here."))));
     if (d.unseen) api("/api/notif/seen", {}).catch(() => 0);
   };
@@ -67,8 +67,12 @@ register("ZNOTIF_CONF", { title: "Daily Briefing and Alerts - Settings", async r
       tg: inp({ type: "password", w: "l", ph: s.telegram_token || "123456:ABC-…" }),
       host: inp({ value: s.smtp_host || "", w: "m", ph: "smtp.office365.com" }), port: inp({ value: s.smtp_port || "587", w: "s" }), user: inp({ value: s.smtp_user || "", w: "m" }),
       pw: inp({ type: "password", w: "m", ph: s.smtp_password || "" }), from: inp({ value: s.smtp_from || "", w: "m" }), tls: sel([["1", "STARTTLS"], ["0", "None"]], s.smtp_tls || "1"),
-      wid: inp({ value: s.wa_phone_id || "", w: "m" }), wtok: inp({ type: "password", w: "l", ph: s.wa_token || "" }) };
+      wid: inp({ value: s.wa_phone_id || "", w: "m" }), wtok: inp({ type: "password", w: "l", ph: s.wa_token || "" }),
+      wmode: sel(Object.entries(d.wa.modes), s.wa_mode || "auto"), wtpl: inp({ value: s.wa_template || "nerp_alert", w: "m" }),
+      wlang: sel([["ar", "Arabic (ar)"], ["en", "English (en)"], ["en_US", "English US (en_US)"]], s.wa_lang || "ar") };
     const chats = h("div");
+    const tplBox = h("pre.nt-tpl", { dir: "auto" }, f.wlang.value === "ar" ? d.wa.ar : d.wa.en);
+    f.wlang.addEventListener("change", () => { tplBox.textContent = f.wlang.value === "ar" ? d.wa.ar : d.wa.en; });
     out.append(h("div.kpis", null, ...["Subscriptions", "Open alerts", "Messages logged"].map((k, i) => h("div.kpi", null, h("div.k", null, k), h("div.v", null, String([d.subs.length, d.alerts.length, d.log.length][i])))),
       h("div.kpi", null, h("div.k", null, "Scheduler"), h("div.v" + (d.state.running ? ".pos" : ".neg"), null, d.state.running ? "Running" : "Not started"), h("div.s", null, d.state.last_error || "checks every minute"))),
       panel("General", grid(field("Messages", f.enabled), field("Check alerts every (minutes)", f.every))),
@@ -78,8 +82,15 @@ register("ZNOTIF_CONF", { title: "Daily Briefing and Alerts - Settings", async r
         btn("Find chat ids", async () => { const r = await run(() => api("/api/notif/admin/chats", {})); if (!r) return; chats.innerHTML = "";
           chats.append(r.rows.length ? alv({ rows: r.rows, title: "Chats that pressed Start", columns: [{ key: "chat_id", label: "Chat id" }, { key: "name", label: "Name" }] }) : note("No chats yet - open the bot in Telegram and press Start first.")); }), chats),
       panel("E-mail (SMTP)", grid(field("Server", f.host), field("Port", f.port), field("User", f.user), field("Password", f.pw), field("From", f.from), field("Security", f.tls))),
-      panel("WhatsApp (Meta Business Cloud API)", grid(field("Phone number id", f.wid), field("Access token", f.wtok)),
-        note("Needs a verified Meta WhatsApp Business account. Meta delivers free-text messages only within 24 hours after the person wrote to the business number; otherwise an approved message template is required.")),
+      panel("WhatsApp (Meta Business Cloud API)", grid(field("Phone number id", f.wid), field("Access token", f.wtok),
+        field("Sending", f.wmode), field("Approved template name", f.wtpl), field("Template language", f.wlang)),
+        h("ol.nt-help", null,
+          h("li", null, "WhatsApp Manager → Message templates → Create template: category Utility, name as above (small letters, digits, _), language as above."),
+          h("li", null, "Body - copy exactly (2 variables: {{1}} title, {{2}} the message):"),
+          tplBox,
+          h("li", null, "Sample values for Meta's review: {{1}} = Daily briefing, {{2}} = Sales today 125,000 EGP | 3 machines stopped."),
+          h("li", null, "When Meta shows the template as Active, save here and press Test on a subscription.")),
+        note("Auto: a normal message when the person wrote to the business number in the last 24 hours, otherwise the approved template - so the morning briefing arrives every day on any normal mobile number (e.g. 01001234567). Meta charges per template conversation; line breaks become ' | ' inside a template.")),
       note("Secrets are shown masked; leave a field empty to keep it, enter - to remove it. They are stored in the NERP database of this computer."),
       alv({ rows: d.subs.map(x => Object.assign({}, x, { cats_t: x.cats.join(", ") })), title: "All subscriptions", columns: [{ key: "usnam", label: "User" },
         { key: "channel", label: "Channel", render: r => d.channels[r.channel] }, { key: "address", label: "Address" }, { key: "daily", label: "Daily", render: r => r.daily ? `✓ ${r.daily_time}` : "-" },
@@ -93,7 +104,8 @@ register("ZNOTIF_CONF", { title: "Daily Briefing and Alerts - Settings", async r
         { key: "title", label: "Title" }, { key: "status", label: "Status", render: r => badge(...(STAT[r.status] || [r.status, ""])) }, { key: "error", label: "Error" }] }));
     toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
       const r = await run(() => api("/api/notif/admin/settings", { enabled: f.enabled.value, alert_minutes: val(f.every), telegram_token: f.tg.value, smtp_host: val(f.host),
-        smtp_port: val(f.port), smtp_user: val(f.user), smtp_password: f.pw.value, smtp_from: val(f.from), smtp_tls: f.tls.value, wa_phone_id: val(f.wid), wa_token: f.wtok.value }));
+        smtp_port: val(f.port), smtp_user: val(f.user), smtp_password: f.pw.value, smtp_from: val(f.from), smtp_tls: f.tls.value, wa_phone_id: val(f.wid), wa_token: f.wtok.value,
+        wa_mode: f.wmode.value, wa_template: val(f.wtpl), wa_lang: f.wlang.value }));
       if (r) { msg("S", r.message); load(); } } },
       { label: "Check alerts now", onClick: async () => { const r = await run(() => api("/api/notif/admin/alerts", {})); if (r) { msg("S", r.message); load(); } } },
       { label: "My messages", onClick: () => go("ZNOTIF") }]);
