@@ -265,6 +265,7 @@ async function open() {
         tile("🔎", "دوّر على شاشة", "قولّي عايز تعمل إيه", () => { setMode("search"); bubble("a", h("div", { html: md("قولّي عايز تعمل إيه وأنا أوديك للشاشة. مثلاً: **أعمل أمر شراء**، **استلام بضاعة**، **إقرار القيمة المضافة**.") })); }),
         tile("📋", "ملخص اليوم", "أهم أرقام النهارده", () => askData("اديني ملخص اليوم: المبيعات والإنتاج والفلوس المتأخرة والجودة والصيانة")),
         tile("❓", "الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة", screenHelp),
+        (() => { const w = tile("📈", "تقرير اليوم لكل موديول", "", () => go("ZDAY")); w.classList.add("wide"); return w; })(),
         (() => { const w = tile("🔔", "الملخص والتنبيهات على موبايلك", "", () => go("ZNOTIF")); w.classList.add("wide"); return w; })())));
     for (const m of hist.slice(-8)) restore(m);
   };
@@ -331,4 +332,64 @@ const boot = () => { if (!document.getElementById("app") && !document.querySelec
   window.addEventListener("hashchange", sync); setInterval(sync, 1500); setTimeout(poll, 4000); setInterval(poll, 60000); };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 App.copilot = { open, close, searchScreens };
+})();
+
+/* ZDAY - daily review: what happened today in every module, compared with a normal working day,
+   with an opinion per module (good / improving / needs attention) and what to do. */
+(() => {
+const { h, api, run, register, go, toolbar, inp, field } = App;
+const CSS = `.dv{direction:rtl;font-family:Cairo,"Segoe UI",Tahoma,sans-serif;max-width:1500px}
+.dv-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:linear-gradient(120deg,#0b2a55,#1f5fae);color:#fff;border-radius:16px;padding:18px 22px;margin-bottom:14px}
+.dv-head h2{margin:0;font-size:22px}.dv-head .d{opacity:.85;font-size:14px}.dv-head .ov{flex:1 1 420px;font-size:16.5px;line-height:1.7;font-weight:600}
+.dv-cnt{display:flex;gap:8px;flex-wrap:wrap}.dv-cnt span{background:rgba(255,255,255,.14);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
+.dv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.dv-card{background:#fff;border:1px solid #e1e7f0;border-radius:16px;padding:16px 18px;box-shadow:0 2px 8px rgba(11,42,85,.06);display:flex;flex-direction:column;gap:9px;border-top:5px solid #9aa8b8}
+.dv-card.GOOD{border-top-color:#1a9a55}.dv-card.UP{border-top-color:#1f6fd1}.dv-card.ATTN{border-top-color:#d0342c}.dv-card.QUIET{border-top-color:#b8c2cf}
+.dv-t{display:flex;align-items:center;gap:10px}.dv-t .i{font-size:30px}.dv-t b{font-size:19px;color:#0b2a55;flex:1}
+.dv-v{border-radius:999px;padding:5px 12px;font-weight:800;font-size:14px;white-space:nowrap}
+.dv-v.GOOD{background:#e3f6ec;color:#11713e}.dv-v.UP{background:#e4efff;color:#174f98}.dv-v.ATTN{background:#fde7e5;color:#a3221b}.dv-v.QUIET{background:#eef1f5;color:#5d6b7c}
+.dv-main{display:flex;align-items:flex-end;gap:12px}.dv-main .n{font-size:30px;font-weight:800;color:#0b2a55;line-height:1}.dv-main .l{color:#5d6b7c;font-size:13.5px}
+.dv-spark{margin-inline-start:auto}.dv-op{font-size:15px;line-height:1.75;color:#1d2a3a}
+.dv-facts{display:grid;grid-template-columns:1fr 1fr;gap:6px}.dv-facts div{background:#f5f8fc;border-radius:9px;padding:6px 9px;font-size:13px;color:#5d6b7c}.dv-facts b{display:block;color:#0b2a55;font-size:15px}
+.dv-adv{margin:0;padding:0;list-style:none}.dv-adv li{font-size:14px;line-height:1.6;padding:6px 10px;border-radius:9px;margin-top:5px;background:#fff7e6;color:#7a4b00}
+.dv-adv li.r{background:#fdecea;color:#8f1d16;font-weight:700}.dv-adv li.ok{background:#eaf7f0;color:#11713e}
+.dv-card button{align-self:flex-start;border:1px solid #1f5fae;color:#1f5fae;background:#fff;border-radius:9px;padding:6px 14px;cursor:pointer;font-weight:700}
+.dv-card button:hover{background:#e7f0fc}.dv-note{color:#6b7a8c;font-size:13px;margin-top:10px}`;
+const nf = v => Number(v).toLocaleString("en-US", { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 1 });
+function spark(series, better) {
+  const W = 120, H = 38, vals = series.map(s => s.value), mx = Math.max(...vals, 0), mn = Math.min(...vals, 0), rg = (mx - mn) || 1;
+  const bw = W / vals.length;
+  const bars = vals.map((v, i) => { const y = H - 4 - ((v - mn) / rg) * (H - 8), y0 = H - 4 - ((0 - mn) / rg) * (H - 8);
+    const last = i === vals.length - 1;
+    return `<rect x="${(i * bw + 2).toFixed(1)}" y="${Math.min(y, y0).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${Math.max(Math.abs(y0 - y), 1.5).toFixed(1)}" rx="2" fill="${last ? "#1f5fae" : "#c4d3e8"}"><title>${series[i].day}: ${nf(v)}</title></rect>`; }).join("");
+  return h("span.dv-spark", { title: "آخر 7 أيام", html: `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg>` });
+}
+register("ZDAY", { title: "Daily Review - every module", async render(app, params) {
+  if (!document.getElementById("dv-css")) document.head.append(h("style#dv-css", { html: CSS }));
+  const dt = inp({ type: "date", value: params.date || "" }), out = h("div.dv");
+  app.append(h("div.panel", null, h("div.panel-body", null, h("div.form-grid", null, field("Day", dt)))), out);
+  const load = async () => {
+    const d = await run(() => api("/api/ai/day" + (dt.value ? "?date=" + dt.value : ""))); if (!d) return;
+    if (!dt.value) dt.value = d.day;
+    out.innerHTML = "";
+    const L = d.legend;
+    out.append(h("div.dv-head", null, h("div", null, h("h2", null, "📋 تقرير اليوم"), h("div.d", null, `${d.weekday} ${d.day.split("-").reverse().join("/")}`)),
+      h("div.ov", null, d.overall + (d.early ? " (اليوم لسه ماخلصش - الأرقام لحد دلوقتي)" : "")),
+      h("div.dv-cnt", null, ...["ATTN", "UP", "GOOD", "QUIET"].filter(k => d.counts[k]).map(k => h("span", null, `${L[k].emoji} ${L[k].text}: ${d.counts[k]}`)))),
+      h("div.dv-grid", null, ...d.modules.map(m => h("div.dv-card." + m.verdict, null,
+        h("div.dv-t", null, h("span.i", null, m.icon), h("b", null, m.name), h("span.dv-v." + m.verdict, null, `${m.emoji} ${m.verdict_text}`)),
+        h("div.dv-main", null, h("div", null, h("div.n", null, nf(m.main.today)), h("div.l", null, `${m.main.label} (${m.main.unit}) · المعتاد ${nf(m.main.normal)}`)), spark(m.series, m.main.better)),
+        h("div.dv-op", null, m.opinion),
+        h("div.dv-facts", null, ...m.facts.map(f => h("div", null, f.label, h("b", null, `${nf(f.value)} ${f.unit}`)))),
+        (m.problems.length || m.watch.length || m.advice.length) ? h("ul.dv-adv", null, ...m.problems.map(x => h("li.r", null, "⛔ " + x)),
+          ...m.watch.map(x => h("li", null, "⚠️ " + x)), ...(!m.problems.length && !m.watch.length ? m.advice.map(x => h("li.ok", null, "💡 " + x)) : [])) : null,
+        h("button", { type: "button", on: { click: () => go(m.tcode) } }, "افتح " + m.tcode)))),
+      h("div.dv-note", null, d.note + " 🟢 جيد = طبيعي · 🚀 في تقدم = أحسن من المعتاد · 🔴 محتاج تعديل = مشكلة أو أقل بكتير من المعتاد · ⚪ يوم هادي."));
+  };
+  const shift = n => { const x = new Date((dt.value || new Date().toISOString().slice(0, 10)) + "T12:00:00"); x.setDate(x.getDate() + n); dt.value = x.toISOString().slice(0, 10); load(); };
+  dt.addEventListener("change", load);
+  toolbar([{ label: "Display", key: "F8", primary: true, onClick: load }, { label: "◀ Previous day", onClick: () => shift(-1) }, { label: "Next day ▶", onClick: () => shift(1) },
+    { label: "Today", onClick: () => { dt.value = App.today(); load(); } }]);
+  load();
+} });
 })();

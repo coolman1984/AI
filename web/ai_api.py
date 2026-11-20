@@ -28,3 +28,14 @@ def ai_settings_save(req, q):
 def ai_status(req, q):
     s = agent.public_settings(db())
     return {"mode": s["mode"], "model": s["model"] if s["mode"] == "ai" else ""}
+
+
+@route("GET", "/api/ai/day")
+def ai_day(req, q):
+    """daily review (ZDAY): only the modules the user may display"""
+    from ai import review
+    from notify.engine import _allowed
+    c = db()
+    auth_on = getattr(req, "_auth_on", None)
+    allowed = _allowed(c, req.user) if (auth_on and auth_on()) else None
+    return review.day_review(c, q.get("date") or None, req.user, allowed)

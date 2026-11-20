@@ -270,6 +270,7 @@ MENU.push(
     ["Customer Activities", ["VC01N", "VC05", "ZSD_PIPE"]],
   ]],
   ["Common", [
+    ["Daily Review (every module)", ["ZDAY"]],
     ["Ask NERP (AI assistant)", ["ZAI", "ZAI_CONF"]],
     ["Daily Briefing & Alerts (mobile)", ["ZNOTIF", "ZNOTIF_CONF"]],
     ["BI (Business Intelligence)", ["ZDASH", "ZBI", "ZBI_DASH"]],
