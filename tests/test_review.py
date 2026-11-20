@@ -74,6 +74,23 @@ class Review(unittest.TestCase):
             self.assertTrue(all(m["verdict"] != R.ATTN or m["problems"] for m in r["modules"]))
             self.assertNotEqual(R.default_day(), clock.today().isoformat())     # morning: yesterday's review
 
+    def test_english_and_arabic(self):
+        import json
+        import re
+        from ai import review as R
+        c = system()
+        day = (clock.today() - datetime.timedelta(days=4)).isoformat()
+        ar, en = R.day_review(c, day), R.day_review(c, day, lang="en")
+        self.assertEqual((ar["lang"], en["lang"]), ("ar", "en"))
+        self.assertEqual(R.day_review(c, day, lang="xx")["lang"], "ar")              # unknown language: Arabic
+        self.assertFalse(re.search("[\u0600-\u06FF]", json.dumps(en, ensure_ascii=False)), "Arabic text in the English review")
+        self.assertTrue(re.search("[\u0600-\u06FF]", ar["overall"]))
+        self.assertEqual([m["name"] for m in en["modules"]][:3], ["Sales", "Production", "Inventory"])
+        for a, e in zip(ar["modules"], en["modules"]):                           # same figures and verdicts
+            self.assertEqual((a["verdict"], a["main"]["today"], a["main"]["normal"], len(a["problems"]) + len(a["watch"])),
+                             (e["verdict"], e["main"]["today"], e["main"]["normal"], len(e["problems"]) + len(e["watch"])))
+        self.assertEqual(en["legend"]["ATTN"]["text"], "Needs attention")
+
 
 if __name__ == "__main__":
     unittest.main()

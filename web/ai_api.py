@@ -38,4 +38,4 @@ def ai_day(req, q):
     c = db()
     auth_on = getattr(req, "_auth_on", None)
     allowed = _allowed(c, req.user) if (auth_on and auth_on()) else None
-    return review.day_review(c, q.get("date") or None, req.user, allowed)
+    return review.day_review(c, q.get("date") or None, req.user, allowed, q.get("lang") or "ar")
