@@ -338,7 +338,9 @@ App.copilot = { open, close, searchScreens };
    with an opinion per module (good / improving / needs attention) and what to do. */
 (() => {
 const { h, api, run, register, go, toolbar, inp, field } = App;
-const CSS = `.dv{direction:rtl;font-family:Cairo,"Segoe UI",Tahoma,sans-serif;max-width:1500px}
+const CSS = `.dv{direction:rtl;font-family:Cairo,"Segoe UI",Tahoma,sans-serif;max-width:1500px}.dv.en{direction:ltr;font-family:Inter,"Segoe UI",Tahoma,sans-serif}
+.dv-lang{display:inline-flex;border:1px solid #c9d6e8;border-radius:999px;overflow:hidden;margin-bottom:10px}.dv-lang button{border:0;background:#fff;color:#1f5fae;padding:7px 18px;font-weight:700;cursor:pointer;font-size:14px}
+.dv-lang button.on{background:#1f5fae;color:#fff}
 .dv-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:linear-gradient(120deg,#0b2a55,#1f5fae);color:#fff;border-radius:16px;padding:18px 22px;margin-bottom:14px}
 .dv-head h2{margin:0;font-size:22px}.dv-head .d{opacity:.85;font-size:14px}.dv-head .ov{flex:1 1 420px;font-size:16.5px;line-height:1.7;font-weight:600}
 .dv-cnt{display:flex;gap:8px;flex-wrap:wrap}.dv-cnt span{background:rgba(255,255,255,.14);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700}
@@ -356,40 +358,52 @@ const CSS = `.dv{direction:rtl;font-family:Cairo,"Segoe UI",Tahoma,sans-serif;ma
 .dv-card button{align-self:flex-start;border:1px solid #1f5fae;color:#1f5fae;background:#fff;border-radius:9px;padding:6px 14px;cursor:pointer;font-weight:700}
 .dv-card button:hover{background:#e7f0fc}.dv-note{color:#6b7a8c;font-size:13px;margin-top:10px}`;
 const nf = v => Number(v).toLocaleString("en-US", { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 1 });
-function spark(series, better) {
+function spark(series, tip) {
   const W = 120, H = 38, vals = series.map(s => s.value), mx = Math.max(...vals, 0), mn = Math.min(...vals, 0), rg = (mx - mn) || 1;
   const bw = W / vals.length;
   const bars = vals.map((v, i) => { const y = H - 4 - ((v - mn) / rg) * (H - 8), y0 = H - 4 - ((0 - mn) / rg) * (H - 8);
     const last = i === vals.length - 1;
     return `<rect x="${(i * bw + 2).toFixed(1)}" y="${Math.min(y, y0).toFixed(1)}" width="${(bw - 4).toFixed(1)}" height="${Math.max(Math.abs(y0 - y), 1.5).toFixed(1)}" rx="2" fill="${last ? "#1f5fae" : "#c4d3e8"}"><title>${series[i].day}: ${nf(v)}</title></rect>`; }).join("");
-  return h("span.dv-spark", { title: "آخر 7 أيام", html: `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg>` });
+  return h("span.dv-spark", { title: tip, html: `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg>` });
 }
+const TX = { ar: { title: "📋 تقرير اليوم", early: " (اليوم لسه ماخلصش - الأرقام لحد دلوقتي)", normal: "المعتاد", open: "افتح ", last7: "آخر 7 أيام",
+    legend: "🟢 جيد = طبيعي · 🚀 في تقدم = أحسن من المعتاد · 🔴 محتاج تعديل = مشكلة أو أقل بكتير من المعتاد · ⚪ يوم هادي." },
+  en: { title: "📋 Daily Review", early: " (the day is not over yet - figures so far)", normal: "normal", open: "Open ", last7: "Last 7 days",
+    legend: "🟢 Good = normal · 🚀 Improving = better than usual · 🔴 Needs attention = a problem or far below usual · ⚪ Quiet day." } };
+const getLang = () => { try { return localStorage.getItem("zday_lang") || "ar"; } catch (e) { return "ar"; } };
+const setLang = l => { try { localStorage.setItem("zday_lang", l); } catch (e) { /* private window */ } };
 register("ZDAY", { title: "Daily Review - every module", async render(app, params) {
   if (!document.getElementById("dv-css")) document.head.append(h("style#dv-css", { html: CSS }));
+  let lang = params.lang === "en" || params.lang === "ar" ? params.lang : getLang();
   const dt = inp({ type: "date", value: params.date || "" }), out = h("div.dv");
-  app.append(h("div.panel", null, h("div.panel-body", null, h("div.form-grid", null, field("Day", dt)))), out);
-  const load = async () => {
-    const d = await run(() => api("/api/ai/day" + (dt.value ? "?date=" + dt.value : ""))); if (!d) return;
+  const bAr = h("button", { type: "button" }, "عربي"), bEn = h("button", { type: "button" }, "English");
+  const pick = l => { lang = l; setLang(l); load(); };
+  bAr.addEventListener("click", () => pick("ar")); bEn.addEventListener("click", () => pick("en"));
+  app.append(h("div.panel", null, h("div.panel-body", null, h("div.form-grid", null, field("Day", dt), field("Language / اللغة", h("div.dv-lang", null, bAr, bEn))))), out);
+  async function load() {
+    bAr.classList.toggle("on", lang === "ar"); bEn.classList.toggle("on", lang === "en");
+    const d = await run(() => api("/api/ai/day?lang=" + lang + (dt.value ? "&date=" + dt.value : ""))); if (!d) return;
     if (!dt.value) dt.value = d.day;
+    const T = TX[d.lang] || TX.ar, L = d.legend;
+    out.className = "dv" + (d.lang === "en" ? " en" : "");
     out.innerHTML = "";
-    const L = d.legend;
-    out.append(h("div.dv-head", null, h("div", null, h("h2", null, "📋 تقرير اليوم"), h("div.d", null, `${d.weekday} ${d.day.split("-").reverse().join("/")}`)),
-      h("div.ov", null, d.overall + (d.early ? " (اليوم لسه ماخلصش - الأرقام لحد دلوقتي)" : "")),
+    out.append(h("div.dv-head", null, h("div", null, h("h2", null, T.title), h("div.d", null, `${d.weekday} ${d.day.split("-").reverse().join("/")}`)),
+      h("div.ov", null, d.overall + (d.early ? T.early : "")),
       h("div.dv-cnt", null, ...["ATTN", "UP", "GOOD", "QUIET"].filter(k => d.counts[k]).map(k => h("span", null, `${L[k].emoji} ${L[k].text}: ${d.counts[k]}`)))),
       h("div.dv-grid", null, ...d.modules.map(m => h("div.dv-card." + m.verdict, null,
         h("div.dv-t", null, h("span.i", null, m.icon), h("b", null, m.name), h("span.dv-v." + m.verdict, null, `${m.emoji} ${m.verdict_text}`)),
-        h("div.dv-main", null, h("div", null, h("div.n", null, nf(m.main.today)), h("div.l", null, `${m.main.label} (${m.main.unit}) · المعتاد ${nf(m.main.normal)}`)), spark(m.series, m.main.better)),
+        h("div.dv-main", null, h("div", null, h("div.n", null, nf(m.main.today)), h("div.l", null, `${m.main.label} (${m.main.unit}) · ${T.normal} ${nf(m.main.normal)}`)), spark(m.series, T.last7)),
         h("div.dv-op", null, m.opinion),
         h("div.dv-facts", null, ...m.facts.map(f => h("div", null, f.label, h("b", null, `${nf(f.value)} ${f.unit}`)))),
         (m.problems.length || m.watch.length || m.advice.length) ? h("ul.dv-adv", null, ...m.problems.map(x => h("li.r", null, "⛔ " + x)),
           ...m.watch.map(x => h("li", null, "⚠️ " + x)), ...(!m.problems.length && !m.watch.length ? m.advice.map(x => h("li.ok", null, "💡 " + x)) : [])) : null,
-        h("button", { type: "button", on: { click: () => go(m.tcode) } }, "افتح " + m.tcode)))),
-      h("div.dv-note", null, d.note + " 🟢 جيد = طبيعي · 🚀 في تقدم = أحسن من المعتاد · 🔴 محتاج تعديل = مشكلة أو أقل بكتير من المعتاد · ⚪ يوم هادي."));
-  };
+        h("button", { type: "button", on: { click: () => go(m.tcode) } }, T.open + m.tcode)))),
+      h("div.dv-note", null, d.note + " " + T.legend));
+  }
   const shift = n => { const x = new Date((dt.value || new Date().toISOString().slice(0, 10)) + "T12:00:00"); x.setDate(x.getDate() + n); dt.value = x.toISOString().slice(0, 10); load(); };
   dt.addEventListener("change", load);
   toolbar([{ label: "Display", key: "F8", primary: true, onClick: load }, { label: "◀ Previous day", onClick: () => shift(-1) }, { label: "Next day ▶", onClick: () => shift(1) },
-    { label: "Today", onClick: () => { dt.value = App.today(); load(); } }]);
+    { label: "Today", onClick: () => { dt.value = App.today(); load(); } }, { label: "عربي / English", onClick: () => pick(lang === "ar" ? "en" : "ar") }]);
   load();
 } });
 })();
