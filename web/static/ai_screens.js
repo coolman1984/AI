@@ -139,6 +139,7 @@ const CSS = `
 .cp-top .ic{width:34px;height:34px;flex:none}.cp-top .nm{flex:1;font-weight:800;font-size:16px;line-height:1.1}.cp-top .nm small{display:block;font-weight:500;font-size:11px;opacity:.8}
 .cp-top button{background:transparent;border:0;color:#fff;font-size:17px;width:30px;height:30px;border-radius:8px;cursor:pointer}
 .cp-top button:hover{background:rgba(255,255,255,.15)}
+.cp-top button.cp-lang{width:auto;padding:0 10px;font-size:12.5px;font-weight:700;border:1px solid rgba(255,255,255,.45);border-radius:999px;height:26px}
 .cp-info{background:#eef3fb;color:#4a5b75;font-size:11.5px;padding:5px 12px;border-bottom:1px solid #dde4ee}
 .cp-body{flex:1;overflow:auto;padding:12px;background:#f6f8fb;display:flex;flex-direction:column;gap:10px}
 .cp-card{background:#fff;border:1px solid #e1e7f0;border-radius:14px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.03)}
@@ -221,12 +222,43 @@ function searchScreens(q) {
   }
   return res.sort((a, b) => b.score - a.score || a.code.localeCompare(b.code)).slice(0, 7);
 }
-const RELATED = [[/^(V|ZSD|KE|VK|VF)/, ["بعنا كام الشهر ده؟", "مين العملاء اللي عليهم فلوس متأخرة؟"]], [/^(ME|ZPUR|ML)/, ["إيه أخبار المشتريات والموردين المتأخرين؟"]],
-  [/^(M[BIM]|ZMM|MIGO|LT)/, ["عندنا كام زجاج في المخزن؟"]], [/^(CO|ZPP|MD|CS|CR)/, ["إيه حالة الإنتاج النهارده؟", "لخّصلي اجتماع الإنتاج النهارده"]],
-  [/^(Q|ZQM)/, ["إيه أخبار الجودة والموردين؟"]], [/^(ZPM|IW|IE|IP)/, ["الماكينات عاملة إيه؟"]], [/^(ZTAX|FB41|ZWHT)/, ["إيه الإقرارات الضريبية المطلوبة قريب؟"]],
-  [/^(F|S_ALR|ZFI|ZCHQ)/, ["إيه وضع النقدية والربح الشهر ده؟"]], [/^(P[ACT]|ZHR|PPOM)/, ["عندنا كام موظف وتكلفة المرتبات كام؟"]]];
+const RELATED = [[/^(V|ZSD|KE|VK|VF)/, ["بعنا كام الشهر ده؟", "مين العملاء اللي عليهم فلوس متأخرة؟"], ["How much did we sell this month?", "Which customers have overdue receivables?"]],
+  [/^(ME|ZPUR|ML)/, ["إيه أخبار المشتريات والموردين المتأخرين؟"], ["How is purchasing doing, which vendors are late?"]],
+  [/^(M[BIM]|ZMM|MIGO|LT)/, ["عندنا كام زجاج في المخزن؟"], ["How much glass do we have in stock?"]],
+  [/^(CO|ZPP|MD|CS|CR)/, ["إيه حالة الإنتاج النهارده؟", "لخّصلي اجتماع الإنتاج النهارده"], ["How is production today on the lines?", "Summarize today's production meeting"]],
+  [/^(Q|ZQM)/, ["إيه أخبار الجودة والموردين؟"], ["How is quality, any rejected lots?"]], [/^(ZPM|IW|IE|IP)/, ["الماكينات عاملة إيه؟"], ["How are the machines doing?"]],
+  [/^(ZTAX|FB41|ZWHT)/, ["إيه الإقرارات الضريبية المطلوبة قريب؟"], ["Which tax returns are due soon?"]],
+  [/^(F|S_ALR|ZFI|ZCHQ)/, ["إيه وضع النقدية والربح الشهر ده؟"], ["What are cash and profit this month?"]],
+  [/^(P[ACT]|ZHR|PPOM)/, ["عندنا كام موظف وتكلفة المرتبات كام؟"], ["How many employees and what is the payroll cost?"]]];
 
 let win = null, fab = null, mode = "data", busy = false;
+let LANG = (() => { try { return localStorage.getItem("cp_lang") || "ar"; } catch (e) { return "ar"; } })();
+const TXT = {
+  ar: { hi: n => `أهلاً يا ${n} 👋`, intro: "أنا NERP Copilot. بساعدك تلاقي أي رقم أو شاشة في البرنامج بسرعة. اختار خدمة أو اكتب سؤالك تحت.",
+    t1: ["اسأل عن البيانات", "مبيعات، مخزون، إنتاج…"], t2: ["دوّر على شاشة", "قولّي عايز تعمل إيه"], t3: ["ملخص اليوم", "أهم أرقام النهارده"],
+    t4: ["الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة"], t5: "تقرير اليوم لكل موديول", t6: "الملخص والتنبيهات على موبايلك",
+    sugg: ["بعنا كام الشهر ده؟", "مين العملاء اللي عليهم فلوس متأخرة؟", "عندنا كام زجاج في المخزن؟", "الماكينات عاملة إيه؟"],
+    searchHelp: "قولّي عايز تعمل إيه وأنا أوديك للشاشة. مثلاً: **أعمل أمر شراء**، **استلام بضاعة**، **إقرار القيمة المضافة**.",
+    brief: "اديني ملخص اليوم: المبيعات والإنتاج والفلوس المتأخرة والجودة والصيانة", try: "جرّب تسأل:", typing: "بيدوّر في البيانات…",
+    err: "حصلت مشكلة: ", found: "الشاشات اللي ممكن تفيدك:", open: "افتح", none: "مش لاقي شاشة مناسبة. جرّب كلمة تانية، أو اسألني عن البيانات.",
+    home: "إنت في الصفحة الرئيسية. افتح أي شاشة وأنا أقولك هي بتعمل إيه والشاشات اللي مرتبطة بيها.",
+    onScreen: (c, t) => `إنت فاتح **${c}** — ${t}`, where: "مكانها في المنيو: ", related: "شاشات مرتبطة:",
+    phData: "اسأل عن بيانات الشركة… مثلاً: بعنا كام؟", phSearch: "اكتب اللي عايز تعمله… مثلاً: أعمل أمر شراء",
+    mData: "📊 بيانات", mSearch: "🔎 شاشة", ai: "🟢 متصل بالذكاء الاصطناعي", basic: "🟡 الوضع الأساسي - بدون إنترنت", tip: "NERP Copilot · اسأل",
+    sw: "English", swTitle: "Switch to English" },
+  en: { hi: n => `Hello ${n} 👋`, intro: "I am NERP Copilot. I help you find any figure or screen in NERP quickly. Pick a service or type your question below.",
+    t1: ["Ask about the data", "Sales, stock, production…"], t2: ["Find a screen", "Tell me what you want to do"], t3: ["Today's briefing", "Today's key figures"],
+    t4: ["The screen you have open", "What it does, related screens"], t5: "Daily review of every module", t6: "Briefing and alerts on your mobile",
+    sugg: ["How much did we sell this month?", "Which customers have overdue receivables?", "How much glass do we have in stock?", "How are the machines doing?"],
+    searchHelp: "Tell me what you want to do and I open the screen. For example: **create purchase order**, **goods receipt**, **VAT return**.",
+    brief: "Give me today's briefing: sales, production, overdue receivables, quality and maintenance", try: "Try asking:", typing: "Looking at the data…",
+    err: "Something went wrong: ", found: "Screens that can help:", open: "Open", none: "No matching screen. Try another word, or ask me about the data.",
+    home: "You are on the home page. Open any screen and I tell you what it does and which screens are related.",
+    onScreen: (c, t) => `You have **${c}** open — ${t}`, where: "Menu path: ", related: "Related screens:",
+    phData: "Ask about the company's data… e.g. how much did we sell?", phSearch: "Type what you want to do… e.g. create purchase order",
+    mData: "📊 Data", mSearch: "🔎 Screen", ai: "🟢 Connected to AI", basic: "🟡 Basic mode - no internet", tip: "NERP Copilot · Ask",
+    sw: "عربي", swTitle: "التحويل للعربي" } };
+const X = () => TXT[LANG] || TXT.ar;
 const hist = store.get("cp_hist", []);
 
 function ensureStyle() { if (!document.getElementById("cp-css")) { const s = document.createElement("style"); s.id = "cp-css"; s.textContent = CSS; document.head.append(s); } }
@@ -234,7 +266,7 @@ function ensureStyle() { if (!document.getElementById("cp-css")) { const s = doc
 function build() {
   ensureStyle();
   fab = h("div.cp-fab", null, h("button.cp-btn", { type: "button", title: "NERP Copilot", html: ICON + '<span class="dot"></span>' }),
-    h("span.cp-tip", null, "NERP Copilot · اسأل"));
+    h("span.cp-tip", null, X().tip));
   const hide = h("button.cp-hide", { type: "button", title: "Hide until reload" }, "×");
   fab.querySelector(".cp-btn").append(hide, h("span.cp-badge"));
   hide.addEventListener("click", e => { e.stopPropagation(); fab.remove(); fab = null; });
@@ -247,39 +279,40 @@ async function open() {
   ensureStyle();
   const st = await api("/api/ai/status").catch(() => ({ mode: "basic" }));
   const name = (S.me && S.me.name) || S.user || "";
-  const body = h("div.cp-body"), box = h("textarea", { dir: "auto", placeholder: "اكتب رسالتك… / Enter a message" });
+  const body = h("div.cp-body"), box = h("textarea", { dir: "auto", placeholder: X().phData });
   const send = h("button", { type: "button", title: "Send" }, "➤");
-  const modeBtns = [["data", "📊 بيانات"], ["search", "🔎 شاشة"]].map(([k, t]) => {
-    const b = h("button", { type: "button" }, t); b.addEventListener("click", () => setMode(k)); b.dataset.k = k; return b; });
+  const modeBtns = [["data", "mData"], ["search", "mSearch"]].map(([k, t]) => {
+    const b = h("button", { type: "button" }, X()[t]); b.addEventListener("click", () => setMode(k)); b.dataset.k = k; b.dataset.t = t; return b; });
   const setMode = k => { mode = k; modeBtns.forEach(b => b.classList.toggle("on", b.dataset.k === k));
-    box.placeholder = k === "search" ? "اكتب اللي عايز تعمله… مثلاً: أعمل أمر شراء" : "اسأل عن بيانات الشركة… مثلاً: بعنا كام؟"; box.focus(); };
+    box.placeholder = k === "search" ? X().phSearch : X().phData; box.focus(); };
   const scroll = () => { body.scrollTop = body.scrollHeight; };
   const bubble = (cls, content, keep = true) => { const m = h("div.cp-m." + cls, { dir: "auto" }, content, h("div.cp-t", null, now())); body.append(m); scroll(); return m; };
   const welcome = () => {
     body.innerHTML = "";
     const tile = (e, t, s, fn) => { const x = h("div.cp-tile", null, h("span.e", null, e), t, h("small", null, s)); x.addEventListener("click", fn); return x; };
-    body.append(h("div.cp-card", { dir: "auto" }, h("h3", null, `أهلاً يا ${name} 👋`),
-      h("p", null, "أنا NERP Copilot. بساعدك تلاقي أي رقم أو شاشة في البرنامج بسرعة. اختار خدمة أو اكتب سؤالك تحت."),
+    const x = X();
+    body.append(h("div.cp-card", { dir: LANG === "en" ? "ltr" : "rtl" }, h("h3", null, x.hi(name)),
+      h("p", null, x.intro),
       h("div.cp-tiles", null,
-        tile("📊", "اسأل عن البيانات", "مبيعات، مخزون، إنتاج…", () => { setMode("data"); suggest(["بعنا كام الشهر ده؟", "مين العملاء اللي عليهم فلوس متأخرة؟", "عندنا كام زجاج في المخزن؟", "الماكينات عاملة إيه؟"]); }),
-        tile("🔎", "دوّر على شاشة", "قولّي عايز تعمل إيه", () => { setMode("search"); bubble("a", h("div", { html: md("قولّي عايز تعمل إيه وأنا أوديك للشاشة. مثلاً: **أعمل أمر شراء**، **استلام بضاعة**، **إقرار القيمة المضافة**.") })); }),
-        tile("📋", "ملخص اليوم", "أهم أرقام النهارده", () => askData("اديني ملخص اليوم: المبيعات والإنتاج والفلوس المتأخرة والجودة والصيانة")),
-        tile("❓", "الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة", screenHelp),
-        (() => { const w = tile("📈", "تقرير اليوم لكل موديول", "", () => go("ZDAY")); w.classList.add("wide"); return w; })(),
-        (() => { const w = tile("🔔", "الملخص والتنبيهات على موبايلك", "", () => go("ZNOTIF")); w.classList.add("wide"); return w; })())));
+        tile("📊", x.t1[0], x.t1[1], () => { setMode("data"); suggest(x.sugg); }),
+        tile("🔎", x.t2[0], x.t2[1], () => { setMode("search"); bubble("a", h("div", { html: md(x.searchHelp) })); }),
+        tile("📋", x.t3[0], x.t3[1], () => askData(x.brief)),
+        tile("❓", x.t4[0], x.t4[1], screenHelp),
+        (() => { const w = tile("📈", x.t5, "", () => go("ZDAY", { lang: LANG })); w.classList.add("wide"); return w; })(),
+        (() => { const w = tile("🔔", x.t6, "", () => go("ZNOTIF")); w.classList.add("wide"); return w; })())));
     for (const m of hist.slice(-8)) restore(m);
   };
-  const suggest = list => bubble("a", h("div", null, "جرّب تسأل:", h("div.cp-chips", null, ...list.map(s => { const c = h("span.cp-chip", { dir: "auto" }, s); c.addEventListener("click", () => askData(s)); return c; }))));
+  const suggest = list => bubble("a", h("div", null, X().try, h("div.cp-chips", null, ...list.map(s => { const c = h("span.cp-chip", { dir: "auto" }, s); c.addEventListener("click", () => askData(s)); return c; }))));
   const chipsFor = tools => (tools || []).map(t => { const c = h("span.cp-chip" + (t.denied ? ".deny" : ""), null, t.denied ? `🔒 ${t.tool}` : `📊 ${t.screen || t.tool}`);
     if (!t.denied && t.screen) c.addEventListener("click", () => go(t.screen)); return c; });
   const restore = m => { bubble("q", m.q); bubble("a", h("div", null, h("div", { html: md(m.a) }), h("div.cp-chips", null, ...chipsFor(m.tools)))); };
   async function askData(text) {
     if (busy) return; busy = true; send.disabled = true;
     bubble("q", text);
-    const typing = h("div.cp-typing", null, "بيدوّر في البيانات…"); body.append(typing); scroll();
+    const typing = h("div.cp-typing", null, X().typing); body.append(typing); scroll();
     let r = null;
     try { r = await api("/api/ai/ask", { question: text, history: hist.slice(-6).map(x => ({ q: x.q, a: x.a })) }); }
-    catch (e) { r = { answer: "حصلت مشكلة: " + (e.message || e), tools: [] }; }
+    catch (e) { r = { answer: X().err + (e.message || e), tools: [] }; }
     typing.remove(); busy = false; send.disabled = false;
     hist.push({ q: text, a: r.answer, tools: (r.tools || []).map(t => ({ tool: t.tool, screen: t.screen, denied: t.denied })) });
     store.set("cp_hist", hist.slice(-20));
@@ -288,34 +321,43 @@ async function open() {
   function findScreen(text) {
     bubble("q", text);
     const res = searchScreens(text);
-    bubble("a", res.length ? h("div", null, h("div", null, "الشاشات اللي ممكن تفيدك:"), ...res.map(x => h("div.cp-res", null, h("b", null, x.code),
-      h("span", { title: x.path }, x.title), h("button", { type: "button", on: { click: () => go(x.code) } }, "افتح"))))
-      : h("div", null, "مش لاقي شاشة مناسبة. جرّب كلمة تانية، أو اسألني عن البيانات."));
+    bubble("a", res.length ? h("div", null, h("div", null, X().found), ...res.map(x => h("div.cp-res", null, h("b", null, x.code),
+      h("span", { title: x.path }, x.title), h("button", { type: "button", on: { click: () => go(x.code) } }, X().open))))
+      : h("div", null, X().none));
   }
   function screenHelp() {
     const code = cur(), sc = S.screens[code];
-    if (!code || !sc || code === "HOME") return bubble("a", h("div", null, "إنت في الصفحة الرئيسية. افتح أي شاشة وأنا أقولك هي بتعمل إيه والشاشات اللي مرتبطة بيها."));
+    if (!code || !sc || code === "HOME") return bubble("a", h("div", null, X().home));
     const paths = menuPaths(), path = paths[code] || "";
     const sib = Object.entries(paths).filter(([c, p]) => p === path && c !== code && App.allowed(c)).slice(0, 6);
-    const qs = (RELATED.find(([rx]) => rx.test(code)) || [null, []])[1];
-    bubble("a", h("div", null, h("div", { html: md(`إنت فاتح **${code}** — ${esc(sc.title || "")}` + (path ? `\nمكانها في المنيو: ${esc(path)}` : "")) }),
-      sib.length ? h("div", null, h("div", { style: { marginTop: "6px" } }, "شاشات مرتبطة:"), ...sib.map(([c]) => h("div.cp-res", null, h("b", null, c),
-        h("span", null, (S.screens[c] || {}).title || c), h("button", { type: "button", on: { click: () => go(c) } }, "افتح")))) : null,
+    const qs = (RELATED.find(([rx]) => rx.test(code)) || [null, [], []])[LANG === "en" ? 2 : 1];
+    const x = X();
+    bubble("a", h("div", null, h("div", { html: md(x.onScreen(code, esc(sc.title || "")) + (path ? `\n${x.where}${esc(path)}` : "")) }),
+      sib.length ? h("div", null, h("div", { style: { marginTop: "6px" } }, x.related), ...sib.map(([c]) => h("div.cp-res", null, h("b", null, c),
+        h("span", null, (S.screens[c] || {}).title || c), h("button", { type: "button", on: { click: () => go(c) } }, x.open)))) : null,
       qs.length ? h("div.cp-chips", null, ...qs.map(s => { const c = h("span.cp-chip", { dir: "auto" }, s); c.addEventListener("click", () => askData(s)); return c; })) : null));
   }
   const submit = () => { const t = box.value.trim(); if (!t || busy) return; box.value = ""; if (mode === "search") findScreen(t); else askData(t); };
   send.addEventListener("click", submit);
   box.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } });
   const btn = (t, title, fn) => { const b = h("button", { type: "button", title }, t); b.addEventListener("click", fn); return b; };
+  const info = h("div.cp-info");
+  const langBtn = h("button.cp-lang", { type: "button" });
+  const relabel = () => { const x = X(); langBtn.textContent = x.sw; langBtn.title = x.swTitle;
+    info.textContent = `${st.mode === "ai" ? x.ai : x.basic} · ${new Date().toLocaleDateString("en-GB")} ${now()}`;
+    modeBtns.forEach(b => { b.textContent = x[b.dataset.t]; }); setMode(mode);
+    if (fab) fab.querySelector(".cp-tip").textContent = x.tip; };
+  langBtn.addEventListener("click", () => { LANG = LANG === "ar" ? "en" : "ar"; try { localStorage.setItem("cp_lang", LANG); } catch (e) { /* private */ }
+    relabel(); welcome(); });
   win = h("div.cp-win", { role: "dialog", "aria-label": "NERP Copilot" },
     h("div.cp-top", null, h("span.ic", { html: ICON }), h("div.nm", null, "NERP Copilot", h("small", null, st.mode === "ai" ? "AI · " + st.model : "Basic mode")),
-      btn("⌂", "Start", welcome), btn("⤢", "Bigger", () => win.classList.toggle("max")), btn("⧉", "Open full screen (ZAI)", () => { close(); go("ZAI"); }),
+      langBtn, btn("⌂", "Start", welcome), btn("⤢", "Bigger", () => win.classList.toggle("max")), btn("⧉", "Open full screen (ZAI)", () => { close(); go("ZAI"); }),
       btn("–", "Minimize", close), btn("×", "Close and clear", () => { hist.length = 0; store.set("cp_hist", []); close(); win.remove(); win = null; })),
-    h("div.cp-info", null, `${st.mode === "ai" ? "🟢 متصل بالذكاء الاصطناعي" : "🟡 الوضع الأساسي - بدون إنترنت"} · ${new Date().toLocaleDateString("en-GB")} ${now()}`),
+    info,
     body, h("div.cp-foot", null, h("div.cp-modes", null, ...modeBtns), h("div.cp-in", null, box, send)));
   document.body.append(win);
   if (fab) fab.style.display = "none";
-  setMode("data"); welcome(); box.focus();
+  relabel(); setMode("data"); welcome(); box.focus();
 }
 async function poll() {                // unread messages -> red counter on the button
   if (!fab || (S.auth && !S.me)) return;
