@@ -421,7 +421,7 @@ register("ZDAY", { title: "Daily Review - every module", async render(app, param
   const bAr = h("button", { type: "button" }, "عربي"), bEn = h("button", { type: "button" }, "English");
   const pick = l => { lang = l; setLang(l); load(); };
   bAr.addEventListener("click", () => pick("ar")); bEn.addEventListener("click", () => pick("en"));
-  app.append(h("div.panel", null, h("div.panel-body", null, h("div.form-grid", null, field("Day", dt), field("Language / اللغة", h("div.dv-lang", null, bAr, bEn))))), out);
+  app.append(h("div.panel", null, h("div.panel-body", null, h("div.form-grid", null, field("Day", dt), field("Language", h("div.dv-lang", { dir: "ltr" }, bEn, bAr))))), out);
   async function load() {
     bAr.classList.toggle("on", lang === "ar"); bEn.classList.toggle("on", lang === "en");
     const d = await run(() => api("/api/ai/day?lang=" + lang + (dt.value ? "&date=" + dt.value : ""))); if (!d) return;
