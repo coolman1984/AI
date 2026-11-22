@@ -1,6 +1,6 @@
 """All quality checks in one go (the same as the GitHub quality gate, without the
 browser and desktop parts): unit / end-to-end tests, process test catalog, data
-consistency of a fresh demo system, static check (if pyflakes is installed).
+consistency of a fresh demo system, generated docs up to date, static check (if pyflakes is installed).
 Usage:  python tools/qa/check_all.py      (exit code 1 = something is wrong)"""
 import os
 import subprocess
@@ -28,6 +28,7 @@ step("Process test catalog (QA runner)", [py, "-m", "qa.runner"])
 step("Data consistency of a fresh demo system", [py, "-c",
      "import sys; sys.path.insert(0, 'tests'); import fixture; from mm import seed; from mm.db import connect; "
      "from qa.invariants import check; c = connect(':memory:'); seed.seed(c); v = check(c); print(v); sys.exit(1 if v else 0)"])
+step("Generated documentation up to date", [py, os.path.join("tools", "docs", "build_docs.py"), "--check"])
 try:
     import pyflakes  # noqa: F401
     step("Static check (pyflakes)", [py, os.path.join("tools", "qa", "static_check.py")])

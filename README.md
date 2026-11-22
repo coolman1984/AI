@@ -1,7 +1,13 @@
 # NERP
 
-A small inventory system that works like SAP MM (Materials Management).
+A complete ERP for an Egyptian manufacturing company - sales, purchasing, inventory, production,
+quality, maintenance, finance, controlling, Egyptian taxes, HR and payroll, external audit, BI,
+an AI assistant and mobile notifications - modelled on SAP processes and transaction codes.
 Pure Python. Nothing to download or install except Python itself.
+
+**Documentation:** [Architecture](docs/ARCHITECTURE.md) · [Knowledge base](docs/KNOWLEDGE.md) ·
+[دليل سريع بالعربي](docs/GUIDE_AR.md) · [All screens](docs/SCREENS.md) · [API](docs/API.md) ·
+[Error codes](docs/ERROR_CODES.md) · [Test catalog](docs/TESTS.md) · [Change log](docs/CHANGELOG.md)
 
 ## Start it (one click)
 
@@ -38,6 +44,59 @@ user with a one-time password in `data/first_login.txt`.
   hours without use. The server checks every call: the transaction, the area (display /
   change) and the critical object (release, payment run, periods, reversals, user admin).
 - `python run.py --dev` starts without logon (developer mode for tests and tools).
+
+## Daily Review - ZDAY (first icon on the home page)
+
+What happened on the day in every module - sales, production, inventory, purchasing, quality,
+maintenance, finance, taxes, HR - next to a normal working day (average of the last 28 days,
+Friday off), a 7-day mini chart and an opinion per module: 🟢 good, 🚀 improving, 🔴 needs
+attention, ⚪ quiet day, with the reason and what to do. An open problem (machine down, credit
+block, rejected lot, scrap above 3 %, overdue tax return) always means "needs attention". Before
+4 pm the review shows the previous working day. Arabic or English (switch on the page); only the
+modules the user may display.
+
+## NERP Copilot and Ask NERP - ZAI, ZAI_CONF
+
+The round robot at the bottom right of every screen: ask about the data ("how much did we sell this
+month?"), find a screen ("create purchase order"), today's briefing, help for the open screen.
+Read-only tools with the user's authorizations (sales, receivables, finance, purchasing, production,
+stock, quality, maintenance, taxes, HR, daily meeting). Basic mode works without internet; with an
+API key (ZAI_CONF) Claude answers. Arabic / English switch; answers follow the question's language.
+Every question is logged.
+
+## Daily briefing and alerts on the mobile - ZNOTIF, ZNOTIF_CONF
+
+A morning briefing at the chosen time and instant alerts (machine down, stock below safety stock,
+credit block, rejected lot, tax deadline in 3 days, approvals waiting) to Telegram, e-mail or
+WhatsApp. WhatsApp reaches any normal mobile number (`01001234567`): a free-text message inside
+Meta's 24-hour window, otherwise the approved message template (`nerp_alert`; the body to create in
+WhatsApp Manager is shown in ZNOTIF_CONF). Secrets are stored masked; failed sends are retried.
+Step-by-step setup in Arabic: [docs/GUIDE_AR.md](docs/GUIDE_AR.md).
+
+## External audit for audit firms - menu "External Audit" (ZAUD_*)
+
+The place where an external audit firm works on the year-end financial statements, based on the
+Egyptian Accounting Standards (EAS) and Egyptian Standards on Auditing:
+ZAUD_COCKPIT overview · ZAUD_ENG engagement, materiality (profit before tax / revenue / total assets)
+and a time-limited auditor user · ZAUD_PBC the 32-item "prepared by client" list with EAS / ESA
+references (only the auditor accepts or returns) · ZAUD_QUERY queries and answers · ZAUD_TESTS
+analytics (journal entry testing, confirmation samples, expected credit loss, bank, unrecorded
+liabilities, inventory NRV and slow-moving, fixed asset roll-forward, revenue cut-off, payroll vs
+ledger, subsequent events) · ZAUD_LEAD draft statements and lead schedules · ZAUD_AJE proposed
+adjustments (posted by FI or left uncorrected and compared with materiality) · ZAUD_PACK 21-sheet
+Excel audit pack with Arabic confirmation letters · ZAUD_EAS the standards ("verify" = number not
+confirmed in an official source).
+
+## Quality and maintenance - ZQM_*, ZPM_*
+
+Inspection lots from goods receipts and production, results and usage decisions (stock released or
+blocked), complaints to vendors, vendor quality rating; machines, preventive plans, breakdown
+notifications, maintenance orders with spare parts and hours, MTBF / MTTR and availability.
+
+## Daily production meeting - ZPP_DM_*
+
+Boards for the morning meeting (in-house, pending orders, OQC, process and material defects, material
+loss, pending scrap) with a full-screen meeting mode, next to ZPP_BOARD.
 
 ## Human Resources (HR) and Egyptian payroll
 
@@ -105,6 +164,9 @@ today / yesterday / week, open rework orders, blocked stock) and late purchase o
 day) and ZPP_LOSS (stop of a line with reason).
 
 ## Egyptian taxes - module "Taxes Egypt" (ZTAX_*)
+
+ZTAX_REVIEW: an Excel sheet (Arabic / English) of the rules for the tax adviser; the answers are
+loaded back - OK verifies a rule, CHANGE corrects it or adds a dated version with the adviser's name.
 
 | Code | What it does |
 |---|---|
@@ -583,6 +645,7 @@ Every push and pull request on GitHub runs `.github/workflows/ci.yml`:
 | Desktop smoke test | NERP Logon / Easy Access start, log on, run transactions, favorites (`tools/qa/gui_smoke.py`) |
 
 A red check means: do not merge. Locally: double-click `tools/Run all checks.bat`
-(or `python tools/qa/check_all.py`). Rule for every bug fix: first a test that fails,
+(or `python tools/qa/check_all.py`; it also fails when the generated docs are out of date -
+refresh them with `python tools/docs/build_docs.py`). Rule for every bug fix: first a test that fails,
 then the fix, then all checks green.
 

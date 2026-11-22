@@ -26,6 +26,8 @@ jobs:
         run: python -m unittest discover -v
       - name: Process test catalog (QA runner)
         run: python -m qa.runner
+      - name: Generated documentation up to date
+        run: python tools/docs/build_docs.py --check
       - name: Static check (pyflakes)
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         run: |
