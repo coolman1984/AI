@@ -81,6 +81,36 @@ class Daily(unittest.TestCase):
         self.assertTrue(e.inbox(c, "OWNER")["rows"])
 
 
+class DailyReview(unittest.TestCase):
+    def test_briefing_carries_the_daily_review_for_the_allowed_modules(self):
+        from unittest import mock
+        from ai import review as R
+        from mm import util as clock
+        from notify import engine as e
+        c = system()
+        morning = datetime.datetime.combine(clock.today(), datetime.time(8, 0))
+        with mock.patch.object(clock, "now", lambda: morning):
+            title, text = e.daily_message(c, "OWNER")
+            r = R.day_review(c)                                                # yesterday's review (before 4 pm)
+        self.assertIn("تقرير امبارح", text)
+        self.assertIn("ZDAY", text)
+        for m in r["modules"]:
+            if m["verdict"] == R.ATTN:
+                self.assertIn("🔴 %s" % m["name"], text)                    # every module that needs attention
+        counts = " · ".join("%s %d" % (R.VERDICT[k][1], r["counts"][k]) for k in (R.ATTN, R.UP, R.GOOD, R.QUIET) if r["counts"][k])
+        self.assertIn(counts, text)
+        # a user without HR authorization does not get the HR module
+        no_hr = next(u for u in c.execute("SELECT bname FROM usr").fetchall()
+                     if e._allowed(c, u[0]) and not e._allowed(c, u[0])("HR"))[0]
+        with mock.patch.object(clock, "now", lambda: morning):
+            r2 = R.day_review(c, user=no_hr, allowed=e._allowed(c, no_hr))
+            _, text2 = e.daily_message(c, no_hr)
+        self.assertNotIn("HR", [m["code"] for m in r2["modules"]])
+        self.assertNotIn("الموارد البشرية", text2.split("تقرير امبارح")[1])
+        self.assertNotIn("النهارده", text.split("تقرير امبارح")[1])          # yesterday's review speaks of yesterday
+        self.assertLess(len(text), 3800)                                        # fits a Telegram message
+
+
 class Alerts(unittest.TestCase):
     def test_alerts_once_per_event_categories_and_authorization(self):
         from notify import engine as e

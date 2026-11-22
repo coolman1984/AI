@@ -68,7 +68,9 @@ Every question is logged.
 
 A morning briefing at the chosen time and instant alerts (machine down, stock below safety stock,
 credit block, rejected lot, tax deadline in 3 days, approvals waiting) to Telegram, e-mail or
-WhatsApp. WhatsApp reaches any normal mobile number (`01001234567`): a free-text message inside
+WhatsApp. The morning briefing ends with the **daily review** (yesterday's, before 4 pm): the count per
+opinion, every module that needs attention with its reason, the improving ones, and "open ZDAY" -
+only the modules the person may display. WhatsApp reaches any normal mobile number (`01001234567`): a free-text message inside
 Meta's 24-hour window, otherwise the approved message template (`nerp_alert`; the body to create in
 WhatsApp Manager is shown in ZNOTIF_CONF). Secrets are stored masked; failed sends are retried.
 Step-by-step setup in Arabic: [docs/GUIDE_AR.md](docs/GUIDE_AR.md).
