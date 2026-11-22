@@ -215,7 +215,39 @@ def daily_message(conn, user):
         lines.append("- ✅ %d حاجة مستنية موافقتك (ZINBOX)" % len(appr))
     if lines:
         text += "\n\n**تنبيهات مفتوحة:**\n" + "\n".join(lines)
+    rv = review_text(conn, user, allowed)
+    if rv:
+        text += "\n\n" + rv
     return "☀️ صباح الخير - ملخص NERP %s" % clock.today().strftime("%d/%m/%Y"), text
+
+
+def review_text(conn, user, allowed=None):
+    """the daily review (ZDAY) in a few lines: counts, every module that needs attention with the reason,
+    the improving ones; yesterday's review before 4 pm (the morning briefing)"""
+    from ai import review as R
+    try:
+        r = R.day_review(conn, None, user, allowed)
+    except Exception:                                  # the briefing must never fail because of the review
+        return ""
+    if not r["modules"]:
+        return ""
+    d = datetime.date.fromisoformat(r["day"])
+    today = clock.today()
+    head = ("تقرير النهارده" if d == today else "تقرير امبارح" if d == today - datetime.timedelta(days=1)
+            else "تقرير يوم %s %s" % (r["weekday"], d.strftime("%d/%m")))
+    counts = " · ".join("%s %d" % (R.VERDICT[k][1], r["counts"][k]) for k in (R.ATTN, R.UP, R.GOOD, R.QUIET) if r["counts"][k])
+    out = ["**%s:** %s" % (head, counts)]
+    for m in r["modules"]:
+        if m["verdict"] == R.ATTN:
+            why = (m["problems"] or m["watch"] or [m["opinion"].split(". ")[0].rstrip(".")])[0]
+            if d != today:                             # the module texts speak of "today"
+                why = why.replace("النهارده", "امبارح" if d == today - datetime.timedelta(days=1) else "اليوم ده")
+            out.append("- 🔴 %s: %s" % (m["name"], why))
+    up = [m["name"] for m in r["modules"] if m["verdict"] == R.UP]
+    if up:
+        out.append("- 🚀 في تقدم: %s" % "، ".join(up))
+    out.append("التفاصيل كاملة: افتح ZDAY")
+    return "\n".join(out)
 
 
 def run_daily(conn, now=None, sender=None, force_sub=None):
