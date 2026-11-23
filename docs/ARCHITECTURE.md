@@ -51,7 +51,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 | `fi` | Financial accounting: central document, AP, AR, assets, bank, cheques, cash, WHT, closing, reports | `document`, `ap`, `ar`, `aa`, `clearing`, `reports` |
 | `co` | Controlling: cost centers, orders, product costing, actuals, period end, CO-PA, budget | `master`, `costing`, `actual`, `period_end`, `copa`, `budget` |
 | `tax` | Egyptian taxes: law register, returns (VAT form 10, WHT form 41, salary form 4, CIT), e-invoice (ETA), tax audit, adviser review | `rules`, `returns`, `eta`, `audit`, `review` |
-| `hr` | HR and Egyptian payroll: employees, org, time, payroll, posting to FI/CO | `engine`, `payroll`, `extras`, `reports` |
+| `hr` | HR and Egyptian payroll: employees, org, leave, payroll, posting to FI/CO; skills matrix; time clock and evaluation; training, appraisal, end of service; HR analytics | `engine`, `payroll`, `extras`, `reports`, `skills`, `time`, `talent`, `analytics` |
 | `extaudit` | External audit for audit firms (Egyptian Accounting Standards): engagement, materiality, PBC list, queries, adjustments, analytics, Excel pack | `engagement`, `analytics`, `pack`, `standards` |
 | `ai` | "Ask NERP" assistant (read-only tools, Claude API with basic-mode fallback), the daily review and the What-If simulator | `tools`, `agent`, `review`, `whatif` |
 | `notify` | Daily briefing and alerts to Telegram, e-mail, WhatsApp (approved templates) | `engine`, `channels` |

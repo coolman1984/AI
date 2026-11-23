@@ -75,7 +75,14 @@ class Time(unittest.TestCase):
         err(self, lambda: engine.request_absence(c, p, "SIC", "2026-11-16", "2026-11-16", U), "044")
         err(self, lambda: engine.request_absence(c, p, "ANN", "2026-01-04", "2026-10-31", U), "046")
         engine.request_absence(c, p, "CAS", "2026-11-23", "2026-11-26", U, approve=True)
-        err(self, lambda: engine.request_absence(c, p, "CAS", "2026-11-29", "2026-12-01", U), "047")
+        err(self, lambda: engine.request_absence(c, p, "CAS", "2026-11-28", "2026-12-01", U), "047")  # 4 + 4 > 7 casual days
+        # Labour Law 14/2025: 15 days in the first year of service, 45 days for employees with a disability
+        new = engine.hire(c, dict(NEW, hire_date="2026-03-01", national_id="29504120112348"), U)
+        self.assertEqual(engine.quota(c, new, 2026)["entitlement"], 15)
+        self.assertEqual(engine.quota(c, new, 2027)["entitlement"], 21)
+        c.execute("UPDATE hr_employee SET disabled=1 WHERE pernr=?", (p,))
+        self.assertEqual(engine.quota(c, p, 2026)["entitlement"], 45)
+        self.assertEqual(engine.quota(c, p, 2026)["casual_max"], 7)
         c.execute("UPDATE hr_employee SET bname='OMARX' WHERE pernr=?", (p,))
         err(self, lambda: engine.decide_absence(c, a, True, "OMARX"), "049")                    # own request
         engine.decide_absence(c, a, True, "HR1")

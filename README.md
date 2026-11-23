@@ -147,6 +147,29 @@ salaries are confidential: only roles with the HR area (demo users `HR1`, `PAY1`
 the general display authorization of other roles does not include HR. Leave requests and payroll
 steps appear in the approval inbox (ZINBOX), payroll cost in BI (category HR) and on the ERP dashboard.
 
+## HR - time and attendance, talent, settlement and analytics (Labour Law 14/2025)
+
+* **Time clock** ZHR_CLOCK (big IN / OUT, Enter = next clocking) and **shifts / public holidays** ZHR_SHIFTS
+  (day, evening, night shift over midnight; fixed Egyptian holidays delivered, religious ones entered yearly;
+  management is exempt from the clock).
+* **Daily evaluation** ZHR_TIMEEVAL: late only after the grace minutes, early leave, unexcused absence, leave,
+  missing clock-out, overtime above the shift threshold by type (day 135 %, night 170 %, rest day / holiday
+  200 %), more than 10 h a day flagged; approved overtime goes into the payroll once.
+  **Monthly attendance** ZHR_ATTEND (punctuality, attendance, overtime per employee).
+* **Overtime notice** ZHR_OTNOTICE: Law 14/2025 replaced prior approval by a notice to the labour office
+  within 7 days - due / overdue / notified with the reference.
+* **Leave** per Law 14/2025: 15 days in the first year, 21 from the second, 30 from 10 years or age 50,
+  45 with a disability, 7 casual days (all in ZHR_CONF - verify with the labour lawyer).
+* **Skills matrix** ZHR_SKILLS (shared with GMES), **training** ZHR_TRAINING (passing a skill training certifies),
+  **appraisal** ZHR_APPRAISAL (goals 50 % + competencies 30 % + attendance 20 %, distribution vs guideline,
+  low ratings need a plan, no self-appraisal, final is locked).
+* **End-of-service settlement** ZHR_EOS: unused leave, notice in lieu (3 months), grant for fixed-term contracts
+  renewed beyond 5 years (1 month per year), contingent minimum compensation for an unlawful dismissal (2 months
+  per year).
+* **HR analytics** ZHR_ANALYTICS: headcount, turnover (leavers / average headcount, voluntary vs involuntary),
+  absenteeism (unplanned days / working days x headcount), overtime ratio, punctuality, labour cost per good
+  unit, tenure, age, training hours, certificates expired / single-person skills, appraisal average.
+
 ## Egyptian pound and US dollar (EGP / USD)
 
 The books are kept in EGP (local currency). The exchange rates come from OB08 (type M).

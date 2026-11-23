@@ -2,7 +2,7 @@
 
 # JSON API
 
-532 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+543 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -200,6 +200,9 @@
 | GET | `/api/hr/absences` | HR | `hr_api.py` · `hr_absences` |  |
 | GET | `/api/hr/addpay` | HR | `hr2_api.py` · `hr_addpay` |  |
 | POST | `/api/hr/addpay/<act>` | HR | `hr2_api.py` · `hr_addpay_act` |  |
+| GET | `/api/hr/analytics` | HR | `hr3_api.py` · `hr_analytics` |  |
+| GET | `/api/hr/appraisal` | HR | `hr3_api.py` · `appraisal_list` |  |
+| POST | `/api/hr/appraisal` | HR | `hr3_api.py` · `appraisal_save` |  |
 | GET | `/api/hr/close_mgmt` | HR | `hr2_api.py` · `hr_close_mgmt` |  |
 | GET | `/api/hr/cockpit` | HR | `hr_api.py` · `hr_cockpit` |  |
 | GET | `/api/hr/config` | HR | `hr_api.py` · `hr_config` |  |
@@ -209,6 +212,7 @@
 | POST | `/api/hr/employee/<pernr>/change` | HR | `hr_api.py` · `hr_change` |  |
 | POST | `/api/hr/employee/<pernr>/leave` | HR | `hr_api.py` · `hr_terminate` |  |
 | GET | `/api/hr/employees` | HR | `hr_api.py` · `hr_employees` |  |
+| GET | `/api/hr/eos` | HR | `hr3_api.py` · `eos` |  |
 | GET | `/api/hr/events` | HR | `hr2_api.py` · `hr_events` |  |
 | POST | `/api/hr/hire` | HR | `hr_api.py` · `hr_hire` |  |
 | GET | `/api/hr/leavebal` | HR | `hr2_api.py` · `hr_leavebal` |  |
@@ -226,6 +230,13 @@
 | GET | `/api/hr/quota/<pernr>` | HR | `hr_api.py` · `hr_quota` |  |
 | GET | `/api/hr/quotas` | HR | `hr_api.py` · `hr_quotas` |  |
 | GET | `/api/hr/skills` | HR | `hrq_api.py` · `hr_skills` |  |
+| POST | `/api/hr/time/<act>` | HR | `hr3_api.py` · `time_act` |  |
+| GET | `/api/hr/time/day` | HR | `hr3_api.py` · `time_day` |  |
+| GET | `/api/hr/time/month` | HR | `hr3_api.py` · `time_month` |  |
+| GET | `/api/hr/time/notices` | HR | `hr3_api.py` · `time_notices` |  |
+| GET | `/api/hr/time/setup` | HR | `hr3_api.py` · `time_setup` |  |
+| GET | `/api/hr/training` | HR | `hr3_api.py` · `training_list` |  |
+| POST | `/api/hr/training/<act>` | HR | `hr3_api.py` · `training_act` |  |
 | GET | `/api/hrself` | - | `hr_api.py` · `hrself` |  |
 | POST | `/api/hrself/leave` | - | `hr_api.py` · `hrself_leave` |  |
 | GET | `/api/hrself/payslip` | - | `hr_api.py` · `hrself_payslip` |  |
