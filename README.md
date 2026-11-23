@@ -71,7 +71,8 @@ Arabic / English. Only saved scenarios are written; the books are never changed.
 The round robot at the bottom right of every screen: ask about the data ("how much did we sell this
 month?"), find a screen ("create purchase order"), today's briefing, help for the open screen.
 Read-only tools with the user's authorizations (sales, receivables, finance, purchasing, production,
-stock, quality, maintenance, taxes, HR, daily meeting). Basic mode works without internet; with an
+stock, quality, maintenance, taxes, HR, daily meeting, **what-if**: "what if the dollar rises 20 % and
+salaries 10 %?" runs the What-If simulator - the levers are read from the question, in basic mode too). Basic mode works without internet; with an
 API key (ZAI_CONF) Claude answers. Arabic / English switch; answers follow the question's language.
 Every question is logged.
 

@@ -204,6 +204,33 @@ def daily_meeting(conn, args):
             "pending_scrap_over_90_days_egp": _egp(s["aging"]["> 90 days"])}
 
 
+def what_if(conn, args):
+    from ai import whatif
+    from mm.util import MMError
+    levers = args.get("levers") if isinstance(args.get("levers"), dict) else {}
+    try:
+        r = whatif.simulate(conn, levers, args.get("lang") or "ar")
+        goal = None
+        if args.get("goal_profit") is not None:
+            goal = whatif.goal_seek(conn, args["goal_profit"], args.get("goal_lever") or "price", levers, args.get("lang") or "ar")
+    except MMError as e:
+        return {"error": str(e), "screen": "ZWHATIF", "levers_allowed": {k: [v[0], v[1], v[3]] for k, v in whatif.LEVERS.items()}}
+    return {"screen": "ZWHATIF", "currency": "EGP", "basis": r["baseline"]["period"] + (" annualised" if r["baseline"]["annualised"] else ""),
+            "levers": {k: v for k, v in r["params"].items() if v not in (0, None) and not (k == "capex_years" and v == 5)},
+            "profit_today_egp": r["base"]["result"], "profit_after_egp": r["sim"]["result"], "difference_egp": r["diff"],
+            "margin_today_pct": r["base"]["margin"], "margin_after_pct": r["sim"]["margin"],
+            "breakeven_after_egp": r["sim"]["breakeven"], "cash_from_payment_terms_egp": r["sim"]["cash_working_capital"],
+            "biggest_effects": r["impact"][:5], "opinion": r["opinion"], "goal": goal}
+
+
+WHATIF_PROPS = {"levers": {"type": "object", "description": "Changes to simulate: price, volume, material, fx (dollar), "
+                           "salaries, other (operating expenses) in % (e.g. 10 = +10 %); staff = extra employees (negative = fewer); "
+                           "dso / dpo = target days; rate = interest change in percentage points; capex = investment EGP, "
+                           "capex_years, capex_volume %; imported_pct = imported share of material %"},
+                "goal_profit": {"type": "number", "description": "Optional: profit for the year (EGP) to reach"},
+                "goal_lever": {"type": "string", "description": "Lever for the goal: price, volume, material, salaries or other"},
+                "lang": {"type": "string", "description": "ar or en - language of the opinion"}}
+
 # name -> (function, authorization area, description, extra properties)
 TOOLS = {
     "sales_overview": (sales_overview, "SD", "Sales of a period: revenue, incoming orders, backlog, margin, on-time delivery, "
@@ -231,6 +258,9 @@ TOOLS = {
     "tax_calendar": (tax_calendar, "FI", "Egyptian tax calendar: returns and payments overdue or due in the next 30 days "
                      "(VAT, withholding form 41, salary tax, corporate tax).", {"year": {"type": "integer"}}),
     "hr_overview": (hr_overview, "HR", "Personnel: headcount by department, monthly personnel cost, leave, turnover.", {}),
+    "what_if": (what_if, "CO", "What-If simulation on the company's own figures (year so far, annualised): profit, margin, "
+                "break-even and cash after changing prices, volume, material cost, the dollar rate, salaries, staff, payment "
+                "terms, interest or an investment; optional goal seek for a target profit.", WHATIF_PROPS),
     "daily_meeting": (daily_meeting, "PP", "Daily production meeting summary: late orders, scrap, defect rate, material "
                       "loss and pending scrap.", {"date": {"type": "string", "description": "YYYY-MM-DD, default today"}}),
 }

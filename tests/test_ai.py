@@ -2,6 +2,7 @@
 loop with a fake API (tool calls, results, thinking blocks passed back, authorization,
 refusal, fallback to basic mode when the service is unreachable) and the settings."""
 import json
+import re
 import os
 import sys
 import unittest
@@ -95,6 +96,42 @@ class Languages(unittest.TestCase):
         b = agent.basic_answer(c, "Give me today's briefing: sales, production, overdue receivables, quality and maintenance", "OWNER")
         self.assertTrue(b["answer"].startswith("**Today's briefing:**"))
         self.assertGreaterEqual(len(b["tools"]), 3)
+
+
+class WhatIf(unittest.TestCase):
+    def test_what_if_in_the_assistant(self):
+        """"what if" questions run the What-If simulator: levers read from the question, same figures as ZWHATIF"""
+        from ai import agent, tools, whatif
+        c = system()
+        self.assertEqual(agent._whatif_args("لو الدولار زاد 20% والمرتبات زادت 10%"), {"fx": 20.0, "salaries": 10.0})
+        self.assertEqual(agent._whatif_args("ماذا لو خفضنا تكلفة الخامات 5% ورفعنا سعر البيع 8%"), {"material": -5.0, "price": 8.0})
+        self.assertEqual(agent._whatif_args("what if the dollar rises 15% and we hire 3 employees"), {"fx": 15.0, "staff": 3.0})
+        self.assertEqual(agent._whatif_args("what if we collect in 45 days"), {"dso": 45.0})
+        self.assertEqual(agent._whatif_args("لو حصّلنا من العملاء في 45 يوم؟"), {"dso": 45.0})
+        js = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "static", "ai_screens.js"),
+                  encoding="utf-8").read()
+        for q in re.findall(r'wi: \[([^\]]+)\]', js):                       # every suggested what-if question is understood
+            for one in re.findall(r'"([^"]+)"', q):
+                self.assertTrue(agent._whatif_args(one), one)
+                self.assertEqual(agent.basic_answer(c, one, "OWNER")["tools"][0]["tool"], "what_if", one)
+        r = agent.basic_answer(c, "لو الدولار زاد 20% يحصل إيه؟", "OWNER")
+        self.assertEqual(r["tools"][0]["tool"], "what_if")
+        sim = whatif.simulate(c, {"fx": 20})
+        self.assertIn("{:,.0f}".format(abs(sim["diff"])), r["answer"])
+        self.assertIn("ZWHATIF", r["answer"])
+        e = agent.basic_answer(c, "What if prices go up 10%?", "OWNER")
+        self.assertEqual(e["tools"][0]["tool"], "what_if")
+        self.assertIn("EGP", e["answer"])
+        d = tools.run(c, "what_if", {"levers": {"price": 10}, "goal_profit": 0, "goal_lever": "material"})
+        self.assertAlmostEqual(d["difference_egp"], whatif.simulate(c, {"price": 10})["diff"], places=0)
+        self.assertEqual(d["goal"]["lever"], "material")
+        self.assertIn("error", tools.run(c, "what_if", {"levers": {"price": 999}}))       # bad input: an error the model can read
+        with self.assertRaises(PermissionError):
+            tools.run(c, "what_if", {"levers": {}}, allowed=lambda a: a != "CO")
+        self.assertIn("20%", agent.basic_answer(c, "ماذا لو؟", "OWNER")["answer"])         # no lever: a hint, not a crash
+        self.assertIn("ZWHATIF", agent.basic_answer(c, "what if?", "OWNER")["answer"])
+        n = agent.basic_answer(c, "لو سمحت بعنا كام الشهر ده؟", "OWNER")                # "law" as politeness is not a what-if
+        self.assertEqual(n["tools"][0]["tool"], "sales_overview")
 
 
 class Agent(unittest.TestCase):

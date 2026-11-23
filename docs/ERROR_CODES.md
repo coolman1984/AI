@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 773 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 774 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -746,6 +746,7 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 773 codes. `�
 | VP | 002 | Partner function … is not allowed for account group … | `md/partner.py` |
 | VP | 003 | Partner … does not exist | `md/partner.py` |
 | VP | 004 | Customer … (account group …) cannot be partner … | `md/partner.py` |
+| WI | 901 | Invalid scenario parameters | `web/whatif_api.py` |
 | ZI | 001 | Import object … does not exist | `mm/dataimport.py` |
 | ZI | 002 | The file is empty / Choose the Excel file | `mm/dataimport.py`, `web/p6_api.py` |
 | ZI | 003 | At most 5000 lines per file / At most 20000 lines per workbook | `mm/dataimport.py` |

@@ -180,7 +180,7 @@ const HINT = { "استلام": ["MIGO", "MB03"], "بضاع": ["MIGO"], "أمر �
   "فاتورة إلكترونية": ["ZTAX_EINV"], "فاتورة": ["VF01", "VF03"], "أمر بيع": ["VA01", "VA05"], "عرض سعر": ["VA21"], "مرتب": ["PC00_M99_CALC"],
   "موظف جديد": ["PA40"], "قيد": ["FB50", "F-02"], "شيك": ["ZCHQ_IN", "ZCHQ_OUT"], "عطل": ["ZPM_NOTIF"], "صيان": ["ZPM_COCKPIT", "ZPM_ORDERS"],
   "فحص": ["QA32", "QA11"], "جود": ["ZQM_COCKPIT"], "مخزون": ["MMBE", "MB52"], "رصيد": ["MMBE"], "إنتاج": ["ZPP_BOARD", "CO01"], "انتاج": ["ZPP_BOARD", "CO01"],
-  "ميزانية": ["S_ALR_87012284"], "تقارير": ["ZBI"], "مستخدم": ["SU01"], "صلاحي": ["PFCG"], "إكسيل": ["ZIMPORT"], "اسأل": ["ZAI"] };
+  "ميزانية": ["S_ALR_87012284"], "تقارير": ["ZBI"], "مستخدم": ["SU01"], "صلاحي": ["PFCG"], "إكسيل": ["ZIMPORT"], "اسأل": ["ZAI"], "ماذا لو": ["ZWHATIF"], "سيناريو": ["ZWHATIF"], "محاكاة": ["ZWHATIF", "ZCO_SIM"] };
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const md = text => { let html = "", list = false;
   for (const l of esc(text).split(/\n/)) { const b = l.match(/^\s*[-•*]\s+(.*)$/);
@@ -228,6 +228,7 @@ const RELATED = [[/^(V|ZSD|KE|VK|VF)/, ["بعنا كام الشهر ده؟", "م
   [/^(CO|ZPP|MD|CS|CR)/, ["إيه حالة الإنتاج النهارده؟", "لخّصلي اجتماع الإنتاج النهارده"], ["How is production today on the lines?", "Summarize today's production meeting"]],
   [/^(Q|ZQM)/, ["إيه أخبار الجودة والموردين؟"], ["How is quality, any rejected lots?"]], [/^(ZPM|IW|IE|IP)/, ["الماكينات عاملة إيه؟"], ["How are the machines doing?"]],
   [/^(ZTAX|FB41|ZWHT)/, ["إيه الإقرارات الضريبية المطلوبة قريب؟"], ["Which tax returns are due soon?"]],
+  [/^(ZWHATIF|ZCO_SIM|K)/, ["لو الدولار زاد 20% يحصل إيه؟", "لو رفعنا الأسعار 10%؟"], ["What if the dollar rises 20%?", "What if prices go up 10%?"]],
   [/^(F|S_ALR|ZFI|ZCHQ)/, ["إيه وضع النقدية والربح الشهر ده؟"], ["What are cash and profit this month?"]],
   [/^(P[ACT]|ZHR|PPOM)/, ["عندنا كام موظف وتكلفة المرتبات كام؟"], ["How many employees and what is the payroll cost?"]]];
 
@@ -236,7 +237,8 @@ let LANG = (() => { try { return localStorage.getItem("cp_lang") || "ar"; } catc
 const TXT = {
   ar: { hi: n => `أهلاً يا ${n} 👋`, intro: "أنا NERP Copilot. بساعدك تلاقي أي رقم أو شاشة في البرنامج بسرعة. اختار خدمة أو اكتب سؤالك تحت.",
     t1: ["اسأل عن البيانات", "مبيعات، مخزون، إنتاج…"], t2: ["دوّر على شاشة", "قولّي عايز تعمل إيه"], t3: ["ملخص اليوم", "أهم أرقام النهارده"],
-    t4: ["الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة"], t5: "تقرير اليوم لكل موديول", t6: "الملخص والتنبيهات على موبايلك",
+    t4: ["الشاشة اللي فاتحها", "شرح وأسئلة مرتبطة"], t5: "تقرير اليوم لكل موديول", t7: ["ماذا لو؟", "الدولار، الأسعار، المرتبات…"],
+    wi: ["لو الدولار زاد 20% يحصل إيه؟", "لو رفعنا الأسعار 10% والكمية قلت 5%؟", "لو زودنا المرتبات 15%؟", "لو حصّلنا من العملاء في 45 يوم؟"], t6: "الملخص والتنبيهات على موبايلك",
     sugg: ["بعنا كام الشهر ده؟", "مين العملاء اللي عليهم فلوس متأخرة؟", "عندنا كام زجاج في المخزن؟", "الماكينات عاملة إيه؟"],
     searchHelp: "قولّي عايز تعمل إيه وأنا أوديك للشاشة. مثلاً: **أعمل أمر شراء**، **استلام بضاعة**، **إقرار القيمة المضافة**.",
     brief: "اديني ملخص اليوم: المبيعات والإنتاج والفلوس المتأخرة والجودة والصيانة", try: "جرّب تسأل:", typing: "بيدوّر في البيانات…",
@@ -248,7 +250,8 @@ const TXT = {
     sw: "English", swTitle: "Switch to English" },
   en: { hi: n => `Hello ${n} 👋`, intro: "I am NERP Copilot. I help you find any figure or screen in NERP quickly. Pick a service or type your question below.",
     t1: ["Ask about the data", "Sales, stock, production…"], t2: ["Find a screen", "Tell me what you want to do"], t3: ["Today's briefing", "Today's key figures"],
-    t4: ["The screen you have open", "What it does, related screens"], t5: "Daily review of every module", t6: "Briefing and alerts on your mobile",
+    t4: ["The screen you have open", "What it does, related screens"], t5: "Daily review of every module", t7: ["What if?", "Dollar, prices, salaries…"],
+    wi: ["What if the dollar rises 20%?", "What if prices go up 10% and volume drops 5%?", "What if salaries rise 15%?", "What if we collect in 45 days?"], t6: "Briefing and alerts on your mobile",
     sugg: ["How much did we sell this month?", "Which customers have overdue receivables?", "How much glass do we have in stock?", "How are the machines doing?"],
     searchHelp: "Tell me what you want to do and I open the screen. For example: **create purchase order**, **goods receipt**, **VAT return**.",
     brief: "Give me today's briefing: sales, production, overdue receivables, quality and maintenance", try: "Try asking:", typing: "Looking at the data…",
@@ -298,6 +301,8 @@ async function open() {
         tile("🔎", x.t2[0], x.t2[1], () => { setMode("search"); bubble("a", h("div", { html: md(x.searchHelp) })); }),
         tile("📋", x.t3[0], x.t3[1], () => askData(x.brief)),
         tile("❓", x.t4[0], x.t4[1], screenHelp),
+        tile("🔮", x.t7[0], x.t7[1], () => { setMode("data"); suggest(x.wi); }),
+        tile("🧮", LANG === "en" ? "What-If simulator" : "صفحة ماذا لو", LANG === "en" ? "Move the levers yourself" : "حرّك المؤشرات بنفسك", () => go("ZWHATIF")),
         (() => { const w = tile("📈", x.t5, "", () => go("ZDAY", { lang: LANG })); w.classList.add("wide"); return w; })(),
         (() => { const w = tile("🔔", x.t6, "", () => go("ZNOTIF")); w.classList.add("wide"); return w; })())));
     for (const m of hist.slice(-8)) restore(m);
