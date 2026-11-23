@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v50**).
+  delivered: **NERP_v51**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,7 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | What-If in the Copilot: tool `what_if` (area CO) for the AI; basic mode reads levers from the question (`agent._whatif_args`: one number per clause, keyword → lever, "down" words make it negative); "لو سمحت" is not a what-if | Ask in plain words, no screen needed |
 | 2026-11 | What-If simulator (ZWHATIF): own generic design (the TV-show app the owner mentioned could not be verified and must not be copied); model = year so far from the financial statements, annualised; every lever linear so the goal seek is exact; dollar moves imported share (foreign vendors / payables) and export share (account 800100) | A decision tool on real figures, no copying |
 | 2026-11 | The morning briefing ends with the daily review (yesterday's before 4 pm, allowed modules only); module texts say "today", so the briefing replaces it with "yesterday"; a review error never stops the briefing | One message with figures and an opinion |
 | 2026-11 | Generated reference docs (screens, API, error codes, tests, change log) + `check_all` fails when stale | Docs can never drift from the code |

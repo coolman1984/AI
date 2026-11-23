@@ -40,6 +40,7 @@ Rules:
 - Every figure in your answer must come from a tool result of this conversation. Never estimate or invent
   numbers; if no tool gives the information, say so and name the screen where the user can look.
 - Call the tools you need (several at once when the question has several parts), then answer.
+- For "what if" questions (prices, volume, dollar, salaries, staff, payment terms, interest, investment) call what_if with the levers from the question; quote today's and the new profit and the biggest effect.
 - Answer in the language of the question. For Arabic questions use clear, friendly Egyptian Arabic
   that a non-technical manager understands.
 - Start with the direct answer in one or two sentences, then at most a few short bullet points with the
@@ -189,7 +190,9 @@ def run_agent(conn, question, user, history=None, post=None, check_auth=False):
 
 
 # ------------------------------------------------------------------ basic mode (no internet)
+WHATIF = r"ماذا لو|(?:^|[\s،؟?])لو\s+(?!سمحت|سمحتم|تسمح|ممكن)|what.?if|\bscenario|سيناريو|simulat|محاكا"
 INTENTS = [   # (tool, keywords) - first match wins; Arabic and English
+    ("what_if", WHATIF),
     ("receivables", r"مديون|متأخر.*(دفع|سداد)|فلوس.*(عملا|عند|متأخر)|عليهم فلوس|تحصيل|receivab|overdue|owes|collection"),
     ("tax_calendar", r"ضريب|ضرايب|إقرار|اقرار|tax|vat|form 41"),
     ("quality_overview", r"جود|رفض|مرفوض|عيوب.*خام|فحص|quality|reject|inspection|ppm"),
@@ -203,6 +206,32 @@ INTENTS = [   # (tool, keywords) - first match wins; Arabic and English
     ("finance_overview", r"نقدي|كاش|سيول|ربح|خسار|ميزاني|حسابات|cash|profit|loss|balance|finance"),
     ("sales_overview", r"مبيع|بعنا|بيع|إيراد|ايراد|عميل|عملاء|sales|sell|sold|revenue|customer"),
 ]
+
+
+# lever -> keywords; the number in the same clause is the change (% / people / days)
+WI_WORDS = [("fx", r"دولار|dollar|عمل[ةه]|exchange|usd"), ("material", r"خام|material|raw"),
+            ("salaries", r"مرتب|رواتب|أجور|اجور|salar|wage"), ("staff", r"موظف|عامل|عمال|employee|staff|hire|worker|head.?count"),
+            ("dso", r"تحصيل|حصّ?ل|collect"), ("dpo", r"ندفع|الدفع للموردين|pay (?:the )?(?:vendor|supplier)"),
+            ("rate", r"فايد|فائد|interest"), ("other", r"مصاريف|مصروفات|expens|overhead"),
+            ("volume", r"كمي|volume|quantit|نبيع أكتر|sell more"), ("price", r"سعر|أسعار|اسعار|price")]
+WI_DOWN = r"نقص|قل|خفض|خفّض|انخفض|نزل|ينزل|تنزل|وفّر|وفر|decreas|cut|lower|drop|fall|reduc|down|fire|less|fewer|minus|-"
+
+
+def _whatif_args(q):
+    """levers from a what-if question, e.g. 'لو الدولار زاد 20% والمرتبات 10%' -> {"fx": 20, "salaries": 10}"""
+    out = {}
+    for clause in re.split(r"\s+(?:و|and)\s*(?=\S)|،|,|;", q or ""):
+        m = re.search(r"(-?\d+(?:[.,]\d+)?)", clause)
+        if not m:
+            continue
+        num = float(m.group(1).replace(",", "."))
+        for lever, rx in WI_WORDS:
+            if re.search(rx, clause, re.I):
+                if lever not in ("dso", "dpo") and num > 0 and re.search(WI_DOWN, clause, re.I):
+                    num = -num
+                out[lever] = num
+                break
+    return out
 
 
 def _arabic(s):
@@ -264,7 +293,8 @@ def basic_answer(conn, question, user, check_auth=False):
                            "المخزون، الإنتاج، الجودة، الصيانة، الضرايب أو الموظفين." if ar else
                            "Basic mode did not understand the question. Ask about sales, receivables, stock, "
                            "production, quality, maintenance, taxes or HR."), "tools": []}
-    args = {"query": _stock_query(q)} if tool == "stock_lookup" else {}
+    args = {"query": _stock_query(q)} if tool == "stock_lookup" else \
+        {"levers": _whatif_args(q), "lang": "ar" if ar else "en"} if tool == "what_if" else {}
     try:
         d = T.run(conn, tool, args, allowed)
     except PermissionError:
@@ -324,6 +354,17 @@ def _template(tool, d, ar):
             ("Maintenance: %s open orders (%s overdue), %s breakdowns, %s min downtime, availability %s%%, cost EGP %s. "
              "Details: %s." % (d["open_orders"], d["overdue_orders"], d["breakdowns"], d["downtime_min"],
                                d["availability_pct"], _n(d["cost_egp"]), sc))
+    if tool == "what_if":
+        if d.get("error"):
+            return ("مش قادر أحسب السيناريو: %s" % d["error"]) if ar else ("Cannot simulate: %s" % d["error"])
+        if not d["levers"]:
+            return ("قولّي إيه اللي يتغير ونسبته، مثلاً: **لو الدولار زاد 20%%** أو **لو رفعنا الأسعار 10%% والمرتبات 15%%**. "
+                    "أو افتح %s وحرّك المؤشرات بنفسك." % sc) if ar else \
+                ("Tell me what changes and by how much, e.g. **what if the dollar rises 20%%** or **prices +10%% and salaries +15%%**. "
+                 "Or open %s and move the levers yourself." % sc)
+        eff = "\n".join("- %s: %s%s" % (x["name"], "+" if x["effect"] >= 0 else "", _n(x["effect"])) for x in d["biggest_effects"])
+        return (("**ماذا لو؟** %s\n%s\nجرّب سيناريوهات تانية في %s." % (d["opinion"], eff, sc)) if ar else
+                ("**What if?** %s\n%s\nTry more scenarios in %s." % (d["opinion"], eff, sc)))
     if tool == "daily_meeting":
         return ("ملخص الاجتماع: %s أمر متأخر، %s أمر ناقصه خامات، الهالك الشهر ده %s قطعة (%s%%)، والفاقد %s جنيه، "
                 "والبضاعة المستنية إعدام %s جنيه.\nللتفاصيل افتح %s." % (d["orders_late"], d["orders_missing_components"],
