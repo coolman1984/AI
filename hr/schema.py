@@ -53,12 +53,37 @@ CREATE TABLE IF NOT EXISTS hr_skill (         -- skills / certifications catalog
 CREATE TABLE IF NOT EXISTS hr_qual (          -- qualification of an employee (skills matrix, operator certification)
     pernr TEXT NOT NULL, skill TEXT NOT NULL, level INTEGER NOT NULL DEFAULT 1, valid_from TEXT NOT NULL,
     valid_to TEXT NOT NULL, trainer TEXT, note TEXT, usnam TEXT, ts TEXT, PRIMARY KEY (pernr, skill));
+CREATE TABLE IF NOT EXISTS hr_shift (         -- work schedules (shift plan)
+    code TEXT PRIMARY KEY, text TEXT NOT NULL, start TEXT NOT NULL, end TEXT NOT NULL, break_min INTEGER NOT NULL DEFAULT 30,
+    night INTEGER NOT NULL DEFAULT 0, grace_min INTEGER NOT NULL DEFAULT 10, ot_after_min INTEGER NOT NULL DEFAULT 30);
+CREATE TABLE IF NOT EXISTS hr_holiday (day TEXT PRIMARY KEY, text TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS hr_punch (         -- time clock: clock-in / clock-out
+    id INTEGER PRIMARY KEY AUTOINCREMENT, pernr TEXT NOT NULL, ts TEXT NOT NULL, kind TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'TERMINAL', usnam TEXT);
+CREATE INDEX IF NOT EXISTS ix_hr_punch ON hr_punch (pernr, ts);
+CREATE TABLE IF NOT EXISTS hr_attend (        -- daily time evaluation result
+    pernr TEXT NOT NULL, day TEXT NOT NULL, shift TEXT, first_in TEXT, last_out TEXT, planned_min INTEGER DEFAULT 0,
+    worked_min INTEGER DEFAULT 0, late_min INTEGER DEFAULT 0, early_min INTEGER DEFAULT 0, ot_min INTEGER DEFAULT 0,
+    ot_type TEXT, status TEXT NOT NULL, absence TEXT, over_limit INTEGER DEFAULT 0, ot_posted INTEGER DEFAULT 0,
+    ts TEXT, PRIMARY KEY (pernr, day));
+CREATE TABLE IF NOT EXISTS hr_ot_notice (     -- overtime notified to the labour office (Law 14/2025: within 7 days)
+    day TEXT PRIMARY KEY, notified TEXT, ref TEXT, usnam TEXT);
+CREATE TABLE IF NOT EXISTS hr_training (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, skill TEXT, datum TEXT NOT NULL, hours INTEGER NOT NULL DEFAULT 0,
+    trainer TEXT, cost INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'PLANNED', usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS hr_training_part (
+    tid INTEGER NOT NULL, pernr TEXT NOT NULL, result TEXT DEFAULT '', PRIMARY KEY (tid, pernr));
+CREATE TABLE IF NOT EXISTS hr_appraisal (     -- yearly performance appraisal
+    id INTEGER PRIMARY KEY AUTOINCREMENT, pernr TEXT NOT NULL, year INTEGER NOT NULL, goals INTEGER, competencies INTEGER,
+    attendance INTEGER, rating INTEGER, comment TEXT, appraiser TEXT, status TEXT NOT NULL DEFAULT 'DRAFT', ts TEXT,
+    UNIQUE (pernr, year));
 """
 
 # upgrades of older databases: pay currency (EGP / USD) of the employee and the results
 HR_COLUMN_ADDS = {
     "hr_employee": [("waers", "TEXT DEFAULT 'EGP'"), ("contract_end", "TEXT DEFAULT ''"),
-                    ("old_pernr", "TEXT DEFAULT ''")],
+                    ("old_pernr", "TEXT DEFAULT ''"), ("shift", "TEXT DEFAULT 'D1'"), ("disabled", "INTEGER DEFAULT 0"),
+                    ("time_rec", "INTEGER DEFAULT 1")],     # 1 = clocks in / out (time evaluation), 0 = exempt
     "hr_payroll": [("waers", "TEXT DEFAULT 'EGP'"), ("kurs", "INTEGER DEFAULT 100000"), ("gross_fc", "INTEGER"),
                    ("net_fc", "INTEGER"), ("addpay", "INTEGER DEFAULT 0"), ("penalty", "INTEGER DEFAULT 0"),
                    ("loan", "INTEGER DEFAULT 0")],
@@ -72,8 +97,12 @@ def install(conn):
         for col, typ in cols:
             if col not in have:
                 conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))
+                if (table, col) == ("hr_employee", "time_rec"):         # management is exempt from the time clock
+                    conn.execute("UPDATE hr_employee SET time_rec=0 WHERE persk='M'")
     for k, v in DEFAULTS.items():
         conn.execute("INSERT OR IGNORE INTO hr_config VALUES (?,?)", (k, v))
+    from .time import install_defaults
+    install_defaults(conn)
     # HR roles for databases that already have users (the demo bootstrap creates them too)
     if conn.execute("SELECT name FROM sqlite_master WHERE name='role'").fetchone() and \
             conn.execute("SELECT COUNT(*) FROM role").fetchone()[0]:

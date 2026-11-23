@@ -11,8 +11,11 @@ social insurance) x 12 minus the personal exemption; monthly tax = annual / 12.
 Martyrs' fund: 0.05 % of the gross salary.
 Overtime (labour law): +35 % day, +70 % night, +100 % rest day / holiday on the
 hourly rate (basic / 30 / 8).
-Annual leave: 21 days, 30 days from 10 years of service or age 50; casual leave
-6 days (part of the annual quota).
+Annual leave (Labour Law 14/2025, in force 1 Sept 2025): 15 days in the first year of service, 21 days
+from the second year, 30 days from 10 years of service or age 50, 45 days for employees with a
+disability; casual leave 7 days (part of the annual quota). Working time 8 h a day / 48 h a week;
+overtime must be notified to the labour office within 7 days; notice period 3 months (indefinite
+contracts). Sources are secondary summaries of the law - VERIFY with the labour lawyer.
 """
 
 DEFAULTS = {
@@ -31,7 +34,12 @@ DEFAULTS = {
     "ot_rest_pct": "20000",
     "leave_days": "21",
     "leave_days_senior": "30",
-    "casual_days": "6",
+    "casual_days": "7",
+    "leave_days_first": "15",
+    "leave_days_disabled": "45",
+    "max_daily_hours": "10",
+    "ot_notice_days": "7",
+    "notice_months": "3",
     "hours_per_day": "8",
     "days_per_month": "30",
 }
@@ -49,7 +57,12 @@ CONFIG_TEXT = {
     "ot_rest_pct": "Overtime rest day / holiday (basis points of hourly rate)",
     "leave_days": "Annual leave days",
     "leave_days_senior": "Annual leave days from 10 years of service or age 50",
-    "casual_days": "Casual leave days (part of the annual quota)",
+    "casual_days": "Casual leave days (part of the annual quota) - Law 14/2025: 7",
+    "leave_days_first": "Annual leave days in the first year of service (Law 14/2025: 15)",
+    "leave_days_disabled": "Annual leave days for employees with a disability (Law 14/2025: 45)",
+    "max_daily_hours": "Maximum working hours per day including overtime (flag above)",
+    "ot_notice_days": "Days to notify overtime to the labour office (Law 14/2025: 7)",
+    "notice_months": "Notice period in months for indefinite contracts (Law 14/2025: 3)",
     "hours_per_day": "Working hours per day",
     "days_per_month": "Days per month for day / hourly rates",
 }

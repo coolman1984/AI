@@ -142,6 +142,8 @@ def hire(conn, data, user):
     v.update(pernr=pernr, hire_date=begda, status="A", created=now_ts(), changed=now_ts(), changed_by=user)
     cols = ",".join(v)
     conn.execute("INSERT INTO hr_employee (%s) VALUES (%s)" % (cols, ",".join("?" * len(v))), list(v.values()))
+    conn.execute("UPDATE hr_employee SET time_rec=? WHERE pernr=?",          # management exempt from the time clock
+                 (0 if v.get("persk") == "M" else 1, pernr))
     _log(conn, pernr, "01", begda, user, detail=v["name"])
     return pernr
 
@@ -275,9 +277,14 @@ def quota(conn, pernr, year=None):
     y = int(year or mmclock.today().year)
     end = "%04d-12-31" % y
     senior = _years(e["hire_date"], end) >= 10 or (e["birth_date"] and _years(e["birth_date"], end) >= 50)
-    ent = cfg_int(conn, "leave_days_senior" if senior else "leave_days")
-    if e["hire_date"][:4] == str(y):                    # pro rata in the hiring year
-        ent = ent * (13 - int(e["hire_date"][5:7])) // 12
+    if e["disabled"] if "disabled" in e.keys() else 0:
+        ent = cfg_int(conn, "leave_days_disabled") or 45
+    elif senior:
+        ent = cfg_int(conn, "leave_days_senior")
+    elif _years(e["hire_date"], end) < 1:               # Law 14/2025: first year of service
+        ent = cfg_int(conn, "leave_days_first") or cfg_int(conn, "leave_days")
+    else:
+        ent = cfg_int(conn, "leave_days")
     taken = requested = casual = 0
     for a in conn.execute("SELECT * FROM hr_absence WHERE pernr=? AND substr(begda,1,4)=? AND status IN ('A','R')",
                           (e["pernr"], str(y))):

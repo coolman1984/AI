@@ -119,3 +119,61 @@ def seed(conn):
     t = clock.today()
     conn.execute("UPDATE hr_employee SET persg='2', contract_end=? WHERE pernr=?",
                  ((t + datetime.timedelta(days=45)).isoformat(), pern[10]))
+
+
+def time_and_talent(conn):
+    """time clock and evaluation of the last working days of this month, approved overtime, a training that certifies,
+    appraisals of the previous year and drafts of this year"""
+    import random
+    from pp.config import WORKDAYS
+    from . import talent, time as tm
+    rnd = random.Random(11)
+    today = mmclock.today()
+    staff = [r["pernr"] for r in conn.execute("SELECT pernr FROM hr_employee WHERE orgeh LIKE '1000%' AND pernr BETWEEN '10003' AND '10017' "
+                                              "AND status='A' ORDER BY pernr")]
+    conn.execute("UPDATE hr_employee SET shift='N1' WHERE pernr='10011'")         # maintenance on nights
+    conn.execute("UPDATE hr_employee SET time_rec=CASE WHEN pernr IN (%s) THEN 1 ELSE 0 END" % ",".join("?" * len(staff)), staff)
+    days = []
+    d = today - datetime.timedelta(days=1)
+    while len(days) < 8 and d.month == today.month:
+        if d.weekday() in WORKDAYS:
+            days.append(d)
+        d -= datetime.timedelta(days=1)
+    for d in sorted(days):
+        for p in staff:
+            r = rnd.random()
+            if p == "10009" and d == days[0]:
+                continue                                                         # unexcused absence yesterday
+            if r < 0.04:
+                continue
+            night = p == "10011"
+            start = datetime.datetime.combine(d, datetime.time(22 if night else 8, 0))
+            late = rnd.choice([0, 0, 0, 0, 3, 6, 18, 35]) if r < 0.9 else 0
+            stay = 0 if rnd.random() < 0.75 else rnd.choice([45, 60, 90, 120])
+            tm.punch(conn, p, "IN", USER, at=start + datetime.timedelta(minutes=late - rnd.randint(0, 8)), source="TERMINAL")
+            tm.punch(conn, p, "OUT", USER, at=start + datetime.timedelta(minutes=510 + stay + rnd.randint(0, 6)), source="TERMINAL")
+        tm.evaluate(conn, d.isoformat())
+    for d in sorted(days)[:-2]:                                                  # overtime approved, notified except the last
+        try:
+            tm.approve_overtime(conn, d.isoformat(), USER)
+        except Exception:                                                        # day without overtime
+            continue
+    for d in sorted(days)[:-4]:
+        if conn.execute("SELECT 1 FROM hr_overtime WHERE datum=?", (d.isoformat(),)).fetchone():
+            tm.notify_overtime(conn, d.isoformat(), "LO-%s" % d.strftime("%m%d"), USER)
+    t = talent.plan_training(conn, {"title": "Final test and inspection - certification", "skill": "TEST",
+                                    "datum": (today - datetime.timedelta(days=20)).isoformat(), "hours": "16", "trainer": "Rania Magdy",
+                                    "cost": "4500", "participants": ["10008", "10009"]}, USER)["id"]
+    talent.complete_training(conn, t, {"10008": "PASS", "10009": "FAIL"}, USER)
+    talent.plan_training(conn, {"title": "CNC refresher", "skill": "CNC", "datum": (today + datetime.timedelta(days=10)).isoformat(),
+                                "hours": "8", "trainer": "Mahmoud Ibrahim", "participants": ["10006"]}, USER)
+    talent.plan_training(conn, {"title": "Fire safety and first aid", "datum": (today - datetime.timedelta(days=40)).isoformat(),
+                                "hours": "4", "trainer": "External", "cost": "6000",
+                                "participants": [p for p in staff[:8]]}, USER)
+    for pernr, g, c, a, comment in (("10004", 5, 5, 5, ""), ("10005", 4, 4, 4, ""), ("10006", 3, 3, 2, ""),
+                                    ("10007", 5, 4, 5, ""), ("10008", 3, 4, 4, ""), ("10009", 2, 2, 2, "Absences - improvement plan agreed"),
+                                    ("10013", 4, 5, 5, ""), ("10014", 3, 3, 4, "")):
+        talent.save_appraisal(conn, dict(pernr=pernr, year=today.year - 1, goals=g, competencies=c, attendance=a, comment=comment,
+                                         final=True), "HRADMIN")
+    for pernr, g, c in (("10004", 4, 5), ("10010", 3, 3)):
+        talent.save_appraisal(conn, dict(pernr=pernr, year=today.year, goals=g, competencies=c), "HRADMIN")

@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 774 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 815 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -558,6 +558,10 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 774 codes. `�
 | PG | 072 | Tax brackets must be in ascending order | `hr/engine.py` |
 | PG | 073 | … must be a whole number | `hr/engine.py` |
 | PG | 080 | Your user … is not linked to an employee (PA30 field 'user') | `web/hr_api.py` |
+| PQ | 901 | Enter the skill code and text | `hr/skills.py` |
+| PQ | 902 | Employee … does not exist | `hr/skills.py` |
+| PQ | 903 | Skill … does not exist | `hr/skills.py` |
+| PQ | 904 | Valid to is before valid from | `hr/skills.py` |
 | PY | 001 | Period must be 1 - 12 | `hr/payroll.py` |
 | PY | 002 | Payroll …/… is posted - reverse the posting first | `hr/payroll.py` |
 | PY | 003 | Payroll for a future month is not possible | `hr/payroll.py` |
@@ -610,6 +614,43 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 774 codes. `�
 | SE | 926 | Service entry sheet … is already … | `pur/service.py` |
 | SE | 927 | You entered sheet … yourself - a second person must accept it | `pur/service.py` |
 | SE | 928 | Enter the reason for the rejection | `pur/service.py` |
+| SF | 901 | Enter the station code | `mes/track.py` |
+| SF | 902 | Work center (line) … does not exist / Line … does not exist | `mes/track.py` |
+| SF | 903 | Station kind must be OP, TEST or REPAIR | `mes/track.py` |
+| SF | 904 | Enter the operation (e.g. 0010) the station performs | `mes/track.py` |
+| SF | 905 | Skill … does not exist (HR skills catalog) | `mes/track.py` |
+| SF | 906 | Station … does not exist or is inactive | `mes/track.py` |
+| SF | 907 | Order … does not exist | `mes/track.py` |
+| SF | 908 | Order … is not released (status …) | `mes/track.py` |
+| SF | 909 | Material … has no routing - units cannot be tracked | `mes/track.py` |
+| SF | 910 | Order … is for … units - … serial numbers exist already | `mes/track.py` |
+| SF | 911 | Serial number … does not exist | `mes/track.py` |
+| SF | 912 | Result must be OK, NG, REPAIRED or SCRAP | `mes/track.py` |
+| SF | 913 | … - booking refused | `mes/track.py` |
+| SF | 914 | Unit … is already … | `mes/track.py` |
+| SF | 915 | Unit … is not waiting for repair | `mes/track.py` |
+| SF | 916 | At a repair station the result is REPAIRED or SCRAP / REPAIRED is booked at a repair station | `mes/track.py` |
+| SF | 917 | Unit … was repaired … times - scrap it | `mes/track.py` |
+| SF | 918 | Unit … failed and must go to repair first | `mes/track.py` |
+| SF | 919 | Wrong station: unit … needs operation … (…) next, this station does … | `mes/track.py` |
+| SF | 920 | Station … is not on the line of operation … | `mes/track.py` |
+| SF | 921 | Choose the defect code: … | `mes/track.py` |
+| SF | 922 | Component … does not exist | `mes/track.py` |
+| SF | 923 | No finished or scrapped units of order … to confirm | `mes/track.py` |
+| SF | 924 | Order … has no open operation to confirm | `mes/track.py` |
+| SF | 925 | Delivery … does not exist | `mes/track.py` |
+| SF | 926 | Unit … is not finished - it cannot be shipped | `mes/track.py` |
+| SF | 927 | Enter a serial number or a component lot | `mes/track.py` |
+| SF | 928 | … is neither a serial number nor a component lot used in production | `mes/track.py` |
+| SF | 929 | Andon type must be one of … | `mes/track.py` |
+| SF | 930 | Andon call … does not exist | `mes/track.py` |
+| SF | 931 | Andon call … is already … / Andon call … is already closed | `mes/track.py` |
+| SF | 932 | Write what was done to solve the problem | `mes/track.py` |
+| SF | 933 | Enter code and text of the characteristic | `mes/track.py` |
+| SF | 934 | Enter lower and upper specification limits as numbers | `mes/track.py` |
+| SF | 935 | The lower limit must be below the upper limit | `mes/track.py` |
+| SF | 936 | Characteristic … does not exist | `mes/track.py` |
+| SF | 937 | Enter the measured value as a number | `mes/track.py` |
 | SG | 100 | Exchange rate must be positive | `mm/util.py` |
 | SG | 105 | Enter exchange rate … / … for … (OB08) | `fi/document.py` |
 | TX | 901 | No tax rule … valid on … (ZTAX_LAW) | `tax/rules.py` |

@@ -71,6 +71,7 @@ def _seed(conn):
     qm_seed.sample(conn)
     from mes import seed as mes_seed                # shop floor: serial numbers, stations, andon, SPC
     mes_seed.sample(conn)
+    hr_seed.time_and_talent(conn)                 # time clock, overtime, training, appraisals
     from sec import users as sec_users           # demo users and roles (AMS / SU01 / PFCG)
     sec_users.bootstrap(conn, demo=True)
     sec_users.request(conn, "SALES1", "ROLE", "CREDIT_MANAGER", "",

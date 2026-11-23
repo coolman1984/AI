@@ -2,7 +2,7 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 554 screens, by menu area.
+Type the code in the top field of NERP. 563 screens, by menu area.
 
 Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
 
@@ -1962,6 +1962,18 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 |---|---|
 | `ZHR_EVENTS` | HR Follow-up (probation, contracts, retirement) |
 
+### 2-4 Personnel - Skills Matrix & Certifications
+
+| Code | Screen |
+|---|---|
+| `ZHR_SKILLS` | Skills Matrix and Certifications |
+
+### 2-5 Personnel - End-of-Service Settlement
+
+| Code | Screen |
+|---|---|
+| `ZHR_EOS` | End-of-Service Settlement (Law 14/2025) |
+
 ### 3-1 Time - Leave Requests
 
 | Code | Screen |
@@ -1981,11 +1993,35 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | `PT50` | Quota Overview (Annual Leave) |
 | `ZHR_LEAVEBAL` | Leave Balances (all employees) |
 
-### 2-4 Personnel - Skills Matrix & Certifications
+### 3-4 Time - Time Clock
 
 | Code | Screen |
 |---|---|
-| `ZHR_SKILLS` | Skills Matrix and Certifications |
+| `ZHR_CLOCK` | Time Clock - Clock In / Out |
+
+### 3-5 Time - Daily Evaluation
+
+| Code | Screen |
+|---|---|
+| `ZHR_TIMEEVAL` | Daily Time Evaluation |
+
+### 3-6 Time - Monthly Attendance
+
+| Code | Screen |
+|---|---|
+| `ZHR_ATTEND` | Monthly Attendance Report |
+
+### 3-7 Time - Overtime Notice (Law 14/2025)
+
+| Code | Screen |
+|---|---|
+| `ZHR_OTNOTICE` | Overtime Notice to the Labour Office (Law 14/2025) |
+
+### 3-8 Time - Shifts & Public Holidays
+
+| Code | Screen |
+|---|---|
+| `ZHR_SHIFTS` | Shifts, Public Holidays and Shift Assignment |
 
 ### 4-1 Payroll - Monthly Entries (bonus, penalty)
 
@@ -2032,6 +2068,24 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | `ZHR_HEADCOUNT` | Headcount Report |
 | `ZHR_EMPLOYEES` | Employee List |
 | `ZHR_COCKPIT` | HR Cockpit |
+
+### 5-3 Reports - HR Analytics
+
+| Code | Screen |
+|---|---|
+| `ZHR_ANALYTICS` | HR Analytics |
+
+### 6-1 Talent - Training
+
+| Code | Screen |
+|---|---|
+| `ZHR_TRAINING` | Training Plan and Results |
+
+### 6-2 Talent - Performance Appraisal
+
+| Code | Screen |
+|---|---|
+| `ZHR_APPRAISAL` | Performance Appraisal |
 
 ## Common
 
