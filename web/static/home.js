@@ -33,6 +33,7 @@ const GLYPH = {
   chart: '<path d="M12 34V14M12 34h24"/><path d="M17 29l6-7 5 4 7-9"/>',
   factory: '<path d="M10 35V22l8 5v-5l8 5v-5l8 5V14h4v21z"/>',
   tag: '<path d="M12 24V13h11l13 13-11 11z"/><circle cx="18" cy="19" r="2"/>',
+  whatif: '<circle cx="24" cy="24" r="12"/><path d="M20 20a4 4 0 1 1 5.5 3.7c-1 .5-1.5 1.3-1.5 2.3v1"/><circle cx="24" cy="31.5" r=".6"/><path d="M35 13l3-3M13 13l-3-3"/>',
   pulse: '<rect x="11" y="10" width="26" height="28" rx="3"/><path d="M15 26h4l3-6 4 10 3-6h4"/><path d="M17 15h14"/>',
 };
 const PORTAL_ICON = {
@@ -51,6 +52,7 @@ const PORTAL_ICON = {
 // default banner apps (favorites of the menu come first)
 const HERO = [
   ["ZDAY", "Daily Review", "pulse", "green"],
+  ["ZWHATIF", "What-If Simulator", "whatif", "green"],
   ["ZCO_PROCESS", "Execute CO Process Map", "report"],
   ["F.01", "Financial Statement", "person"],
   ["FBL3N", "G/L Account Line Items", "clock"],
@@ -68,6 +70,7 @@ const HERO = [
 ];
 const PORTAL = [
   ["ZDAY", "Daily Review", "What happened today in every module", "check"],
+  ["ZWHATIF", "What-If Simulator", "Prices, costs, dollar, staff → profit & cash", "cockpit"],
   ["ZBI", "BI (Business Intelligence)", "Business Status View Around KPIs", "bi"],
   ["ZAMS", "AMS", "ID & Authorization", "lock"],
   ["ZINBOX", "Approval Inbox", "My work items", "inbox"],

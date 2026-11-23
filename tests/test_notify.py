@@ -118,7 +118,8 @@ class Alerts(unittest.TestCase):
         c = system()
         e.save_sub(c, {"channel": "inapp", "daily": False, "cats": ["MACH", "APPR", "STOCK"]}, "OWNER")
         e.save_sub(c, {"channel": "inapp", "daily": False, "cats": ["TAX"]}, "TAXONLY")
-        start = datetime.datetime.combine(T, datetime.time(9, 0)) - datetime.timedelta(hours=2)
+        from mm import util as clock
+        start = clock.now() - datetime.timedelta(hours=2)                     # not tied to the real time of day
         n = pm.create_notification(c, {"qmart": "M2", "equnr": "PRS-01", "text": "Hydraulic leak",
                                        "start": start.strftime("%Y-%m-%d %H:%M")}, "T")
         s = Sender()

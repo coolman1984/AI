@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v49**).
+  delivered: **NERP_v50**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,7 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | What-If simulator (ZWHATIF): own generic design (the TV-show app the owner mentioned could not be verified and must not be copied); model = year so far from the financial statements, annualised; every lever linear so the goal seek is exact; dollar moves imported share (foreign vendors / payables) and export share (account 800100) | A decision tool on real figures, no copying |
 | 2026-11 | The morning briefing ends with the daily review (yesterday's before 4 pm, allowed modules only); module texts say "today", so the briefing replaces it with "yesterday"; a review error never stops the briefing | One message with figures and an opinion |
 | 2026-11 | Generated reference docs (screens, API, error codes, tests, change log) + `check_all` fails when stale | Docs can never drift from the code |
 | 2026-11 | Copilot and daily review in Arabic **and** English (switch remembered per browser); answers follow the question's language | Foreign managers / customers |
@@ -65,6 +66,7 @@ something new (newest entries at the top of each section).
 * The demo breakdown is dated before the PP sample month (otherwise the OEE test changes).
 * October payroll run is released but **not posted** → payroll vs ledger shows a 740k difference; the
   audit analytics explain it ("payroll run not posted yet"). This is intended.
+* The demo P&L is a loss and material cost exceeds sales → the What-If shows "no break-even" and the goal seek for profit 0 needs > +200 % price (out of range). Intended for the demo; real data differs.
 * The demo has 21 overdue tax returns → Taxes are "needs attention" in the daily review. Intended.
 * Journal entry testing flags 6 of 324 documents in the demo (weekend / round / large flags apply to
   manual entries only, otherwise almost everything is flagged).

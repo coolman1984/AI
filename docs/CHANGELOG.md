@@ -6,6 +6,7 @@ Every merged pull request, newest first (from the git history). Details: the pul
 
 | PR | Date | Change |
 |---|---|---|
+| [#56](https://github.com/coolman1984/AI/pull/56) | 2026-11-22 | Daily review in the morning briefing on the mobile |
 | [#55](https://github.com/coolman1984/AI/pull/55) | 2026-11-22 | Professional documentation that updates itself + standing workflow rules |
 | [#54](https://github.com/coolman1984/AI/pull/54) | 2026-11-20 | NERP Copilot in English and Arabic |
 | [#53](https://github.com/coolman1984/AI/pull/53) | 2026-11-20 | Daily review in Arabic or English |
