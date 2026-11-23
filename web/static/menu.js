@@ -210,7 +210,7 @@ const MENU = [
     ["9-4 Manufacturing - Overhead / Allocation", ["KGI2", "KSU5"]],
     ["9-5 Manufacturing - WIP & Variances", ["KKAX", "KKS2"]],
     ["9-6 Manufacturing - Settlement", ["CO88"]],
-    ["E-1 Simulation", ["ZCO_SIM"]],
+    ["E-1 Simulation", ["ZCO_SIM", "ZWHATIF"]],
   ]],
 ];
 
@@ -271,6 +271,7 @@ MENU.push(
   ]],
   ["Common", [
     ["Daily Review (every module)", ["ZDAY"]],
+    ["What-If Simulator (ماذا لو)", ["ZWHATIF"]],
     ["Ask NERP (AI assistant)", ["ZAI", "ZAI_CONF"]],
     ["Daily Briefing & Alerts (mobile)", ["ZNOTIF", "ZNOTIF_CONF"]],
     ["BI (Business Intelligence)", ["ZDASH", "ZBI", "ZBI_DASH"]],

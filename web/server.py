@@ -651,5 +651,6 @@ from web import hr2_api  # noqa: E402,F401
 from web import tax_api  # noqa: E402,F401
 from web import qm_api  # noqa: E402,F401
 from web import ai_api  # noqa: E402,F401
+from web import whatif_api  # noqa: E402,F401
 from web import notify_api  # noqa: E402,F401
 from web import audit_api  # noqa: E402,F401

@@ -2,7 +2,7 @@
 
 # JSON API
 
-514 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+518 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -513,6 +513,10 @@
 | GET | `/api/tax/simp` | FI | `tax_api.py` · `tax_simp` |  |
 | GET | `/api/tax/vat` | FI | `tax_api.py` · `tax_vat` |  |
 | POST | `/api/vendor` | - | `server.py` · `api_vendor` |  |
+| POST | `/api/whatif/<act>` | CO | `whatif_api.py` · `whatif_act` |  |
+| GET | `/api/whatif/goal` | CO | `whatif_api.py` · `whatif_goal` | the value of one lever that gives the target profit |
+| GET | `/api/whatif/scenarios` | CO | `whatif_api.py` · `whatif_scenarios` |  |
+| GET | `/api/whatif/sim` | CO | `whatif_api.py` · `whatif_sim` | simulate the year with the levers in p (JSON); lang ar/en |
 | GET | `/api/wm/abc` | MM | `sdmm_api.py` · `wm_abc` |  |
 | POST | `/api/wm/abc/save` | MM | `sdmm_api.py` · `wm_abc_save` |  |
 | GET | `/api/wm/aging` | MM | `sdmm_api.py` · `wm_aging` |  |

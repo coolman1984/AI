@@ -52,7 +52,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 | `tax` | Egyptian taxes: law register, returns (VAT form 10, WHT form 41, salary form 4, CIT), e-invoice (ETA), tax audit, adviser review | `rules`, `returns`, `eta`, `audit`, `review` |
 | `hr` | HR and Egyptian payroll: employees, org, time, payroll, posting to FI/CO | `engine`, `payroll`, `extras`, `reports` |
 | `extaudit` | External audit for audit firms (Egyptian Accounting Standards): engagement, materiality, PBC list, queries, adjustments, analytics, Excel pack | `engagement`, `analytics`, `pack`, `standards` |
-| `ai` | "Ask NERP" assistant (read-only tools, Claude API with basic-mode fallback) and the daily review | `tools`, `agent`, `review` |
+| `ai` | "Ask NERP" assistant (read-only tools, Claude API with basic-mode fallback), the daily review and the What-If simulator | `tools`, `agent`, `review`, `whatif` |
 | `notify` | Daily briefing and alerts to Telegram, e-mail, WhatsApp (approved templates) | `engine`, `channels` |
 | `bi` | BI reports and dashboards | `engine`, `catalog`, `dashboards` |
 | `sec` | Users, roles, authorization objects/areas, logon, approval inbox, audit log | `users`, `auth`, `config`, `inbox` |
@@ -63,7 +63,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 ## 4. How a feature is built (the pattern)
 
 1. **Schema** - `package/schema.py` with `install(conn)`; add the call to the install chain at the end of
-   `mm/db.py` (current order: … `tax` → `qm` → `ai` → `notify` → `extaudit`).
+   `mm/db.py` (current order: … `tax` → `qm` → `ai` → `notify` → `extaudit` → `ai.whatif`).
 2. **Engine** - functions `fn(conn, …, user)`; validate with parse helpers; raise
    `MMError(text, class, number)`; write inside `with transaction(conn):`. Pick a free message number
    range (see [ERROR_CODES](ERROR_CODES.md)).

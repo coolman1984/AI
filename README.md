@@ -55,6 +55,17 @@ block, rejected lot, scrap above 3 %, overdue tax return) always means "needs at
 4 pm the review shows the previous working day. Arabic or English (switch on the page); only the
 modules the user may display.
 
+## What-If simulator - ZWHATIF ("ماذا لو", second icon on the home page)
+
+Move a lever and see at once what happens to the year's profit, margin, break-even and cash - on the
+company's own figures (the year so far from the books, scaled to a full year). Levers: selling price,
+volume, dollar rate (moves the imported share of material and the export sales), material cost,
+operating expenses, salaries, head count, collection days, days to pay vendors, interest rate on the
+loans, and an investment (amount, life, extra output). Shows the income statement before / after, what
+moves the result most, an opinion in plain words, a goal seek ("which price increase gives a profit of
+X?"), six ready scenarios (dollar +20 %, prices +10 %, new machine …) and saved scenarios side by side.
+Arabic / English. Only saved scenarios are written; the books are never changed.
+
 ## NERP Copilot and Ask NERP - ZAI, ZAI_CONF
 
 The round robot at the bottom right of every screen: ask about the data ("how much did we sell this
