@@ -2,7 +2,7 @@
 
 # Process test catalog
 
-10 processes, 185 test cases.
+10 processes, 187 test cases.
 
 Every business process has test cases; each case is proven by unit tests (run by `python tools/qa/check_all.py` and screen ZQA_TEST).
 
@@ -113,6 +113,8 @@ From the sales plan to the finished product in stock, with the real cost of ever
 | PTP-28 | Preventive maintenance plans and scheduling | ZPM_PLAN ZPM_COCKPIT | Due plan creates one PM02 order; completion moves the next due date by the interval | `test_qm_pm.Maintenance.test_preventive_plan_scheduling_and_next_due` |
 | PTP-29 | Daily meeting boards: in-house production, pending orders, production defects | ZPP_DM_INHOUSE ZPP_DM_PENDING ZPP_DM_PDEFECT | Month yield and scrap = confirmations; pending = open orders (late / today / next); scrap Pareto = confirmed scrap | `test_daily.DailyMeeting.test_production_boards_equal_the_documents` |
 | PTP-30 | Daily meeting boards: OQC, material defect, material loss, pending scrap | ZPP_DM_OQC ZPP_DM_MDEFECT ZPP_DM_MLOSS ZPP_DM_SCRAP | Finished goods in inspection and open lots; vendor complaints; extra component issue raises the loss; pending scrap = blocked stock with aging | `test_daily.DailyMeeting.test_quality_loss_and_scrap_boards` |
+| PTP-31 | GMES: serial tracking with route enforcement, certification, repair loop, genealogy and order confirmation | ZMES_STATION ZMES_UNITS ZMES_TRACE ZHR_SKILLS | Serials only for released orders up to the order quantity; no skipping or double booking; only certified operators (expired certificate blocks); NG needs a defect and goes to repair; max 3 repairs then scrap; forward / backward trace; finished and scrapped units confirmed operation by operation without double counting | `test_mes.Execution.test_route_enforcement_certification_repair_loop` |
+| PTP-32 | GMES reports: hourly output, FPY / RTY / DPU / DPMO, WIP, cycle time, andon, SPC | ZMES_HOURLY ZMES_QUALITY ZMES_WIP ZMES_ANDON ZMES_SPC | Output per hour = units passing the line's last operation; FPY from first attempts, RTY = product of FPY, DPMO with the station's opportunities; andon response and resolution minutes; X-bar / R limits with A2, capability and run rules | `test_mes.Execution.test_reports_andon_and_spc` |
 
 ## INV - Inventory & Warehouse
 

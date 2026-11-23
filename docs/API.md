@@ -2,7 +2,7 @@
 
 # JSON API
 
-518 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+532 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -222,8 +222,10 @@
 | GET | `/api/hr/payroll` | HR | `hr_api.py` · `hr_payroll` |  |
 | POST | `/api/hr/payroll/<act>` | HR | `hr_api.py` · `hr_payroll_act` |  |
 | POST | `/api/hr/position` | HR | `hr_api.py` · `hr_position` |  |
+| POST | `/api/hr/qualify` | HR | `hrq_api.py` · `hr_qualify` |  |
 | GET | `/api/hr/quota/<pernr>` | HR | `hr_api.py` · `hr_quota` |  |
 | GET | `/api/hr/quotas` | HR | `hr_api.py` · `hr_quotas` |  |
+| GET | `/api/hr/skills` | HR | `hrq_api.py` · `hr_skills` |  |
 | GET | `/api/hrself` | - | `hr_api.py` · `hrself` |  |
 | POST | `/api/hrself/leave` | - | `hr_api.py` · `hrself_leave` |  |
 | GET | `/api/hrself/payslip` | - | `hr_api.py` · `hrself_payslip` |  |
@@ -265,6 +267,18 @@
 | GET | `/api/md/vendor/<lifnr>` | MD | `md_api.py` · `md_vendor` |  |
 | POST | `/api/md/vendor/<lifnr>/<act>` | MD | `md_api.py` · `md_vendor_act` |  |
 | GET | `/api/md/vendors` | MD | `md_api.py` · `md_vendors` |  |
+| POST | `/api/mes/<act>` | PP | `mes_api.py` · `mes_act` |  |
+| POST | `/api/mes/<obj>` | PP | `mes_api.py` · `mes_master_save` |  |
+| GET | `/api/mes/andon` | PP | `mes_api.py` · `mes_andon` |  |
+| POST | `/api/mes/andon/<act>` | PP | `mes_api.py` · `mes_andon_act` |  |
+| GET | `/api/mes/cockpit` | PP | `mes_api.py` · `mes_cockpit` |  |
+| GET | `/api/mes/master` | PP | `mes_api.py` · `mes_master` |  |
+| POST | `/api/mes/measure` | PP | `mes_api.py` · `mes_measure` |  |
+| GET | `/api/mes/report/<kind>` | PP | `mes_api.py` · `mes_report` |  |
+| GET | `/api/mes/spc` | PP | `mes_api.py` · `mes_spc` |  |
+| GET | `/api/mes/trace` | PP | `mes_api.py` · `mes_trace` |  |
+| GET | `/api/mes/unit` | PP | `mes_api.py` · `mes_unit` |  |
+| GET | `/api/mes/units` | PP | `mes_api.py` · `mes_units` |  |
 | GET | `/api/meta` | - | `server.py` · `api_meta` |  |
 | POST | `/api/mi/count` | - | `p6_api.py` · `mi_count` |  |
 | POST | `/api/mi/create` | - | `p6_api.py` · `mi_create` |  |

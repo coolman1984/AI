@@ -112,6 +112,24 @@ notifications, maintenance orders with spare parts and hours, MTBF / MTTR and av
 Boards for the morning meeting (in-house, pending orders, OQC, process and material defects, material
 loss, pending scrap) with a full-screen meeting mode, next to ZPP_BOARD.
 
+## GMES - shop-floor execution (Production menu, group 8: ZMES_*)
+
+Manufacturing execution on the line, following the ISA-95 level-3 / MESA functions: every unit gets a
+**serial number** (ZMES_UNITS, only for released orders, up to the order quantity) and is booked at
+**stations** (ZMES_STATION - a big-button terminal: scan, OK / NG / Repaired / Scrap, components).
+Rules enforced: the unit must be at the station's operation (no skipping, no double booking); the
+**operator must hold a valid certification** for the station's skill (skills matrix ZHR_SKILLS - an expired
+certificate blocks the booking); NG needs a defect code and sends the unit to the repair bench; after 3
+repairs it must be scrapped. Finished and scrapped units are confirmed to the production order
+operation by operation (CO11N) without double counting manual confirmations.
+**Genealogy** (ZMES_TRACE): backward from a serial (who, where, when, result, components) and forward from a
+component lot (every unit containing it, order, delivery, customer - the recall list).
+Reports: **hourly board** plan vs output per line with takt (ZMES_HOURLY), **quality** FPY / RTY / DPU / DPMO
+per operation and the defect Pareto (ZMES_QUALITY), **WIP** by step with aging, **cycle time** vs standard with
+the bottleneck, **operator** output and FPY (ZMES_WIP), **andon** calls with response / resolution times
+(ZMES_ANDON, refreshes every 30 s), **SPC** X-bar / R charts with Cp / Cpk and run rules (ZMES_SPC), cockpit
+(ZMES_COCKPIT) and settings for stations, skills and characteristics (ZMES_CONF).
+
 ## Human Resources (HR) and Egyptian payroll
 
 | T-code | What it does |

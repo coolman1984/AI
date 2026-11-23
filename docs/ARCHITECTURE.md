@@ -46,6 +46,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 | `sd` | Sales: pricing, orders, ATP, credit, delivery, billing, returns, rebates, service | `order`, `pricing`, `credit`, `delivery`, `billing`, `rebate` |
 | `pur` | Purchasing: requisitions, release, sourcing, RFQ, contracts, PO, MRP, import/LC, follow-up | `pr`, `po`, `sourcing`, `mrp`, `importfile`, `analytics` |
 | `pp` | Production: BOM, routing, planning, orders, confirmations, subcontracting, boards, daily meeting | `master`, `planning`, `order`, `board`, `daily` |
+| `mes` | GMES shop-floor execution: stations, serial numbers, bookings with route enforcement and operator certification, genealogy, andon, SPC, hourly / quality / WIP / cycle / operator reports | `track`, `reports`, `seed` |
 | `qm` | Quality (inspection lots, results, decisions, notifications) and plant maintenance | `quality`, `maintenance` |
 | `fi` | Financial accounting: central document, AP, AR, assets, bank, cheques, cash, WHT, closing, reports | `document`, `ap`, `ar`, `aa`, `clearing`, `reports` |
 | `co` | Controlling: cost centers, orders, product costing, actuals, period end, CO-PA, budget | `master`, `costing`, `actual`, `period_end`, `copa`, `budget` |
@@ -63,7 +64,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 ## 4. How a feature is built (the pattern)
 
 1. **Schema** - `package/schema.py` with `install(conn)`; add the call to the install chain at the end of
-   `mm/db.py` (current order: … `tax` → `qm` → `ai` → `notify` → `extaudit` → `ai.whatif`).
+   `mm/db.py` (current order: … `tax` → `qm` → `ai` → `notify` → `extaudit` → `ai.whatif` → `mes`).
 2. **Engine** - functions `fn(conn, …, user)`; validate with parse helpers; raise
    `MMError(text, class, number)`; write inside `with transaction(conn):`. Pick a free message number
    range (see [ERROR_CODES](ERROR_CODES.md)).

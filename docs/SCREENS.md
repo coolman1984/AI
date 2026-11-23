@@ -2,7 +2,7 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 543 screens, by menu area.
+Type the code in the top field of NERP. 554 screens, by menu area.
 
 Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
 
@@ -828,6 +828,57 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 |---|---|
 | `ZPP_BOARD` | Production Status Board |
 | `ZPP_COCKPIT` | Production Cockpit - Orders, Capacity, WIP & Variances |
+
+### 8-1 GMES - Cockpit & Settings
+
+| Code | Screen |
+|---|---|
+| `ZMES_COCKPIT` | GMES Cockpit - Shop Floor Today |
+| `ZMES_CONF` | GMES Settings - Stations, Skills, SPC Characteristics |
+
+### 8-2 GMES - Station Terminal & Serial Numbers
+
+| Code | Screen |
+|---|---|
+| `ZMES_STATION` | GMES Station Terminal |
+| `ZMES_UNITS` | GMES Serial Numbers per Order |
+
+### 8-3 GMES - Genealogy (Trace)
+
+| Code | Screen |
+|---|---|
+| `ZMES_TRACE` | GMES Genealogy - Forward / Backward Trace |
+
+### 8-4 GMES - Hourly Board
+
+| Code | Screen |
+|---|---|
+| `ZMES_HOURLY` | GMES Hourly Production Board |
+
+### 8-5 GMES - Quality (FPY / RTY / DPMO)
+
+| Code | Screen |
+|---|---|
+| `ZMES_QUALITY` | GMES Quality - FPY, RTY, DPU, DPMO and Defects |
+
+### 8-6 GMES - WIP, Cycle Time, Operators
+
+| Code | Screen |
+|---|---|
+| `ZMES_WIP` | GMES Work in Process, Cycle Time and Operators |
+
+### 8-7 GMES - Andon & SPC
+
+| Code | Screen |
+|---|---|
+| `ZMES_ANDON` | GMES Andon Board |
+| `ZMES_SPC` | GMES SPC - X-bar / R Chart and Capability |
+
+### 8-8 GMES - Operator Certifications
+
+| Code | Screen |
+|---|---|
+| `ZHR_SKILLS` | Skills Matrix and Certifications |
 
 ## Quality
 
@@ -1929,6 +1980,12 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 |---|---|
 | `PT50` | Quota Overview (Annual Leave) |
 | `ZHR_LEAVEBAL` | Leave Balances (all employees) |
+
+### 2-4 Personnel - Skills Matrix & Certifications
+
+| Code | Screen |
+|---|---|
+| `ZHR_SKILLS` | Skills Matrix and Certifications |
 
 ### 4-1 Payroll - Monthly Entries (bonus, penalty)
 
