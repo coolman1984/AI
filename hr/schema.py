@@ -48,6 +48,11 @@ CREATE TABLE IF NOT EXISTS hr_addpay (        -- ZHR_ADDPAY one-time payments / 
     id INTEGER PRIMARY KEY AUTOINCREMENT, pernr TEXT NOT NULL, gjahr INTEGER NOT NULL, perio INTEGER NOT NULL,
     wtype TEXT NOT NULL, amount INTEGER NOT NULL DEFAULT 0, days INTEGER NOT NULL DEFAULT 0,  -- days x100
     text TEXT, usnam TEXT, ts TEXT);
+CREATE TABLE IF NOT EXISTS hr_skill (         -- skills / certifications catalog (qualification catalog)
+    code TEXT PRIMARY KEY, text TEXT NOT NULL, valid_months INTEGER NOT NULL DEFAULT 24, kind TEXT DEFAULT 'SKILL');
+CREATE TABLE IF NOT EXISTS hr_qual (          -- qualification of an employee (skills matrix, operator certification)
+    pernr TEXT NOT NULL, skill TEXT NOT NULL, level INTEGER NOT NULL DEFAULT 1, valid_from TEXT NOT NULL,
+    valid_to TEXT NOT NULL, trainer TEXT, note TEXT, usnam TEXT, ts TEXT, PRIMARY KEY (pernr, skill));
 """
 
 # upgrades of older databases: pay currency (EGP / USD) of the employee and the results

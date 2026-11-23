@@ -191,6 +191,8 @@ def migrate_schema(conn):
     audit_install(conn)
     from ai.whatif import install as whatif_install
     whatif_install(conn)
+    from mes.schema import install as mes_install
+    mes_install(conn)
     from fi.clearing import DP_SCHEMA
     conn.executescript(DP_SCHEMA)
     from fi.document import PERIOD_SCHEMA
