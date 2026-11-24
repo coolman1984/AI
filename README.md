@@ -181,6 +181,14 @@ employees that have **no rate yet**. "Enter many rates" takes a whole list at on
 JPY 33.1`) and reports wrong pairs. OB08 now offers every currency and refuses unknown codes and EGP itself.
 Currencies can be hidden from the list. Postings keep using the rate valid on the posting date.
 
+**Automatic rates from the Central Bank of Egypt:** "Update from Central Bank" reads the official CBE rates page
+(average of buy and sell, per 100 where the CBE quotes per 100, saved for the date on the page) and the daily
+run - switched on in "Central Bank settings" - does it every day after the chosen time (default 09:30), retries
+after 15 minutes if the site is not reachable, and logs every run. A rate that jumps more than the safety limit
+(default 15 %) against the last one is not saved and is reported. The tolerant reader finds the rates by the
+currency names (English or Arabic), so small layout changes of the site do not break it; the source address can
+be changed. The computer running NERP needs internet access to the CBE site.
+
 ## Egyptian pound and US dollar (EGP / USD)
 
 The books are kept in EGP (local currency). The exchange rates come from OB08 (type M).

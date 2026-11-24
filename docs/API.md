@@ -2,7 +2,7 @@
 
 # JSON API
 
-547 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+549 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -161,6 +161,8 @@
 | GET | `/api/fi/fs_org` | FI | `fi_api.py` · `fi_fs_org` | Financial statement by business area / profit center (ZFS_BAPC) |
 | GET | `/api/fi/fx` | FI | `fx_api.py` · `fx_overview` |  |
 | POST | `/api/fi/fx/<act>` | FI | `fx_api.py` · `fx_act` |  |
+| GET | `/api/fi/fx/cbe` | FI | `fx_api.py` · `fx_cbe` |  |
+| POST | `/api/fi/fx/cbe/<act>` | FI | `fx_api.py` · `fx_cbe_act` |  |
 | GET | `/api/fi/fx/convert` | FI | `fx_api.py` · `fx_convert` |  |
 | GET | `/api/fi/fx/history` | FI | `fx_api.py` · `fx_history` |  |
 | GET | `/api/fi/meta` | FI | `fi_api.py` · `fi_meta` |  |

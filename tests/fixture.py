@@ -18,3 +18,5 @@ TODAY = FIXED.isoformat()
 from sec import users as _sec_users  # noqa: E402
 
 _sec_users.ITER = 1000          # fast password hashing in tests (production: 200000)
+
+os.environ["NERP_NO_NETWORK"] = "1"   # tests never go to the internet (central bank rates, AI, messages)
