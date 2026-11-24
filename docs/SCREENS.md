@@ -2,7 +2,7 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 564 screens, by menu area.
+Type the code in the top field of NERP. 570 screens, by menu area.
 
 Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
 
@@ -879,6 +879,42 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZHR_SKILLS` | Skills Matrix and Certifications |
+
+### 9-1 Ceramics - Sorting (Grades, Shades, Calibers)
+
+| Code | Screen |
+|---|---|
+| `ZTILE_SORT` | Tile Sorting - Grades, Shades and Calibers |
+
+### 9-2 Ceramics - Lots and Deliveries
+
+| Code | Screen |
+|---|---|
+| `ZTILE_LOTS` | Tile Lots - Shade / Caliber Stock and Deliveries |
+
+### 9-3 Ceramics - Lab Tests
+
+| Code | Screen |
+|---|---|
+| `ZTILE_LAB` | Tile Lab Tests (ISO 13006 groups) |
+
+### 9-4 Ceramics - First-Choice Rate
+
+| Code | Screen |
+|---|---|
+| `ZTILE_KPI` | First-Choice Rate and Defects |
+
+### 9-5 Ceramics - Gas and Power per m2
+
+| Code | Screen |
+|---|---|
+| `ZENERGY` | Energy - Gas and Power per m2 |
+
+### 9-6 Ceramics - Settings
+
+| Code | Screen |
+|---|---|
+| `ZTILE_CONF` | Ceramics Settings - Tile Products and Energy Meters |
 
 ## Quality
 

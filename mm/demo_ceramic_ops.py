@@ -1,6 +1,8 @@
 """Ceramic factory demo - this month's business after the go-live (see mm/demo_ceramic.py):
 purchase -> goods receipt -> invoice, body preparation and tile production orders with
 confirmations and scrap, domestic and export sales with delivery and billing."""
+import datetime
+
 from mm import util as mmclock
 from mm.posting import post_goods_movement
 
@@ -9,6 +11,50 @@ USER = "MIGRATION"
 PLAN_PRICES = [("4100", "MACH", "620", "1400", "1400"), ("4200", "MACH", "620", "1900", "1600"),
                ("4300", "MACH", "620", "1700", "1500"), ("4400", "KILN", "700", "3500", "6000"),
                ("4500", "LAB", "1800", "300", "150")]
+
+
+OPENING_LOTS = [("FG-F45", "C1", "44.8", "18000"), ("FG-F60", "A1", "9.8", "20000"), ("FG-F60", "A2", "9.9", "22000"),
+                ("FG-F60B", "A1", "9.8", "6500"), ("FG-W36", "B1", "29.7", "15000"), ("FG-W36", "B3", "29.8", "10000"),
+                ("FG-P612", "P1", "59.6", "9000")]
+# one sorting per day: grade 1 lots (shade, caliber, m2), grade 2, grade 3, broken, defects
+SORTING = {
+    "FG-F60": [dict(lots=[dict(shade="A1", caliber="9.8", qty="7200"), dict(shade="A2", caliber="9.8", qty="2100")],
+                    grade2=[dict(shade="A1", caliber="9.8", qty="500")], grade3="150", broken="100",
+                    defects={"GLZ": "260", "PIN": "180", "CHP": "160", "PRN": "150"}),
+               dict(lots=[dict(shade="A1", caliber="9.9", qty="6800"), dict(shade="A3", caliber="9.8", qty="1500")],
+                    grade2=[dict(shade="A3", caliber="9.8", qty="450")], grade3="200", broken="100",
+                    defects={"PLN": "300", "GLZ": "180", "SHD": "150", "CHP": "120"})],
+    "FG-W36": [dict(lots=[dict(shade="B1", caliber="29.7", qty="7200"), dict(shade="B2", caliber="29.7", qty="1800")],
+                    grade3="450", broken="250", defects={"CRK": "300", "GLZ": "250", "CHP": "150"}),
+               dict(lots=[dict(shade="B1", caliber="29.8", qty="3800")], grade3="650", broken="300",
+                    defects={"CRK": "400", "PLN": "300", "DOT": "250"})]}
+# meter, text, kind, area, price per unit (EGP per m3 / kWh) - illustrative tariffs, set your own
+METERS = [("GAS-KILN", "غاز الفرن", "GAS", "FIRING", "8.50"), ("GAS-SPRAY", "غاز المجفف الرذاذي", "GAS",
+                                                                "PREPARATION", "8.50"),
+          ("GAS-DRY", "غاز المجففات الرأسية", "GAS", "FORMING", "8.50"),
+          ("POWER", "الكهرباء - العداد الرئيسي", "POWER", "PLANT", "2.34")]
+# per m2 sorted: m3 gas of each meter and kWh; idle day (no sorting): holding the kiln hot
+PER_M2 = {"GAS-KILN": 1.10, "GAS-SPRAY": 0.42, "GAS-DRY": 0.22, "POWER": 3.3}
+IDLE = {"GAS-KILN": 950, "GAS-SPRAY": 0, "GAS-DRY": 60, "POWER": 2600}
+
+
+def _energy(conn, energy, go_live, t):
+    import datetime as _dt
+    day = _dt.date.fromisoformat(go_live)
+    read = {m: 1000000.0 for m in PER_M2}
+    n = 0
+    while day <= t:
+        ds = day.isoformat()
+        m2 = (conn.execute("SELECT COALESCE(SUM(grade1+grade2),0) FROM tile_sort WHERE day=?", (ds,)).fetchone()[0]
+              / 1000.0)
+        if day.isoformat() != go_live:
+            for m in PER_M2:
+                use = PER_M2[m] * m2 * (1.18 if m2 and n == 3 else 1.0 + 0.03 * ((n % 5) - 2)) if m2 else IDLE[m]
+                read[m] += round(use, 1)
+            n += 1 if m2 else 0
+        for m in PER_M2:
+            energy.save_reading(conn, m, ds, "%.1f" % read[m], "SHOP1")
+        day += _dt.timedelta(days=1)
 
 
 def _vendor(conn, altkn):
@@ -67,13 +113,23 @@ def run(conn):
             post_goods_movement(conn, {"budat": d(day), "bktxt": "GR production order"}, [
                 {"bwart": "101", "aufnr": aufnr, "qty": qty, "lgort": lgort}], USER)
 
-    body = order.create(conn, {"auart": "PP01", "matnr": "SF-SPR", "gamng": "600000", "gstrp": d(5),
+    body = order.create(conn, {"auart": "PP01", "matnr": "SF-SPR", "gamng": "900000", "gstrp": d(5),
                                "lgort": "0001"}, USER)
     order.release(conn, body, USER, d(5))
     picking(body, 5)
-    order.confirm(conn, body, "0010", "600000", budat=d(6), user=USER)
-    order.confirm(conn, body, "0020", "594000", "6000", budat=d(7), final=True, user=USER, grund="01")
-    receive(body, "594000", "0001", 7)
+    order.confirm(conn, body, "0010", "900000", budat=d(6), user=USER)
+    order.confirm(conn, body, "0020", "891000", "9000", budat=d(7), final=True, user=USER, grund="01")
+    receive(body, "891000", "0001", 7)
+    # tile products, lots of the opening stock (one shade + caliber each)
+    from tile import energy, lots
+    for m, g2, fmt, grp, box, pal in (("FG-F45", "", "45x45", "BIIa", "1.62", "48"),
+                                      ("FG-F60", "FG-F60B", "60x60", "BIIa", "1.44", "40"),
+                                      ("FG-W36", "", "30x60", "BIII", "1.44", "48"),
+                                      ("FG-P612", "", "60x120", "BIa", "1.44", "24")):
+        lots.save_product(conn, m, g2, fmt, grp, box, pal)
+    go_live = (t.replace(day=1) - datetime.timedelta(days=1)).isoformat()
+    for m, shade, cal, q in OPENING_LOTS:
+        lots.opening_lot(conn, m, shade, cal, q, go_live)
     tiles = [("FG-F60", "20000", "19100", "900", 8, True), ("FG-W36", "15000", "14450", "550", 9, True),
              ("FG-P612", "6000", "3000", "120", 10, False)]
     for matnr, qty, good, scrap, day, done in tiles:
@@ -81,18 +137,52 @@ def run(conn):
                                 "lgort": "0003"}, USER)
         order.release(conn, a, USER, d(day))
         picking(a, day)
-        ops = ["0010", "0020", "0030", "0040", "0050"] if done else ["0010", "0020"]
+        ops = ["0010", "0020", "0030", "0040"] if done else ["0010", "0020"]
         for n, vornr in enumerate(ops):
-            last = done and vornr == "0050"
             order.confirm(conn, a, vornr, good, scrap if vornr == "0040" else "0",
-                          budat=d(day + 1 + n // 3), final=last, user=USER,
+                          budat=d(day + 1 + n // 3), user=USER,
                           grund="02" if vornr == "0040" and scrap != "0" else None)
-        if done:
-            receive(a, good, "0003", day + 2)
-    # one more order for next week, only released
-    nxt = order.create(conn, {"auart": "PP01", "matnr": "FG-F45", "gamng": "12000", "gstrp": d(20),
+        if done:                                    # sorting line: grades, shades, calibers -> stock + lots
+            first = 0
+            for k, srt in enumerate(SORTING[matnr]):
+                r = lots.sort(conn, a, dict(srt, day=d(day + 2 + k), arbpl="WC-SORT"), USER)
+                first += sum(float(x["qty"]) for x in srt["lots"])
+            order.confirm(conn, a, "0050", "%.3f" % first, budat=d(day + 3), final=True, user=USER)
+    # lab: lots of this month tested; one fails planarity and is blocked
+    for n, lot in enumerate(r0["lot"] for r0 in conn.execute(
+            "SELECT lot FROM tile_lot WHERE sort_id IS NOT NULL ORDER BY lot").fetchall()):
+        grp = conn.execute("SELECT bgroup FROM tile_product p JOIN tile_lot l ON l.matnr IN (p.matnr, p.grade2) "
+                           "WHERE l.lot=?", (lot,)).fetchone()[0]
+        wa, st = {"BIa": ("0.35", "1650"), "BIIa": ("4.6", "1250"), "BIII": ("13.8", "820")}[grp]
+        lots.test(conn, lot, dict(day=d(13), water_abs=wa, strength=st, planarity="0.65" if n == 3 else "0.30",
+                                  size_dev="0.25"), "QM1")
+    # floor 45x45 runs on line 1 every day since the 14th: sorted daily (first-choice rate, gas per m2)
+    f45 = order.create(conn, {"auart": "PP01", "matnr": "FG-F45", "gamng": "12000", "gstrp": d(14),
                               "lgort": "0003"}, USER)
-    order.release(conn, nxt, USER, d(min(20, t.day)))
+    order.release(conn, f45, USER, d(14))
+    picking(f45, 14)
+    for vornr in ("0010", "0020", "0030", "0040"):
+        order.confirm(conn, f45, vornr, "11700", "300" if vornr == "0040" else "0", budat=d(14), user=USER,
+                      grund="02" if vornr == "0040" else None)
+    days = list(range(14, t.day)) or [14]
+    per = 11700.0 / len(days)
+    sorted_g1 = 0.0
+    for n, day in enumerate(days):
+        fc = (0.935, 0.948, 0.921, 0.952, 0.94, 0.886, 0.945)[n % 7]      # one bad day (glaze line)
+        g1 = round(per * fc)
+        g3 = round(per * (1 - fc) * 0.6)
+        br = round(per) - g1 - g3
+        shade = "C%d" % (1 + n // 4)
+        lots.sort(conn, f45, dict(day=d(day), arbpl="WC-SORT", lots=[dict(shade=shade, caliber="44.8", qty=str(g1))],
+                                  grade3=str(g3), broken=str(br),
+                                  defects={"GLZ": str(round(g3 * 0.5)), "PIN": str(g3 - round(g3 * 0.5)),
+                                           "CHP": str(br)}), USER)
+        sorted_g1 += g1
+    order.confirm(conn, f45, "0050", "%.3f" % sorted_g1, budat=d(days[-1]), final=True, user=USER)
+    # porcelain for next week: released only
+    nxt = order.create(conn, {"auart": "PP01", "matnr": "FG-P612", "gamng": "8000", "gstrp": d(25),
+                              "lgort": "0003"}, USER)
+    order.release(conn, nxt, USER, d(min(25, t.day)))
 
     # ------------------------------------------------------------ sales
     orders = [("C1001", 10, "DST-7781", [("FG-F60", "8000"), ("FG-W36", "4000")], True),
@@ -112,3 +202,8 @@ def run(conn):
             dl.pick(conn, dn)
             dl.post_gi(conn, dn, USER, d(day + 1))
             bl.create(conn, dn, USER, d(day + 1))
+
+    # energy meters, one reading per day from the go-live (gas per m2 of the sorted tiles)
+    for m, txt, kind, area, price in METERS:
+        energy.save_meter(conn, m, txt, kind, area, price)
+    _energy(conn, energy, go_live, t)

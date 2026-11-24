@@ -143,6 +143,8 @@ def post_gi(conn, vbeln, user, budat=None):
         k = conn.execute("SELECT * FROM sd_vbak WHERE vbeln=?", (h["vgbel"],)).fetchone()
         if h["lfart"] != "LR":
             _check_before_goods_issue(conn, k, lips, budat)
+            from tile.lots import on_goods_issue          # tiles: one shade + caliber per item
+            on_goods_issue(conn, vbeln)
         lines = []
         for l in lips:
             q = l["pikmg"] or l["lfimg"]

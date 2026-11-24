@@ -46,6 +46,9 @@ profile of the largest ceramic producers in Egypt (generic names only, no real c
   tile production orders with kiln scrap, an open porcelain order (WIP), domestic and export sales
   with delivery and billing, two open orders.
 
+- **Ceramics functions** (below): sorting with shade / caliber lots, lab tests, first-choice rate and
+  gas per m², with a month of daily data.
+
 The master data and opening balances are loaded **through the ZIMPORT takeover objects** (the same
 code a real go-live uses). The same data as an Excel workbook (all ZIMPORT sheets, ready to upload
 into an empty system): `python tools/demo/ceramic_excel.py` → `NERP_Ceramic_Factory.xlsx`.
@@ -158,6 +161,28 @@ per operation and the defect Pareto (ZMES_QUALITY), **WIP** by step with aging, 
 the bottleneck, **operator** output and FPY (ZMES_WIP), **andon** calls with response / resolution times
 (ZMES_ANDON, refreshes every 30 s), **SPC** X-bar / R charts with Cp / Cpk and run rules (ZMES_SPC), cockpit
 (ZMES_COCKPIT) and settings for stations, skills and characteristics (ZMES_CONF).
+
+## Ceramics - sorting, shade / caliber lots, lab, first choice, energy (Production menu, group 9)
+
+For tile factories (switched on per product in **ZTILE_CONF**; the standard demo has no tile products).
+
+- **ZTILE_SORT - sorting:** after the kiln the sorting line grades every tile. Per production order and
+  day: grade 1 lots (shade / caliber / m²), grade 2 lots, grade 3 and broken m², defects (crack, pinholes,
+  glaze, print, shade, size, warpage, chipped edge, spots). Grade 1 is received on the order (101), grade 2
+  into the grade 2 material (501), grade 3 / broken are scrap. Every lot = one shade + one caliber.
+- **ZTILE_LOTS - lots and deliveries:** lot stock, free m² per shade + caliber, block / release, and
+  "lots = stock" check. Enter a delivery to see its lots: **one delivery item gets one shade and one
+  caliber** - the goods issue (VL02N) takes the chosen lots or the proposal (oldest first, one lot if it
+  is enough) and refuses a mix. No single shade big enough = clear message (deliver less or split).
+- **ZTILE_LAB - lab tests:** water absorption, breaking strength, planarity, size against the ISO 13006
+  group of the product (BIa porcelain ≤ 0.5 %, BIb, BIIa, BIIb, BIII wall > 10 %). A failed test
+  blocks the lot. The limits are defaults - check them against the standard you certify to.
+- **ZTILE_KPI - first-choice rate:** grade 1 ÷ everything sorted, per day (target 95 %) and product,
+  defects Pareto, "each 1 % = x m²".
+- **ZENERGY - gas and power per m²:** one reading per meter and day (kiln gas, spray dryer, dryers,
+  electricity); consumption ÷ m² sorted = m³ gas and kWh per m² and EGP energy cost per m²; a day more
+  than 10 % above the 28-day normal is flagged; a meter cannot run backwards. Prices per unit in ZTILE_CONF.
+- **Morning briefing:** "المصنع" lines with yesterday's first-choice rate and gas per m² (production users).
 
 ## Human Resources (HR) and Egyptian payroll
 

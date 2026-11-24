@@ -218,10 +218,25 @@ def daily_message(conn, user):
     fx = fx_text(conn)
     if fx:
         text += "\n\n" + fx
+    tl = tile_text(conn, allowed)
+    if tl:
+        text += "\n\n" + tl
     rv = review_text(conn, user, allowed)
     if rv:
         text += "\n\n" + rv
     return "☀️ صباح الخير - ملخص NERP %s" % clock.today().strftime("%d/%m/%Y"), text
+
+
+def tile_text(conn, allowed=None, day=None):
+    """ceramics: yesterday's first-choice rate and gas per m2 (only when the factory sorts tiles)"""
+    if allowed is not None and not allowed("PP"):
+        return ""
+    from tile import energy, lots
+    try:
+        lines = [x for x in (lots.day_text(conn, day), energy.day_text(conn, day)) if x]
+    except Exception:                              # the briefing must always arrive
+        return ""
+    return ("**🧱 المصنع:**\n" + "\n".join(lines)) if lines else ""
 
 
 FX_MAIN = ("USD", "EUR", "GBP", "SAR", "AED", "CNY")
