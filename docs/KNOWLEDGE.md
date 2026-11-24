@@ -73,6 +73,7 @@ something new (newest entries at the top of each section).
 
 ## 4. Traps in the demo data
 
+* `tools/docs/build_docs.py` collects error codes only from files git already tracks: after adding a new package run `git add` first, then build_docs (otherwise check_all says ERROR_CODES.md is out of date).
 * Lots of goods already in stock at go-live must be created with `tile.lots.opening_lot` (the demo does it), otherwise the goods issue finds no lot. Returns (651) and GI reversals do not give m2 back to a lot yet - correct with a new opening lot.
 * With the test clock (2026-11-09) all demo sortings fall on the same day (dates are capped at today); the energy "high day" test therefore builds its own days.
 * Ceramic demo: only the payment terms 0001 / NT30 / NT60 / Z210 exist and only the countries in `md.config.COUNTRIES` (ES, JO, IQ, LY, KW were added); unit **M2** was added for tiles. Semi-finished and finished goods need `plant.beskz = E`, otherwise "procured externally - no production order". Production orders need plan activity prices (KP26) for the month - the demo plans them for this and next month. Export customers use distribution channel 10 (the takeover material sheet has one sales view per row). Exchange rates (USD, EUR ...) are saved from the go-live date; they are not part of the Excel workbook.

@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 848 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 876 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -684,6 +684,34 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 848 codes. `�
 | SG | 110 | Central bank rates not read: … | `fi/cbe.py` |
 | SG | 111 | Time as HH:MM, e.g. 09:30 | `fi/cbe.py` |
 | SG | 112 | The source must be a web address (https://...) | `fi/cbe.py` |
+| TL | 001 | Material … does not exist / Grade 2 material … does not exist | `tile/lots.py` |
+| TL | 002 | The grade 2 material must be another material | `tile/lots.py` |
+| TL | 003 | Group … is unknown - use … | `tile/lots.py` |
+| TL | 004 | Enter the … (up to 10 characters, e.g. A1) / Wrong … line | `tile/lots.py` |
+| TL | 005 | Production order … does not exist | `tile/lots.py` |
+| TL | 006 | Order … has status … - sorting not possible | `tile/lots.py` |
+| TL | 007 | Material … is not a tile product (ZTILE_CONF) | `tile/lots.py` |
+| TL | 008 | Material … has no grade 2 material (ZTILE_CONF) | `tile/lots.py` |
+| TL | 009 | Enter the sorted quantities | `tile/lots.py` |
+| TL | 010 | Defect code … is unknown (…) | `tile/lots.py` |
+| TL | 011 | More defects than grade 2 + grade 3 + broken tiles | `tile/lots.py` |
+| TL | 012 | Status … is unknown (OK, HOLD, BLOCK) | `tile/lots.py` |
+| TL | 013 | Lot … does not exist / Wrong lot line | `tile/lots.py` |
+| TL | 014 | Material …: no single shade / caliber has … m2 free (largest: … m2) - deliver less or split the item | `tile/lots.py` |
+| TL | 015 | Delivery item …/… does not exist | `tile/lots.py` |
+| TL | 016 | Goods issue of delivery … is already posted | `tile/lots.py` |
+| TL | 017 | Lot … is material …, not … | `tile/lots.py` |
+| TL | 018 | Lot … is … | `tile/lots.py` |
+| TL | 019 | Lot … has only … m2 free | `tile/lots.py` |
+| TL | 020 | The lots give … m2 - the item needs … m2 / Delivery … item …: the lots give … m2, the item needs … m2 - choose the lots again (ZTILE_LOTS) | `tile/lots.py` |
+| TL | 021 | …: one delivery item may only have one shade and one caliber - the lots differ (…) | `tile/lots.py` |
+| TL | 022 | Lot … is not free any more - choose the lots again (ZTILE_LOTS) | `tile/lots.py` |
+| TL | 040 | Enter the meter (up to 12 characters) | `tile/energy.py` |
+| TL | 041 | Kind … is unknown (GAS, POWER) | `tile/energy.py` |
+| TL | 042 | Meter … does not exist (ZENERGY settings) | `tile/energy.py` |
+| TL | 043 | A reading cannot be in the future | `tile/energy.py` |
+| TL | 044 | Reading … is lower than … of … - a meter does not run backwards | `tile/energy.py` |
+| TL | 045 | Reading … is higher than … of … | `tile/energy.py` |
 | TX | 901 | No tax rule … valid on … (ZTAX_LAW) | `tax/rules.py` |
 | TX | 902 | Enter the new value | `tax/rules.py` |
 | TX | 903 | Enter the legal reference (law / decree / resolution number) | `tax/rules.py` |
