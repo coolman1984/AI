@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v57**).
+  delivered: **NERP_v58**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,10 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Ceramics (`tile` package): lots are a sub-ledger next to MM stock (MM keeps quantities per material / bin; a lot = shade + caliber of one sorting) instead of batch management in the posting engine - no change to the posting logic or the standard demo; the goods issue of a delivery calls `tile.lots.on_goods_issue` (no-op without tile products) and refuses a shade / caliber mix; `reconcile` shows lots = stock | Shade-consistent deliveries without the risk of rebuilding inventory posting |
+| 2026-11 | Grade 1 = GR 101 on the order, grade 2 = 501 into its own material at its price (offset 399990, a simplification - grade 2 is not a by-product of the order in CO), grade 3 / broken = scrap quantity in the sorting only; first choice = grade 1 / all sorted | Grade 2 has its own price list |
+| 2026-11 | Lab limits = ISO 13006 groups by water absorption (BIa ≤ 0.5 %, BIb ≤ 3, BIIa ≤ 6, BIIb ≤ 10, BIII > 10) with minimum breaking strength 1300 / 1100 / 1000 / 800 / 600 N, planarity 0.5 %, size 0.6 %: defaults from general knowledge of the standard - VERIFY against the certified standard | Honest about what was not checked |
+| 2026-11 | Energy per m2 = daily meter difference ÷ m2 sorted that day (grade 1 + 2); idle days count in cost but not per m2; "high" = more than 10 % above the average of the 28 days before; demo gas 8.50 EGP/m3 and power 2.34 EGP/kWh are illustrative tariffs | Gas is the biggest variable cost in tiles |
 | 2026-11 | Ceramic factory demo (`mm/demo_ceramic.py`, `run.py --demo ceramic`): a separate, on-demand demo instead of changing the standard demo (~270 tests depend on it); master data and opening balances go through the ZIMPORT takeover objects (tests the go-live path), this month's business through the engines (`mm/demo_ceramic_ops.py`); equity is the plug that brings 399999 to zero; profile of the largest Egyptian tile makers with generic names; its Excel workbook is generated from the same rows | Realistic industry data without breaking the standard demo, and a real test of the takeover |
 | 2026-11 | Exchange rates in the morning briefing (`notify.engine.fx_text`): main currencies + those with rates in use (max 6 lines), change vs previous rate, flags for old rates, currencies used without a rate and a failed CBE update today; shown to everybody (rates are public) | The owner sees the dollar every morning |
 | 2026-11 | Central bank rates (`fi/cbe.py`): tolerant HTML reader (rows with a known currency name EN / AR + numbers; no CSS classes), mid = (buy + sell) / 2, per 100 from the name, page date (never future), safety limit on jumps, daily run in the notify scheduler thread with 15-minute retry; the CBE site could NOT be reached from the build environment, so the reader was built from the usual table layout and is configurable | Rates without manual typing, safe against wrong reads |
@@ -69,6 +73,9 @@ something new (newest entries at the top of each section).
 
 ## 4. Traps in the demo data
 
+* `tools/docs/build_docs.py` collects error codes only from files git already tracks: after adding a new package run `git add` first, then build_docs (otherwise check_all says ERROR_CODES.md is out of date).
+* Lots of goods already in stock at go-live must be created with `tile.lots.opening_lot` (the demo does it), otherwise the goods issue finds no lot. Returns (651) and GI reversals do not give m2 back to a lot yet - correct with a new opening lot.
+* With the test clock (2026-11-09) all demo sortings fall on the same day (dates are capped at today); the energy "high day" test therefore builds its own days.
 * Ceramic demo: only the payment terms 0001 / NT30 / NT60 / Z210 exist and only the countries in `md.config.COUNTRIES` (ES, JO, IQ, LY, KW were added); unit **M2** was added for tiles. Semi-finished and finished goods need `plant.beskz = E`, otherwise "procured externally - no production order". Production orders need plan activity prices (KP26) for the month - the demo plans them for this and next month. Export customers use distribution channel 10 (the takeover material sheet has one sales view per row). Exchange rates (USD, EUR ...) are saved from the go-live date; they are not part of the Excel workbook.
 
 * Demo QM parts must be posted in the **current month** (the CO period of earlier months is closed).

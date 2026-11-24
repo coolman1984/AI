@@ -43,7 +43,7 @@ class CeramicDemo(unittest.TestCase):
         c = factory()
         n = lambda sql, *a: c.execute(sql, a).fetchone()[0]
         self.assertEqual(n("SELECT COUNT(*) FROM po_header"), 4)
-        self.assertEqual(n("SELECT COUNT(*) FROM orders"), 5)
+        self.assertEqual(n("SELECT COUNT(*) FROM orders"), 6)
         self.assertEqual(n("SELECT COUNT(*) FROM sd_vbak"), 6)
         self.assertEqual(n("SELECT COUNT(*) FROM billing WHERE cancelled=0"), 4)
         # tiles produced into the finished goods store, kiln scrap recorded

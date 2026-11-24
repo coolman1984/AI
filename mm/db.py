@@ -195,6 +195,8 @@ def migrate_schema(conn):
     mes_install(conn)
     from fi.currency import install as currency_install
     currency_install(conn)
+    from tile.schema import install as tile_install
+    tile_install(conn)
     from fi.clearing import DP_SCHEMA
     conn.executescript(DP_SCHEMA)
     from fi.document import PERIOD_SCHEMA

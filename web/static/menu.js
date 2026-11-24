@@ -79,6 +79,12 @@ const MENU = [
     ["8-6 GMES - WIP, Cycle Time, Operators", ["ZMES_WIP"]],
     ["8-7 GMES - Andon & SPC", ["ZMES_ANDON", "ZMES_SPC"]],
     ["8-8 GMES - Operator Certifications", ["ZHR_SKILLS"]],
+    ["9-1 Ceramics - Sorting (Grades, Shades, Calibers)", ["ZTILE_SORT"]],
+    ["9-2 Ceramics - Lots and Deliveries", ["ZTILE_LOTS"]],
+    ["9-3 Ceramics - Lab Tests", ["ZTILE_LAB"]],
+    ["9-4 Ceramics - First-Choice Rate", ["ZTILE_KPI"]],
+    ["9-5 Ceramics - Gas and Power per m2", ["ZENERGY"]],
+    ["9-6 Ceramics - Settings", ["ZTILE_CONF"]],
   ]],
   ["Procurement", [
     ["1-1 Common - Basic Config", ["ZPUR_CONF", "OX08", "OME4", "OME9", "M/06", "OMGS"]],
