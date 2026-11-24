@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v55**).
+  delivered: **NERP_v56**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,7 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Exchange rates in the morning briefing (`notify.engine.fx_text`): main currencies + those with rates in use (max 6 lines), change vs previous rate, flags for old rates, currencies used without a rate and a failed CBE update today; shown to everybody (rates are public) | The owner sees the dollar every morning |
 | 2026-11 | Central bank rates (`fi/cbe.py`): tolerant HTML reader (rows with a known currency name EN / AR + numbers; no CSS classes), mid = (buy + sell) / 2, per 100 from the name, page date (never future), safety limit on jumps, daily run in the notify scheduler thread with 15-minute retry; the CBE site could NOT be reached from the build environment, so the reader was built from the usual table layout and is configurable | Rates without manual typing, safe against wrong reads |
 | 2026-11 | Exchange rates for all currencies (ZFX, `fi/currency.py`): ISO 4217 currency master; rates still stored EGP per 1 unit x 100000 in `exch_rate` (postings unchanged); weak currencies entered per 100 / 1,000 (factor) and divided on save; OB08 validates against the master and refuses EGP; demo rates are illustrative, not market data | One place for every currency without touching the posting logic |
 | 2026-11 | HR: positive time recording (`hr/time.py`), talent (`hr/talent.py`), analytics (`hr/analytics.py`); Labour Law 14/2025 values as configurable defaults (15 / 21 / 30 / 45 leave days, 7 casual, 3 months notice, 7-day overtime notice) from secondary sources - marked VERIFY; settlement is an estimate, dismissal compensation shown as contingent | Close the HR gap with rules HR can change |

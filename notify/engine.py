@@ -215,10 +215,54 @@ def daily_message(conn, user):
         lines.append("- ✅ %d حاجة مستنية موافقتك (ZINBOX)" % len(appr))
     if lines:
         text += "\n\n**تنبيهات مفتوحة:**\n" + "\n".join(lines)
+    fx = fx_text(conn)
+    if fx:
+        text += "\n\n" + fx
     rv = review_text(conn, user, allowed)
     if rv:
         text += "\n\n" + rv
     return "☀️ صباح الخير - ملخص NERP %s" % clock.today().strftime("%d/%m/%Y"), text
+
+
+FX_MAIN = ("USD", "EUR", "GBP", "SAR", "AED", "CNY")
+FX_AR = {"USD": "الدولار الأمريكي", "EUR": "اليورو", "GBP": "الجنيه الإسترليني", "SAR": "الريال السعودي",
+         "AED": "الدرهم الإماراتي", "CNY": "اليوان الصيني", "KWD": "الدينار الكويتي", "CHF": "الفرنك السويسري"}
+
+
+def fx_text(conn, limit=6):
+    """exchange rates for the briefing: the main currencies and those used in the books (rate, change),
+    old rates, currencies used without a rate and a failed central bank update of today"""
+    try:
+        from fi import currency as fxm
+        o = fxm.overview(conn)
+    except Exception:                                  # never stop the briefing because of the rates
+        return ""
+    rows = {r["waers"]: r for r in o["rows"] if r["rate"] is not None}
+    used = [r[0] for r in conn.execute("SELECT DISTINCT waers FROM exch_rate")]
+    order = [c for c in FX_MAIN if c in rows] + [c for c in sorted(used) if c in rows and c not in FX_MAIN]
+    out = []
+    for c in order[:limit]:
+        r = rows[c]
+        name = FX_AR.get(c) or r["ltext_ar"] or c
+        if r["factor"] > 1:
+            name = "%d %s" % (r["factor"], name)
+        ch = ""
+        if r["change_pct"]:
+            ch = " (%s %.2f%%)" % ("▲" if r["change_pct"] > 0 else "▼", abs(r["change_pct"]))
+        old = " ⚠️ سعر قديم من %s" % r["gdatu"][8:10] + "/" + r["gdatu"][5:7] if r["stale"] else ""
+        out.append("- %s %.2f%s%s" % (name, r["rate"], ch, old))
+    if o["missing"]:
+        out.append("- ⚠️ عملات مستخدمة من غير سعر: %s" % ", ".join(m["waers"] for m in o["missing"]))
+    try:
+        last = conn.execute("SELECT status, message FROM fx_update_log WHERE run_day=? ORDER BY id DESC LIMIT 1",
+                            (clock.today().isoformat(),)).fetchone()
+    except Exception:
+        last = None
+    if last and last["status"] == "failed":
+        out.append("- ⚠️ تحديث البنك المركزي النهارده ما نجحش: %s" % (last["message"] or "")[:80])
+    if not out:
+        return ""
+    return "**أسعار الصرف (جنيه):**\n" + "\n".join(out) + "\nكل العملات والمحوّل: افتح ZFX"
 
 
 def review_text(conn, user, allowed=None):

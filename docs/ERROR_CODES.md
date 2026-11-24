@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 843 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 846 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -681,6 +681,9 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 843 codes. `�
 | SG | 107 | … is the local currency - it has no exchange rate | `fi/currency.py` |
 | SG | 108 | Rate too small for … - enter it per … units | `fi/currency.py` |
 | SG | 109 | No rate after … / Paste at least one rate, e.g. USD 49.85 | `fi/currency.py` |
+| SG | 110 | Central bank rates not read: … | `fi/cbe.py` |
+| SG | 111 | Time as HH:MM, e.g. 09:30 | `fi/cbe.py` |
+| SG | 112 | The source must be a web address (https://...) | `fi/cbe.py` |
 | TX | 901 | No tax rule … valid on … (ZTAX_LAW) | `tax/rules.py` |
 | TX | 902 | Enter the new value | `tax/rules.py` |
 | TX | 903 | Enter the legal reference (law / decree / resolution number) | `tax/rules.py` |
