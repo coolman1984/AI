@@ -11,7 +11,7 @@ import datetime
 import json
 
 from mm.db import next_number, transaction
-from mm.util import MMError, now_ts, parse_amount, parse_date, parse_key, parse_rate
+from mm.util import MMError, now_ts, parse_amount, parse_date
 
 from .ap import open_items, pay
 from .config import (CHART, FX_ACCOUNTS, LOCAL_CURRENCY, POSTING_KEYS, TAX_CODES,
@@ -96,11 +96,10 @@ def periods(conn):
 
 
 def set_rate(conn, waers, gdatu, ukurs):
-    gdatu = parse_date(gdatu)
-    v = parse_rate(ukurs)
-    waers = parse_key(waers, "currency")
-    with transaction(conn):
-        conn.execute("INSERT OR REPLACE INTO exch_rate VALUES (?,?,?)", (waers, gdatu, v))
+    """OB08: only currencies of the currency master, never the local currency; the rate is entered as quoted
+    (EGP per 1 unit, or per 100 / 1,000 units for weak currencies - see ZFX)"""
+    from .currency import set_rate as fx_set
+    return fx_set(conn, waers, gdatu, ukurs)
 
 
 # ---------------------------------------------------------------- F-02

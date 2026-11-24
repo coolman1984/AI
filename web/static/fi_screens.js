@@ -222,8 +222,11 @@ register("OB52", { title: "Open and Close Posting Periods", async render(app) {
 
 register("OB08", { title: "Exchange Rates (type M)", async render(app) {
   await meta(true);
-  const w = sel(Object.keys(FI.currencies).filter(c => c !== "EGP"), "USD", { w: "s" }), d = inp({ type: "date", value: today(), w: "m" }), r = inp({ w: "s" });
-  app.append(panel("New rate", grid(field("From currency", w), field("Valid from", d), field("Rate (EGP per unit)", r))), alv({ title: "Exchange rates", rows: FI.rates, columns: [
+  const fx = await api("/api/fi/fx").catch(() => ({ rows: [] }));
+  const opts = fx.rows.length ? fx.rows.map(c => [c.waers, `${c.waers} - ${c.ltext}${c.factor > 1 ? " (per " + c.factor + ")" : ""}`]) : Object.keys(FI.currencies).filter(c => c !== "EGP");
+  const w = sel(opts, "USD", { w: "m" }), d = inp({ type: "date", value: today(), w: "m" }), r = inp({ w: "s" });
+  app.append(panel("New rate", grid(field("From currency", w), field("Valid from", d), field("Rate (EGP per unit, per 100 / 1,000 for weak currencies)", r)),
+    h("div.note", null, "All currencies with the latest rates, bulk entry, history and a converter: ZFX.")), alv({ title: "Exchange rates", rows: FI.rates, columns: [
     { key: "waers", label: "From" }, { key: "gdatu", label: "Valid from", type: "date" }, { key: "ukurs", label: "Rate", type: "amt" }] }));
   toolbar([{ label: "Save", key: "Ctrl+S", primary: true, onClick: async () => {
     const x = await run(() => api("/api/fi/ob08", { waers: w.value, gdatu: d.value, ukurs: val(r) })); if (x) { msg("S", x.message); go("OB08"); } } }]);

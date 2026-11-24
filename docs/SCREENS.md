@@ -2,7 +2,7 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 563 screens, by menu area.
+Type the code in the top field of NERP. 564 screens, by menu area.
 
 Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
 
@@ -977,6 +977,7 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | `OBB8` | Terms of Payment |
 | `FTXP` | Tax Codes |
 | `OB08` | Exchange Rates (type M) |
+| `ZFX` | Exchange Rates - All Currencies |
 
 ### 1-2 Common - Global Master
 
@@ -2181,6 +2182,7 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZWORKPLACE` | Workplace - All Apps |
+| `ZFX` | Exchange Rates - All Currencies |
 | `ZCOM` | Office Integration (COM) - Test Cockpit |
 | `ZORG` | Enterprise Structure & Basic Master Data |
 | `MB5K` | Stock Consistency Check |

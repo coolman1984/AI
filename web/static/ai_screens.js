@@ -172,7 +172,7 @@ const AR = { "أمر شراء": "purchase order", "شراء": "purchase", "مش�
   "أمر بيع": "sales order", "مبيعات": "sales", "تسليم": "delivery", "شحن": "delivery shipping", "إنتاج": "production", "انتاج": "production",
   "تأكيد": "confirmation", "قائمة مواد": "bill of material bom", "ماكين": "machine maintenance", "صيان": "maintenance", "عطل": "breakdown",
   "جود": "quality inspection", "فحص": "inspection", "شكو": "notification complaint", "ضريب": "tax", "ضرايب": "tax", "قيمة مضافة": "vat",
-  "خصم وإضافة": "withholding", "مرتب": "payroll", "موظف": "employee", "إجاز": "leave", "سلف": "loan", "ميزاني": "balance sheet",
+  "خصم وإضافة": "withholding", "سعر الصرف": "exchange rate", "عملة": "currency exchange", "عملات": "currency exchange", "مرتب": "payroll", "موظف": "employee", "إجاز": "leave", "سلف": "loan", "ميزاني": "balance sheet",
   "قيد": "journal entry posting", "شيك": "cheque", "خزن": "cash", "بنك": "bank", "أصول": "asset", "تكلف": "cost", "ربحي": "profitability",
   "تقارير": "report bi", "تقرير": "report", "مستخدم": "user", "صلاحي": "role authorization", "إكسيل": "excel import", "لوحة": "board" };
 const HINT = { "استلام": ["MIGO", "MB03"], "بضاع": ["MIGO"], "أمر شراء": ["ME21N"], "طلب شراء": ["ME51N"], "قيمة مضافة": ["ZTAX_VAT"], "القيمة المضافة": ["ZTAX_VAT"],
@@ -180,7 +180,7 @@ const HINT = { "استلام": ["MIGO", "MB03"], "بضاع": ["MIGO"], "أمر �
   "فاتورة إلكترونية": ["ZTAX_EINV"], "فاتورة": ["VF01", "VF03"], "أمر بيع": ["VA01", "VA05"], "عرض سعر": ["VA21"], "مرتب": ["PC00_M99_CALC"],
   "موظف جديد": ["PA40"], "قيد": ["FB50", "F-02"], "شيك": ["ZCHQ_IN", "ZCHQ_OUT"], "عطل": ["ZPM_NOTIF"], "صيان": ["ZPM_COCKPIT", "ZPM_ORDERS"],
   "فحص": ["QA32", "QA11"], "جود": ["ZQM_COCKPIT"], "مخزون": ["MMBE", "MB52"], "رصيد": ["MMBE"], "إنتاج": ["ZPP_BOARD", "CO01"], "انتاج": ["ZPP_BOARD", "CO01"],
-  "ميزانية": ["S_ALR_87012284"], "تقارير": ["ZBI"], "مستخدم": ["SU01"], "صلاحي": ["PFCG"], "إكسيل": ["ZIMPORT"], "اسأل": ["ZAI"], "ماذا لو": ["ZWHATIF"], "سيناريو": ["ZWHATIF"], "محاكاة": ["ZWHATIF", "ZCO_SIM"] };
+  "ميزانية": ["S_ALR_87012284"], "تقارير": ["ZBI"], "مستخدم": ["SU01"], "صلاحي": ["PFCG"], "إكسيل": ["ZIMPORT"], "اسأل": ["ZAI"], "ماذا لو": ["ZWHATIF"], "سعر الصرف": ["ZFX", "OB08"], "عملة": ["ZFX"], "عملات": ["ZFX"], "سعر الدولار": ["ZFX"], "سيناريو": ["ZWHATIF"], "محاكاة": ["ZWHATIF", "ZCO_SIM"] };
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const md = text => { let html = "", list = false;
   for (const l of esc(text).split(/\n/)) { const b = l.match(/^\s*[-•*]\s+(.*)$/);

@@ -655,5 +655,6 @@ from web import whatif_api  # noqa: E402,F401
 from web import mes_api  # noqa: E402,F401
 from web import hrq_api  # noqa: E402,F401
 from web import hr3_api  # noqa: E402,F401
+from web import fx_api  # noqa: E402,F401
 from web import notify_api  # noqa: E402,F401
 from web import audit_api  # noqa: E402,F401

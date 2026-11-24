@@ -48,7 +48,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 | `pp` | Production: BOM, routing, planning, orders, confirmations, subcontracting, boards, daily meeting | `master`, `planning`, `order`, `board`, `daily` |
 | `mes` | GMES shop-floor execution: stations, serial numbers, bookings with route enforcement and operator certification, genealogy, andon, SPC, hourly / quality / WIP / cycle / operator reports | `track`, `reports`, `seed` |
 | `qm` | Quality (inspection lots, results, decisions, notifications) and plant maintenance | `quality`, `maintenance` |
-| `fi` | Financial accounting: central document, AP, AR, assets, bank, cheques, cash, WHT, closing, reports | `document`, `ap`, `ar`, `aa`, `clearing`, `reports` |
+| `fi` | Financial accounting: central document, AP, AR, assets, bank, cheques, cash, WHT, closing, reports, currencies and exchange rates | `document`, `ap`, `ar`, `aa`, `clearing`, `reports`, `currency` |
 | `co` | Controlling: cost centers, orders, product costing, actuals, period end, CO-PA, budget | `master`, `costing`, `actual`, `period_end`, `copa`, `budget` |
 | `tax` | Egyptian taxes: law register, returns (VAT form 10, WHT form 41, salary form 4, CIT), e-invoice (ETA), tax audit, adviser review | `rules`, `returns`, `eta`, `audit`, `review` |
 | `hr` | HR and Egyptian payroll: employees, org, leave, payroll, posting to FI/CO; skills matrix; time clock and evaluation; training, appraisal, end of service; HR analytics | `engine`, `payroll`, `extras`, `reports`, `skills`, `time`, `talent`, `analytics` |
@@ -64,7 +64,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 ## 4. How a feature is built (the pattern)
 
 1. **Schema** - `package/schema.py` with `install(conn)`; add the call to the install chain at the end of
-   `mm/db.py` (current order: … `tax` → `qm` → `ai` → `notify` → `extaudit` → `ai.whatif` → `mes`).
+   `mm/db.py` (current order: … `tax` → `qm` → `ai` → `notify` → `extaudit` → `ai.whatif` → `mes` → `fi.currency`).
 2. **Engine** - functions `fn(conn, …, user)`; validate with parse helpers; raise
    `MMError(text, class, number)`; write inside `with transaction(conn):`. Pick a free message number
    range (see [ERROR_CODES](ERROR_CODES.md)).
