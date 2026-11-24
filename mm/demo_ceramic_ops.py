@@ -122,11 +122,11 @@ def run(conn):
     receive(body, "891000", "0001", 7)
     # tile products, lots of the opening stock (one shade + caliber each)
     from tile import energy, lots
-    for m, g2, fmt, grp, box, pal in (("FG-F45", "", "45x45", "BIIa", "1.62", "48"),
-                                      ("FG-F60", "FG-F60B", "60x60", "BIIa", "1.44", "40"),
-                                      ("FG-W36", "", "30x60", "BIII", "1.44", "48"),
-                                      ("FG-P612", "", "60x120", "BIa", "1.44", "24")):
-        lots.save_product(conn, m, g2, fmt, grp, box, pal)
+    for m, g2, fmt, grp, box, pal, kg in (("FG-F45", "", "45x45", "BIIa", "1.62", "48", "19"),
+                                          ("FG-F60", "FG-F60B", "60x60", "BIIa", "1.44", "40", "20"),
+                                          ("FG-W36", "", "30x60", "BIII", "1.44", "48", "15"),
+                                          ("FG-P612", "", "60x120", "BIa", "1.44", "24", "24")):
+        lots.save_product(conn, m, g2, fmt, grp, box, pal, kg)
     go_live = (t.replace(day=1) - datetime.timedelta(days=1)).isoformat()
     for m, shade, cal, q in OPENING_LOTS:
         lots.opening_lot(conn, m, shade, cal, q, go_live)
@@ -189,11 +189,13 @@ def run(conn):
               ("C1002", 11, "ALX-2210", [("FG-W36", "5000"), ("FG-F60B", "2500")], True),
               ("C1005", 11, "NCP-PH2-118", [("FG-P612", "3000")], True),
               ("C1006", 12, "GBM-EXP-55", [("FG-F60", "6000")], True),
+              ("C1007", 12, "LTD-EXP-12", [("FG-W36", "8", "PAL")], True),          # ordered in pallets
               ("C1003", 13, "DLT-411", [("FG-F45", "3500")], False),
               ("C1004", 13, "UPE-090", [("FG-F60", "2000"), ("FG-W36", "1500")], False)]
     for kunnr, day, ref, items, ship in orders:
         r = so.create(conn, dict(auart="OR", kunnr=kunnr, audat=d(day), vdatu=d(day + 2), bstnk=ref,
-                                 items=[dict(matnr=m, qty=q) for m, q in items]), USER)
+                                 items=[dict(matnr=x[0], qty=x[1], unit=x[2] if len(x) > 2 else "")
+                                        for x in items]), USER)
         v = r["vbeln"]
         if conn.execute("SELECT cmgst FROM sd_vbak WHERE vbeln=?", (v,)).fetchone()[0] == "B":
             so.release_credit(conn, v, "CREDITMGR")

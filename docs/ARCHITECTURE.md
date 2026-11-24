@@ -47,7 +47,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 | `pur` | Purchasing: requisitions, release, sourcing, RFQ, contracts, PO, MRP, import/LC, follow-up | `pr`, `po`, `sourcing`, `mrp`, `importfile`, `analytics` |
 | `pp` | Production: BOM, routing, planning, orders, confirmations, subcontracting, boards, daily meeting | `master`, `planning`, `order`, `board`, `daily` |
 | `mes` | GMES shop-floor execution: stations, serial numbers, bookings with route enforcement and operator certification, genealogy, andon, SPC, hourly / quality / WIP / cycle / operator reports | `track`, `reports`, `seed` |
-| `tile` | Ceramic tiles: sorting into grade / shade / caliber lots, one shade + caliber per delivery item (hook in the goods issue of `sd.delivery`), lab tests by ISO 13006 group, first-choice rate, gas / power per m2 | `lots`, `energy` |
+| `tile` | Ceramic tiles: sorting into grade / shade / caliber lots, one shade + caliber per delivery item (hook in the goods issue of `sd.delivery`), lab tests by ISO 13006 group, first-choice rate, gas / power per m2, sales in m2 / boxes / pallets (hook in `sd.order` item creation), export report and documents | `lots`, `energy`, `pack`, `export` |
 | `qm` | Quality (inspection lots, results, decisions, notifications) and plant maintenance | `quality`, `maintenance` |
 | `fi` | Financial accounting: central document, AP, AR, assets, bank, cheques, cash, WHT, closing, reports, currencies and exchange rates | `document`, `ap`, `ar`, `aa`, `clearing`, `reports`, `currency`, `cbe` |
 | `co` | Controlling: cost centers, orders, product costing, actuals, period end, CO-PA, budget | `master`, `costing`, `actual`, `period_end`, `copa`, `budget` |

@@ -39,5 +39,13 @@ CREATE TABLE IF NOT EXISTS energy_reading (
 """
 
 
+COLUMN_ADDS = {"tile_product": [("kg_m2", "INTEGER NOT NULL DEFAULT 20000")]}   # weight per m2 (milli kg)
+
+
 def install(conn):
     conn.executescript(TILE_SCHEMA)
+    for table, cols in COLUMN_ADDS.items():
+        have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
+        for col, typ in cols:
+            if col not in have:
+                conn.execute("ALTER TABLE %s ADD COLUMN %s %s" % (table, col, typ))

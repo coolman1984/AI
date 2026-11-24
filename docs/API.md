@@ -2,7 +2,7 @@
 
 # JSON API
 
-562 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+565 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -477,6 +477,7 @@
 | GET | `/api/sd/einv` | SD | `sd_api.py` · `sd_einv` |  |
 | GET | `/api/sd/equi` | SD | `sd_api.py` · `sd_equi` |  |
 | POST | `/api/sd/equi` | SD | `sd_api.py` · `sd_equi_save` |  |
+| GET | `/api/sd/export` | SD | `tile_api.py` · `sd_export` |  |
 | GET | `/api/sd/listing` | SD | `sd_api.py` · `sd_listing` |  |
 | GET | `/api/sd/meta` | SD | `sd_api.py` · `sd_meta` |  |
 | POST | `/api/sd/order` | SD | `sd_api.py` · `sd_order_create` |  |
@@ -549,12 +550,14 @@
 | POST | `/api/tile/conf/<act>` | PP | `tile_api.py` · `tile_conf_save` |  |
 | GET | `/api/tile/delivery` | SD | `tile_api.py` · `tile_delivery` |  |
 | POST | `/api/tile/delivery/assign` | SD | `tile_api.py` · `tile_assign` |  |
+| GET | `/api/tile/delivery/packing` | SD | `tile_api.py` · `tile_packing` |  |
 | GET | `/api/tile/kpi` | PP | `tile_api.py` · `tile_kpi` |  |
 | GET | `/api/tile/lab` | PP | `tile_api.py` · `tile_lab` |  |
 | POST | `/api/tile/lab` | PP | `tile_api.py` · `tile_lab_save` |  |
 | GET | `/api/tile/lots` | PP | `tile_api.py` · `tile_lots` |  |
 | POST | `/api/tile/lots/status` | PP | `tile_api.py` · `tile_lot_status` |  |
 | GET | `/api/tile/orders` | PP | `tile_api.py` · `tile_orders` |  |
+| GET | `/api/tile/pack` | SD | `tile_api.py` · `tile_pack` | m2 / boxes / pallets of a quantity (sales screens) |
 | POST | `/api/tile/sort` | PP | `tile_api.py` · `tile_sort` |  |
 | POST | `/api/vendor` | - | `server.py` · `api_vendor` |  |
 | POST | `/api/whatif/<act>` | CO | `whatif_api.py` · `whatif_act` |  |

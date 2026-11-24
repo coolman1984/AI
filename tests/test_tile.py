@@ -96,7 +96,9 @@ class Deliveries(unittest.TestCase):
         self.assertEqual(e.exception.msg_no, "021")
         p = lots.picks(c, dn)[0]
         self.assertEqual(len({(x["shade"], x["caliber"]) for x in p["lots"]}), 1)
-        self.assertEqual(sum(x["qty"] for x in p["lots"]), 8500000)
+        need = c.execute("SELECT lfimg FROM sd_lips WHERE vbeln=?", (dn,)).fetchone()[0]
+        self.assertEqual(need, 8500320)                        # rounded up to full boxes (5903 x 1.44 m2)
+        self.assertEqual(sum(x["qty"] for x in p["lots"]), need)
         dl.pick(c, dn)
         dl.post_gi(c, dn, "T")
         self.assertTrue(all(x["difference"] == 0 for x in lots.reconcile(c)))
@@ -118,6 +120,61 @@ class Deliveries(unittest.TestCase):
         with self.assertRaises(MMError) as e:
             dl.post_gi(c, dn, "T")
         self.assertEqual(e.exception.msg_no, "014")
+
+
+class Packing(unittest.TestCase):
+    def test_boxes_pallets_and_rounding(self):
+        from tile import pack
+        c = factory()
+        self.assertEqual(pack.sales_qty(c, "FG-F60", 100000), (100800, "FG-F60: rounded up to full boxes - 70 boxes = "
+                                                                       "100.8 m2"))
+        self.assertEqual(pack.sales_qty(c, "FG-F60", 2000, "PAL")[0], 2 * 40 * 1440)
+        self.assertEqual(pack.sales_qty(c, "FG-F60", 10000, "BOX")[0], 14400)
+        self.assertEqual(pack.sales_qty(c, "FG-F60B", 1440, "")[0], 1440)          # grade 2 uses the grade 1 box
+        self.assertEqual(pack.sales_qty(c, "RM-CLR", 1234, ""), (1234, None))        # not a tile: unchanged
+        with self.assertRaises(MMError):
+            pack.sales_qty(c, "FG-F60", 1000, "KG")
+        with self.assertRaises(MMError):
+            pack.sales_qty(c, "RM-CLR", 1000, "PAL")
+        p = pack.packing(c, "FG-F60", 2 * 40 * 1440 + 3 * 1440)
+        self.assertEqual((p["boxes"], p["full_pallets"], p["loose_boxes"], p["pallets"]), (83, 2, 3, 3))
+
+    def test_order_in_pallets_and_packing_list(self):
+        from mm import forms
+        from tile import pack
+        c = factory()
+        dn = c.execute("SELECT vbeln FROM sd_likp WHERE kunnr='C1007'").fetchone()[0]
+        d = pack.delivery(c, dn)
+        self.assertEqual(d["total"]["pallets"], 8)                     # 8 pallets ordered
+        self.assertEqual(d["total"]["boxes"], 8 * 48)
+        html = forms.render(c, "PACKLIST", dn)
+        self.assertIn("6907.23", html)                                # wall tile: water absorption > 10 %
+        self.assertIn("B1/29.7", html)
+
+
+class Export(unittest.TestCase):
+    def test_export_channel_report_and_origin(self):
+        from mm import forms
+        from tile import export
+        c = factory()
+        r = export.report(c, "2026-01-01", "2026-12-31")
+        self.assertEqual({x["land"] for x in r["countries"]}, {"SA", "JO"})
+        self.assertTrue(all(x["vtweg"] == "20" for x in r["invoices"]))
+        self.assertTrue(all(x["mwsbk"] == 0 for x in r["invoices"]))  # exports zero-rated
+        self.assertGreater(r["share"], 0)
+        dn = c.execute("SELECT vbeln FROM sd_likp WHERE kunnr='C1006'").fetchone()[0]
+        html = forms.render(c, "ORIGIN", dn)
+        self.assertIn("6907.22", html)
+        self.assertIn("USD", html)
+
+    def test_takeover_material_line_adds_the_export_channel(self):
+        from mm import dataimport
+        c = factory()
+        self.assertEqual(c.execute("SELECT COUNT(*) FROM md_mvke WHERE matnr='FG-F60'").fetchone()[0], 2)
+        r = dataimport.run(c, "MATERIAL", "matnr,sales.vkorg,sales.vtweg\nFG-F60,1000,20\n", "T", simulate=True)
+        self.assertEqual(r["errors"], 1)                               # channel 20 exists already
+        r = dataimport.run(c, "MATERIAL", "matnr\nFG-F60\n", "T", simulate=True)
+        self.assertEqual(r["errors"], 1)                               # nothing to add: already exists
 
 
 class Lab(unittest.TestCase):

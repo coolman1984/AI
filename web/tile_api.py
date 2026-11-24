@@ -16,7 +16,7 @@ def tile_conf_save(req, q, act):
     c, b = db(), req.body
     if act == "product":
         m = lots.save_product(c, b.get("matnr"), b.get("grade2"), b.get("fmt"), b.get("bgroup") or "BIIa",
-                              b.get("m2_box") or "1.44", b.get("boxes_pal") or "40")
+                              b.get("m2_box") or "1.44", b.get("boxes_pal") or "40", b.get("kg_m2") or "20")
         return {"message": "Tile product %s saved" % m}
     m = energy.save_meter(c, b.get("meter"), b.get("text"), b.get("kind"), b.get("area"), b.get("price"),
                           str(b.get("active", "1")) not in ("0", "false", "False"))
@@ -92,3 +92,25 @@ def energy_report(req, q):
 def energy_reading(req, q):
     b = req.body
     return energy.save_reading(db(), b.get("meter"), b.get("day"), b.get("reading"), req.user)
+
+
+@route("GET", "/api/tile/delivery/packing")
+def tile_packing(req, q):
+    from tile import pack
+    return pack.delivery(db(), q.get("vbeln"))
+
+
+@route("GET", "/api/tile/pack")
+def tile_pack(req, q):
+    """m2 / boxes / pallets of a quantity (sales screens)"""
+    from tile import pack
+    c = db()
+    m = str(q.get("matnr") or "").strip().upper()
+    qty = pack.parse_unit_qty(c, m, q.get("qty") or "1", q.get("unit"))
+    return {"matnr": m, "qty": qty, "packing": pack.packing(c, m, qty)}
+
+
+@route("GET", "/api/sd/export")
+def sd_export(req, q):
+    from tile import export
+    return export.report(db(), q.get("from") or None, q.get("to") or None)
