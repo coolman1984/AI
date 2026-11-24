@@ -80,7 +80,9 @@ Every question is logged.
 
 A morning briefing at the chosen time and instant alerts (machine down, stock below safety stock,
 credit block, rejected lot, tax deadline in 3 days, approvals waiting) to Telegram, e-mail or
-WhatsApp. The morning briefing ends with the **daily review** (yesterday's, before 4 pm): the count per
+WhatsApp. The morning briefing shows the **exchange rates** (USD, EUR, GBP, SAR, AED, CNY and the other
+currencies in use, with the change against the previous rate; old rates, currencies used without a rate and a
+failed central bank update are flagged) and ends with the **daily review** (yesterday's, before 4 pm): the count per
 opinion, every module that needs attention with its reason, the improving ones, and "open ZDAY" -
 only the modules the person may display. WhatsApp reaches any normal mobile number (`01001234567`): a free-text message inside
 Meta's 24-hour window, otherwise the approved message template (`nerp_alert`; the body to create in

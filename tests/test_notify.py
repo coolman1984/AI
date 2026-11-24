@@ -111,6 +111,36 @@ class DailyReview(unittest.TestCase):
         self.assertLess(len(text), 3800)                                        # fits a Telegram message
 
 
+class FxInBriefing(unittest.TestCase):
+    def test_briefing_shows_the_exchange_rates(self):
+        from fi import currency as fx
+        from mm import util as clock
+        from notify import engine as e
+        c = system()
+        t = clock.today()
+        fx.save_rates(c, "USD 50.10, EUR 58.00", t.isoformat(), "T")                # demo: USD 49.80 before, EUR 57.80
+        txt = e.fx_text(c)
+        self.assertIn("أسعار الصرف", txt)
+        self.assertIn("ZFX", txt)
+        self.assertIn("الدولار الأمريكي 50.10 (▲ 0.60%)", txt)                       # (50.10 - 49.80) / 49.80
+        self.assertIn("اليورو 58.00", txt)
+        self.assertLessEqual(txt.count("\n- "), 6)                                  # short: the main currencies only
+        _, text = e.daily_message(c, "OWNER")
+        self.assertIn("أسعار الصرف", text)
+        # a currency used in the books without a rate and a failed update from the central bank are reported
+        c.execute("UPDATE hr_employee SET waers='NOK' WHERE pernr='10024'")
+        c.execute("INSERT INTO fx_update_log (ts, run_day, status, message, usnam) VALUES (?,?, 'failed', 'No connection', 'AUTO')",
+                  (clock.now_ts(), t.isoformat()))
+        c.commit()
+        txt = e.fx_text(c)
+        self.assertIn("NOK", txt)
+        self.assertIn("البنك المركزي", txt)
+        # old rates are flagged
+        c.execute("DELETE FROM exch_rate WHERE gdatu>=?", ((t - __import__("datetime").timedelta(days=20)).isoformat(),))
+        c.commit()
+        self.assertIn("قديم", e.fx_text(c))
+
+
 class Alerts(unittest.TestCase):
     def test_alerts_once_per_event_categories_and_authorization(self):
         from notify import engine as e
