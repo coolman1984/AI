@@ -122,7 +122,7 @@ QM_CONTROL = {"": "-", "0001": "Inspection on goods receipt, certificate require
 UNITS_EXT = {                   # CUNI (base + alternative units)
     "PC": "Piece", "KG": "Kilogram", "L": "Litre", "M": "Metre", "BOX": "Box",
     "ROL": "Roll", "SET": "Set", "TO": "Ton", "PAL": "Pallet", "DR": "Drum",
-    "G": "Gram", "M3": "Cubic metre", "CAR": "Carton",
+    "G": "Gram", "M2": "Square metre", "M3": "Cubic metre", "CAR": "Carton",
 }
 
 # ------------------------------------------------------------------ sales org
@@ -224,4 +224,5 @@ EXIM_CONTROL = {"": "No control", "W": "Warning", "L": "License required",
                 "B": "Embargo - blocked"}
 COUNTRIES = {"EG": "Egypt", "SA": "Saudi Arabia", "AE": "United Arab Emirates",
              "TR": "Turkey", "CN": "China", "DE": "Germany", "IN": "India",
-             "BR": "Brazil", "US": "United States", "IT": "Italy"}
+             "BR": "Brazil", "US": "United States", "IT": "Italy",
+             "ES": "Spain", "JO": "Jordan", "IQ": "Iraq", "LY": "Libya", "KW": "Kuwait"}

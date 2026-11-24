@@ -23,6 +23,33 @@ Double-click **`Start NERP.bat`** in this folder.
 
 The first start loads demo data: 2 plants, 10 materials and about 4 months of movements.
 
+### Ceramic factory demo (test data of a tile factory)
+
+`tools/Reset - ceramic factory demo.bat` (or `python run.py --reset --demo ceramic`) deletes the
+data and loads a **ceramic tile factory** instead of the standard demo. It is modelled on the
+profile of the largest ceramic producers in Egypt (generic names only, no real company):
+
+- **Plants:** tile factory (10th of Ramadan) + distribution / export center (Alexandria);
+  yards for clay / feldspar / sand, frit and glaze store, finished goods, spare parts, packaging.
+- **Materials:** red and white clay, kaolin, feldspar, silica sand, imported frit and glaze,
+  digital printing inks, cartons, pallets, kiln rollers, press moulds; spray-dried body powder;
+  finished tiles in **m² (M2)**: floor 45×45 and 60×60 (grade 1 and 2), wall 30×60, polished porcelain 60×120.
+- **Production:** ball mills → spray dryer → presses → vertical dryers → glazing and digital
+  printing → roller kiln → automatic sorting and packing (3 shifts, plan prices per hour);
+  bills of material per m² (≈ 20 kg body, frit, glaze, ink, 0.7 carton) and routings.
+- **Partners:** local mineral suppliers, frit / ink suppliers in EUR, packaging; distributors in
+  Cairo, Alexandria, Delta, Upper Egypt, a developer's project and two export customers in USD.
+- **People and money:** 20 employees in 9 org units, 10 fixed assets (kilns, presses, spray dryer,
+  digital printer …), opening stock, open customer / vendor items, bank balances, capital
+  (takeover account 399999 = 0).
+- **This month:** purchase orders with receipts and an invoice, a frit import in transit, body and
+  tile production orders with kiln scrap, an open porcelain order (WIP), domestic and export sales
+  with delivery and billing, two open orders.
+
+The master data and opening balances are loaded **through the ZIMPORT takeover objects** (the same
+code a real go-live uses). The same data as an Excel workbook (all ZIMPORT sheets, ready to upload
+into an empty system): `python tools/demo/ceramic_excel.py` → `NERP_Ceramic_Factory.xlsx`.
+
 **Log on - switched OFF for now.** NERP starts without user and password. To switch the
 logon on, run `tools/Login ON.bat` (back off: `tools/Login OFF.bat`) and start NERP again
 (or `python run.py --login`). With the logon on, every person has an own user (AMS - ID & Authorization).

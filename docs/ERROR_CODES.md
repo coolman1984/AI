@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 846 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 848 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -852,3 +852,5 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 846 codes. `�
 | ZI | 054 | Loan type … does not exist (LOAN / ADV) | `mm/dataimport.py` |
 | ZI | 055 | The installment is higher than the open balance | `mm/dataimport.py` |
 | ZI | 056 | Accumulated depreciation is higher than the acquisition cost | `mm/dataimport.py` |
+| ZI | 090 | The database is not empty - start with run.py --reset --demo ceramic | `mm/demo_ceramic.py` |
+| ZI | 091 | Ceramic demo: … / Ceramic demo: … lines failed - … | `mm/demo_ceramic.py` |

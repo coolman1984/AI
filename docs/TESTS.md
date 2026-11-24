@@ -2,7 +2,7 @@
 
 # Process test catalog
 
-10 processes, 191 test cases.
+10 processes, 192 test cases.
 
 Every business process has test cases; each case is proven by unit tests (run by `python tools/qa/check_all.py` and screen ZQA_TEST).
 
@@ -75,6 +75,7 @@ From the requirement to the vendor payment: buy the right thing, at the right pr
 | P2P-31 | Purchasing configuration and month-end | ZPUR_CONF ZPUR_CLOSE | Settings displayed; open purchasing work in order with status | `test_pur_ext.ConfigAndClosing.test_configuration_and_month_end_status` |
 | P2P-32 | Data takeover of every business area with six Excel workbooks | ZIMPORT | Purchasing, sales, warehouse, finance, production and HR examples load in order without an error; takeover account 399999 = 0; asset accounts = asset register | `test_takeover_all.AllAreas.test_examples_load_in_order_and_balance`<br>`test_takeover_all.AllAreas.test_asset_accounts_equal_the_asset_register` |
 | P2P-33 | Takeover check: compare file with system, no double load, clear errors | ZIMPORT | Every value found; a changed salary or credit limit is reported; second load refused; wrong national ID points to the Excel row | `test_takeover_all.AllAreas.test_compare_finds_everything_and_reports_a_change`<br>`test_takeover_all.AllAreas.test_loading_twice_is_refused`<br>`test_takeover_all.Templates.test_every_area_has_guide_sheets_control_and_lists`<br>`test_takeover_all.Templates.test_wrong_national_id_points_to_the_excel_row` |
+| P2P-34 | Ceramic factory demo: go-live through the takeover objects + a month of business | ZIMPORT | Tile factory loads into an empty system, 399999 = 0, purchase / production with scrap / domestic + export sales posted; its Excel workbook loads through ZIMPORT without an error; never on top of other data | `test_demo_ceramic.CeramicDemo.test_factory_loads_and_balances`<br>`test_demo_ceramic.CeramicDemo.test_this_months_business`<br>`test_demo_ceramic.CeramicDemo.test_excel_workbook_loads_through_zimport`<br>`test_demo_ceramic.CeramicDemo.test_not_on_top_of_existing_data` |
 | P2P-34 | Quality inspection at goods receipt and usage decision | QP01 QA32 QA11 QM01 ZQM_VENDOR | GR of a QM material goes to inspection stock with a lot; manual release blocked; results valuated; accepted to unrestricted, rejected to blocked with a vendor complaint; reversal cancels the open lot | `test_qm_pm.Quality.test_goods_receipt_lot_results_and_usage_decision`<br>`test_qm_pm.Quality.test_reversal_cancels_lot_manual_lot_and_corrective_action` |
 
 ## PTP - Plan to Produce

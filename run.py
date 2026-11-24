@@ -7,6 +7,7 @@ itself a few seconds after the last browser tab is closed.
 Options:
   --reset          delete the database and load fresh demo data
   --empty          an empty system for real data (no demo data, also on later starts)
+  --demo ceramic   with --reset: the ceramic tile factory demo instead of the standard demo
   --port N         port (default 8080)
   --no-browser     do not open the browser
   --keep-running   do not stop when the browser tabs are closed
@@ -169,6 +170,8 @@ def main():
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--reset", action="store_true")
     ap.add_argument("--empty", action="store_true")
+    ap.add_argument("--demo", choices=["standard", "ceramic"], default="standard",
+                    help="with --reset: which demo company to load (ceramic = tile factory)")
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--no-open", action="store_true",
                     help="do not open the browser, but stop when the last window closes (desktop launchers)")
@@ -236,6 +239,10 @@ def main():
                                "(run.py --restore data/backup/...)" % db_path)
         if a.empty:
             seed.mark_no_demo(conn)                 # real data: never demo data in this database
+        elif a.demo == "ceramic" and not conn.execute("SELECT COUNT(*) FROM plant").fetchone()[0]:
+            from mm import demo_ceramic
+            demo_ceramic.load(conn)
+            print("Ceramic factory demo loaded.")
         elif seed.seed(conn) is not None:
             print("Demo data loaded.")
         _first_users(conn, db_path)

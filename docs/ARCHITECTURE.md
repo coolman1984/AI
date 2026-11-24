@@ -41,7 +41,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 
 | Package | Area | Main modules |
 |---|---|---|
-| `mm` | Core + inventory: DB, clock, parse helpers, material documents, posting, periods, Excel read/write, import | `db`, `util`, `posting`, `inventory`, `periods`, `xlsx`, `dataimport`, `board` |
+| `mm` | Core + inventory: DB, clock, parse helpers, material documents, posting, periods, Excel read/write, import | `db`, `util`, `posting`, `inventory`, `periods`, `xlsx`, `dataimport`, `board`, `seed`, `demo_ceramic` |
 | `md` | Master data: material views, customer, vendor, change documents, checks | `material`, `partner`, `changes`, `checks` |
 | `sd` | Sales: pricing, orders, ATP, credit, delivery, billing, returns, rebates, service | `order`, `pricing`, `credit`, `delivery`, `billing`, `rebate` |
 | `pur` | Purchasing: requisitions, release, sourcing, RFQ, contracts, PO, MRP, import/LC, follow-up | `pr`, `po`, `sourcing`, `mrp`, `importfile`, `analytics` |
@@ -102,4 +102,6 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 
 * `Start NERP.bat` (one click) → `python run.py` → browser on the home page.
 * `NERP Logon.bat` → desktop client. `python run.py --dev --reset` = fresh demo data, logon off.
+* `python run.py --reset --demo ceramic` = ceramic tile factory demo instead (`mm/demo_ceramic.py`: master data
+  and opening balances through the ZIMPORT takeover objects, then this month's business through the engines).
 * Data in `data/`; backup with `tools/Backup database.bat`.
