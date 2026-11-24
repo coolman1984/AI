@@ -6,6 +6,7 @@ Every merged pull request, newest first (from the git history). Details: the pul
 
 | PR | Date | Change |
 |---|---|---|
+| [#61](https://github.com/coolman1984/AI/pull/61) | 2026-11-24 | Exchange rates of all currencies (ZFX) |
 | [#60](https://github.com/coolman1984/AI/pull/60) | 2026-11-23 | HR: time and attendance, Law 14/2025, training, appraisal, settlement, analytics |
 | [#59](https://github.com/coolman1984/AI/pull/59) | 2026-11-23 | GMES shop-floor execution (ZMES_*) and operator certifications |
 | [#58](https://github.com/coolman1984/AI/pull/58) | 2026-11-23 | What-If in the NERP Copilot |

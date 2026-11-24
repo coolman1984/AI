@@ -357,5 +357,10 @@ def start(db_fn, interval=60):
                 STATE["last_error"] = ""
             except Exception as e:              # never stop the server because of a message
                 STATE["last_error"] = "%s: %s" % (type(e).__name__, e)
+            try:                                # daily exchange rates from the central bank (ZFX), if switched on
+                from fi import cbe
+                cbe.tick(db_fn())
+            except Exception as e:
+                STATE["fx_error"] = "%s: %s" % (type(e).__name__, e)
             time.sleep(interval)
     threading.Thread(target=loop, daemon=True, name="nerp-notify").start()

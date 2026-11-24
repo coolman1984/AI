@@ -85,6 +85,8 @@ CREATE TABLE IF NOT EXISTS currency (          -- TCURC / TCURX currency master
 
 def install(conn):
     conn.executescript(SCHEMA)
+    from .cbe import install as cbe_install
+    cbe_install(conn)
     for k, (en, ar, dec, f) in ISO.items():
         conn.execute("INSERT OR IGNORE INTO currency (waers, ltext, ltext_ar, decimals, factor) VALUES (?,?,?,?,?)", (k, en, ar, dec, f))
 

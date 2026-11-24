@@ -60,19 +60,42 @@ register("ZFX", { title: "Exchange Rates - All Currencies", async render(app, pa
     res.replaceChildren(h("div.k", null, "Result"), h("div.v", null, `${num(r.result, 2)} ${r.to}`), h("div.s", null, r.text)); };
   conv.append(panel("Currency converter (cross rate through EGP)", grid(field("Amount", amt), field("From", from), field("To", to)), btn("Convert", doConv), " ",
     btn("⇄ Swap", () => { const t = from.value; from.value = to.value; to.value = t; doConv(); }), h("div.kpis", null, res)));
+  const cbeBox = h("div");
+  const cbeLoad = async () => {
+    const d = await api("/api/fi/fx/cbe").catch(() => null); if (!d) return;
+    const s = d.settings, last = d.log[0];
+    cbeBox.replaceChildren(panel("🏦 Automatic rates from the Central Bank of Egypt",
+      h("div.kpis", null, kpi("Daily update", s.auto === "1" ? "On" : "Off", s.auto === "1" ? "every day after " + s.time : "switch on in Settings", s.auto === "1" ? "pos" : ""),
+        kpi("Last run", last ? last.ts.slice(5, 16) : "never", last ? last.message.slice(0, 120) : "", last && last.status === "failed" ? "neg" : last && last.status === "partial" ? "neg" : "pos"),
+        kpi("Safety limit", s.max_change + " %", "bigger jumps are not saved")),
+      d.log.length ? alv({ rows: d.log.slice(0, 8), compact: true, title: "Update log", columns: [{ key: "ts", label: "Time" }, { key: "usnam", label: "By" },
+        { key: "status", label: "Status", render: r => badge(r.status, r.status === "ok" ? "U" : r.status === "partial" ? "Q" : "B") }, { key: "rate_day", label: "Rates of" },
+        { key: "saved", label: "Saved", type: "int" }, { key: "rejected", label: "Not saved" }, { key: "message", label: "Message" }] }) : null,
+      note("Rates = average of the CBE buy and sell rates (type M). The update runs on the computer where NERP runs - it needs internet access to " + new URL(s.url).host + ".")));
+  };
   async function load() {
     data = await run(() => api(`/api/fi/fx?day=${dt.value}&all=${all.value}`)); if (!data) return;
     out.innerHTML = "";
+    cbeLoad();
     out.append(h("div.kpis", null, kpi("Currencies", String(data.total), "ISO 4217 + gold / silver"), kpi("With a rate", String(data.with_rate)),
       kpi("Older than " + data.stale_days + " days", String(data.stale), "update them", data.stale ? "neg" : "pos"),
       kpi("Used without a rate", String(data.missing.length), data.missing.map(m => m.waers).join(", ") || "none", data.missing.length ? "neg" : "pos")),
-      conv, h("div.fx-list"), hist,
+      cbeBox, conv, h("div.fx-list"), hist,
       note("Rates are EGP per 1 unit (type M, average). Weak currencies are quoted per 100 or 1,000 units, like the banks (e.g. 100 JPY). Postings use the rate valid on the posting date; OB08 maintains the same rates."));
     draw();
   }
   q.addEventListener("input", draw);
   dt.addEventListener("change", load); all.addEventListener("change", load);
   toolbar([{ label: "Display", key: "F8", primary: true, onClick: load },
+    { label: "🏦 Update from Central Bank", onClick: async () => {
+      const r = await run(() => api("/api/fi/fx/cbe/update", {})); if (!r) { cbeLoad(); return; }
+      msg(r.rejected.length ? "W" : "S", r.message + (r.rejected.length ? " - check: " + r.rejected.map(x => `${x.waers} ${x.rate} (last ${x.last}, ${x.change_pct}%)`).join("; ") : "")); load(); } },
+    { label: "Central Bank settings", onClick: async () => {
+      const d = await run(() => api("/api/fi/fx/cbe")); if (!d) return; const s = d.settings;
+      const x = await ask("Automatic exchange rates (Central Bank of Egypt)", [{ name: "auto", label: "Daily update: 1 = on, 0 = off", value: s.auto },
+        { name: "time", label: "Every day after (HH:MM)", value: s.time }, { name: "max_change", label: "Do not save jumps above (%)", value: s.max_change },
+        { name: "url", label: "Source page", value: s.url }]); if (!x) return;
+      const r = await run(() => api("/api/fi/fx/cbe/settings", x)); if (r) { msg("S", r.message); cbeLoad(); } } },
     { label: "Enter many rates", onClick: async () => {
       const x = await ask("Paste rates: CODE rate, CODE rate ... (e.g. USD 49.85, SAR 13.27, JPY 33.1 per 100)", [{ name: "text", label: "Rates", value: "" }, { name: "gdatu", label: "Valid from", value: dt.value }]); if (!x) return;
       const r = await run(() => api("/api/fi/fx/rates", { text: x.text, gdatu: x.gdatu })); if (!r) return;
