@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 815 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 839 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -558,6 +558,30 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 815 codes. `�
 | PG | 072 | Tax brackets must be in ascending order | `hr/engine.py` |
 | PG | 073 | … must be a whole number | `hr/engine.py` |
 | PG | 080 | Your user … is not linked to an employee (PA30 field 'user') | `web/hr_api.py` |
+| PH | 901 | Time as HH:MM, e.g. 08:00 | `hr/time.py` |
+| PH | 902 | Enter code and text of the shift | `hr/time.py` |
+| PH | 903 | Shift … does not exist | `hr/time.py` |
+| PH | 904 | Employee … does not exist / Employee … does not exist or has left | `hr/time.py` |
+| PH | 905 | Enter the name of the holiday | `hr/time.py` |
+| PH | 906 | Punch kind must be IN or OUT | `hr/time.py` |
+| PH | 907 | Already clocked … at … | `hr/time.py` |
+| PH | 908 | No evaluated overtime to approve on … | `hr/time.py` |
+| PH | 909 | Enter the reference of the notice to the labour office | `hr/time.py` |
+| PH | 910 | No overtime on … | `hr/time.py` |
+| PH | 920 | Enter the title of the training | `hr/talent.py` |
+| PH | 921 | Skill … does not exist | `hr/talent.py` |
+| PH | 922 | Employee … does not exist | `hr/talent.py` |
+| PH | 923 | Training … does not exist | `hr/talent.py` |
+| PH | 924 | Training … is already completed | `hr/talent.py` |
+| PH | 925 | Training … has no participants | `hr/talent.py` |
+| PH | 926 | Result must be PASS or FAIL | `hr/talent.py` |
+| PH | 930 | Employee … does not exist | `hr/talent.py` |
+| PH | 931 | You cannot appraise yourself | `hr/talent.py` |
+| PH | 932 | The appraisal … of … is final | `hr/talent.py` |
+| PH | 933 | A rating of … needs a comment with the improvement plan | `hr/talent.py` |
+| PH | 940 | Employee … does not exist | `hr/talent.py` |
+| PH | 941 | The leaving date is before the hiring date | `hr/talent.py` |
+| PH | 942 | Leaving reason must be one of … | `hr/talent.py` |
 | PQ | 901 | Enter the skill code and text | `hr/skills.py` |
 | PQ | 902 | Employee … does not exist | `hr/skills.py` |
 | PQ | 903 | Skill … does not exist | `hr/skills.py` |

@@ -132,7 +132,7 @@ const MENU = [
     ["6-2 Analysis - ABC & Coverage", ["ZMM_ABC", "ZMM_COVER"]],
   ]],
   ["Financial Accounting", [
-    ["1-1 Common - Basic Config", ["OX02", "OBA7", "OB41", "FBN1", "OBB8", "FTXP", "OB08"]],
+    ["1-1 Common - Basic Config", ["OX02", "OBA7", "OB41", "FBN1", "OBB8", "FTXP", "OB08", "ZFX"]],
     ["1-2 Common - Global Master", ["FS00", "FI12", "OAOA"]],
     ["1-3 Common - FI Utilities", ["FB03", "FB08", "FBRA", "ZIMPORT"]],
     ["1-4 Common - Process Map", ["ZFI_PROCESS", "ZFI_COCKPIT"]],
@@ -288,7 +288,7 @@ MENU.push(
     ["Cockpits", ["ZMM_COCKPIT", "ZSD_COCKPIT", "ZPUR_COCKPIT", "ZPP_COCKPIT", "ZFI_COCKPIT", "ZCO_COCKPIT", "ZMD_COCKPIT"]],
     ["Process Maps", ["ZPROCESS_ALL", "ZSD_PROCESS", "ZPUR_PROCESS", "ZPP_PROCESS", "ZFI_PROCESS", "ZCO_PROCESS", "ZMD_PROCESS"]],
     ["Change Documents", ["MM04", "XD04", "XK04"]],
-    ["Tools", ["ZWORKPLACE", "ZCOM", "ZORG", "MB5K", "ZEINV", "ZPRINT"]],
+    ["Tools", ["ZWORKPLACE", "ZFX", "ZCOM", "ZORG", "MB5K", "ZEINV", "ZPRINT"]],
     ["e-Learning & Quality", ["ZLMS", "ZQA_TEST", "ZQA_CHECK"]],
     ["More transactions", ["OKEON", "CS12", "MC82", "KKAO", "VKM3", "IW53"]],
   ]],

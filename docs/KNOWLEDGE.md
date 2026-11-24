@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v53**).
+  delivered: **NERP_v54**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,7 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Exchange rates for all currencies (ZFX, `fi/currency.py`): ISO 4217 currency master; rates still stored EGP per 1 unit x 100000 in `exch_rate` (postings unchanged); weak currencies entered per 100 / 1,000 (factor) and divided on save; OB08 validates against the master and refuses EGP; demo rates are illustrative, not market data | One place for every currency without touching the posting logic |
 | 2026-11 | HR: positive time recording (`hr/time.py`), talent (`hr/talent.py`), analytics (`hr/analytics.py`); Labour Law 14/2025 values as configurable defaults (15 / 21 / 30 / 45 leave days, 7 casual, 3 months notice, 7-day overtime notice) from secondary sources - marked VERIFY; settlement is an estimate, dismissal compensation shown as contingent | Close the HR gap with rules HR can change |
 | 2026-11 | GMES (mes package): own design after ISA-95 / MESA-11 (no third-party GMES copied); serial = 1 unit; stations perform (line, operation) of the routing; operator certification from HR skills (`hr_skill` / `hr_qual`, owned by HR); FPY from first attempts, RTY = product, DPMO with station opportunities; confirmation to the order per operation = units passed - already confirmed (manual CO11N counts too) | Close the production-tracking gap without double counting |
 | 2026-11 | What-If in the Copilot: tool `what_if` (area CO) for the AI; basic mode reads levers from the question (`agent._whatif_args`: one number per clause, keyword → lever, "down" words make it negative); "لو سمحت" is not a what-if | Ask in plain words, no screen needed |
@@ -70,6 +71,7 @@ something new (newest entries at the top of each section).
 * October payroll run is released but **not posted** → payroll vs ledger shows a 740k difference; the
   audit analytics explain it ("payroll run not posted yet"). This is intended.
 * Demo GMES: order 1000004 has 30 serials, 21 finished, 1 scrapped, 1 in repair; bookings on the last 3 days (none today), so the cockpit for today shows 0 output - use the day before. The demo line plan is only added where none exists (`INSERT OR IGNORE`), otherwise the ZPP_BOARD tests change.
+* Exchange rates are stored per 1 unit with 5 decimals: a very weak currency (e.g. IDR, VND) keeps about 3 significant digits per unit - always enter them per 1,000 (factor), never per unit.
 * Employees with `time_rec = 0` (management by default) are not evaluated by the time clock - otherwise every manager shows as absent. Demo: only the factory staff 10003-10017 clock in.
 * Time evaluation keeps `ot_posted` when a day is evaluated again, so approved overtime is never paid twice.
 * `pp.order.confirm` checks the operation sequence: confirm earlier operations before later ones.

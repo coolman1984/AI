@@ -170,6 +170,17 @@ steps appear in the approval inbox (ZINBOX), payroll cost in BI (category HR) an
   absenteeism (unplanned days / working days x headcount), overtime ratio, punctuality, labour cost per good
   unit, tenure, age, training hours, certificates expired / single-person skills, appraisal average.
 
+## Exchange rates of all currencies - ZFX
+
+All ISO 4217 currencies (about 155, plus gold and silver) with the English and Arabic name, decimals and the
+quotation unit: weak currencies are entered per 100 or 1,000 units as the banks quote them (e.g. 100 JPY).
+ZFX shows the latest rate (EGP per unit), the previous one, the change, the age (older than 7 days is flagged),
+1 EGP in the currency, a search (code, English or Arabic name), a history chart per currency, a **currency
+converter** with cross rates through EGP (e.g. SAR → USD) and the currencies used in documents, orders or
+employees that have **no rate yet**. "Enter many rates" takes a whole list at once (`USD 49.85, SAR 13.27,
+JPY 33.1`) and reports wrong pairs. OB08 now offers every currency and refuses unknown codes and EGP itself.
+Currencies can be hidden from the list. Postings keep using the rate valid on the posting date.
+
 ## Egyptian pound and US dollar (EGP / USD)
 
 The books are kept in EGP (local currency). The exchange rates come from OB08 (type M).
