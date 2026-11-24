@@ -6,6 +6,7 @@ Every merged pull request, newest first (from the git history). Details: the pul
 
 | PR | Date | Change |
 |---|---|---|
+| [#63](https://github.com/coolman1984/AI/pull/63) | 2026-11-24 | Exchange rates in the morning briefing |
 | [#62](https://github.com/coolman1984/AI/pull/62) | 2026-11-24 | Automatic exchange rates from the Central Bank of Egypt |
 | [#61](https://github.com/coolman1984/AI/pull/61) | 2026-11-24 | Exchange rates of all currencies (ZFX) |
 | [#60](https://github.com/coolman1984/AI/pull/60) | 2026-11-23 | HR: time and attendance, Law 14/2025, training, appraisal, settlement, analytics |

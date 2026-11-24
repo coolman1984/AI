@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v56**).
+  delivered: **NERP_v57**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,7 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Ceramic factory demo (`mm/demo_ceramic.py`, `run.py --demo ceramic`): a separate, on-demand demo instead of changing the standard demo (~270 tests depend on it); master data and opening balances go through the ZIMPORT takeover objects (tests the go-live path), this month's business through the engines (`mm/demo_ceramic_ops.py`); equity is the plug that brings 399999 to zero; profile of the largest Egyptian tile makers with generic names; its Excel workbook is generated from the same rows | Realistic industry data without breaking the standard demo, and a real test of the takeover |
 | 2026-11 | Exchange rates in the morning briefing (`notify.engine.fx_text`): main currencies + those with rates in use (max 6 lines), change vs previous rate, flags for old rates, currencies used without a rate and a failed CBE update today; shown to everybody (rates are public) | The owner sees the dollar every morning |
 | 2026-11 | Central bank rates (`fi/cbe.py`): tolerant HTML reader (rows with a known currency name EN / AR + numbers; no CSS classes), mid = (buy + sell) / 2, per 100 from the name, page date (never future), safety limit on jumps, daily run in the notify scheduler thread with 15-minute retry; the CBE site could NOT be reached from the build environment, so the reader was built from the usual table layout and is configurable | Rates without manual typing, safe against wrong reads |
 | 2026-11 | Exchange rates for all currencies (ZFX, `fi/currency.py`): ISO 4217 currency master; rates still stored EGP per 1 unit x 100000 in `exch_rate` (postings unchanged); weak currencies entered per 100 / 1,000 (factor) and divided on save; OB08 validates against the master and refuses EGP; demo rates are illustrative, not market data | One place for every currency without touching the posting logic |
@@ -67,6 +68,8 @@ something new (newest entries at the top of each section).
   not start or end with a variable; names are `a-z0-9_`.
 
 ## 4. Traps in the demo data
+
+* Ceramic demo: only the payment terms 0001 / NT30 / NT60 / Z210 exist and only the countries in `md.config.COUNTRIES` (ES, JO, IQ, LY, KW were added); unit **M2** was added for tiles. Semi-finished and finished goods need `plant.beskz = E`, otherwise "procured externally - no production order". Production orders need plan activity prices (KP26) for the month - the demo plans them for this and next month. Export customers use distribution channel 10 (the takeover material sheet has one sales view per row). Exchange rates (USD, EUR ...) are saved from the go-live date; they are not part of the Excel workbook.
 
 * Demo QM parts must be posted in the **current month** (the CO period of earlier months is closed).
 * The demo breakdown is dated before the PP sample month (otherwise the OEE test changes).
