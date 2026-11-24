@@ -44,8 +44,8 @@ class CeramicDemo(unittest.TestCase):
         n = lambda sql, *a: c.execute(sql, a).fetchone()[0]
         self.assertEqual(n("SELECT COUNT(*) FROM po_header"), 4)
         self.assertEqual(n("SELECT COUNT(*) FROM orders"), 6)
-        self.assertEqual(n("SELECT COUNT(*) FROM sd_vbak"), 6)
-        self.assertEqual(n("SELECT COUNT(*) FROM billing WHERE cancelled=0"), 4)
+        self.assertEqual(n("SELECT COUNT(*) FROM sd_vbak"), 7)
+        self.assertEqual(n("SELECT COUNT(*) FROM billing WHERE cancelled=0"), 5)
         # tiles produced into the finished goods store, kiln scrap recorded
         self.assertGreater(n("SELECT COUNT(*) FROM mat_doc_item WHERE bwart='101' AND aufnr IS NOT NULL"), 2)
         # export invoice in US dollars

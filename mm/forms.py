@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS output_log (     -- NAST: message status per document
 """
 FORMS = {"PO": "Purchase order", "RFQ": "Request for quotation", "DELIVERY": "Delivery note / picking list",
          "INVOICE": "Invoice", "DUNNING": "Dunning letter", "PAYADVICE": "Payment advice",
-         "COUNT": "Inventory count sheet", "PRODORDER": "Production order", "PAYSLIP": "Payslip"}
+         "COUNT": "Inventory count sheet", "PRODORDER": "Production order", "PAYSLIP": "Payslip",
+         "PACKLIST": "Packing list (export)", "ORIGIN": "Certificate of origin - data sheet"}
 
 CSS = """
 @page { size: A4; margin: 16mm 14mm; }
@@ -278,6 +279,53 @@ def _fc_pay(r):
 
 _R = {"PO": _po, "RFQ": _rfq, "DELIVERY": _delivery, "INVOICE": _invoice, "DUNNING": _dunning,
       "PAYADVICE": _payadvice, "COUNT": _count, "PRODORDER": _prodorder, "PAYSLIP": _payslip}
+
+
+def _packlist(conn, key):
+    from tile.export import documents
+    d = documents(conn, key)
+    lines = []
+    for i in d["items"]:
+        shades = ", ".join("%s/%s" % (l["shade"], l["caliber"]) for l in i["lots"]) or "-"
+        lines.append((i["posnr"], i["matnr"], i["arktx"], i.get("hs", ""), _q(i["qty"]), i.get("boxes", ""),
+                      i.get("pallets", ""), "{:,}".format(i["gross_kg"]) if i.get("gross_kg") else "", shades))
+    t = d["total"]
+    inv = d["invoice"]
+    return _page("Packing list", key, [("Delivery date", d["lfdat"]), ("Goods issue", d["gi"] or "not yet"),
+                                       ("Sales order", d["vgbel"]), ("Customer PO", d["order"].get("bstnk", "")),
+                                       ("Commercial invoice", inv["vbeln"] if inv else "not yet billed"),
+                                       ("Country of origin", "Egypt")],
+                 _addr(d["customer"]), [("Item", 0), ("Material", 0), ("Description", 0), ("HS code", 0), ("m2", 1),
+                                        ("Boxes", 1), ("Pallets", 1), ("Gross kg", 1), ("Shade / caliber", 0)], lines,
+                 "Total: <b>%s m2 - %d boxes - %d pallets - %s kg gross</b>" % (
+                     _q(t["m2"]), t["boxes"], t["pallets"], "{:,}".format(t["gross_kg"])),
+                 "<div class='box'>Every item is one shade and one caliber. Pallets wrapped and labelled with lot, "
+                 "shade and caliber.</div>", ["Warehouse", "Export department"])
+
+
+def _origin(conn, key):
+    from tile.export import documents
+    d = documents(conn, key)
+    inv = d["invoice"]
+    lines = [(i["posnr"], i.get("hs", ""), i.get("hs_text") or i["arktx"], _q(i["qty"]) + " m2",
+              i.get("pallets", ""), "{:,}".format(i["gross_kg"]) if i.get("gross_kg") else "") for i in d["items"]]
+    amount = ""
+    if inv:
+        amount = "Invoice %s of %s: <b>%s %s</b>" % (e(inv["vbeln"]), e(inv["fkdat"]), _a(
+            inv["netwr_fc"] if inv["waerk"] != "EGP" and inv["netwr_fc"] is not None else inv["netwr"]), e(inv["waerk"]))
+    return _page("Certificate of origin - data sheet", key, [
+        ("Exporter", _company()), ("Consignee", d["customer"].get("name", "")),
+        ("Country of destination", d["customer"].get("land", "")), ("Country of origin", "Egypt"),
+        ("Means of transport", "Sea / land - to be completed"), ("Delivery", key)],
+        _addr(d["customer"]), [("Item", 0), ("HS code", 0), ("Description of goods", 0), ("Quantity", 1),
+                               ("Pallets", 1), ("Gross kg", 1)], lines, amount,
+        "<div class='box'>Data for the certificate of origin application at the chamber of commerce / the "
+        "preferential certificate of the trade agreement with the country of destination. The goods were "
+        "wholly manufactured in Egypt from local and imported materials. Check the HS codes with the customs "
+        "broker.</div>", ["Export department", "Authorised signatory"])
+
+
+_R.update(PACKLIST=_packlist, ORIGIN=_origin)
 
 
 def render(conn, form, key):

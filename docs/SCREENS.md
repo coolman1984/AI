@@ -2,7 +2,7 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 570 screens, by menu area.
+Type the code in the top field of NERP. 571 screens, by menu area.
 
 Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
 
@@ -217,6 +217,12 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 |---|---|
 | `ZSD_BOARD` | Sales Status Board |
 | `ZSD_COCKPIT` | Sales Cockpit - Orders, Revenue, Margin, Service Level & Credit |
+
+### 8-3 Reports - Export Sales & Documents
+
+| Code | Screen |
+|---|---|
+| `ZSD_EXPORT` | Export Sales and Export Documents |
 
 ## Logistics Execution
 

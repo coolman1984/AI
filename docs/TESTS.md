@@ -2,7 +2,7 @@
 
 # Process test catalog
 
-10 processes, 196 test cases.
+10 processes, 198 test cases.
 
 Every business process has test cases; each case is proven by unit tests (run by `python tools/qa/check_all.py` and screen ZQA_TEST).
 
@@ -35,6 +35,8 @@ From the customer request to the cash in the bank: price, promise, ship, bill, c
 | O2C-21 | USD price list: order and invoice in USD to the cent | VK11 VA01 VF01 | USD price stays exact on the invoice; local amount at the billing-date rate | `test_flows.CustomerCurrency.test_usd_price_is_kept_exactly_from_order_to_invoice` |
 | O2C-22 | Customer rebate agreement with targets, accrual and settlement | ZREB01 ZREB02 ZREB_ACR ZREB03 | Reached tier on net billed sales; accrual only the difference; customer credited and accrual cleared at the end | `test_sd_mm_ext.Rebates.test_tiers_accrual_and_settlement` |
 | O2C-23 | Quotation follow-up, sales configuration and month-end | ZSD_QFU ZSD_CONF ZSD_CLOSE | Conversion and hit rate; settings displayed; open sales work in order | `test_sd_mm_ext.SalesFollowUp.test_quotations_config_and_month_end` |
+| O2C-24 | Tiles sold in m2, boxes or pallets | VA01 ZTILE_LOTS | Order quantity rounded up to full boxes, BOX / PAL converted to m2, wrong units refused; delivery packing = boxes, pallets, gross weight | `test_tile.Packing.test_boxes_pallets_and_rounding`<br>`test_tile.Packing.test_order_in_pallets_and_packing_list` |
+| O2C-25 | Export channel, export report and export documents | ZSD_EXPORT | Foreign customers in channel 20, VAT 0, report per country; packing list and certificate of origin data with HS code; takeover adds the export sales view to an existing material | `test_tile.Export.test_export_channel_report_and_origin`<br>`test_tile.Export.test_takeover_material_line_adds_the_export_channel` |
 
 ## P2P - Procure to Pay
 

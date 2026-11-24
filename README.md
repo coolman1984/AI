@@ -183,6 +183,22 @@ For tile factories (switched on per product in **ZTILE_CONF**; the standard demo
   electricity); consumption ÷ m² sorted = m³ gas and kWh per m² and EGP energy cost per m²; a day more
   than 10 % above the 28-day normal is flagged; a meter cannot run backwards. Prices per unit in ZTILE_CONF.
 - **Morning briefing:** "المصنع" lines with yesterday's first-choice rate and gas per m² (production users).
+- **Sold in m², boxes or pallets:** a sales order item of a tile product can be entered in `M2`, `BOX` or
+  `PAL` (field "unit"); the quantity is converted to m² and **rounded up to full boxes** (message in the
+  order). m² per box, boxes per pallet and kg per m² per product in ZTILE_CONF. ZTILE_LOTS shows the packing
+  of a delivery: boxes, full pallets + loose boxes, gross weight.
+
+## Export sales and export documents - ZSD_EXPORT (Sales menu 8-3)
+
+- Export = distribution channel **20** or a customer outside Egypt. Report per country and customer
+  (document currency and EGP), export invoices (VAT 0 %), share of total sales, open export orders.
+- Enter a delivery to print the **packing list** (form `PACKLIST`: HS code, m², boxes, pallets, gross kg,
+  shade / caliber per item) and the **certificate of origin data sheet** (form `ORIGIN`: exporter, consignee,
+  destination, HS codes, quantities, invoice amount) - plus the delivery note and the invoice in USD.
+- HS codes of ceramic tiles follow the water absorption group: 6907.21 (≤ 0.5 %), 6907.22 (0.5-10 %),
+  6907.23 (> 10 %) - check them with the customs broker.
+- Data takeover: a second "06 Materials" line with the same material and only `sales.vkorg` /
+  `sales.vtweg` adds the export sales view to a material loaded before.
 
 ## Human Resources (HR) and Egyptian payroll
 

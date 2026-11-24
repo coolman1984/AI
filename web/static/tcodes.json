@@ -535,6 +535,7 @@
  "ZSD_CLOSE": "Sales - Closing Management",
  "ZSD_COCKPIT": "Sales Cockpit - Orders, Revenue, Margin, Service Level & Credit",
  "ZSD_CONF": "Sales - Basic Configuration (display)",
+ "ZSD_EXPORT": "Export Sales and Export Documents",
  "ZSD_PIPE": "Sales Pipeline (Inquiries & Quotations)",
  "ZSD_PROCESS": "Order-to-Cash Process Map",
  "ZSD_QFU": "Quotation Follow-up",

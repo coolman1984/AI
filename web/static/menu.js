@@ -41,6 +41,7 @@ const MENU = [
     ["7-3 Returns - Service Master & Parts", ["IE01", "IE03", "BGM1", "ZSP01", "ZWR01", "MP33"]],
     ["8-1 Reports - Sales Analysis", ["MCTA", "MCTC", "KE30", "ZSLM"]],
     ["8-2 Reports - Boards & Cockpit", ["ZSD_BOARD", "ZSD_COCKPIT"]],
+    ["8-3 Reports - Export Sales & Documents", ["ZSD_EXPORT"]],
   ]],
   ["Production", [
     ["1-1 Common - Basic Config", ["ZPP_CONF", "OPL8", "SCAL"]],

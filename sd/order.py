@@ -286,6 +286,11 @@ def _add_item(conn, vbeln, posnr, it, c, area, auart, t, audat, vdatu, ref):
         raise MMError("Material %s is excluded for customer %s (VB01 exclusion)" % (matnr, c["kunnr"]),
                       "V1", "022")
     qty = parse_qty(it.get("qty"))
+    if auart not in ("RE", "CR", "DR"):                     # tiles: M2 / BOX / PAL, full boxes
+        from tile.pack import sales_qty
+        qty, pnote = sales_qty(conn, matnr, qty, it.get("unit"))
+        if pnote:
+            msgs.append(pnote)
     if ref and ref["vbtyp"] == "M" and it.get("vgbel") and it.get("vgpos"):
         _check_reference_limit(conn, auart, it["vgbel"], int(it["vgpos"]), qty, it.get("price"), posnr)
     pstyv = t["pstyv"]

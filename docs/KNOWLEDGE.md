@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v58**).
+  delivered: **NERP_v59**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,8 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Tiles in boxes / pallets (`tile/pack.py`): order items of tile products are rounded UP to full boxes when the order is created (`sd.order._add_item`, not for returns / credit / debit memos; VA02 quantity changes are not rounded); BOX / PAL entered in the item field "unit"; gross weight = m2 x kg/m2 + 0.6 kg per carton + 25 kg per pallet | Customers get full boxes; the warehouse ships boxes |
+| 2026-11 | Export (`tile/export.py`, ZSD_EXPORT): export = channel 20 or a customer outside Egypt; forms PACKLIST and ORIGIN (data sheet for the chamber of commerce / preferential certificate - not the certificate itself); HS 6907.21 / .22 / .23 from the ISO group - VERIFY with the customs broker; the takeover MATERIAL object now extends an existing material by a new plant / sales area line | Export documents from the delivery, no retyping |
 | 2026-11 | Ceramics (`tile` package): lots are a sub-ledger next to MM stock (MM keeps quantities per material / bin; a lot = shade + caliber of one sorting) instead of batch management in the posting engine - no change to the posting logic or the standard demo; the goods issue of a delivery calls `tile.lots.on_goods_issue` (no-op without tile products) and refuses a shade / caliber mix; `reconcile` shows lots = stock | Shade-consistent deliveries without the risk of rebuilding inventory posting |
 | 2026-11 | Grade 1 = GR 101 on the order, grade 2 = 501 into its own material at its price (offset 399990, a simplification - grade 2 is not a by-product of the order in CO), grade 3 / broken = scrap quantity in the sorting only; first choice = grade 1 / all sorted | Grade 2 has its own price list |
 | 2026-11 | Lab limits = ISO 13006 groups by water absorption (BIa ≤ 0.5 %, BIb ≤ 3, BIIa ≤ 6, BIIb ≤ 10, BIII > 10) with minimum breaking strength 1300 / 1100 / 1000 / 800 / 600 N, planarity 0.5 %, size 0.6 %: defaults from general knowledge of the standard - VERIFY against the certified standard | Honest about what was not checked |

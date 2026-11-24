@@ -80,7 +80,13 @@ register("ZTILE_LOTS", { title: "Tile Lots - Shade / Caliber Stock and Deliverie
   async function delivery() {
     if (!val(dn)) { dlv.replaceChildren(); return; }
     const d = await run(() => api("/api/tile/delivery?vbeln=" + encodeURIComponent(val(dn)))); if (!d) return;
-    dlv.replaceChildren(panel(`Lots of delivery ${d.vbeln} (one shade + one caliber per item)`, d.items.length ? alv({ rows: d.items, compact: true, columns: [
+    const pk = await api("/api/tile/delivery/packing?vbeln=" + encodeURIComponent(val(dn))).catch(() => null);
+    dlv.replaceChildren(pk ? panel(`Packing of delivery ${d.vbeln}`, h("div.kpis", null, kpi("m2", m2(pk.total.m2)), kpi("Boxes", String(pk.total.boxes)),
+        kpi("Pallets", String(pk.total.pallets)), kpi("Gross weight", pk.total.gross_kg.toLocaleString("en-US") + " kg")),
+      alv({ rows: pk.items.filter(i => i.boxes), compact: true, columns: [{ key: "posnr", label: "Item" }, { key: "matnr", label: "Material" },
+        { key: "qty", label: "m2", render: r => m2(r.qty) }, { key: "boxes", label: "Boxes", type: "int" }, { key: "full_pallets", label: "Full pallets", type: "int" },
+        { key: "loose_boxes", label: "+ loose boxes", type: "int" }, { key: "gross_kg", label: "Gross kg", type: "int" }] }),
+      h("div", null, btn("🖨 Packing list", () => App.printForm("PACKLIST", d.vbeln)), " ", btn("🖨 Certificate of origin data", () => App.printForm("ORIGIN", d.vbeln)))) : "", panel(`Lots of delivery ${d.vbeln} (one shade + one caliber per item)`, d.items.length ? alv({ rows: d.items, compact: true, columns: [
       { key: "posnr", label: "Item" }, { key: "matnr", label: "Material" }, { key: "qty", label: "m2", render: r => m2(r.qty) },
       { key: "lots", label: "Lots", render: r => r.error ? h("span", { style: { color: "#b3261e" } }, r.error) : r.lots.map(l => `${l.lot} ${l.shade}/${l.caliber} ${m2(l.qty)}`).join(", ") },
       { key: "chosen", label: "", render: r => r.chosen ? badge("chosen", "U") : badge("proposal", "Q") },
@@ -173,6 +179,41 @@ register("ZENERGY", { title: "Energy - Gas and Power per m2", async render(app) 
   load();
 } });
 
+register("ZSD_EXPORT", { title: "Export Sales and Export Documents", async render(app) {
+  const f = inp({ type: "date", value: today().slice(0, 4) + "-01-01" }), t = inp({ type: "date", value: today() });
+  const dn = inp({ w: "s", ph: "delivery" }), out = h("div"), docs = h("div");
+  app.append(panel(null, grid(field("From", f), field("To", t), field("Export delivery", dn))), docs, out);
+  const egp = c => (c / 100).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  async function load() {
+    const d = await run(() => api(`/api/sd/export?from=${f.value}&to=${t.value}`)); if (!d) return;
+    out.replaceChildren(
+      h("div.kpis", null, kpi("Export sales", egp(d.total_egp) + " EGP", `${d.invoices.length} invoices`), kpi("Share of sales", pct(d.share)),
+        kpi("Countries", String(d.countries.length), d.countries.map(c => c.land).join(", ")), kpi("Open export orders", String(d.open_orders.length))),
+      alv({ rows: d.countries, compact: true, title: "Per country", columns: [{ key: "land", label: "Country" }, { key: "qty", label: "m2", render: r => m2(r.qty) },
+        { key: "egp", label: "EGP", render: r => egp(r.egp) }, { key: "invoices", label: "Invoices", type: "int" }] }),
+      alv({ rows: d.customers, compact: true, title: "Per customer", columns: [{ key: "kunnr", label: "Customer" }, { key: "name", label: "Name" }, { key: "land", label: "Country" },
+        { key: "qty", label: "m2", render: r => m2(r.qty) }, { key: "fc", label: "Document currency", render: r => egp(r.fc) + " " + r.waerk }, { key: "egp", label: "EGP", render: r => egp(r.egp) }] }),
+      alv({ rows: d.invoices, title: "Export invoices (VAT 0 %)", columns: [{ key: "vbeln", label: "Invoice" }, { key: "fkdat", label: "Date", type: "date" },
+        { key: "kunnr", label: "Customer" }, { key: "name", label: "Name" }, { key: "land", label: "Country" }, { key: "vtweg", label: "Channel" },
+        { key: "netwr_fc", label: "Amount", render: r => egp(r.netwr_fc ?? r.netwr) + " " + r.waerk }, { key: "netwr", label: "EGP", render: r => egp(r.netwr) },
+        { key: "x", label: "", render: r => btn("🖨 Invoice", () => App.printForm("INVOICE", r.vbeln)) }] }),
+      alv({ rows: d.open_orders, compact: true, title: "Open export orders", columns: [{ key: "vbeln", label: "Order" }, { key: "audat", label: "Date", type: "date" },
+        { key: "kunnr", label: "Customer" }, { key: "name", label: "Name" }, { key: "land", label: "Country" }, { key: "waerk", label: "Currency" }] }),
+      note("Export = distribution channel 20 or a customer outside Egypt. Exports are zero-rated for VAT."));
+  }
+  async function showDocs() {
+    if (!val(dn)) { docs.replaceChildren(); return; }
+    const pk = await run(() => api("/api/tile/delivery/packing?vbeln=" + encodeURIComponent(val(dn)))); if (!pk) return;
+    docs.replaceChildren(panel(`Export documents of delivery ${pk.vbeln}`, h("div.kpis", null, kpi("m2", m2(pk.total.m2)), kpi("Boxes", String(pk.total.boxes)),
+        kpi("Pallets", String(pk.total.pallets)), kpi("Gross weight", pk.total.gross_kg.toLocaleString("en-US") + " kg")),
+      h("div", null, btn("🖨 Packing list", () => App.printForm("PACKLIST", pk.vbeln)), " ", btn("🖨 Certificate of origin data", () => App.printForm("ORIGIN", pk.vbeln)), " ",
+        btn("🖨 Delivery note", () => App.printForm("DELIVERY", pk.vbeln)))));
+  }
+  dn.addEventListener("change", showDocs);
+  toolbar([{ label: "Display", key: "F8", primary: true, onClick: () => { load(); showDocs(); } }]);
+  load();
+} });
+
 register("ZTILE_CONF", { title: "Ceramics Settings - Tile Products and Energy Meters", async render(app) {
   const out = h("div");
   app.append(out);
@@ -181,14 +222,16 @@ register("ZTILE_CONF", { title: "Ceramics Settings - Tile Products and Energy Me
     out.replaceChildren(
       alv({ rows: d.products, title: "Tile products (kept in shade / caliber lots)", columns: [{ key: "matnr", label: "Material" }, { key: "maktx", label: "Text" },
         { key: "fmt", label: "Format" }, { key: "bgroup", label: "ISO group" }, { key: "grade2", label: "Grade 2 material" },
-        { key: "m2_box", label: "m2 / box", render: r => (r.m2_box / 1000).toFixed(3) }, { key: "boxes_pal", label: "Boxes / pallet", type: "int" }] }),
+        { key: "m2_box", label: "m2 / box", render: r => (r.m2_box / 1000).toFixed(3) }, { key: "boxes_pal", label: "Boxes / pallet", type: "int" },
+        { key: "kg_m2", label: "kg / m2", render: r => (r.kg_m2 / 1000).toFixed(1) }, { key: "pal", label: "m2 / pallet", render: r => (r.m2_box * r.boxes_pal / 1e6).toFixed(2) }] }),
       alv({ rows: d.meters, title: "Energy meters", columns: [{ key: "meter", label: "Meter" }, { key: "text", label: "Text" }, { key: "kind", label: "Kind" },
         { key: "unit", label: "Unit" }, { key: "area", label: "Area" }, { key: "price", label: "Price EGP / unit", render: r => (r.price / 100).toFixed(2) }, { key: "active", label: "Active", type: "int" }] }));
   }
   toolbar([{ label: "Refresh", key: "F8", primary: true, onClick: load },
     { label: "Tile product", onClick: async () => {
       const x = await ask("Tile product", [{ name: "matnr", label: "Material" }, { name: "fmt", label: "Format (e.g. 60x60)" }, { name: "bgroup", label: "ISO group (BIa BIb BIIa BIIb BIII)", value: "BIIa" },
-        { name: "grade2", label: "Grade 2 material (optional)" }, { name: "m2_box", label: "m2 per box", value: "1.44" }, { name: "boxes_pal", label: "Boxes per pallet", value: "40" }]); if (!x) return;
+        { name: "grade2", label: "Grade 2 material (optional)" }, { name: "m2_box", label: "m2 per box", value: "1.44" }, { name: "boxes_pal", label: "Boxes per pallet", value: "40" },
+        { name: "kg_m2", label: "kg per m2", value: "20" }]); if (!x) return;
       const r = await run(() => api("/api/tile/conf/product", x)); if (r) { msg("S", r.message); load(); } } },
     { label: "Energy meter", onClick: async () => {
       const x = await ask("Energy meter", [{ name: "meter", label: "Meter" }, { name: "text", label: "Text" }, { name: "kind", label: "Kind (GAS / POWER)", value: "GAS" },

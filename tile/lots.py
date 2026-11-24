@@ -37,7 +37,7 @@ STATUS = {"OK": "Free", "HOLD": "On hold (lab)", "BLOCK": "Blocked"}
 
 
 # ------------------------------------------------------------------ master
-def save_product(conn, matnr, grade2="", fmt="", bgroup="BIIa", m2_box="1.44", boxes_pal="40"):
+def save_product(conn, matnr, grade2="", fmt="", bgroup="BIIa", m2_box="1.44", boxes_pal="40", kg_m2="20"):
     m = str(matnr or "").strip().upper()
     if not conn.execute("SELECT 1 FROM material WHERE matnr=?", (m,)).fetchone():
         raise MMError("Material %s does not exist" % str(matnr or ""), "TL", "001")
@@ -49,9 +49,10 @@ def save_product(conn, matnr, grade2="", fmt="", bgroup="BIIa", m2_box="1.44", b
     if bgroup not in GROUPS:
         raise MMError("Group %s is unknown - use %s" % (bgroup, ", ".join(GROUPS)), "TL", "003")
     with transaction(conn):
-        conn.execute("INSERT OR REPLACE INTO tile_product VALUES (?,?,?,?,?,?)",
+        conn.execute("INSERT OR REPLACE INTO tile_product (matnr,grade2,fmt,bgroup,m2_box,boxes_pal,kg_m2) "
+                     "VALUES (?,?,?,?,?,?,?)",
                      (m, g2, str(fmt or "").strip()[:20], bgroup, parse_qty(m2_box),
-                      parse_int(boxes_pal, "boxes per pallet", 1, 500)))
+                      parse_int(boxes_pal, "boxes per pallet", 1, 500), parse_qty(kg_m2 or "20")))
     return m
 
 

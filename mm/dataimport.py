@@ -132,7 +132,15 @@ def _costcenter(conn, d, user):
 
 
 def _material(conn, d, user):
-    from md.material import create_material
+    """a new material, or a further plant / sales area of a material loaded in an earlier line
+    (e.g. the export distribution channel: same material, second line with sales.vtweg = 20)"""
+    from md.material import create_material, extend_material
+    m = (d.get("matnr") or "").strip().upper()
+    if m and conn.execute("SELECT 1 FROM material WHERE matnr=?", (m,)).fetchone():
+        if not (d.get("plants") or d.get("sales")):
+            raise MMError("Material %s already exists" % m, "M3", "305")
+        return extend_material(conn, m, {k: v for k, v in d.items() if k in ("plants", "sales")}, user,
+                               tcode="ZIMPORT")
     return create_material(conn, d, user, tcode="ZIMPORT")
 
 

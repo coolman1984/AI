@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 876 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 879 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -372,7 +372,7 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 876 codes. `�
 | M3 | 302 | Material type … does not exist (OMS2) | `md/material.py` |
 | M3 | 303 | Unit of measure … is not defined (CUNI) | `md/material.py` |
 | M3 | 304 | Maintain at least one plant (plant views) | `md/material.py` |
-| M3 | 305 | Material … already exists / NCM code …: format NNNN.NN.NN (8 digits) / Material … is not maintained in plant … / Material … does not exist | `md/material.py`, `mm/master.py`, `mm/posting.py`, `mm/reports.py` |
+| M3 | 305 | Material … already exists / NCM code …: format NNNN.NN.NN (8 digits) / Material … is not maintained in plant … / Material … does not exist | `md/material.py`, `mm/dataimport.py`, `mm/master.py`, `mm/posting.py`, `mm/reports.py` |
 | M3 | 306 | Price control must be V (moving average) or S (standard) | `md/material.py` |
 | M3 | 307 | Enter a standard price for price control S | `md/material.py` |
 | M3 | 308 | Industry sector … does not exist (OMS3) | `md/material.py` |
@@ -712,6 +712,9 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 876 codes. `�
 | TL | 043 | A reading cannot be in the future | `tile/energy.py` |
 | TL | 044 | Reading … is lower than … of … - a meter does not run backwards | `tile/energy.py` |
 | TL | 045 | Reading … is higher than … of … | `tile/energy.py` |
+| TL | 060 | Unit … is only possible for tile products (ZTILE_CONF) | `tile/pack.py` |
+| TL | 061 | Unit … is not possible for tiles - use M2, BOX or PAL | `tile/pack.py` |
+| TL | 062 | Delivery … does not exist | `tile/export.py`, `tile/pack.py` |
 | TX | 901 | No tax rule … valid on … (ZTAX_LAW) | `tax/rules.py` |
 | TX | 902 | Enter the new value | `tax/rules.py` |
 | TX | 903 | Enter the legal reference (law / decree / resolution number) | `tax/rules.py` |

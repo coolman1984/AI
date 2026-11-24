@@ -143,9 +143,9 @@ CUSTOMERS = [  # kunnr altkn name street pstlz city land telf1 email stcd1 zterm
     ["C1005", "P-NCP", "شركة التطوير العقاري - مشروع العاصمة", "الحي المالي", "11865", "العاصمة الإدارية", "EG",
      "0225550000", "projects@developer.example", "410-100-005", "NT60", "15000000", "EGP", "10", "03", "CAI"],
     ["C1006", "X-KSA", "Gulf Building Materials Trading", "Industrial city 2", "21451", "Jeddah", "SA", "",
-     "import@gulf-bm.example", "300512345600003", "NT60", "400000", "USD", "10", "04", "EXP"],
+     "import@gulf-bm.example", "300512345600003", "NT60", "400000", "USD", "20", "04", "EXP"],
     ["C1007", "X-JOR", "Levant Tiles Distribution", "Sahab industrial", "11512", "Amman", "JO", "",
-     "orders@levant-tiles.example", "JO-4471002", "NT60", "250000", "USD", "10", "04", "EXP"],
+     "orders@levant-tiles.example", "JO-4471002", "NT60", "250000", "USD", "20", "04", "EXP"],
 ]
 # matnr werks basis idnrk menge ausch lgort rgekz
 BOMS = [
@@ -282,6 +282,8 @@ def load_master(conn):
         "sloc.lgort,sales.vkorg,sales.vtweg,sales.kbetr,plant.beskz",
         [[m, "FERT", tx, un, mg, "10", "1000", "S", cost, "PD", "0003", "1000", "10", price, "E"]
          for m, tx, un, mg, cost, price in PRODUCTS], p)
+    _do(conn, "MATERIAL", "matnr,sales.vkorg,sales.vtweg",                     # export distribution channel
+        [[m, "1000", "20"] for m, tx, un, mg, cost, price in PRODUCTS], p)
     _do(conn, "CUSTOMER", "kunnr,altkn,ktokd,name,street,pstlz,city,land,telf1,email,stcd1,zterm,klimk,waers,"
         "sales.vtweg,sales.spart,sales.kdgrp,sales.bzirk",
         [r[:2] + ["0001"] + r[2:14] + ["10", r[14], r[15]] for r in CUSTOMERS], p)
