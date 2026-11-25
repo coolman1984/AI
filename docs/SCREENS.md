@@ -2,9 +2,9 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 573 screens, by menu area.
+Type the code in the top field of NERP. 577 screens, by menu area.
 
-Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
+Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration) · [Customs & Clearance](#customs-clearance)
 
 ## Sales
 
@@ -223,7 +223,6 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZSD_EXPORT` | Export Sales and Export Documents |
-| `ZCUS` | Customs Clearance - Imports and Exports |
 
 ## Logistics Execution
 
@@ -528,13 +527,6 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZIMP03` | Import Files - Overview |
-
-### 5-5 Import - Customs Clearance
-
-| Code | Screen |
-|---|---|
-| `ZCUS` | Customs Clearance - Imports and Exports |
-| `ZCUS_TARIFF` | Customs Tariff, HS Codes and Settings |
 
 ### 6-1 Services - Service Order
 
@@ -2288,6 +2280,61 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZIMPORT` | Data Import for Go-Live |
+
+## Customs & Clearance
+
+### 1-1 Cockpit - Declarations & Alerts
+
+| Code | Screen |
+|---|---|
+| `ZCUS` | Customs Clearance - Imports and Exports |
+
+### 2-1 Import - Declarations
+
+| Code | Screen |
+|---|---|
+| `ZCUS_IMP` | Customs - Import Declarations |
+
+### 2-2 Import - Import File, LC & Landed Cost
+
+| Code | Screen |
+|---|---|
+| `ZIMP01` | Create Import File (letter of credit) |
+| `ZIMP02` | Import File Workbench |
+| `ZLC01` | Open Letter of Credit (LC margin) |
+| `ZIMP_COST` | Enter Import Cost |
+| `ZIMP_LAND` | Landed Cost - Add Import Costs to Stock |
+| `ZIMP03` | Import Files - Overview |
+
+### 3-1 Export - Declarations
+
+| Code | Screen |
+|---|---|
+| `ZCUS_EXP` | Customs - Export Declarations |
+
+### 3-2 Export - Sales & Documents
+
+| Code | Screen |
+|---|---|
+| `ZSD_EXPORT` | Export Sales and Export Documents |
+
+### 4-1 Temporary Admission
+
+| Code | Screen |
+|---|---|
+| `ZCUS_TA` | Temporary Admission - Imported Materials for Export |
+
+### 5-1 Reports - Duties, Clearance Time, Exports
+
+| Code | Screen |
+|---|---|
+| `ZCUS_REP` | Customs Report - Duties, Clearance Time, Exports |
+
+### 6-1 Settings - Tariff, HS Codes, Broker
+
+| Code | Screen |
+|---|---|
+| `ZCUS_TARIFF` | Customs Tariff, HS Codes and Settings |
 
 ## Other screens (opened from other screens or by code)
 

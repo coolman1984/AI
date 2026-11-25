@@ -168,6 +168,34 @@ class TemporaryAdmission(unittest.TestCase):
             cu.create_import(c, {"impno": "X", "regime": "XX"}, "T")
 
 
+class Module(unittest.TestCase):
+    def test_separate_menu_area_and_customs_role(self):
+        from sec import auth, config
+        cat = auth.catalog()
+        for t in ("ZCUS", "ZCUS_IMP", "ZCUS_EXP", "ZCUS_TA", "ZCUS_REP", "ZCUS_TARIFF"):
+            self.assertIn("CU", cat.get(t, set()), t)
+        self.assertNotIn("PUR", cat["ZCUS"])                              # its own module, not in purchasing
+        self.assertEqual(auth.area_of_path("/api/customs/decl/step"), "CU")
+        self.assertIn(("S_AREA", "CU", "02"), config.DEMO_ROLES["CUSTOMS_CLERK"][2])
+        self.assertEqual(config.DEMO_USERS["CUS1"][1], ["CUSTOMS_CLERK"])
+
+    def test_report_duties_suspended_and_clearance_time(self):
+        from customs import engine as cu
+        c = factory()
+        r = cu.report(c, "2026-01-01", "2026-12-31")
+        paid = c.execute("SELECT COALESCE(SUM(i.duty),0) + COALESCE((SELECT SUM(fees) FROM cus_decl WHERE regime='HOME' "
+                         "AND direction='IMP'),0) FROM cus_item i JOIN cus_decl d USING (declno) WHERE d.direction='IMP' "
+                         "AND d.regime='HOME'").fetchone()[0]
+        self.assertEqual(r["total"]["duty"], paid)
+        ta_amt = c.execute("SELECT SUM(i.duty + i.vat) FROM cus_item i JOIN cus_decl d USING (declno) WHERE "
+                           "d.regime='TA'").fetchone()[0]
+        self.assertEqual(r["total"]["suspended"], ta_amt)
+        self.assertEqual(r["total"]["declarations"], 2)
+        self.assertEqual(sum(m["duty"] for m in r["months"]), r["total"]["duty"])
+        self.assertIsNotNone(r["total"]["avg_clear_days"])                # the TA import was released
+        self.assertTrue(r["exports"])
+
+
 class Tariff(unittest.TestCase):
     def test_tariff_and_material_hs(self):
         from customs import engine as cu
@@ -182,11 +210,11 @@ class Tariff(unittest.TestCase):
             cu.set_material_hs(c, "NOPE", "3207.40")
         self.assertEqual(cu.hs_of(c, "FG-P612"), "6907.21")                 # tiles: from the ISO group
 
-    def test_briefing_line_only_for_purchasing(self):
+    def test_briefing_line_only_for_customs_users(self):
         from notify.engine import customs_text
         c = factory()
         self.assertIn("الجمارك", customs_text(c))
-        self.assertEqual(customs_text(c, lambda area: area != "PUR"), "")
+        self.assertEqual(customs_text(c, lambda area: area != "CU"), "")
 
 
 if __name__ == "__main__":

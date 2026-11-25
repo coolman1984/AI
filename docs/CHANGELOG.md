@@ -6,6 +6,10 @@ Every merged pull request, newest first (from the git history). Details: the pul
 
 | PR | Date | Change |
 |---|---|---|
+| [#67](https://github.com/coolman1984/AI/pull/67) | 2026-11-25 | Customs module: import / export clearance and temporary admission |
+| [#66](https://github.com/coolman1984/AI/pull/66) | 2026-11-24 | Tiles sold in m2 / boxes / pallets, export channel and export documents |
+| [#65](https://github.com/coolman1984/AI/pull/65) | 2026-11-24 | Ceramics: shade / caliber lots, lab tests, first-choice rate, gas per m2 |
+| [#64](https://github.com/coolman1984/AI/pull/64) | 2026-11-24 | Ceramic factory demo + its Excel takeover workbook |
 | [#63](https://github.com/coolman1984/AI/pull/63) | 2026-11-24 | Exchange rates in the morning briefing |
 | [#62](https://github.com/coolman1984/AI/pull/62) | 2026-11-24 | Automatic exchange rates from the Central Bank of Egypt |
 | [#61](https://github.com/coolman1984/AI/pull/61) | 2026-11-24 | Exchange rates of all currencies (ZFX) |

@@ -475,3 +475,47 @@ def day_text(conn):
     if t:
         out.append(t)
     return ("**🛃 الجمارك:**\n" + "\n".join(out)) if out else ""
+
+
+def report(conn, frm=None, to=None):
+    """ZCUS_REP: duties and import VAT per month, HS code and country; clearance time; exports and support"""
+    to = parse_date(to)
+    frm = parse_date(frm) if frm else datetime.date.fromisoformat(to).replace(month=1, day=1).isoformat()
+    imp = conn.execute(
+        "SELECT d.*, (SELECT COALESCE(SUM(cif),0) FROM cus_item WHERE declno=d.declno) cif, "
+        "(SELECT COALESCE(SUM(duty),0) FROM cus_item WHERE declno=d.declno) duty, "
+        "(SELECT COALESCE(SUM(vat),0) FROM cus_item WHERE declno=d.declno) vat FROM cus_decl d "
+        "WHERE d.direction='IMP' AND COALESCE(d.d_assessed, d.d_arrival, substr(d.ts,1,10)) BETWEEN ? AND ?",
+        (frm, to)).fetchall()
+    months, countries = {}, {}
+    for d in imp:
+        m = (d["d_paid"] or d["d_assessed"] or d["ts"][:10])[:7]
+        for agg, k in ((months, m), (countries, d["country"] or "-")):
+            x = agg.setdefault(k, dict(cif=0, duty=0, vat=0, suspended=0, n=0))
+            x["cif"] += d["cif"]
+            x["n"] += 1
+            if d["regime"] == "TA":
+                x["suspended"] += d["duty"] + d["vat"]
+            else:
+                x["duty"] += d["duty"] + d["fees"]
+                x["vat"] += d["vat"]
+    hs = [dict(r) for r in conn.execute(
+        "SELECT i.hs, t.text, COUNT(DISTINCT i.declno) n, SUM(i.cif) cif, SUM(i.duty) duty, SUM(i.vat) vat, "
+        "MAX(t.duty_pct) duty_pct FROM cus_item i JOIN cus_decl d USING (declno) LEFT JOIN cus_tariff t USING (hs) "
+        "WHERE d.direction='IMP' AND COALESCE(d.d_assessed, d.d_arrival, substr(d.ts,1,10)) BETWEEN ? AND ? "
+        "GROUP BY i.hs ORDER BY duty DESC", (frm, to))]
+    done = [d for d in imp if d["d_arrival"] and d["d_released"]]
+    days = [(datetime.date.fromisoformat(d["d_released"]) - datetime.date.fromisoformat(d["d_arrival"])).days
+            for d in done]
+    exp = conn.execute(
+        "SELECT d.country, COUNT(*) n, SUM((SELECT COALESCE(SUM(cif),0) FROM cus_item WHERE declno=d.declno)) fob "
+        "FROM cus_decl d WHERE d.direction='EXP' AND COALESCE(d.d_submitted, substr(d.ts,1,10)) BETWEEN ? AND ? "
+        "GROUP BY d.country ORDER BY fob DESC", (frm, to)).fetchall()
+    return dict(frm=frm, to=to, months=[dict(month=k, **v) for k, v in sorted(months.items())],
+                countries=[dict(country=k, **v) for k, v in sorted(countries.items(), key=lambda x: -x[1]["cif"])],
+                hs=hs, exports=[dict(r) for r in exp],
+                total=dict(cif=sum(d["cif"] for d in imp), duty=sum(d["duty"] + d["fees"] for d in imp if d["regime"] != "TA"),
+                           vat=sum(d["vat"] for d in imp if d["regime"] != "TA"),
+                           suspended=sum(d["duty"] + d["vat"] for d in imp if d["regime"] == "TA"),
+                           declarations=len(imp), avg_clear_days=round(sum(days) / len(days), 1) if days else None,
+                           max_clear_days=max(days) if days else None))

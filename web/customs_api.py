@@ -56,3 +56,8 @@ def customs_ta_home(req, q):
     from customs import ta
     b = req.body
     return ta.to_home(db(), b.get("declno"), b.get("pos"), b.get("day"), req.user, b.get("paid_by"))
+
+
+@route("GET", "/api/customs/report")
+def customs_report(req, q):
+    return cu.report(db(), q.get("from") or None, q.get("to") or None)

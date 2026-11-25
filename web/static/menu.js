@@ -41,7 +41,7 @@ const MENU = [
     ["7-3 Returns - Service Master & Parts", ["IE01", "IE03", "BGM1", "ZSP01", "ZWR01", "MP33"]],
     ["8-1 Reports - Sales Analysis", ["MCTA", "MCTC", "KE30", "ZSLM"]],
     ["8-2 Reports - Boards & Cockpit", ["ZSD_BOARD", "ZSD_COCKPIT"]],
-    ["8-3 Reports - Export Sales & Documents", ["ZSD_EXPORT", "ZCUS"]],
+    ["8-3 Reports - Export Sales & Documents", ["ZSD_EXPORT"]],
   ]],
   ["Production", [
     ["1-1 Common - Basic Config", ["ZPP_CONF", "OPL8", "SCAL"]],
@@ -108,7 +108,6 @@ const MENU = [
     ["5-2 Import - Import Costs", ["ZIMP_COST"]],
     ["5-3 Import - Landed Cost", ["ZIMP_LAND"]],
     ["5-4 Import - Overview", ["ZIMP03"]],
-    ["5-5 Import - Customs Clearance", ["ZCUS", "ZCUS_TARIFF"]],
     ["6-1 Services - Service Order", ["ME21N"]],
     ["6-2 Services - Service Entry Sheet", ["ML81N"]],
     ["7-1 Receipt - Goods Receipt / Return", ["MIGO", "MB51"]],
@@ -231,6 +230,16 @@ const MENU = [
 ];
 
 MENU.push(
+  ["Customs & Clearance", [
+    ["1-1 Cockpit - Declarations & Alerts", ["ZCUS"]],
+    ["2-1 Import - Declarations", ["ZCUS_IMP"]],
+    ["2-2 Import - Import File, LC & Landed Cost", ["ZIMP01", "ZIMP02", "ZLC01", "ZIMP_COST", "ZIMP_LAND", "ZIMP03"]],
+    ["3-1 Export - Declarations", ["ZCUS_EXP"]],
+    ["3-2 Export - Sales & Documents", ["ZSD_EXPORT"]],
+    ["4-1 Temporary Admission", ["ZCUS_TA"]],
+    ["5-1 Reports - Duties, Clearance Time, Exports", ["ZCUS_REP"]],
+    ["6-1 Settings - Tariff, HS Codes, Broker", ["ZCUS_TARIFF"]],
+  ]],
   ["Quality", [
     ["1-1 Common - Quality Cockpit", ["ZQM_COCKPIT"]],
     ["1-2 Common - Inspection Plan (characteristics)", ["QP01"]],

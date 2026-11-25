@@ -21,14 +21,8 @@ function timeline(steps) {
       h("div", { style: { fontWeight: "600" } }, (s.done ? "✓ " : "") + s.text), h("div", { style: { color: "#5d6b7c" } }, s.date || "—"))));
 }
 
-register("ZCUS", { title: "Customs Clearance - Imports and Exports", async render(app, params) {
-  const dir = sel([["", "Imports and exports"], ["IMP", "Imports"], ["EXP", "Exports"]], params.dir || "");
-  const open = sel([["1", "Open declarations"], ["0", "All declarations"]], "0");
-  const out = h("div"), det = h("div"), taBox = h("div");
-  app.append(panel(null, grid(field("Direction", dir), field("Show", open))), det, out);
-  async function loadTa() {
-    const t = await api("/api/customs/ta").catch(() => null); if (!t || !t.rows.length) { taBox.replaceChildren(); return; }
-    taBox.replaceChildren(panel("Temporary admission - imported materials for export",
+function taPanel(t, reload) {
+  return panel("Temporary admission - imported materials for export",
       h("div.kpis", null, kpi("Duty + VAT still secured", egp(t.at_risk) + " EGP", "open quantities"), kpi("Saved by exports", egp(t.saved) + " EGP", "discharged quantities, never paid"),
         kpi("Deadline soon", String(t.soon), `within ${t.warn_days} days`, t.soon ? "neg" : "pos"), kpi("Deadline passed", String(t.expired), "clear for home use", t.expired ? "neg" : "pos")),
       alv({ rows: t.rows, compact: true, rowClass: r => r.alert ? ".neg" : "", columns: [{ key: "declno", label: "Import" }, { key: "pos", label: "Line" },
@@ -39,8 +33,18 @@ register("ZCUS", { title: "Customs Clearance - Imports and Exports", async rende
         { key: "status", label: "Status", render: r => badge(r.status === "OPEN" ? "Open" : r.status === "DONE" ? "Fully exported" : "Home use", r.status === "OPEN" ? "Q" : "U") },
         { key: "x", label: "", render: r => r.status === "OPEN" ? btn("Clear for home use", async () => {
           const x = await ask(`${r.declno}/${r.pos} ${r.matnr}: pay duty + VAT of the open ${qty(r.open)} now`, [{ name: "day", label: "Date", value: today() }, { name: "paid_by", label: "Paid by: BANK or BROKER", value: "BANK" }]); if (!x) return;
-          const res = await run(() => api("/api/customs/ta/home", { declno: r.declno, pos: r.pos, day: x.day, paid_by: x.paid_by })); if (res) { msg("S", res.message); load(); } }) : "" }] }),
-      note(`Each released export declaration discharges the imported materials in the exported products (bill of material incl. scrap), oldest balance first. Deadline = release + ${t.months} months. The official input / output standards of the customs authority prevail over the bill of material.`)));
+          const res = await run(() => api("/api/customs/ta/home", { declno: r.declno, pos: r.pos, day: x.day, paid_by: x.paid_by })); if (res) { msg("S", res.message); reload(); } }) : "" }] }),
+      note(`Each released export declaration discharges the imported materials in the exported products (bill of material incl. scrap), oldest balance first. Deadline = release + ${t.months} months. The official input / output standards of the customs authority prevail over the bill of material.`));
+}
+
+const ZCUS_DEF = { title: "Customs Clearance - Imports and Exports", async render(app, params) {
+  const dir = sel([["", "Imports and exports"], ["IMP", "Imports"], ["EXP", "Exports"]], params.dir || "");
+  const open = sel([["1", "Open declarations"], ["0", "All declarations"]], "0");
+  const out = h("div"), det = h("div"), taBox = h("div");
+  app.append(panel(null, grid(field("Direction", dir), field("Show", open))), det, out);
+  async function loadTa() {
+    const t = await api("/api/customs/ta").catch(() => null);
+    taBox.replaceChildren(t && t.rows.length ? taPanel(t, load) : "");
   }
   async function load() {
     const d = await run(() => api(`/api/customs?dir=${dir.value}&open=${open.value}`)); if (!d) return;
@@ -128,6 +132,51 @@ register("ZCUS", { title: "Customs Clearance - Imports and Exports", async rende
       const r = await run(() => api("/api/customs/decl/export", x)); if (r) { msg("S", r.message); load(); show(r.declno); } } }]);
   await load();
   if (params.declno) show(params.declno);
+} };
+register("ZCUS", ZCUS_DEF);
+register("ZCUS_IMP", { title: "Customs - Import Declarations", render: (app, params) => ZCUS_DEF.render(app, Object.assign({}, params, { dir: "IMP" })) });
+register("ZCUS_EXP", { title: "Customs - Export Declarations", render: (app, params) => ZCUS_DEF.render(app, Object.assign({}, params, { dir: "EXP" })) });
+
+register("ZCUS_TA", { title: "Temporary Admission - Imported Materials for Export", async render(app) {
+  const all = sel([["0", "All lines"], ["1", "Open lines only"]], "0"), out = h("div");
+  app.append(panel(null, grid(field("Show", all))), out);
+  async function load() {
+    const t = await run(() => api("/api/customs/ta?open=" + all.value)); if (!t) return;
+    const uses = [].concat(...t.rows.map(r => r.uses));
+    out.replaceChildren(t.rows.length ? taPanel(t, load) : note("No temporary admission yet: create an import declaration with regime TA in ZCUS_IMP."),
+      uses.length ? alv({ rows: uses, compact: true, title: "Discharges by export declarations", columns: [{ key: "day", label: "Date", type: "date" },
+        { key: "exp_declno", label: "Export declaration" }, { key: "declno", label: "Import" }, { key: "pos", label: "Line" }, { key: "matnr", label: "Material" },
+        { key: "qty", label: "Quantity", render: r => qty(r.qty) }] }) : "");
+  }
+  all.addEventListener("change", load);
+  toolbar([{ label: "Display", key: "F8", primary: true, onClick: load }]);
+  load();
+} });
+
+register("ZCUS_REP", { title: "Customs Report - Duties, Clearance Time, Exports", async render(app) {
+  const f = inp({ type: "date", value: today().slice(0, 4) + "-01-01" }), t = inp({ type: "date", value: today() }), out = h("div");
+  app.append(panel(null, grid(field("From", f), field("To", t))), out);
+  async function load() {
+    const d = await run(() => api(`/api/customs/report?from=${f.value}&to=${t.value}`)); if (!d) return;
+    const k = d.total;
+    out.replaceChildren(
+      h("div.kpis", null, kpi("Import declarations", String(k.declarations)), kpi("Customs value", egp(k.cif) + " EGP"),
+        kpi("Duty + fees paid", egp(k.duty) + " EGP"), kpi("Import VAT (deductible)", egp(k.vat) + " EGP"),
+        kpi("Suspended (temporary admission)", egp(k.suspended) + " EGP"),
+        kpi("Clearance time", k.avg_clear_days === null ? "-" : k.avg_clear_days + " days", k.max_clear_days === null ? "arrival → release" : "longest " + k.max_clear_days + " days")),
+      alv({ rows: d.months, compact: true, title: "Per month", columns: [{ key: "month", label: "Month" }, { key: "n", label: "Declarations", type: "int" },
+        { key: "cif", label: "Customs value", render: r => egp(r.cif) }, { key: "duty", label: "Duty + fees", render: r => egp(r.duty) }, { key: "vat", label: "Import VAT", render: r => egp(r.vat) },
+        { key: "suspended", label: "Suspended (TA)", render: r => egp(r.suspended) }] }),
+      alv({ rows: d.hs, compact: true, title: "Per HS code", columns: [{ key: "hs", label: "HS code" }, { key: "text", label: "Description" }, { key: "n", label: "Declarations", type: "int" },
+        { key: "cif", label: "Customs value", render: r => egp(r.cif) }, { key: "duty_pct", label: "Duty %", render: r => pct(r.duty_pct) }, { key: "duty", label: "Duty", render: r => egp(r.duty) }, { key: "vat", label: "VAT", render: r => egp(r.vat) }] }),
+      alv({ rows: d.countries, compact: true, title: "Imports per country of the supplier", columns: [{ key: "country", label: "Country" }, { key: "n", label: "Declarations", type: "int" },
+        { key: "cif", label: "Customs value", render: r => egp(r.cif) }, { key: "duty", label: "Duty + fees", render: r => egp(r.duty) }] }),
+      alv({ rows: d.exports, compact: true, title: "Export declarations per country", columns: [{ key: "country", label: "Country" }, { key: "n", label: "Declarations", type: "int" },
+        { key: "fob", label: "FOB value EGP", render: r => egp(r.fob) }] }),
+      note("Duty of temporary admission imports is suspended and only becomes payable when the material is cleared for home use."));
+  }
+  toolbar([{ label: "Display", key: "F8", primary: true, onClick: load }]);
+  load();
 } });
 
 register("ZCUS_TARIFF", { title: "Customs Tariff, HS Codes and Settings", async render(app) {

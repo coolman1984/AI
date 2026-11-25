@@ -48,7 +48,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 | `pp` | Production: BOM, routing, planning, orders, confirmations, subcontracting, boards, daily meeting | `master`, `planning`, `order`, `board`, `daily` |
 | `mes` | GMES shop-floor execution: stations, serial numbers, bookings with route enforcement and operator certification, genealogy, andon, SPC, hourly / quality / WIP / cycle / operator reports | `track`, `reports`, `seed` |
 | `tile` | Ceramic tiles: sorting into grade / shade / caliber lots, one shade + caliber per delivery item (hook in the goods issue of `sd.delivery`), lab tests by ISO 13006 group, first-choice rate, gas / power per m2, sales in m2 / boxes / pallets (hook in `sd.order` item creation), export report and documents | `lots`, `energy`, `pack`, `export` |
-| `customs` | Customs clearance: import declarations from the import file (ACID, CIF at the customs rate, duty, import VAT code VI, payment into the import file costs), export declarations from a delivery (origin certificate, B/L, export support), tariff and HS codes, days in port | `engine`, `schema` |
+| `customs` | Customs clearance (own menu "Customs & Clearance", authorization area CU, role CUSTOMS_CLERK): import declarations from the import file (ACID, CIF at the customs rate, duty, import VAT code VI, payment into the import file costs), export declarations from a delivery (origin certificate, B/L, export support), tariff and HS codes, days in port | `engine`, `schema` |
 | `qm` | Quality (inspection lots, results, decisions, notifications) and plant maintenance | `quality`, `maintenance` |
 | `fi` | Financial accounting: central document, AP, AR, assets, bank, cheques, cash, WHT, closing, reports, currencies and exchange rates | `document`, `ap`, `ar`, `aa`, `clearing`, `reports`, `currency`, `cbe` |
 | `co` | Controlling: cost centers, orders, product costing, actuals, period end, CO-PA, budget | `master`, `costing`, `actual`, `period_end`, `copa`, `budget` |
@@ -86,7 +86,7 @@ mm/db.py  - SQLite connection, schema install chain, migrations, savepoints
 
 * Roles in `sec/config.DEMO_ROLES`: `(text, [tcode patterns], [(object, value, activity)])`.
   `D = [("*", "*", "03")]` = display everything except HR (HR needs an explicit grant).
-* Areas (`S_AREA`): SD, MM, PUR, PP, FI, CO, MD, HR, CA, BC, AU …; `area_allowed(profile, area, "02"|"03")`.
+* Areas (`S_AREA`): SD, MM, PUR, PP, FI, CO, MD, HR, CA, BC, AU, CU …; `area_allowed(profile, area, "02"|"03")`.
 * The server checks the API area of every request: GET = display (03), POST = change (02).
 * Logon can be switched off (developer / single-user mode) - then everything is allowed.
 * Read-only features that show several modules (AI tools, daily review, notifications) filter by the
