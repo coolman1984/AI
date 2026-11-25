@@ -28,7 +28,7 @@ API_AREAS = (("/api/forms/PAYSLIP/", "HR"), ("/api/sd/", "SD"), ("/api/fi/", "FI
              ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
              ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"), ("/api/wm/", "MM"), ("/api/tax/", "FI"),
              ("/api/qm/", "MM"), ("/api/pm/", "PP"),
-             ("/api/ai/settings", "BC"), ("/api/ai/", "CA"), ("/api/whatif/", "CO"), ("/api/mes/", "PP"), ("/api/tile/delivery", "SD"), ("/api/tile/pack", "SD"), ("/api/tile/", "PP"), ("/api/energy", "PP"),
+             ("/api/ai/settings", "BC"), ("/api/ai/", "CA"), ("/api/whatif/", "CO"), ("/api/mes/", "PP"), ("/api/customs/", "PUR"), ("/api/tile/delivery", "SD"), ("/api/tile/pack", "SD"), ("/api/tile/", "PP"), ("/api/energy", "PP"),
              ("/api/notif/admin", "BC"), ("/api/notif/", "CA"),
              ("/api/audit/access", "BC"), ("/api/audit/aje/post", "FI"), ("/api/audit/", "AU"))
 

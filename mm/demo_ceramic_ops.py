@@ -57,6 +57,19 @@ def _energy(conn, energy, go_live, t):
         day += _dt.timedelta(days=1)
 
 
+# HS codes and example tariff rates (duty %, export support %) - check every rate with the broker
+TARIFF = [("2508.40", "Other clays", "2", "0"), ("2507.00", "Kaolin", "2", "0"), ("2529.10", "Feldspar", "2", "0"),
+          ("2505.10", "Silica sand", "2", "0"), ("3207.40", "Glass frit", "5", "0"),
+          ("3207.20", "Vitrifiable enamels and glazes", "5", "0"), ("3215.19", "Printing ink", "10", "0"),
+          ("6903.90", "Refractory ceramic goods (kiln rollers)", "5", "0"),
+          ("6907.21", "Ceramic tiles, water absorption <= 0.5 %", "40", "6"),
+          ("6907.22", "Ceramic tiles, water absorption 0.5 - 10 %", "40", "6"),
+          ("6907.23", "Ceramic tiles, water absorption > 10 %", "40", "6")]
+MAT_HS = [("RM-CLR", "2508.40"), ("RM-CLW", "2508.40"), ("RM-KAO", "2507.00"), ("RM-FLD", "2529.10"),
+          ("RM-SND", "2505.10"), ("RM-FRT", "3207.40"), ("RM-GLZ", "3207.20"), ("RM-INK", "3215.19"),
+          ("SP-ROL", "6903.90")]
+
+
 def _vendor(conn, altkn):
     return conn.execute("SELECT lifnr FROM vendor WHERE altkn=?", (altkn,)).fetchone()[0]
 
@@ -94,7 +107,7 @@ def run(conn):
     feld = buy(2, "V-FLD", "101", [{"matnr": "RM-FLD", "menge": "250000", "lgort": "0001"},
                                     {"matnr": "RM-KAO", "menge": "80000", "lgort": "0001"}], "")
     ctn = buy(2, "V-CTN", "103", [{"matnr": "PK-CTN", "menge": "40000", "lgort": "0005"}], "")
-    buy(3, "V-FRT", "102", [{"matnr": "RM-FRT", "menge": "20000", "lgort": "0002"},
+    frit = buy(3, "V-FRT", "102", [{"matnr": "RM-FRT", "menge": "20000", "lgort": "0002"},
                              {"matnr": "RM-GLZ", "menge": "12000", "lgort": "0002"}], "")   # import, in transit
     gr(4, clay, 10, "600000")
     gr(4, clay, 20, "150000")
@@ -204,6 +217,30 @@ def run(conn):
             dl.pick(conn, dn)
             dl.post_gi(conn, dn, USER, d(day + 1))
             bl.create(conn, dn, USER, d(day + 1))
+
+    # ------------------------------------------------------------ customs (import of frit, exports)
+    from customs import engine as cus
+    from pur import importfile
+    for hs, txt, duty, sup in TARIFF:
+        cus.save_tariff(conn, hs, txt, duty, "14", sup, "example rate - check with the broker")
+    for m, hs in MAT_HS:
+        cus.set_material_hs(conn, m, hs)
+    cus.save_settings(conn, {"default_broker": _vendor(conn, "V-CUS"), "storage_egp_day": "1500", "free_days": "4"})
+    imp = importfile.create(conn, {"ebeln": frit, "port": "Alexandria", "eta": d(9), "bl_no": "SEA-ALX-55120",
+                                   "text": "Frit and glaze from Spain"}, USER)["impno"]
+    decl = cus.create_import(conn, {"impno": imp, "freight": "1450", "insurance": "95", "incoterm": "FOB",
+                                    "acid": "4010120260000123456"}, USER)["declno"]
+    for stp, day, extra in (("ACID", 3, {}), ("ARRIVED", 9, {}), ("SUBMITTED", 10, {"decl_ref": "IM-ALX-44817"}),
+                            ("INSPECTION", 11, {}), ("ASSESSED", 12, {}), ("PAID", 13, {})):
+        cus.step(conn, decl, stp, d(day), USER, extra)            # paid, still in port (not released)
+    exp_dn = [r[0] for r in conn.execute("SELECT l.vbeln FROM sd_likp l JOIN customer c USING (kunnr) WHERE "
+                                         "c.land<>'EG' ORDER BY l.vbeln").fetchall()]
+    for n, dn in enumerate(exp_dn):
+        e = cus.create_export(conn, {"vbeln": dn, "port": "Alexandria", "incoterm": "FOB"}, USER)["declno"]
+        cus.step(conn, e, "SUBMITTED", d(13 + n), USER, {"decl_ref": "EX-ALX-%d" % (7710 + n)})
+        if n == 0:
+            cus.step(conn, e, "RELEASED", d(14), USER, {"coo_no": "COO-%d-0931" % t.year})
+            cus.step(conn, e, "SHIPPED", d(15), USER, {"bl_no": "SEA-JED-88231"})
 
     # energy meters, one reading per day from the go-live (gas per m2 of the sorted tiles)
     for m, txt, kind, area, price in METERS:

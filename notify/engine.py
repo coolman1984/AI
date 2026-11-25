@@ -221,6 +221,9 @@ def daily_message(conn, user):
     tl = tile_text(conn, allowed)
     if tl:
         text += "\n\n" + tl
+    cu = customs_text(conn, allowed)
+    if cu:
+        text += "\n\n" + cu
     rv = review_text(conn, user, allowed)
     if rv:
         text += "\n\n" + rv
@@ -237,6 +240,17 @@ def tile_text(conn, allowed=None, day=None):
     except Exception:                              # the briefing must always arrive
         return ""
     return ("**🧱 المصنع:**\n" + "\n".join(lines)) if lines else ""
+
+
+def customs_text(conn, allowed=None):
+    """customs: shipments in port (over the free days), duties to pay, exports not cleared"""
+    if allowed is not None and not allowed("PUR"):
+        return ""
+    try:
+        from customs.engine import day_text
+        return day_text(conn)
+    except Exception:                              # the briefing must always arrive
+        return ""
 
 
 FX_MAIN = ("USD", "EUR", "GBP", "SAR", "AED", "CNY")

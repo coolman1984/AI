@@ -91,6 +91,8 @@ VENDORS = [  # altkn ktokk name street pstlz city land telf1 email stcd1 bankn b
      "", "305-661-550", "4005005005", "NBE", "0001", "EGP", "103", "4", ""],
     ["V-SPR", "0001", "شركة قطع غيار الأفران والمكابس", "العبور", "11828", "القاهرة", "EG", "0244771122",
      "parts@kiln-parts.example", "306-771-660", "4006006006", "CIB", "NT30", "EGP", "104", "10", ""],
+    ["V-CUS", "0001", "مكتب التخليص الجمركي - الإسكندرية", "الجمرك - باب 10", "21512", "الإسكندرية", "EG",
+     "0334801122", "ops@clearing-office.example", "307-881-770", "4007007007", "NBE", "NT30", "EGP", "102", "3", ""],
 ]
 
 # matnr mtart maktx meins matkl spart werks vprsv price peinh ekgrp plifz dismm minbe mabst eisbe lgort

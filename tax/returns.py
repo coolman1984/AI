@@ -51,8 +51,10 @@ def vat_return(conn, y, m):
         dict(no="2", text="Exports (0 %)", base=g("A0", "base"), tax=0),
         dict(no="3", text="Total output tax", base=g("A1", "base") + g("A0", "base"), tax=v["output"]),
         dict(no="4", text="Local purchases with input tax", base=g("V1", "base"), tax=g("V1", "tax")),
+        dict(no="4a", text="Imports - VAT paid at customs", base=g("VI", "base"), tax=g("VI", "tax")),
         dict(no="5", text="Purchases without input tax (0 %)", base=g("V0", "base"), tax=0),
-        dict(no="6", text="Total deductible input tax", base=g("V1", "base") + g("V0", "base"), tax=v["input"]),
+        dict(no="6", text="Total deductible input tax", base=g("V1", "base") + g("V0", "base") + g("VI", "base"),
+             tax=v["input"]),
         dict(no="7", text="Credit carried forward from the previous month", base=0, tax=carried),
     ]
     net = v["output"] - v["input"] - carried

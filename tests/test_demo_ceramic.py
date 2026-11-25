@@ -30,7 +30,7 @@ class CeramicDemo(unittest.TestCase):
         self.assertEqual(takeover_balance(c), 0)
         n = lambda sql: c.execute(sql).fetchone()[0]
         self.assertEqual(n("SELECT COUNT(*) FROM customer"), 7)
-        self.assertEqual(n("SELECT COUNT(*) FROM vendor"), 8)
+        self.assertEqual(n("SELECT COUNT(*) FROM vendor"), 9)
         self.assertEqual(n("SELECT COUNT(*) FROM hr_employee"), 20)
         self.assertEqual(n("SELECT COUNT(*) FROM asset"), 10)
         self.assertEqual(n("SELECT meins FROM material WHERE matnr='FG-P612'"), "M2")

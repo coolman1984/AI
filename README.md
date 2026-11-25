@@ -188,6 +188,27 @@ For tile factories (switched on per product in **ZTILE_CONF**; the standard demo
   order). m² per box, boxes per pallet and kg per m² per product in ZTILE_CONF. ZTILE_LOTS shows the packing
   of a delivery: boxes, full pallets + loose boxes, gross weight.
 
+## Customs clearance - imports and exports (ZCUS, ZCUS_TARIFF; Procurement 5-5, Sales 8-3)
+
+- **Import declaration** from an import file (ZIMP01): the purchase order items with their HS code, goods
+  value, freight, insurance, Incoterm, broker, port. Steps: **ACID** pre-registration (19 digits, required
+  first) → arrived at the port → declaration submitted → inspection → **duties assessed** → **paid** →
+  **released**. Steps go only forward and never into the future.
+- **Assessment:** customs value = CIF (goods + freight + insurance) × customs exchange rate (system rate or
+  entered), shared over the lines by value; duty = customs value × duty % of the HS code; import VAT =
+  (customs value + duty) × VAT %. Lines without a HS code in the tariff stop the assessment.
+- **Payment** (from the bank or by the broker): duty + fees go into the import file as a CUSTOMS cost, so
+  ZIMP_LAND adds them to the material cost; import VAT is posted as deductible input tax (tax code **VI**)
+  and shows in the VAT return (line 4a).
+- **Days in port** from arrival to release; above the free days (setting, default 4) the storage is
+  estimated (EGP per day, setting) and an alert shows in ZCUS and in the morning briefing.
+- **Export declaration** from a delivery: value from the invoice, steps submitted → inspection → released
+  (certificate of origin number) → shipped (bill of lading); expected export support = FOB × support %
+  of the HS code; packing list / origin data print buttons.
+- **ZCUS_TARIFF:** HS codes with duty %, import VAT %, export support %; HS code per material (tiles take
+  it from their ISO group); free days, storage per day, default broker. The demo rates are examples -
+  check every code and rate with the customs broker.
+
 ## Export sales and export documents - ZSD_EXPORT (Sales menu 8-3)
 
 - Export = distribution channel **20** or a customer outside Egypt. Report per country and customer

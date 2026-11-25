@@ -417,6 +417,8 @@
  "ZCO_PROCESS": "CO Process Map & Closing Cockpit",
  "ZCO_RECON": "Reconciliation FI ↔ CO ↔ CO-PA",
  "ZCO_SIM": "Profit Simulation (what if)",
+ "ZCUS": "Customs Clearance - Imports and Exports",
+ "ZCUS_TARIFF": "Customs Tariff, HS Codes and Settings",
  "ZDASH": "ERP Dashboard",
  "ZDAY": "Daily Review - every module",
  "ZEINV": "E-Invoice Monitor (Egyptian Tax Authority)",

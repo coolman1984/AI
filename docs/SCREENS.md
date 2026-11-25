@@ -2,7 +2,7 @@
 
 # Screens (T-codes)
 
-Type the code in the top field of NERP. 571 screens, by menu area.
+Type the code in the top field of NERP. 573 screens, by menu area.
 
 Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procurement](#procurement) · [Production](#production) · [Quality](#quality) · [Maintenance](#maintenance) · [Financial Accounting](#financial-accounting) · [Controlling](#controlling) · [Taxes Egypt](#taxes-egypt) · [External Audit](#external-audit) · [Marketing](#marketing) · [Master Data](#master-data) · [Human Resources](#human-resources) · [Common](#common) · [Administration](#administration)
 
@@ -223,6 +223,7 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZSD_EXPORT` | Export Sales and Export Documents |
+| `ZCUS` | Customs Clearance - Imports and Exports |
 
 ## Logistics Execution
 
@@ -527,6 +528,13 @@ Areas: [Sales](#sales) · [Logistics Execution](#logistics-execution) · [Procur
 | Code | Screen |
 |---|---|
 | `ZIMP03` | Import Files - Overview |
+
+### 5-5 Import - Customs Clearance
+
+| Code | Screen |
+|---|---|
+| `ZCUS` | Customs Clearance - Imports and Exports |
+| `ZCUS_TARIFF` | Customs Tariff, HS Codes and Settings |
 
 ### 6-1 Services - Service Order
 

@@ -2,7 +2,7 @@
 
 # JSON API
 
-565 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+570 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -106,6 +106,11 @@
 | POST | `/api/co/skf` | CO | `co_api.py` · `co_kk01` |  |
 | POST | `/api/co/vf01` | CO | `co_api.py` · `co_vf01` |  |
 | POST | `/api/costcenter` | - | `server.py` · `api_kostl` |  |
+| GET | `/api/customs` | - | `customs_api.py` · `customs_cockpit` |  |
+| GET | `/api/customs/decl` | PUR | `customs_api.py` · `customs_detail` |  |
+| POST | `/api/customs/decl/<act>` | PUR | `customs_api.py` · `customs_decl` |  |
+| GET | `/api/customs/tariff` | PUR | `customs_api.py` · `customs_tariff` |  |
+| POST | `/api/customs/tariff/<act>` | PUR | `customs_api.py` · `customs_tariff_save` |  |
 | GET | `/api/dash/overview` | CA | `dash_api.py` · `dash_overview` |  |
 | GET | `/api/dashboard` | - | `server.py` · `api_dashboard` |  |
 | GET | `/api/doc/<mblnr>` | - | `server.py` · `api_mb03_any_year` |  |
