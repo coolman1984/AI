@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 899 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 903 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -179,6 +179,7 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 899 codes. `�
 | CU | 015 | Delivery … already has an export declaration | `customs/engine.py` |
 | CU | 016 | The ACID number has 19 digits | `customs/engine.py` |
 | CU | 017 | Declaration … is … - values for the duties cannot change any more | `customs/engine.py` |
+| CU | 018 | Regime … is unknown (HOME = duty paid, TA = temporary admission) | `customs/engine.py` |
 | CU | 020 | Step … does not exist for … declarations (…) | `customs/engine.py` |
 | CU | 021 | Declaration … is already … | `customs/engine.py` |
 | CU | 022 | The date of a step cannot be in the future | `customs/engine.py` |
@@ -187,6 +188,9 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 899 codes. `�
 | CU | 025 | Lines without a HS code in the tariff: … (ZCUS_TARIFF) | `customs/engine.py` |
 | CU | 026 | Enter the bill of lading number to ship | `customs/engine.py` |
 | CU | 027 | The declaration has no broker | `customs/engine.py` |
+| CU | 050 | Bill of material of … is recursive | `customs/ta.py` |
+| CU | 051 | Temporary admission line …/… does not exist | `customs/ta.py` |
+| CU | 052 | Line …/… is closed (…) | `customs/ta.py` |
 | DP | 001 | Notification … has no service order | `sd/service.py` |
 | DP | 002 | Repair is under warranty - not billable (costs go to warranty in CO-PA) | `sd/service.py` |
 | DP | 003 | Notification … is already billed (…) | `sd/service.py` |

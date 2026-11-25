@@ -97,6 +97,9 @@ def save_settings(conn, data):
         if data.get("free_days") not in (None, ""):
             conn.execute("INSERT OR REPLACE INTO cus_setting VALUES ('free_days', ?)",
                          (str(parse_int(data["free_days"], "free days", 0, 60)),))
+        for k, lo, hi in (("ta_months", 1, 60), ("ta_warn_days", 0, 365)):
+            if data.get(k) not in (None, ""):
+                conn.execute("INSERT OR REPLACE INTO cus_setting VALUES (?, ?)", (k, str(parse_int(data[k], k, lo, hi))))
         if "default_broker" in data:
             b = str(data.get("default_broker") or "").strip().upper()
             if b and not conn.execute("SELECT 1 FROM vendor WHERE lifnr=?", (b,)).fetchone():
@@ -148,14 +151,19 @@ def create_import(conn, data, user):
             conn.execute("INSERT INTO cus_item (declno,pos,matnr,text,hs,qty,meins,value_fc) VALUES (?,?,?,?,?,?,?,?)",
                          (declno, n * 10, i["matnr"], i["maktx"] or i["txz01"], hs_of(conn, i["matnr"]) if i["matnr"]
                           else "", i["menge"], i["meins"], val))
+        regime = str(data.get("regime") or "HOME").strip().upper()
+        if regime not in ("HOME", "TA"):
+            raise MMError("Regime %s is unknown (HOME = duty paid, TA = temporary admission)" % regime, "CU", "018")
         conn.execute("INSERT INTO cus_decl (declno,direction,impno,ebeln,partner,broker,acid,port,country,incoterm,waers,"
-                     "goods,freight,insurance,free_days,text,usnam,ts) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                     "goods,freight,insurance,free_days,text,usnam,ts,regime) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      (declno, "IMP", impno, f["ebeln"], f["lifnr"], _broker(conn, data.get("broker")),
                       _acid(data.get("acid")) if data.get("acid") else None, str(data.get("port") or f["port"] or "")[:30],
                       v["land"] if v and "land" in v.keys() else "", _incoterm(data.get("incoterm")) or "FOB",
                       f["waers"] or "EGP", goods, _amt0(data.get("freight")), _amt0(data.get("insurance")),
-                      int(settings(conn).get("free_days") or 4), str(data.get("text") or "")[:80], user, now_ts()))
-    return {"declno": declno, "message": "Import declaration %s created for import file %s" % (declno, impno)}
+                      int(settings(conn).get("free_days") or 4), str(data.get("text") or "")[:80], user, now_ts(),
+                      regime))
+    return {"declno": declno, "message": "Import declaration %s created for import file %s%s" % (
+        declno, impno, " (temporary admission)" if regime == "TA" else "")}
 
 
 def create_export(conn, data, user):
@@ -311,11 +319,17 @@ def step(conn, declno, to, day, user, data=None):
                     raise MMError("Lines without a HS code in the tariff: %s (ZCUS_TARIFF)" % ", ".join(
                         "%s %s" % (b["pos"], b["matnr"] or "") for b in bad), "CU", "025")
                 _calculate(conn, d["declno"], day)
-            if i >= steps.index("PAID") and d["status"] != "PAID":
+            if i >= steps.index("PAID") and d["status"] != "PAID" and d["regime"] != "TA":
                 _pay(conn, _get(conn, d["declno"]), day, user, data.get("paid_by"))
+            if to == "RELEASED" and d["regime"] == "TA":         # duty / VAT suspended: open the balances
+                from . import ta
+                ta.open_balances(conn, _get(conn, d["declno"]), day)
         else:
             if i >= steps.index("SUBMITTED") and d["status"] == "DRAFT":
                 _calculate(conn, d["declno"], day)
+            if i >= steps.index("RELEASED") and d["status"] not in ("RELEASED", "SHIPPED"):
+                from . import ta                                  # exported products discharge TA materials
+                ta.discharge(conn, d, day)
             if to == "SHIPPED" and not (d["bl_no"] or data.get("bl_no")):
                 raise MMError("Enter the bill of lading number to ship", "CU", "026")
             if data.get("bl_no"):
@@ -377,11 +391,15 @@ def detail(conn, declno):
     steps = IMP_STEPS if d["direction"] == "IMP" else EXP_STEPS
     names = {r["lifnr"]: r["name"] for r in conn.execute("SELECT lifnr, name FROM vendor")}
     names.update({r["kunnr"]: r["name"] for r in conn.execute("SELECT kunnr, name FROM customer")})
-    return dict(d, items=items, partner_name=names.get(d["partner"], ""), broker_name=names.get(d["broker"], ""),
+    ta_use = [dict(r) for r in conn.execute("SELECT * FROM cus_ta_use WHERE exp_declno=? OR declno=? ORDER BY day",
+                                            (d["declno"], d["declno"]))]
+    ta_lines = [dict(r) for r in conn.execute("SELECT * FROM cus_ta WHERE declno=? ORDER BY pos", (d["declno"],))]
+    return dict(d, items=items, partner_name=names.get(d["partner"], ""), ta_use=ta_use, ta_lines=ta_lines, broker_name=names.get(d["broker"], ""),
                 duty=sum(i["duty"] or 0 for i in items), vat=sum(i["vat"] or 0 for i in items),
                 cif=sum(i["cif"] or 0 for i in items), days_in_port=days, over_days=over, storage=storage,
                 export_support=support, missing_hs=missing_hs(conn, d["declno"]),
-                steps=[dict(step=s, text=STEP_TEXT[s], text_ar=STEP_AR[s], date=d.get(DATE_COL.get(s, ""), None),
+                steps=[dict(step=s, text="Guarantee lodged (TA)" if s == "PAID" and d["regime"] == "TA" else STEP_TEXT[s],
+                            text_ar="ضمان (سماح مؤقت)" if s == "PAID" and d["regime"] == "TA" else STEP_AR[s], date=d.get(DATE_COL.get(s, ""), None),
                             done=steps.index(s) <= steps.index(d["status"])) for s in steps[1:]],
                 next=[s for s in steps if steps.index(s) > steps.index(d["status"])])
 
@@ -414,12 +432,22 @@ def cockpit(conn, direction=None, open_only=False):
                                "may not leave the origin without it" % d["declno"]))
     month = today[:7]
     paid = conn.execute("SELECT COALESCE(SUM(i.duty),0), COALESCE(SUM(i.vat),0) FROM cus_item i JOIN cus_decl d USING "
-                        "(declno) WHERE d.direction='IMP' AND substr(COALESCE(d.d_paid,''),1,7)=?", (month,)).fetchone()
+                        "(declno) WHERE d.direction='IMP' AND d.regime<>'TA' AND substr(COALESCE(d.d_paid,''),1,7)=?",
+                        (month,)).fetchone()
     support = 0
     for r in conn.execute("SELECT i.cif, t.export_support_pct FROM cus_item i JOIN cus_decl d USING (declno) LEFT JOIN "
                           "cus_tariff t USING (hs) WHERE d.direction='EXP' AND d.status IN ('RELEASED','SHIPPED')"):
         support += rdiv((r[0] or 0) * (r[1] or 0), 10000)
+    from . import ta
+    tb = ta.balances(conn, only_open=True)
+    for r in tb["rows"]:
+        if r["alert"]:
+            alerts.append(dict(declno=r["declno"], kind="TA", text="%s/%s %s: temporary admission %s - %s open, deadline "
+                               "%s" % (r["declno"], r["pos"], r["matnr"], "expired" if r["alert"] == "EXPIRED" else
+                                       "ends in %d days" % r["days_left"], "{:,.3f}".format(r["open"] / 1000.0),
+                                       r["deadline"])))
     return dict(rows=rows, alerts=alerts, duty_month=paid[0], vat_month=paid[1], export_support=support,
+                ta_at_risk=tb["at_risk"], ta_open=len(tb["rows"]),
                 open_imports=sum(1 for r in rows if r["direction"] == "IMP" and r["status"] != "RELEASED"),
                 open_exports=sum(1 for r in rows if r["direction"] == "EXP" and r["status"] != "SHIPPED"),
                 steps={"IMP": IMP_STEPS[1:], "EXP": EXP_STEPS[1:]}, step_text=STEP_TEXT, step_ar=STEP_AR)
@@ -442,4 +470,8 @@ def day_text(conn):
     exp = [r for r in c["rows"] if r["direction"] == "EXP"]
     if exp:
         out.append("- %d شحنة تصدير لسه ماخلصتش جمارك" % len(exp))
+    from . import ta
+    t = ta.day_text(conn)
+    if t:
+        out.append(t)
     return ("**🛃 الجمارك:**\n" + "\n".join(out)) if out else ""

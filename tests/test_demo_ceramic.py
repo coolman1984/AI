@@ -42,7 +42,7 @@ class CeramicDemo(unittest.TestCase):
     def test_this_months_business(self):
         c = factory()
         n = lambda sql, *a: c.execute(sql, a).fetchone()[0]
-        self.assertEqual(n("SELECT COUNT(*) FROM po_header"), 4)
+        self.assertEqual(n("SELECT COUNT(*) FROM po_header"), 5)
         self.assertEqual(n("SELECT COUNT(*) FROM orders"), 6)
         self.assertEqual(n("SELECT COUNT(*) FROM sd_vbak"), 7)
         self.assertEqual(n("SELECT COUNT(*) FROM billing WHERE cancelled=0"), 5)

@@ -35,7 +35,8 @@ class Import(unittest.TestCase):
     def test_duty_and_vat_on_cif_at_the_customs_rate(self):
         from customs import engine as cu
         c = factory()
-        d = cu.detail(c, c.execute("SELECT declno FROM cus_decl WHERE direction='IMP'").fetchone()[0])
+        d = cu.detail(c, c.execute("SELECT declno FROM cus_decl WHERE direction='IMP' AND regime='HOME'")
+                       .fetchone()[0])
         self.assertEqual(d["status"], "PAID")
         cif_fc = d["goods"] + d["freight"] + d["insurance"]
         self.assertEqual(d["cif"], rdiv(cif_fc * d["kurs"], 100000))          # customs value in EGP
@@ -54,7 +55,7 @@ class Import(unittest.TestCase):
     def test_steps_only_forward_and_acid_required(self):
         from customs import engine as cu
         c = fresh()
-        imp = c.execute("SELECT impno FROM imp_file").fetchone()[0]
+        imp = c.execute("SELECT impno FROM cus_decl WHERE regime='HOME' AND direction='IMP'").fetchone()[0]
         c.execute("DELETE FROM cus_item WHERE declno IN (SELECT declno FROM cus_decl WHERE impno=?)", (imp,))
         c.execute("DELETE FROM cus_decl WHERE impno=?", (imp,))
         decl = cu.create_import(c, {"impno": imp, "freight": "100"}, "T")["declno"]
@@ -75,7 +76,7 @@ class Import(unittest.TestCase):
     def test_missing_hs_code_stops_the_assessment(self):
         from customs import engine as cu
         c = fresh()
-        imp = c.execute("SELECT impno FROM imp_file").fetchone()[0]
+        imp = c.execute("SELECT impno FROM cus_decl WHERE regime='HOME' AND direction='IMP'").fetchone()[0]
         c.execute("DELETE FROM cus_item WHERE declno IN (SELECT declno FROM cus_decl WHERE impno=?)", (imp,))
         c.execute("DELETE FROM cus_decl WHERE impno=?", (imp,))
         c.execute("DELETE FROM cus_tariff WHERE hs='3207.20'")
@@ -88,7 +89,7 @@ class Import(unittest.TestCase):
         from customs import engine as cu
         from mm import util
         c = fresh()
-        decl = c.execute("SELECT declno FROM cus_decl WHERE direction='IMP'").fetchone()[0]
+        decl = c.execute("SELECT declno FROM cus_decl WHERE direction='IMP' AND regime='HOME'").fetchone()[0]
         c.execute("UPDATE cus_decl SET d_arrival='2026-11-01', free_days=4 WHERE declno=?", (decl,))
         d = cu.detail(c, decl)
         self.assertEqual(d["days_in_port"], (util.today() - __import__("datetime").date(2026, 11, 1)).days)
@@ -115,6 +116,56 @@ class Export(unittest.TestCase):
             c2 = fresh()
             c2.execute("UPDATE cus_decl SET bl_no=NULL WHERE declno=?", (other["declno"],))
             cu.step(c2, other["declno"], "SHIPPED", None, "T")
+
+
+class TemporaryAdmission(unittest.TestCase):
+    def test_nothing_paid_and_exports_discharge_the_balance(self):
+        from customs import engine as cu, ta
+        c = factory()
+        d = c.execute("SELECT * FROM cus_decl WHERE regime='TA'").fetchone()
+        self.assertEqual(d["status"], "RELEASED")
+        self.assertIsNone(d["pay_belnr"])                                 # duty and VAT only secured
+        self.assertFalse(c.execute("SELECT 1 FROM imp_cost WHERE impno=?", (d["impno"],)).fetchone())
+        frit = c.execute("SELECT * FROM cus_ta WHERE declno=? AND matnr='RM-FRT'", (d["declno"],)).fetchone()
+        # the shipped export (60x60 floor tiles) used 0.8 kg frit + 3 % scrap per m2
+        exported = sum(i["qty"] for i in c.execute(
+            "SELECT i.qty FROM cus_item i JOIN cus_decl e USING (declno) WHERE e.direction='EXP' AND e.status IN "
+            "('RELEASED','SHIPPED') AND i.matnr='FG-F60'"))
+        self.assertEqual(frit["discharged"], ta.explode(c, "FG-F60", exported)["RM-FRT"])
+        b = ta.balances(c)
+        self.assertGreater(b["saved"], 0)
+        self.assertEqual(b["at_risk"], sum(r["duty_open"] + r["vat_open"] for r in b["rows"]))
+        self.assertEqual([s["text"] for s in cu.detail(c, d["declno"])["steps"] if s["step"] == "PAID"], ["Guarantee lodged (TA)"])
+
+    def test_explosion_through_the_body(self):
+        from customs import ta
+        c = factory()
+        x = ta.explode(c, "FG-F60", 1000)                                  # 1 m2
+        self.assertEqual(x["RM-FRT"], 824)                                 # 0.8 kg + 3 %
+        self.assertEqual(x["RM-INK"], 10)
+        self.assertIn("RM-CLR", x)                                        # through the spray-dried body
+        self.assertNotIn("SF-SPR", x)
+
+    def test_deadline_alert_and_home_use(self):
+        from customs import engine as cu, ta
+        c = fresh()
+        b = c.execute("SELECT * FROM cus_ta WHERE matnr='RM-GLZ'").fetchone()
+        c.execute("UPDATE cus_ta SET deadline='2026-11-01' WHERE declno=? AND pos=?", (b["declno"], b["pos"]))
+        r = [x for x in ta.balances(c)["rows"] if x["matnr"] == "RM-GLZ"][0]
+        self.assertEqual(r["alert"], "EXPIRED")
+        self.assertTrue(any(a["kind"] == "TA" for a in cu.cockpit(c)["alerts"]))
+        self.assertIn("السماح المؤقت", cu.day_text(c))
+        vat0 = c.execute("SELECT COALESCE(SUM(dmbtr),0) FROM acc_doc_item WHERE mwskz='VI'").fetchone()[0]
+        res = ta.to_home(c, b["declno"], b["pos"], None, "T")
+        self.assertEqual(res["duty"], r["duty_open"])
+        self.assertEqual(c.execute("SELECT COALESCE(SUM(dmbtr),0) FROM acc_doc_item WHERE mwskz='VI'").fetchone()[0] - vat0,
+                         r["vat_open"])
+        self.assertEqual(c.execute("SELECT status FROM cus_ta WHERE declno=? AND pos=?", (b["declno"], b["pos"])).fetchone()[0],
+                         "HOME")
+        with self.assertRaises(MMError):
+            ta.to_home(c, b["declno"], b["pos"], None, "T")                # only once
+        with self.assertRaises(MMError):
+            cu.create_import(c, {"impno": "X", "regime": "XX"}, "T")
 
 
 class Tariff(unittest.TestCase):

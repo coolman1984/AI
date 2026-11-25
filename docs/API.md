@@ -2,7 +2,7 @@
 
 # JSON API
 
-570 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
+572 routes. Area = authorization area checked by the server (`sec/config.py` API_AREAS); GET needs display (03), POST needs change (02).
 
 | Method | Path | Area | File · function | Purpose |
 |---|---|---|---|---|
@@ -109,6 +109,8 @@
 | GET | `/api/customs` | - | `customs_api.py` · `customs_cockpit` |  |
 | GET | `/api/customs/decl` | PUR | `customs_api.py` · `customs_detail` |  |
 | POST | `/api/customs/decl/<act>` | PUR | `customs_api.py` · `customs_decl` |  |
+| GET | `/api/customs/ta` | PUR | `customs_api.py` · `customs_ta` |  |
+| POST | `/api/customs/ta/home` | PUR | `customs_api.py` · `customs_ta_home` |  |
 | GET | `/api/customs/tariff` | PUR | `customs_api.py` · `customs_tariff` |  |
 | POST | `/api/customs/tariff/<act>` | PUR | `customs_api.py` · `customs_tariff_save` |  |
 | GET | `/api/dash/overview` | CA | `dash_api.py` · `dash_overview` |  |

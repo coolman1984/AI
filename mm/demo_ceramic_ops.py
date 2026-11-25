@@ -109,6 +109,8 @@ def run(conn):
     ctn = buy(2, "V-CTN", "103", [{"matnr": "PK-CTN", "menge": "40000", "lgort": "0005"}], "")
     frit = buy(3, "V-FRT", "102", [{"matnr": "RM-FRT", "menge": "20000", "lgort": "0002"},
                              {"matnr": "RM-GLZ", "menge": "12000", "lgort": "0002"}], "")   # import, in transit
+    ta_po = buy(3, "V-FRT", "102", [{"matnr": "RM-FRT", "menge": "15000", "lgort": "0002"},
+                                     {"matnr": "RM-GLZ", "menge": "8000", "lgort": "0002"}], "")  # temporary admission
     gr(4, clay, 10, "600000")
     gr(4, clay, 20, "150000")
     gr(6, feld, 10, "150000")                                     # partial delivery
@@ -233,6 +235,16 @@ def run(conn):
     for stp, day, extra in (("ACID", 3, {}), ("ARRIVED", 9, {}), ("SUBMITTED", 10, {"decl_ref": "IM-ALX-44817"}),
                             ("INSPECTION", 11, {}), ("ASSESSED", 12, {}), ("PAID", 13, {})):
         cus.step(conn, decl, stp, d(day), USER, extra)            # paid, still in port (not released)
+    # temporary admission: frit and glaze for export production, duty and VAT only secured
+    imp2 = importfile.create(conn, {"ebeln": ta_po, "port": "Alexandria", "eta": d(4), "bl_no": "SEA-ALX-54980",
+                                    "text": "Frit and glaze - temporary admission"}, USER)["impno"]
+    decl2 = cus.create_import(conn, {"impno": imp2, "freight": "900", "insurance": "60", "incoterm": "FOB",
+                                     "acid": "4010120260000119870", "regime": "TA"}, USER)["declno"]
+    for stp, day, extra in (("ACID", 1, {}), ("ARRIVED", 4, {}), ("SUBMITTED", 4, {"decl_ref": "TA-ALX-1207"}),
+                            ("ASSESSED", 5, {}), ("PAID", 5, {}), ("RELEASED", 6, {})):
+        cus.step(conn, decl2, stp, d(day), USER, extra)
+    gr(6, ta_po, 10, "15000")
+    gr(6, ta_po, 20, "8000")
     exp_dn = [r[0] for r in conn.execute("SELECT l.vbeln FROM sd_likp l JOIN customer c USING (kunnr) WHERE "
                                          "c.land<>'EG' ORDER BY l.vbeln").fetchall()]
     for n, dn in enumerate(exp_dn):

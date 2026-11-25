@@ -205,6 +205,14 @@ For tile factories (switched on per product in **ZTILE_CONF**; the standard demo
 - **Export declaration** from a delivery: value from the invoice, steps submitted → inspection → released
   (certificate of origin number) → shipped (bill of lading); expected export support = FOB × support %
   of the HS code; packing list / origin data print buttons.
+- **Temporary admission** (regime `TA` on the import declaration): imported materials for export production
+  enter without paying duty and import VAT - the amounts are only secured. At the release every line gets a
+  balance with a deadline (release + 12 months, setting). Every export declaration that is released
+  discharges the imported materials contained in the exported products (multi-level bill of material incl.
+  scrap %), oldest balance first. ZCUS shows the open quantities, the deadline, duty + VAT still secured,
+  what the exports saved, and warns 60 days before the deadline; "Clear for home use" pays duty + VAT of
+  the open rest (into the import file and as input VAT). The bill of material stands in for the official
+  input / output standards - those always prevail.
 - **ZCUS_TARIFF:** HS codes with duty %, import VAT %, export support %; HS code per material (tiles take
   it from their ISO group); free days, storage per day, default broker. The demo rates are examples -
   check every code and rate with the customs broker.

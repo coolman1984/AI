@@ -43,3 +43,16 @@ def customs_tariff_save(req, q, act):
     if act == "material":
         return cu.set_material_hs(c, b.get("matnr"), b.get("hs"))
     return cu.save_settings(c, b)
+
+
+@route("GET", "/api/customs/ta")
+def customs_ta(req, q):
+    from customs import ta
+    return ta.balances(db(), q.get("open") == "1")
+
+
+@route("POST", "/api/customs/ta/home")
+def customs_ta_home(req, q):
+    from customs import ta
+    b = req.body
+    return ta.to_home(db(), b.get("declno"), b.get("pos"), b.get("day"), req.user, b.get("paid_by"))
