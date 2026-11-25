@@ -41,7 +41,7 @@ const MENU = [
     ["7-3 Returns - Service Master & Parts", ["IE01", "IE03", "BGM1", "ZSP01", "ZWR01", "MP33"]],
     ["8-1 Reports - Sales Analysis", ["MCTA", "MCTC", "KE30", "ZSLM"]],
     ["8-2 Reports - Boards & Cockpit", ["ZSD_BOARD", "ZSD_COCKPIT"]],
-    ["8-3 Reports - Export Sales & Documents", ["ZSD_EXPORT"]],
+    ["8-3 Reports - Export Sales & Documents", ["ZSD_EXPORT", "ZCUS"]],
   ]],
   ["Production", [
     ["1-1 Common - Basic Config", ["ZPP_CONF", "OPL8", "SCAL"]],
@@ -108,6 +108,7 @@ const MENU = [
     ["5-2 Import - Import Costs", ["ZIMP_COST"]],
     ["5-3 Import - Landed Cost", ["ZIMP_LAND"]],
     ["5-4 Import - Overview", ["ZIMP03"]],
+    ["5-5 Import - Customs Clearance", ["ZCUS", "ZCUS_TARIFF"]],
     ["6-1 Services - Service Order", ["ME21N"]],
     ["6-2 Services - Service Entry Sheet", ["ML81N"]],
     ["7-1 Receipt - Goods Receipt / Return", ["MIGO", "MB51"]],

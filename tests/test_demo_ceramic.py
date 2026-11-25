@@ -30,7 +30,7 @@ class CeramicDemo(unittest.TestCase):
         self.assertEqual(takeover_balance(c), 0)
         n = lambda sql: c.execute(sql).fetchone()[0]
         self.assertEqual(n("SELECT COUNT(*) FROM customer"), 7)
-        self.assertEqual(n("SELECT COUNT(*) FROM vendor"), 8)
+        self.assertEqual(n("SELECT COUNT(*) FROM vendor"), 9)
         self.assertEqual(n("SELECT COUNT(*) FROM hr_employee"), 20)
         self.assertEqual(n("SELECT COUNT(*) FROM asset"), 10)
         self.assertEqual(n("SELECT meins FROM material WHERE matnr='FG-P612'"), "M2")
@@ -42,7 +42,7 @@ class CeramicDemo(unittest.TestCase):
     def test_this_months_business(self):
         c = factory()
         n = lambda sql, *a: c.execute(sql, a).fetchone()[0]
-        self.assertEqual(n("SELECT COUNT(*) FROM po_header"), 4)
+        self.assertEqual(n("SELECT COUNT(*) FROM po_header"), 5)
         self.assertEqual(n("SELECT COUNT(*) FROM orders"), 6)
         self.assertEqual(n("SELECT COUNT(*) FROM sd_vbak"), 7)
         self.assertEqual(n("SELECT COUNT(*) FROM billing WHERE cancelled=0"), 5)

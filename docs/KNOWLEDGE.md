@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v59**).
+  delivered: **NERP_v60**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,8 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Temporary admission (`customs/ta.py`): regime TA on the import declaration; no posting at the guarantee step (duty / VAT stored per line only); balances open at the release, deadline = release + `ta_months` (12, setting - VERIFY with the broker, extensions exist); discharge at the release of an export declaration by exploding the exported products' BOM (multi-level, scrap % included) down to the TA materials, earliest deadline first, only balances released on or before the export day; the rest can be cleared for home use (duty into the import file, VAT code VI). BOM = estimate of the official input/output standards | Exporters save duty and VAT on imported inputs without a separate spreadsheet |
+| 2026-11 | Customs (`customs` package, ZCUS): an import declaration needs an import file (ZIMP01) so the duty flows through the existing import costs and landed cost (ZIMP_LAND) - no second costing path; import VAT gets its own tax code VI (input, 154000) and VAT return line 4a; customs value = CIF x customs rate (system rate unless entered); the ACID number (19 digits) is required before any further import step; steps only forward, never future-dated; tariff rates, free days (4) and storage per day are user settings - the demo values are examples, VERIFY with a broker | Customs inside the purchase cost and the VAT return, not a separate island |
 | 2026-11 | Tiles in boxes / pallets (`tile/pack.py`): order items of tile products are rounded UP to full boxes when the order is created (`sd.order._add_item`, not for returns / credit / debit memos; VA02 quantity changes are not rounded); BOX / PAL entered in the item field "unit"; gross weight = m2 x kg/m2 + 0.6 kg per carton + 25 kg per pallet | Customers get full boxes; the warehouse ships boxes |
 | 2026-11 | Export (`tile/export.py`, ZSD_EXPORT): export = channel 20 or a customer outside Egypt; forms PACKLIST and ORIGIN (data sheet for the chamber of commerce / preferential certificate - not the certificate itself); HS 6907.21 / .22 / .23 from the ISO group - VERIFY with the customs broker; the takeover MATERIAL object now extends an existing material by a new plant / sales area line | Export documents from the delivery, no retyping |
 | 2026-11 | Ceramics (`tile` package): lots are a sub-ledger next to MM stock (MM keeps quantities per material / bin; a lot = shade + caliber of one sorting) instead of batch management in the posting engine - no change to the posting logic or the standard demo; the goods issue of a delivery calls `tile.lots.on_goods_issue` (no-op without tile products) and refuses a shade / caliber mix; `reconcile` shows lots = stock | Shade-consistent deliveries without the risk of rebuilding inventory posting |
@@ -75,6 +77,7 @@ something new (newest entries at the top of each section).
 
 ## 4. Traps in the demo data
 
+* Process catalog ids (`qa/catalog.py`) must be unique - P2P-34 was used twice for a while (ceramic demo moved to P2P-35); check with `grep -o '("[A-Z0-9]*-[0-9]*"' qa/catalog.py | sort | uniq -d`.
 * `tools/docs/build_docs.py` collects error codes only from files git already tracks: after adding a new package run `git add` first, then build_docs (otherwise check_all says ERROR_CODES.md is out of date).
 * Lots of goods already in stock at go-live must be created with `tile.lots.opening_lot` (the demo does it), otherwise the goods issue finds no lot. Returns (651) and GI reversals do not give m2 back to a lot yet - correct with a new opening lot.
 * With the test clock (2026-11-09) all demo sortings fall on the same day (dates are capped at today); the energy "high day" test therefore builds its own days.

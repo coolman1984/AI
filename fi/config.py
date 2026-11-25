@@ -192,6 +192,7 @@ TAX_CODES = {
     # code: (text, percent in 1/100 %, type I input / O output, account)
     "V0": ("Input tax 0 %", 0, "I", "154000"),
     "V1": ("Input tax 14 % (VAT)", 1400, "I", "154000"),
+    "VI": ("Import VAT paid at customs", 1400, "I", "154000"),
     "A0": ("Output tax 0 % (export)", 0, "O", "175000"),
     "A1": ("Output tax 14 % (VAT)", 1400, "O", "175000"),
 }

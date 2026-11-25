@@ -2,7 +2,7 @@
 
 # Business messages (error codes)
 
-Message class + number as shown in the status bar (e.g. `AU 906`). 879 codes. `…` = a value filled in at run time.
+Message class + number as shown in the status bar (e.g. `AU 906`). 903 codes. `…` = a value filled in at run time.
 
 | Class | No. | Message | Where |
 |---|---|---|---|
@@ -167,6 +167,30 @@ Message class + number as shown in the status bar (e.g. `AU 906`). 879 codes. `�
 | CR | 002 | Work center … already exists in plant … | `pp/master.py` |
 | CR | 010 | Control key … does not exist | `pp/master.py` |
 | CR | 011 | Capacity: hours per shift 0-24, shifts 1-3, utilization 1-100 % | `pp/master.py` |
+| CU | 001 | HS code … is not valid (4 to 12 digits, e.g. 3207.40) | `customs/engine.py` |
+| CU | 002 | … %% must be between 0 and 300 | `customs/engine.py` |
+| CU | 003 | Material … does not exist | `customs/engine.py` |
+| CU | 004 | Vendor … does not exist / Broker (vendor) … does not exist | `customs/engine.py` |
+| CU | 010 | Customs declaration … does not exist | `customs/engine.py` |
+| CU | 011 | Incoterm … is unknown (…) | `customs/engine.py` |
+| CU | 012 | Import file … does not exist (create it in ZIMP01 first) | `customs/engine.py` |
+| CU | 013 | Import file … already has a customs declaration | `customs/engine.py` |
+| CU | 014 | Delivery … does not exist | `customs/engine.py` |
+| CU | 015 | Delivery … already has an export declaration | `customs/engine.py` |
+| CU | 016 | The ACID number has 19 digits | `customs/engine.py` |
+| CU | 017 | Declaration … is … - values for the duties cannot change any more | `customs/engine.py` |
+| CU | 018 | Regime … is unknown (HOME = duty paid, TA = temporary admission) | `customs/engine.py` |
+| CU | 020 | Step … does not exist for … declarations (…) | `customs/engine.py` |
+| CU | 021 | Declaration … is already … | `customs/engine.py` |
+| CU | 022 | The date of a step cannot be in the future | `customs/engine.py` |
+| CU | 023 | The date … is before the previous step (…) | `customs/engine.py` |
+| CU | 024 | Enter the ACID number first (pre-registration, 19 digits) | `customs/engine.py` |
+| CU | 025 | Lines without a HS code in the tariff: … (ZCUS_TARIFF) | `customs/engine.py` |
+| CU | 026 | Enter the bill of lading number to ship | `customs/engine.py` |
+| CU | 027 | The declaration has no broker | `customs/engine.py` |
+| CU | 050 | Bill of material of … is recursive | `customs/ta.py` |
+| CU | 051 | Temporary admission line …/… does not exist | `customs/ta.py` |
+| CU | 052 | Line …/… is closed (…) | `customs/ta.py` |
 | DP | 001 | Notification … has no service order | `sd/service.py` |
 | DP | 002 | Repair is under warranty - not billable (costs go to warranty in CO-PA) | `sd/service.py` |
 | DP | 003 | Notification … is already billed (…) | `sd/service.py` |
