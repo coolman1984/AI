@@ -188,7 +188,15 @@ For tile factories (switched on per product in **ZTILE_CONF**; the standard demo
   order). m² per box, boxes per pallet and kg per m² per product in ZTILE_CONF. ZTILE_LOTS shows the packing
   of a delivery: boxes, full pallets + loose boxes, gross weight.
 
-## Customs clearance - imports and exports (ZCUS, ZCUS_TARIFF; Procurement 5-5, Sales 8-3)
+## Customs clearance - imports and exports (own menu "Customs & Clearance")
+
+A separate module with its own menu, authorization area **CU** and role **Customs clerk** (demo user
+`CUS1 / cus1`): 1-1 cockpit **ZCUS** (all declarations and alerts), 2-1 **ZCUS_IMP** import declarations,
+2-2 import file / LC / landed cost (ZIMP01 ... ZIMP03), 3-1 **ZCUS_EXP** export declarations, 3-2 export sales and
+documents (ZSD_EXPORT), 4-1 **ZCUS_TA** temporary admission, 5-1 **ZCUS_REP** report (duties and import VAT per
+month / HS code / supplier country, duty suspended under temporary admission, average and longest clearance
+time arrival → release, exports per country), 6-1 **ZCUS_TARIFF** settings. The morning briefing shows the
+customs lines to users with the CU area.
 
 - **Import declaration** from an import file (ZIMP01): the purchase order items with their HS code, goods
   value, freight, insurance, Incoterm, broker, port. Steps: **ACID** pre-registration (19 digits, required

@@ -11,7 +11,7 @@ something new (newest entries at the top of each section).
 * **Delivery:** every change goes to a pull request that is **merged automatically** (no asking).
   After the merge a zip of the whole program is delivered:
   `git archive --format=zip --prefix=NERP/ HEAD` → `NERP_vNN.zip` (version +1 each time; last
-  delivered: **NERP_v60**).
+  delivered: **NERP_v61**).
 * **Documentation in every pull request** (see section 5 and `CLAUDE.md`), so no knowledge is lost.
 * **GitHub Actions budget is used up:** run `check_all` and the browser sweep locally and say so in
   the pull request.
@@ -23,6 +23,7 @@ something new (newest entries at the top of each section).
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-11 | Customs is its own module (owner's wish): top menu "Customs & Clearance" -> area CU (`sec.config.MENU_AREAS`), `/api/customs/` -> CU, role CUSTOMS_CLERK (+ ZIMP*, ZSD_EXPORT), demo user CUS1; ZCUS_IMP / ZCUS_EXP are ZCUS with a fixed direction; the import file screens appear in both Procurement and Customs (a tcode may belong to several areas) | One place for the customs team with its own authorization |
 | 2026-11 | Temporary admission (`customs/ta.py`): regime TA on the import declaration; no posting at the guarantee step (duty / VAT stored per line only); balances open at the release, deadline = release + `ta_months` (12, setting - VERIFY with the broker, extensions exist); discharge at the release of an export declaration by exploding the exported products' BOM (multi-level, scrap % included) down to the TA materials, earliest deadline first, only balances released on or before the export day; the rest can be cleared for home use (duty into the import file, VAT code VI). BOM = estimate of the official input/output standards | Exporters save duty and VAT on imported inputs without a separate spreadsheet |
 | 2026-11 | Customs (`customs` package, ZCUS): an import declaration needs an import file (ZIMP01) so the duty flows through the existing import costs and landed cost (ZIMP_LAND) - no second costing path; import VAT gets its own tax code VI (input, 154000) and VAT return line 4a; customs value = CIF x customs rate (system rate unless entered); the ACID number (19 digits) is required before any further import step; steps only forward, never future-dated; tariff rates, free days (4) and storage per day are user settings - the demo values are examples, VERIFY with a broker | Customs inside the purchase cost and the VAT return, not a separate island |
 | 2026-11 | Tiles in boxes / pallets (`tile/pack.py`): order items of tile products are rounded UP to full boxes when the order is created (`sd.order._add_item`, not for returns / credit / debit memos; VA02 quantity changes are not rounded); BOX / PAL entered in the item field "unit"; gross weight = m2 x kg/m2 + 0.6 kg per carton + 25 kg per pallet | Customers get full boxes; the warehouse ships boxes |

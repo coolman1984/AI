@@ -244,7 +244,7 @@ def tile_text(conn, allowed=None, day=None):
 
 def customs_text(conn, allowed=None):
     """customs: shipments in port (over the free days), duties to pay, exports not cleared"""
-    if allowed is not None and not allowed("PUR"):
+    if allowed is not None and not allowed("CU"):
         return ""
     try:
         from customs.engine import day_text

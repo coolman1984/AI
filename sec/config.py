@@ -13,12 +13,13 @@ MENU_AREAS = {"Sales": "SD", "Marketing": "SD", "Logistics Execution": "MM",
               "Procurement": "PUR", "Production": "PP", "Financial Accounting": "FI",
               "Controlling": "CO", "Master Data": "MD", "Common": "CA",
               "Administration": "BC", "Human Resources": "HR", "Taxes Egypt": "FI",
-              "Quality": "MM", "Maintenance": "PP", "External Audit": "FI"}
+              "Quality": "MM", "Maintenance": "PP", "External Audit": "FI", "Customs & Clearance": "CU"}
 AREAS = {"SD": "Sales and distribution", "MM": "Inventory / logistics execution",
          "PUR": "Procurement", "PP": "Production", "FI": "Financial accounting",
          "CO": "Controlling", "MD": "Master data", "CA": "Cross-application tools",
          "HR": "Human resources (personnel data, salaries - confidential)",
-         "BC": "User and authorisation administration", "AU": "External audit (engagement, queries, adjustments)"}
+         "BC": "User and authorisation administration", "AU": "External audit (engagement, queries, adjustments)",
+         "CU": "Customs clearance (import / export declarations, temporary admission)"}
 ACTIVITIES = {"02": "Change", "03": "Display", "*": "All"}
 
 # URL prefix -> area; anything else under /api is inventory management (MM)
@@ -28,7 +29,7 @@ API_AREAS = (("/api/forms/PAYSLIP/", "HR"), ("/api/sd/", "SD"), ("/api/fi/", "FI
              ("/api/inbox", "CA"), ("/api/com/", "CA"), ("/api/sec/admin/", "BC"), ("/api/import/", "BC"),
              ("/api/bi/", "CA"), ("/api/dash/", "CA"), ("/api/hr/", "HR"), ("/api/wm/", "MM"), ("/api/tax/", "FI"),
              ("/api/qm/", "MM"), ("/api/pm/", "PP"),
-             ("/api/ai/settings", "BC"), ("/api/ai/", "CA"), ("/api/whatif/", "CO"), ("/api/mes/", "PP"), ("/api/customs/", "PUR"), ("/api/tile/delivery", "SD"), ("/api/tile/pack", "SD"), ("/api/tile/", "PP"), ("/api/energy", "PP"),
+             ("/api/ai/settings", "BC"), ("/api/ai/", "CA"), ("/api/whatif/", "CO"), ("/api/mes/", "PP"), ("/api/customs/", "CU"), ("/api/tile/delivery", "SD"), ("/api/tile/pack", "SD"), ("/api/tile/", "PP"), ("/api/energy", "PP"),
              ("/api/notif/admin", "BC"), ("/api/notif/", "CA"),
              ("/api/audit/access", "BC"), ("/api/audit/aje/post", "FI"), ("/api/audit/", "AU"))
 
@@ -116,6 +117,8 @@ DEMO_ROLES = {
                     D + [("S_AREA", "MD", "02"), ("F_LFA1_BEK", "*", "02")]),
     "AUDITOR": ("Auditor (display only; works in the external audit area)", ["*"],
                 D + [("S_USER_GRP", "*", "03"), ("S_AREA", "AU", "02")]),
+    "CUSTOMS_CLERK": ("Customs clerk (clearance, temporary admission)", ["@CU", "@CA", "ZIMP*", "ZSD_EXPORT"],
+                      D + [("S_AREA", "CU", "02")]),
     "ADMIN": ("Administrator (all)", ["*"], [("*", "*", "*")]),
     "HR_ADMIN": ("HR administrator", ["@HR", "@CA"], D + [("S_AREA", "HR", "02"), ("P_ABSENCE", "*", "02")]),
     "PAYROLL": ("Payroll accountant", ["@HR", "@CA", "@FI"],
@@ -139,6 +142,7 @@ DEMO_USERS = {
     "MDM1": ("Master data maintainer", ["MD_MAINTAINER"], "Master Data", "4100"),
     "MDA1": ("Master data approver", ["MD_APPROVER"], "Master Data", "4100"),
     "AUDIT1": ("Auditor", ["AUDITOR"], "Finance", "4200"),
+    "CUS1": ("Customs clerk", ["CUSTOMS_CLERK"], "Procurement", "4100"),
     "HR1": ("HR specialist", ["HR_ADMIN"], "Finance & Administration", "9100"),
     "PAY1": ("Payroll accountant", ["PAYROLL"], "Finance & Administration", "9100"),
 }
